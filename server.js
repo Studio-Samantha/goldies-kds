@@ -798,6 +798,32 @@ async function getCompletedTicketsToday() {
   return (orders || []).map((order) => ticketFromDb(order, []));
 }
 
+function ticketMatchesQuery(ticket, query) {
+  const q = String(query || "").trim().toLowerCase();
+  if (!q) return false;
+
+  return (
+    String(ticket.id || "").toLowerCase().includes(q) ||
+    String(ticket.orderNumber || "").toLowerCase().includes(q) ||
+    String(ticket.customerName || "").toLowerCase().includes(q) ||
+    String(ticket.diningOption || "").toLowerCase().includes(q) ||
+    (ticket.items || []).some((item) => {
+      return (
+        String(item.name || "").toLowerCase().includes(q) ||
+        (item.modifiers || []).some((mod) => String(mod).toLowerCase().includes(q))
+      );
+    })
+  );
+}
+
+async function findTickets(query) {
+  const active = await getActiveTickets().catch(() => []);
+  const completed = await getCompletedTicketsToday().catch(() => []);
+  const combined = dedupeOrders([...active, ...completed]);
+
+  return combined.filter((ticket) => ticketMatchesQuery(ticket, query));
+}
+
 function mapKDSStatusToSquareFulfillmentState(kdsStatus) {
   const mapping = {
     new: "PROPOSED",
@@ -1035,6 +1061,23 @@ app.get("/api/tickets/completed", requireKdsAuth, async (req, res) => {
     res.json(completedTickets);
   } catch (error) {
     console.error("Error fetching completed tickets:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/tickets/search", requireKdsAuth, async (req, res) => {
+  try {
+    const query = req.query.q || "";
+    const matches = await findTickets(query);
+
+    res.json({
+      ok: true,
+      query,
+      count: matches.length,
+      matches,
+    });
+  } catch (error) {
+    console.error("Error searching tickets:", error);
     res.status(500).json({ error: error.message });
   }
 });
