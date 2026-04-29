@@ -83,6 +83,7 @@ app.use(
 app.use(express.json());
 
 let lastSquareSyncAt = 0;
+const squareCustomerNameCache = new Map();
 let tickets = [
   {
     id: "local-101",
@@ -525,14 +526,11 @@ function getDiningOption(order) {
   return "Order";
 }
 
-function getSquareCustomerName(order) {
+function getSquareCustomerNameFromFields(order) {
   const fulfillment = order.fulfillments?.[0] || {};
   const pickupRecipient = fulfillment.pickupDetails?.recipient || {};
   const deliveryRecipient = fulfillment.deliveryDetails?.recipient || {};
   const shipmentRecipient = fulfillment.shipmentDetails?.recipient || {};
-  const tenders = order.tenders || [];
-  const firstTenderCustomer =
-    tenders.find((tender) => tender.customerId || tender.buyerEmailAddress) || {};
   const rawName =
     pickupRecipient.displayName ||
     deliveryRecipient.displayName ||
@@ -540,13 +538,74 @@ function getSquareCustomerName(order) {
     order.metadata?.customer_name ||
     order.metadata?.customerName ||
     order.metadata?.name ||
-    firstTenderCustomer.customerId ||
     "";
 
   return String(rawName).trim();
 }
 
-function normalizeSquareOrder(order) {
+function getSquareCustomerIds(order) {
+  const fulfillment = order.fulfillments?.[0] || {};
+  const pickupRecipient = fulfillment.pickupDetails?.recipient || {};
+  const deliveryRecipient = fulfillment.deliveryDetails?.recipient || {};
+  const shipmentRecipient = fulfillment.shipmentDetails?.recipient || {};
+  const tenders = order.tenders || [];
+
+  return [
+    order.customerId,
+    order.customer_id,
+    fulfillment.customerId,
+    fulfillment.customer_id,
+    pickupRecipient.customerId,
+    pickupRecipient.customer_id,
+    deliveryRecipient.customerId,
+    deliveryRecipient.customer_id,
+    shipmentRecipient.customerId,
+    shipmentRecipient.customer_id,
+    ...tenders.flatMap((tender) => [tender.customerId, tender.customer_id]),
+  ]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+}
+
+async function getSquareCustomerName(order) {
+  const fieldName = getSquareCustomerNameFromFields(order);
+  if (fieldName) return fieldName;
+
+  const customerIds = [...new Set(getSquareCustomerIds(order))];
+  if (!customerIds.length) return "";
+
+  for (const customerId of customerIds) {
+    if (squareCustomerNameCache.has(customerId)) {
+      const cachedName = squareCustomerNameCache.get(customerId);
+      if (cachedName) return cachedName;
+      continue;
+    }
+
+    try {
+      const response = await squareClient.customersApi.retrieveCustomer(customerId);
+      const customer = response.result.customer || {};
+      const resolvedName =
+        [customer.givenName, customer.familyName]
+          .filter(Boolean)
+          .join(" ")
+          .trim() ||
+        String(customer.nickname || "").trim() ||
+        String(customer.companyName || "").trim() ||
+        String(customer.emailAddress || "").trim() ||
+        "";
+
+      squareCustomerNameCache.set(customerId, resolvedName);
+      if (resolvedName) return resolvedName;
+    } catch (error) {
+      squareCustomerNameCache.set(customerId, "");
+      console.error(`Error retrieving Square customer ${customerId}:`, error.message);
+    }
+  }
+
+  return "";
+}
+
+async function normalizeSquareOrder(order) {
   const items = [];
 
   for (const lineItem of order.lineItems || []) {
@@ -568,10 +627,10 @@ function normalizeSquareOrder(order) {
   return {
     id: order.id,
     orderNumber: order.orderNumber || order.id.slice(-4),
-    customerName: getSquareCustomerName(order),
+    customerName: await getSquareCustomerName(order),
     createdAt: new Date(order.createdAt || Date.now()).getTime(),
     source: "Square Register",
-    status: getSquareOrderStatus(order),
+    status: "new",
     diningOption: getDiningOption(order),
     items,
   };
@@ -669,7 +728,7 @@ async function syncRecentSquareOrders() {
   const paymentOrders = await fetchSquarePaymentOrders();
 
   for (const order of dedupeOrders([...squareOrders, ...paymentOrders])) {
-    const ticket = normalizeSquareOrder(order);
+    const ticket = await normalizeSquareOrder(order);
     await upsertTicket(ticket, order);
   }
 }
@@ -1089,7 +1148,7 @@ app.post("/api/square-sync", requireKdsAuth, async (req, res) => {
     const savedTickets = [];
 
     for (const order of dedupeOrders([...squareOrders, ...paymentOrders])) {
-      const ticket = normalizeSquareOrder(order);
+      const ticket = await normalizeSquareOrder(order);
       const savedTicket = await upsertTicket(ticket, order);
       savedTickets.push(savedTicket);
     }
@@ -1298,7 +1357,7 @@ app.post("/api/square-webhook", async (req, res) => {
         const order = orderResponse.result.order;
 
         if (order) {
-          const ticket = normalizeSquareOrder(order);
+          const ticket = await normalizeSquareOrder(order);
           await upsertTicket(ticket, order);
 
           console.log(`Saved ticket from Square webhook: ${ticket.id}`);
