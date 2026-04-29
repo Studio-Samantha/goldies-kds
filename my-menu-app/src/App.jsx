@@ -7,9 +7,32 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const APP_VERSION = "v1.0.0";
+const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 
 function apiUrl(path) {
   return API_BASE_URL ? `${API_BASE_URL}${path}` : path;
+}
+
+function buildSupportMailto() {
+  const subject = encodeURIComponent("Goldie's KDS support request");
+  const body = encodeURIComponent(
+    [
+      "Hi Samantha,",
+      "",
+      "I need a fix or update for the Goldie's KDS.",
+      "",
+      "What I was doing:",
+      "",
+      "What happened:",
+      "",
+      "Device/browser:",
+      "",
+      "Thanks,",
+      "",
+    ].join("\n")
+  );
+
+  return `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
 }
 
 function getSavedThemeMode() {
@@ -1136,6 +1159,13 @@ function LoginScreen({ onLogin, themeMode, onThemeToggle, themeStyle }) {
         {themeMode === "dark" ? "Light mode" : "Dark mode"}
       </button>
 
+      <a
+        href={buildSupportMailto()}
+        className="absolute right-4 top-16 rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+      >
+        Suggest Fix
+      </a>
+
       <main className="w-full max-w-md rounded-3xl bg-[#FFFDF8] border border-[#CA862B]/22 shadow-[0_20px_60px_rgba(15,64,54,0.08)] p-6 flex flex-col items-center text-center">
         <div className="flex items-center justify-center gap-4 mb-5">
           <BrandMark size="lg" />
@@ -1793,6 +1823,13 @@ export default function GoldiesKDS() {
               >
                 Sign out
               </button>
+
+              <a
+                href={buildSupportMailto()}
+                className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+              >
+                Suggest Fix
+              </a>
             </div>
 
             <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6A614F]">
