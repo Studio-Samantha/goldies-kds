@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 const API_BASE_URL = import.meta.env.DEV
   ? import.meta.env.VITE_API_BASE_URL || ""
   : "";
+const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 
 function apiUrl(path) {
@@ -461,6 +462,21 @@ function DailyDrinkCount({ drinkCounts }) {
   );
 }
 
+function BrandMark({ size = "md" }) {
+  const dimensions = size === "lg" ? "h-24 w-24" : "h-14 w-14";
+
+  return (
+    <img
+      src={LOGO_URL}
+      alt="Goldie's Coffee Shop"
+      className={`${dimensions} rounded-full border border-amber-200 bg-white object-contain shadow-sm`}
+      onError={(event) => {
+        event.currentTarget.style.display = "none";
+      }}
+    />
+  );
+}
+
 function DrinkStats({ reports }) {
   return (
     <section className="rounded-3xl bg-white border border-neutral-200 p-4 shadow-sm">
@@ -573,8 +589,12 @@ function LoginScreen({ onLogin }) {
   return (
     <div className="min-h-screen bg-[#fbfaf7] text-neutral-950 flex items-center justify-center px-4">
       <main className="w-full max-w-md rounded-3xl bg-white border border-neutral-200 shadow-sm p-6">
-        <div className="inline-flex items-center rounded-full bg-amber-100 border border-amber-200 text-amber-900 px-3 py-1 text-sm font-bold mb-4">
-          Goldie’s Coffee Shop
+        <div className="flex items-center gap-4 mb-5">
+          <BrandMark size="lg" />
+
+          <div className="inline-flex items-center rounded-full bg-amber-100 border border-amber-200 text-amber-900 px-3 py-1 text-sm font-bold">
+            Goldie’s Coffee Shop
+          </div>
         </div>
 
         <h1 className="text-4xl font-black tracking-tight">
@@ -849,18 +869,22 @@ export default function GoldiesKDS() {
     <div className="min-h-screen bg-[#fbfaf7] text-neutral-950">
       <header className="border-b-4 border-amber-400 bg-white/95 px-4 md:px-6 py-4">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center rounded-full bg-amber-100 border border-amber-200 text-amber-900 px-3 py-1 text-sm font-bold mb-3">
-              Goldie’s Coffee Shop
+          <div className="flex items-center gap-4">
+            <BrandMark />
+
+            <div>
+              <div className="inline-flex items-center rounded-full bg-amber-100 border border-amber-200 text-amber-900 px-3 py-1 text-sm font-bold mb-2">
+                Goldie’s Coffee Shop
+              </div>
+
+              <h1 className="text-3xl md:text-4xl font-black tracking-tight">
+                Kitchen Display
+              </h1>
+
+              <p className="text-neutral-600 mt-1 text-base">
+                Live Square orders
+              </p>
             </div>
-
-            <h1 className="text-3xl md:text-4xl font-black tracking-tight">
-              Kitchen Display
-            </h1>
-
-            <p className="text-neutral-600 mt-1 text-base">
-              Live Square orders
-            </p>
           </div>
 
           <div className="flex flex-col items-start lg:items-end gap-3">
