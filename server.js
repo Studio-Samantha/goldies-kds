@@ -357,57 +357,38 @@ async function fetchSquareOrders() {
   }
 }
 
-async function fetchSquarePaymentOrders(payments = null) {
+async function fetchSquarePayments() {
   try {
-    const { ordersApi, paymentsApi } = squareClient;
+    const { paymentsApi } = squareClient;
     const now = new Date();
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const locations = await getSquareLocations();
     const locationIds = uniqueLocationIds(locations);
-    const paymentList = payments || [];
-    const orders = [];
+    const payments = [];
 
-    if (!payments) {
-      for (const locationId of locationIds) {
-        try {
-          const response = await paymentsApi.listPayments(
-            yesterday.toISOString(),
-            now.toISOString(),
-            "DESC",
-            undefined,
-            locationId,
-            undefined,
-            undefined,
-            undefined,
-            100
-          );
-          paymentList.push(...(response.result.payments || []));
-        } catch (error) {
-          console.error(
-            `Error fetching Square payments for location ${locationId}:`,
-            error.message
-          );
-        }
-      }
-    }
-
-    for (const payment of dedupePayments(paymentList)) {
-      if (!payment.orderId) continue;
-
+    for (const locationId of locationIds) {
       try {
-        const orderResponse = await ordersApi.retrieveOrder(payment.orderId);
-        if (orderResponse.result.order) {
-          orders.push(orderResponse.result.order);
-        }
+        const response = await paymentsApi.listPayments(
+          yesterday.toISOString(),
+          now.toISOString(),
+          "DESC",
+          undefined,
+          locationId,
+          undefined,
+          undefined,
+          undefined,
+          100
+        );
+        payments.push(...(response.result.payments || []));
       } catch (error) {
         console.error(
-          `Error retrieving Square order for payment ${payment.id}:`,
+          `Error fetching Square payments for location ${locationId}:`,
           error.message
         );
       }
     }
 
-    return orders;
+    return dedupePayments(payments);
   } catch (error) {
     console.error("Error fetching Square payments:", error.message);
     return [];
@@ -416,13 +397,11 @@ async function fetchSquarePaymentOrders(payments = null) {
 
 async function buildPaymentEmployeeMap(payments = []) {
   const employeeMap = new Map();
-  const teamMemberIds = [
-    ...new Set(
-      payments
-        .map((payment) => String(payment.teamMemberId || payment.employeeId || "").trim())
-        .filter(Boolean)
-    ),
-  ];
+  const teamMemberIds = [...new Set(
+    payments
+      .map((payment) => String(payment.teamMemberId || payment.employeeId || "").trim())
+      .filter(Boolean)
+  )];
 
   const namesByTeamMemberId = new Map();
 
@@ -447,6 +426,35 @@ async function buildPaymentEmployeeMap(payments = []) {
   }
 
   return employeeMap;
+}
+
+async function fetchSquarePaymentOrders(payments = null) {
+  try {
+    const { ordersApi } = squareClient;
+    const paymentList = payments || (await fetchSquarePayments());
+    const orders = [];
+
+    for (const payment of paymentList) {
+      if (!payment.orderId) continue;
+
+      try {
+        const orderResponse = await ordersApi.retrieveOrder(payment.orderId);
+        if (orderResponse.result.order) {
+          orders.push(orderResponse.result.order);
+        }
+      } catch (error) {
+        console.error(
+          `Error retrieving Square order for payment ${payment.id}:`,
+          error.message
+        );
+      }
+    }
+
+    return orders;
+  } catch (error) {
+    console.error("Error fetching Square payment orders:", error.message);
+    return [];
+  }
 }
 
 function dedupeOrders(orders) {
@@ -653,7 +661,10 @@ async function getSquareCustomerName(order) {
       const response = await squareClient.customersApi.retrieveCustomer(customerId);
       const customer = response.result.customer || {};
       const resolvedName =
-        [customer.givenName, customer.familyName]
+        [
+          customer.givenName,
+          customer.familyName,
+        ]
           .filter(Boolean)
           .join(" ")
           .trim() ||

@@ -352,10 +352,6 @@ function TicketCard({ ticket, onStatusChange, onNameChange }) {
             #{ticket.orderNumber}
           </div>
 
-          <div className="text-sm text-neutral-500 mt-1">
-            {ticket.source}
-          </div>
-
           {ticket.customerName ? (
             <div className="mt-2 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2">
               <div className="text-xs font-black uppercase tracking-wide text-emerald-700">
@@ -387,6 +383,10 @@ function TicketCard({ ticket, onStatusChange, onNameChange }) {
               />
             </label>
           )}
+
+          <div className="text-sm text-neutral-500 mt-1">
+            {ticket.source}
+          </div>
 
           {ticket.employeeName && (
             <div className="mt-1 text-sm font-semibold text-neutral-700">
@@ -474,11 +474,11 @@ function TicketCard({ ticket, onStatusChange, onNameChange }) {
 
 function StatCard({ label, value, detail }) {
   return (
-    <div className="rounded-2xl bg-white border border-neutral-200 p-4 shadow-sm">
+    <div className="rounded-xl bg-white border border-neutral-200/80 p-3 shadow-sm">
       <div className="text-xs uppercase tracking-wide text-neutral-500 font-bold">
         {label}
       </div>
-      <div className="text-2xl font-black mt-1">
+      <div className="text-xl md:text-2xl font-black mt-1">
         {value}
       </div>
       <div className="text-sm text-neutral-500 mt-1">
@@ -492,16 +492,16 @@ function DailyDrinkCount({ drinkCounts }) {
   const totalDrinks = drinkCounts.reduce((sum, drink) => sum + drink.qty, 0);
 
   return (
-    <section className="rounded-3xl bg-white border border-neutral-200 p-4 shadow-sm">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+    <section className="rounded-2xl bg-white border border-neutral-200/80 p-4 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
         <div>
-          <h2 className="text-2xl font-black">Today&apos;s Count</h2>
+          <h2 className="text-xl md:text-2xl font-black">Today&apos;s Count</h2>
           <p className="text-sm text-neutral-500">
             Resets automatically at midnight
           </p>
         </div>
 
-        <div className="rounded-full bg-amber-100 border border-amber-200 px-4 py-2 text-sm font-black text-amber-900">
+        <div className="rounded-full bg-amber-100 border border-amber-200 px-3 py-1.5 text-sm font-black text-amber-900">
           {totalDrinks} drinks
         </div>
       </div>
@@ -511,9 +511,9 @@ function DailyDrinkCount({ drinkCounts }) {
           {drinkCounts.map((drink) => (
             <div
               key={drink.name}
-              className="rounded-2xl bg-neutral-50 border border-neutral-200 px-3 py-3"
+              className="rounded-xl bg-neutral-50 border border-neutral-200/80 px-3 py-3"
             >
-              <div className="text-2xl font-black">
+              <div className="text-xl font-black">
                 {drink.qty}
               </div>
               <div className="text-sm font-bold text-neutral-700 leading-tight">
@@ -548,10 +548,10 @@ function BrandMark({ size = "md" }) {
 
 function DrinkStats({ reports }) {
   return (
-    <section className="rounded-3xl bg-white border border-neutral-200 p-4 shadow-sm">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+    <section className="rounded-2xl bg-white border border-neutral-200/80 p-4 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
         <div>
-          <h2 className="text-2xl font-black">Drink Stats</h2>
+          <h2 className="text-xl md:text-2xl font-black">Drink Stats</h2>
           <p className="text-sm text-neutral-500">
             Totals include completed orders
           </p>
@@ -570,14 +570,14 @@ function DrinkStats({ reports }) {
           return (
             <div
               key={range.key}
-              className="rounded-2xl bg-neutral-50 border border-neutral-200 p-4"
+              className="rounded-xl bg-neutral-50 border border-neutral-200/80 p-4"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="text-sm font-black text-neutral-600">
                   {range.label}
                 </div>
 
-                <div className="rounded-full bg-white border border-neutral-200 px-3 py-1 text-sm font-black">
+                <div className="rounded-full bg-white border border-neutral-200/80 px-3 py-1 text-sm font-black">
                   {total}
                 </div>
               </div>
@@ -586,9 +586,9 @@ function DrinkStats({ reports }) {
                 {["Coffee", "Not Coffee", "Smoothies"].map((category) => (
                   <div
                     key={category}
-                    className="rounded-xl bg-white border border-neutral-200 px-3 py-2"
+                    className="rounded-lg bg-white border border-neutral-200/80 px-3 py-2"
                   >
-                    <div className="text-xl font-black">
+                    <div className="text-lg font-black">
                       {categories[category] || 0}
                     </div>
                     <div className="text-xs font-bold text-neutral-500 leading-tight">
@@ -625,22 +625,22 @@ function DrinkStats({ reports }) {
 
 function CompletedTransactions({ tickets }) {
   return (
-    <section className="rounded-3xl bg-white border border-neutral-200 p-4 shadow-sm">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+    <section className="rounded-2xl bg-white border border-neutral-200/80 p-4 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
         <div>
-          <h2 className="text-2xl font-black">Completed Today</h2>
+          <h2 className="text-xl md:text-2xl font-black">Completed Today</h2>
           <p className="text-sm text-neutral-500">
             Resets automatically each day
           </p>
         </div>
 
-        <div className="rounded-full bg-neutral-100 border border-neutral-200 px-4 py-2 text-sm font-black text-neutral-800">
+        <div className="rounded-full bg-neutral-100 border border-neutral-200/80 px-3 py-1.5 text-sm font-black text-neutral-800">
           {tickets.length} done
         </div>
       </div>
 
       {tickets.length ? (
-        <div className="max-h-64 overflow-y-auto border border-neutral-200 rounded-2xl">
+        <div className="max-h-56 overflow-y-auto border border-neutral-200/80 rounded-xl">
           <table className="w-full text-left">
             <thead className="sticky top-0 bg-neutral-50 text-xs uppercase text-neutral-500">
               <tr>
@@ -709,7 +709,7 @@ function LoginScreen({ onLogin }) {
 
   return (
     <div className="min-h-screen bg-[#fbfaf7] text-neutral-950 flex items-center justify-center px-4">
-      <main className="w-full max-w-md rounded-3xl bg-white border border-neutral-200 shadow-sm p-6">
+      <main className="w-full max-w-md rounded-3xl bg-white border border-neutral-200/80 shadow-sm p-6">
         <div className="flex items-center gap-4 mb-5">
           <BrandMark size="lg" />
 
@@ -768,6 +768,7 @@ export default function GoldiesKDS() {
   const [drinkReports, setDrinkReports] = useState({});
   const [showStats, setShowStats] = useState(false);
   const [showTodayCount, setShowTodayCount] = useState(false);
+  const [showCompletedToday, setShowCompletedToday] = useState(false);
   const [lastPoll, setLastPoll] = useState(new Date());
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
   const [lastError, setLastError] = useState("");
@@ -1042,13 +1043,13 @@ export default function GoldiesKDS() {
 
   return (
     <div className="min-h-screen bg-[#fbfaf7] text-neutral-950">
-      <header className="border-b-4 border-amber-400 bg-white/95 px-4 md:px-6 py-4">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <header className="border-b border-neutral-200/80 bg-white/95 backdrop-blur px-4 md:px-6 py-4">
+        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
           <div className="flex items-center gap-4">
             <BrandMark />
 
             <div>
-              <div className="inline-flex items-center rounded-full bg-amber-100 border border-amber-200 text-amber-900 px-3 py-1 text-sm font-bold mb-2">
+              <div className="inline-flex items-center rounded-full bg-amber-100 border border-amber-200 text-amber-900 px-3 py-1 text-xs md:text-sm font-bold mb-2">
                 Goldie’s Coffee Shop
               </div>
 
@@ -1056,34 +1057,43 @@ export default function GoldiesKDS() {
                 Kitchen Display
               </h1>
 
-              <p className="text-neutral-600 mt-1 text-base">
+              <p className="text-neutral-600 mt-1 text-sm md:text-base">
                 Live Square orders
               </p>
             </div>
           </div>
 
-          <div className="flex flex-col items-start lg:items-end gap-3">
-            <div className="text-left lg:text-right">
-              <div className="text-3xl font-black">
-                {new Date().toLocaleTimeString([], {
-                  hour: "numeric",
-                  minute: "2-digit",
-                })}
+          <div className="flex flex-col items-start xl:items-end gap-3">
+            <div className="grid grid-cols-2 gap-2 w-full xl:w-auto">
+              <div className="rounded-xl bg-neutral-50 border border-neutral-200/80 px-3 py-2">
+                <div className="text-xs uppercase tracking-wide text-neutral-500 font-bold">
+                  Time
+                </div>
+                <div className="text-xl font-black">
+                  {new Date().toLocaleTimeString([], {
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
+                </div>
               </div>
-
-              <div className="text-sm text-neutral-500">
-                {new Date().toLocaleDateString([], {
-                  weekday: "short",
-                  month: "short",
-                  day: "numeric",
-                })}
+              <div className="rounded-xl bg-neutral-50 border border-neutral-200/80 px-3 py-2">
+                <div className="text-xs uppercase tracking-wide text-neutral-500 font-bold">
+                  Date
+                </div>
+                <div className="text-xl font-black">
+                  {new Date().toLocaleDateString([], {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </div>
               </div>
             </div>
 
             <button
               type="button"
               onClick={handleLogout}
-              className="rounded-2xl border border-neutral-300 bg-white px-4 py-2 text-sm font-black text-neutral-700 transition hover:bg-neutral-100"
+              className="rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-black text-neutral-700 transition hover:bg-neutral-100"
             >
               Sign out
             </button>
@@ -1091,7 +1101,7 @@ export default function GoldiesKDS() {
         </div>
       </header>
 
-      <main className="p-3 md:p-4 space-y-4">
+      <main className="p-3 md:p-4 space-y-4 max-w-[1900px] mx-auto">
         <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
           <StatCard
             label="Mode"
@@ -1123,18 +1133,23 @@ export default function GoldiesKDS() {
         </section>
 
         {lastError && (
-          <div className="rounded-2xl bg-red-50 border border-red-100 text-red-900 px-4 py-3 font-medium">
+          <div className="rounded-xl bg-red-50 border border-red-100 text-red-900 px-4 py-3 font-medium">
             {lastError}
           </div>
         )}
 
-        <section className="space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-2xl font-black">Today&apos;s Count</h2>
+        <section className="space-y-2">
+          <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/70 border border-neutral-200/80 px-4 py-3">
+            <div>
+              <h2 className="text-lg md:text-2xl font-black">Today&apos;s Count</h2>
+              <p className="text-sm text-neutral-500">
+                Drink totals, collapsed when not needed
+              </p>
+            </div>
             <button
               type="button"
               onClick={() => setShowTodayCount((current) => !current)}
-              className="rounded-2xl border border-neutral-300 bg-white px-4 py-2 text-sm font-black text-neutral-700 transition hover:bg-neutral-100"
+              className="rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-black text-neutral-700 transition hover:bg-neutral-100"
             >
               {showTodayCount ? "Hide" : "Show"}
             </button>
@@ -1147,7 +1162,7 @@ export default function GoldiesKDS() {
           <button
             type="button"
             onClick={() => setShowStats((current) => !current)}
-            className="rounded-2xl bg-neutral-950 text-white px-4 py-3 font-black transition hover:bg-black"
+            className="rounded-xl bg-neutral-950 text-white px-4 py-3 font-black transition hover:bg-black"
           >
             {showStats ? "Hide Stats" : "View Stats"}
           </button>
@@ -1159,10 +1174,10 @@ export default function GoldiesKDS() {
           {STATUS_COLUMNS.map((column) => (
             <section
               key={column.key}
-              className={`rounded-2xl bg-white/70 border border-neutral-200 border-t-4 ${column.accent} p-3 shadow-sm xl:h-[calc(100vh-330px)] xl:min-h-[360px] flex flex-col`}
+              className={`rounded-2xl bg-gradient-to-b from-white to-neutral-50 border border-neutral-200/80 border-t-4 ${column.accent} p-3 shadow-sm xl:h-[calc(100vh-300px)] xl:min-h-[380px] flex flex-col`}
             >
               <div className="flex items-center justify-between px-1 py-1.5 mb-2 shrink-0">
-                <h2 className="text-xl font-black">
+                <h2 className="text-lg xl:text-xl font-black">
                   {column.label}
                 </h2>
 
@@ -1193,7 +1208,25 @@ export default function GoldiesKDS() {
           ))}
         </section>
 
-        <CompletedTransactions tickets={completedTickets} />
+        <section className="space-y-2">
+          <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/70 border border-neutral-200/80 px-4 py-3">
+            <div>
+              <h2 className="text-lg md:text-2xl font-black">Completed Today</h2>
+              <p className="text-sm text-neutral-500">
+                Finished tickets, collapsed by default
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowCompletedToday((current) => !current)}
+              className="rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-black text-neutral-700 transition hover:bg-neutral-100"
+            >
+              {showCompletedToday ? "Hide" : "Show"}
+            </button>
+          </div>
+
+          {showCompletedToday && <CompletedTransactions tickets={completedTickets} />}
+        </section>
       </main>
     </div>
   );
