@@ -807,10 +807,6 @@ function LoginScreen({ onLogin }) {
       <main className="w-full max-w-md rounded-3xl bg-white border border-neutral-200/80 shadow-sm p-6">
         <div className="flex items-center gap-4 mb-5">
           <BrandMark size="lg" />
-
-          <div className="inline-flex items-center rounded-full bg-amber-100 border border-amber-200 text-amber-900 px-3 py-1 text-sm font-bold">
-            Goldie’s Coffee Shop
-          </div>
         </div>
 
         <h1 className="text-4xl font-black tracking-tight">
