@@ -1,112 +1,221 @@
 import React, { useEffect, useMemo, useState } from "react";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
-const BACKEND_LABEL = API_BASE_URL
-  ? API_BASE_URL.includes("ngrok")
-    ? "ngrok backend"
-    : "absolute backend"
-  : "proxied backend";
-const BACKEND_URL = API_BASE_URL || window.location.origin;
 const POLL_INTERVAL_MS = 3000;
 
-const MOCK_TICKETS = [
-  {
-    id: "104",
-    orderNumber: "104",
-    createdAt: Date.now() - 1000 * 60 * 2,
-    source: "Square Register",
-    status: "new",
-    items: [
-      { name: "Latte", qty: 1, modifiers: ["Oat milk", "Vanilla", "Extra shot"] },
-      { name: "Hot Chocolate", qty: 1, modifiers: ["Small"] },
-    ],
-  },
-  {
-    id: "105",
-    orderNumber: "105",
-    createdAt: Date.now() - 1000 * 60 * 7,
-    source: "Square Handheld",
-    status: "making",
-    items: [
-      { name: "Strawberry Banana", qty: 2, modifiers: ["No banana on one"] },
-      { name: "Chai Latte", qty: 1, modifiers: ["Iced", "Oat milk"] },
-    ],
-  },
-  {
-    id: "106",
-    orderNumber: "106",
-    createdAt: Date.now() - 1000 * 60 * 13,
-    source: "Square Register",
-    status: "ready",
-    items: [
-      { name: "Flat White", qty: 1, modifiers: ["Regular"] },
-    ],
-  },
-];
-
-const CURRENT_MENU = {
-  Coffee: [
-    "Americano",
-    "Cappuccino",
-    "Cold Brew",
-    "Drip",
-    "Espresso",
-    "Flat White",
-    "Gibraltar",
-    "Latte",
-    "Pour Over",
-    "Drip Refill",
-  ],
-  "Not Coffee": [
-    "Chai Latte",
-    "Hot Chocolate",
-    "London Fog",
-    "Matcha Latte",
-    "Steamer",
-    "Teas",
-    "Refresher-Strawberry Mango",
-  ],
-  Smoothies: [
-    "Chocolate P/B Banana",
-    "Greens",
-    "Mango",
-    "Strawberry",
-    "Strawberry Banana",
-  ],
-};
-
-const KDS_TEST_MENU_ITEMS = Object.values(CURRENT_MENU).flat();
+function apiUrl(path) {
+  return API_BASE_URL ? `${API_BASE_URL}${path}` : path;
+}
 
 const STATUS_COLUMNS = [
-  { key: "new", label: "New" },
-  { key: "making", label: "Making" },
-  { key: "ready", label: "Ready" },
-  { key: "completed", label: "Completed" },
+  {
+    key: "new",
+    label: "New",
+    accent: "border-t-green-700",
+    badge: "bg-green-100 text-green-800",
+  },
+  {
+    key: "making",
+    label: "Making",
+    accent: "border-t-amber-400",
+    badge: "bg-amber-100 text-amber-800",
+  },
+  {
+    key: "ready",
+    label: "Ready",
+    accent: "border-t-emerald-700",
+    badge: "bg-emerald-100 text-emerald-800",
+  },
+  {
+    key: "completed",
+    label: "Completed",
+    accent: "border-t-neutral-700",
+    badge: "bg-neutral-200 text-neutral-800",
+  },
 ];
+
+const DRINK_MENU_ITEMS = new Set([
+  "Americano",
+  "Cappuccino",
+  "Cold Brew",
+  "Drip",
+  "Espresso",
+  "Flat White",
+  "Gibraltar",
+  "Latte",
+  "Pour Over",
+  "Drip Refill",
+  "Chai Latte",
+  "Hot Chocolate",
+  "London Fog",
+  "Matcha Latte",
+  "Steamer",
+  "Teas",
+  "Refresher-Strawberry Mango",
+  "Chocolate P/B Banana",
+  "Greens",
+  "Mango",
+  "Strawberry",
+  "Strawberry Banana",
+]);
 
 function getMinutesElapsed(createdAt) {
   return Math.max(0, Math.floor((Date.now() - createdAt) / 60000));
 }
 
-function formatElapsed(createdAt) {
-  const mins = getMinutesElapsed(createdAt);
-  if (mins < 1) return "just now";
-  if (mins === 1) return "1 min";
-  return `${mins} min`;
+function formatOrderTime(createdAt) {
+  return new Date(createdAt).toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 function getTimeClass(createdAt) {
   const mins = getMinutesElapsed(createdAt);
+
   if (mins >= 10) return "text-red-700 bg-red-50 border-red-100";
   if (mins >= 5) return "text-amber-700 bg-amber-50 border-amber-100";
   return "text-emerald-700 bg-emerald-50 border-emerald-100";
 }
 
+function isDrinkItem(itemName = "") {
+  if (DRINK_MENU_ITEMS.has(itemName)) return true;
+
+  const lower = itemName.toLowerCase();
+
+  return [
+    "latte",
+    "coffee",
+    "espresso",
+    "americano",
+    "cappuccino",
+    "mocha",
+    "macchiato",
+    "matcha",
+    "chai",
+    "tea",
+    "teas",
+    "steamer",
+    "smoothie",
+    "refresher",
+    "cold brew",
+    "drip",
+    "hot chocolate",
+    "fog",
+    "pour over",
+    "gibraltar",
+  ].some((keyword) => lower.includes(keyword));
+}
+
+function getDrinkItems(ticket) {
+  return ticket.items.filter((item) => isDrinkItem(item.name));
+}
+
+function hasDrinkItems(ticket) {
+  return getDrinkItems(ticket).length > 0;
+}
+
+function getVisibleItems(ticket) {
+  if (ticket.status === "completed") {
+    return getDrinkItems(ticket);
+  }
+
+  return ticket.items;
+}
+
+function getPreviousStatus(status) {
+  if (status === "making") return "new";
+  if (status === "ready") return "making";
+  if (status === "completed") return "ready";
+
+  return null;
+}
+
+function formatDiningOption(ticket) {
+  const raw =
+    ticket.diningOption ||
+    ticket.dining_option ||
+    ticket.fulfillmentType ||
+    ticket.fulfillment_type ||
+    ticket.orderType ||
+    ticket.order_type ||
+    ticket.serviceChargeType ||
+    ticket.service_charge_type ||
+    ticket.fulfillment ||
+    "";
+
+  const value = String(raw).toLowerCase();
+
+  if (value.includes("delivery")) return "Delivery";
+  if (value.includes("pickup") || value.includes("pick up")) return "Pickup";
+  if (
+    value.includes("to go") ||
+    value.includes("togo") ||
+    value.includes("takeout") ||
+    value.includes("take out") ||
+    value.includes("carryout") ||
+    value.includes("carry out")
+  ) {
+    return "To go";
+  }
+  if (
+    value.includes("dine") ||
+    value.includes("for here") ||
+    value.includes("eat in") ||
+    value.includes("eatin")
+  ) {
+    return "For here";
+  }
+
+  return "Order";
+}
+
+function isToday(timestamp) {
+  const date = new Date(timestamp);
+  const today = new Date();
+
+  return (
+    date.getFullYear() === today.getFullYear() &&
+    date.getMonth() === today.getMonth() &&
+    date.getDate() === today.getDate()
+  );
+}
+
+function getDailyDrinkCounts(tickets) {
+  const counts = {};
+
+  tickets
+    .filter((ticket) => isToday(ticket.createdAt))
+    .forEach((ticket) => {
+      ticket.items.forEach((item) => {
+        if (!isDrinkItem(item.name)) return;
+
+        const qty = Number(item.qty || 1);
+        counts[item.name] = (counts[item.name] || 0) + qty;
+      });
+    });
+
+  return Object.entries(counts)
+    .map(([name, qty]) => ({ name, qty }))
+    .sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name));
+}
+
 function normalizeTicket(ticket) {
-  return {
+  const normalized = {
     id: ticket.id || ticket.order_id || crypto.randomUUID(),
-    orderNumber: ticket.orderNumber || ticket.order_number || ticket.ticketName || "—",
-    createdAt: typeof ticket.createdAt === "number" ? ticket.createdAt : new Date(ticket.createdAt || ticket.created_at || Date.now()).getTime(),
+    orderNumber:
+      ticket.orderNumber ||
+      ticket.order_number ||
+      ticket.ticketName ||
+      "—",
+    createdAt:
+      typeof ticket.createdAt === "number"
+        ? ticket.createdAt
+        : new Date(
+            ticket.createdAt ||
+              ticket.created_at ||
+              Date.now()
+          ).getTime(),
     source: ticket.source || "Square",
     status: ticket.status || "new",
     items: (ticket.items || []).map((item) => ({
@@ -116,262 +225,600 @@ function normalizeTicket(ticket) {
       note: item.note || "",
     })),
   };
-}
 
-function MenuAccordion({ menu }) {
-  const [openSections, setOpenSections] = useState({
-    Coffee: true,
-    "Not Coffee": true,
-    Smoothies: true,
-  });
-
-  const totalItems = Object.values(menu).reduce((sum, items) => sum + items.length, 0);
-
-  function toggleSection(category) {
-    setOpenSections((current) => ({
-      ...current,
-      [category]: !current[category],
-    }));
-  }
-
-  return (
-    <section className="rounded-3xl bg-white border border-neutral-200 p-4 shadow-sm mb-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-        <div>
-          <h2 className="text-2xl font-black tracking-tight">Menu</h2>
-          <p className="text-sm text-neutral-500">{Object.keys(menu).length} categories · {totalItems} items total · retail excluded</p>
-        </div>
-        <div className="rounded-2xl bg-neutral-100 px-4 py-2 text-sm font-bold border border-neutral-200">
-          Sandbox menu reference
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        {Object.entries(menu).map(([category, items]) => (
-          <div key={category} className="rounded-2xl border border-neutral-200 overflow-hidden bg-white">
-            <button
-              onClick={() => toggleSection(category)}
-              className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-neutral-50 text-left"
-            >
-              <span className="font-black text-lg">{category}</span>
-              <span className="rounded-full bg-white border border-neutral-200 px-3 py-1 text-sm font-bold text-neutral-600">
-                {items.length} {openSections[category] ? "▲" : "▼"}
-              </span>
-            </button>
-
-            {openSections[category] && (
-              <div className="p-3 grid grid-cols-1 gap-2">
-                {items.map((item) => (
-                  <div key={item} className="rounded-xl bg-neutral-100 px-3 py-2 text-sm font-semibold text-neutral-800">
-                    {item}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </section>
-  );
+  return {
+    ...normalized,
+    diningOption: formatDiningOption({
+      ...ticket,
+      ...normalized,
+    }),
+  };
 }
 
 function TicketCard({ ticket, onStatusChange }) {
-  const elapsed = formatElapsed(ticket.createdAt);
+  const orderTime = formatOrderTime(ticket.createdAt);
   const timeClass = getTimeClass(ticket.createdAt);
+  const visibleItems = getVisibleItems(ticket);
+  const drinkOnlyMode = ticket.status === "completed";
+  const ticketHasDrinks = hasDrinkItems(ticket);
+  const previousStatus = getPreviousStatus(ticket.status);
+
+  let actions = [];
+
+  if (ticket.status === "new") {
+    actions = [
+      {
+        label: "Start",
+        status: "making",
+        className: "bg-green-700 text-white hover:bg-green-800",
+      },
+    ];
+  } else if (ticket.status === "making") {
+    actions = [
+      {
+        label: "Ready",
+        status: "ready",
+        className: "bg-amber-400 text-white hover:bg-amber-500",
+      },
+    ];
+  } else if (ticket.status === "ready") {
+    if (ticketHasDrinks) {
+      actions = [
+        {
+          label: "Complete Drinks",
+          status: "completed",
+          className: "bg-neutral-900 text-white hover:bg-black",
+        },
+      ];
+    } else {
+      actions = [
+        {
+          label: "Done",
+          status: "done",
+          className: "bg-neutral-900 text-white hover:bg-black",
+        },
+      ];
+    }
+  } else if (ticket.status === "completed") {
+    actions = [
+      {
+        label: "Done",
+        status: "done",
+        className: "bg-neutral-900 text-white hover:bg-black",
+      },
+    ];
+  }
 
   return (
-    <div className="rounded-2xl bg-white shadow-sm border border-neutral-200 p-4 space-y-3">
+    <article className="rounded-3xl bg-white border border-neutral-200 p-4 shadow-sm space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-2xl font-bold tracking-tight">#{ticket.orderNumber}</div>
-          <div className="text-sm text-neutral-500">{ticket.source}</div>
+          <div className="text-3xl font-black tracking-tight leading-none">
+            #{ticket.orderNumber}
+          </div>
+
+          <div className="text-sm text-neutral-500 mt-1">
+            {ticket.source}
+          </div>
+
+          <div className="mt-2 inline-flex rounded-full bg-neutral-100 border border-neutral-200 px-3 py-1 text-xs font-black text-neutral-700">
+            {ticket.diningOption}
+          </div>
         </div>
-        <div className={`rounded-full px-3 py-1 text-sm font-semibold border ${timeClass}`}>{elapsed}</div>
+
+        <div
+          className={`rounded-xl px-3 py-2 text-sm font-black border ${timeClass}`}
+        >
+          {orderTime}
+        </div>
       </div>
+
+      {drinkOnlyMode && (
+        <div className="rounded-xl bg-sky-50 border border-sky-100 px-3 py-2 text-sm font-bold text-sky-900">
+          Completed view shows drinks only
+        </div>
+      )}
 
       <div className="space-y-3">
-        {ticket.items.map((item, idx) => (
-          <div key={`${ticket.id}-${idx}`} className="border-t border-neutral-100 pt-3 first:border-t-0 first:pt-0">
-            <div className="flex gap-2 text-lg font-semibold">
-              <span className="text-neutral-500">{item.qty}×</span>
-              <span>{item.name}</span>
-            </div>
-            {item.modifiers.length > 0 && (
-              <ul className="mt-1 ml-7 list-disc text-sm text-neutral-700 space-y-0.5">
-                {item.modifiers.map((mod) => <li key={mod}>{mod}</li>)}
-              </ul>
-            )}
-            {item.note && (
-              <div className="mt-2 rounded-xl bg-yellow-50 border border-yellow-100 px-3 py-2 text-sm font-medium text-yellow-900">
-                Note: {item.note}
+        {visibleItems.length > 0 ? (
+          visibleItems.map((item, idx) => (
+            <div
+              key={`${ticket.id}-${idx}`}
+              className="border-t border-neutral-100 pt-3 first:border-t-0 first:pt-0"
+            >
+              <div className="flex gap-2 text-lg font-bold leading-tight">
+                <span className="text-neutral-500">{item.qty}×</span>
+                <span>{item.name}</span>
               </div>
-            )}
+
+              {item.modifiers.length > 0 && (
+                <ul className="mt-1 ml-7 list-disc text-sm text-neutral-700 space-y-0.5">
+                  {item.modifiers.map((mod) => (
+                    <li key={mod}>{mod}</li>
+                  ))}
+                </ul>
+              )}
+
+              {item.note && (
+                <div className="mt-2 rounded-xl bg-yellow-50 border border-yellow-100 px-3 py-2 text-sm font-medium text-yellow-900">
+                  Note: {item.note}
+                </div>
+              )}
+            </div>
+          ))
+        ) : (
+          <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 p-4 text-sm text-neutral-500">
+            No drink items to show.
           </div>
-        ))}
+        )}
       </div>
 
-      <div className="grid grid-cols-2 gap-2 pt-2">
-        {ticket.status !== "making" && ticket.status !== "ready" && ticket.status !== "completed" && (
-          <button onClick={() => onStatusChange(ticket.id, "making")} className="rounded-xl bg-neutral-900 text-white px-3 py-2 font-semibold">Start</button>
-        )}
-        {ticket.status !== "ready" && ticket.status !== "completed" && (
-          <button onClick={() => onStatusChange(ticket.id, "ready")} className="rounded-xl bg-neutral-100 px-3 py-2 font-semibold">Ready</button>
-        )}
-        {ticket.status !== "completed" && (
-          <button onClick={() => onStatusChange(ticket.id, "done")} className="rounded-xl bg-neutral-100 px-3 py-2 font-semibold col-span-2">Done</button>
-        )}
+      {actions.length > 0 && (
+        <div className="grid grid-cols-1 gap-2 pt-1">
+          {actions.map((action) => (
+            <button
+              key={action.label}
+              onClick={() => onStatusChange(ticket.id, action.status)}
+              className={`rounded-2xl px-4 py-3 font-black transition ${action.className}`}
+            >
+              {action.label}
+            </button>
+          ))}
+
+          {previousStatus && (
+            <button
+              onClick={() => onStatusChange(ticket.id, previousStatus)}
+              className="rounded-2xl px-4 py-2 font-black transition bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-100"
+            >
+              Back
+            </button>
+          )}
+        </div>
+      )}
+    </article>
+  );
+}
+
+function StatCard({ label, value, detail }) {
+  return (
+    <div className="rounded-2xl bg-white border border-neutral-200 p-4 shadow-sm">
+      <div className="text-xs uppercase tracking-wide text-neutral-500 font-bold">
+        {label}
+      </div>
+      <div className="text-2xl font-black mt-1">
+        {value}
+      </div>
+      <div className="text-sm text-neutral-500 mt-1">
+        {detail}
       </div>
     </div>
   );
 }
 
-export default function GoldiesKDSTestHarness() {
-  const [tickets, setTickets] = useState(MOCK_TICKETS);
+function DailyDrinkCount({ drinkCounts }) {
+  const totalDrinks = drinkCounts.reduce((sum, drink) => sum + drink.qty, 0);
+
+  return (
+    <section className="rounded-3xl bg-white border border-neutral-200 p-4 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+        <div>
+          <h2 className="text-2xl font-black">Today’s Drink Count</h2>
+          <p className="text-sm text-neutral-500">
+            Resets automatically at midnight
+          </p>
+        </div>
+
+        <div className="rounded-full bg-amber-100 border border-amber-200 px-4 py-2 text-sm font-black text-amber-900">
+          {totalDrinks} drinks
+        </div>
+      </div>
+
+      {drinkCounts.length ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2">
+          {drinkCounts.map((drink) => (
+            <div
+              key={drink.name}
+              className="rounded-2xl bg-neutral-50 border border-neutral-200 px-3 py-3"
+            >
+              <div className="text-2xl font-black">
+                {drink.qty}
+              </div>
+              <div className="text-sm font-bold text-neutral-700 leading-tight">
+                {drink.name}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 p-4 text-neutral-500 font-semibold">
+          No drinks counted yet today.
+        </div>
+      )}
+    </section>
+  );
+}
+
+function LoginScreen({ onLogin }) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setSubmitting(true);
+    setError("");
+
+    try {
+      const response = await fetch(apiUrl("/api/login"), {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Login failed");
+      }
+
+      setPassword("");
+      onLogin();
+    } catch (loginError) {
+      setError(loginError.message || "Login failed");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-[#fbfaf7] text-neutral-950 flex items-center justify-center px-4">
+      <main className="w-full max-w-md rounded-3xl bg-white border border-neutral-200 shadow-sm p-6">
+        <div className="inline-flex items-center rounded-full bg-amber-100 border border-amber-200 text-amber-900 px-3 py-1 text-sm font-bold mb-4">
+          Goldie’s Coffee Shop
+        </div>
+
+        <h1 className="text-4xl font-black tracking-tight">
+          Kitchen Display
+        </h1>
+
+        <p className="text-neutral-600 mt-2">
+          Enter the staff password to continue.
+        </p>
+
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          <label className="block">
+            <span className="text-sm font-black text-neutral-700">
+              Password
+            </span>
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete="current-password"
+              autoFocus
+              className="mt-2 w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-lg font-bold outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+            />
+          </label>
+
+          {error && (
+            <div className="rounded-2xl bg-red-50 border border-red-100 text-red-900 px-4 py-3 font-medium">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={submitting || !password}
+            className="w-full rounded-2xl bg-neutral-950 text-white px-4 py-3 font-black transition hover:bg-black disabled:cursor-not-allowed disabled:bg-neutral-300"
+          >
+            {submitting ? "Signing in..." : "Sign in"}
+          </button>
+        </form>
+      </main>
+    </div>
+  );
+}
+
+export default function GoldiesKDS() {
+  const [authStatus, setAuthStatus] = useState("checking");
+  const [tickets, setTickets] = useState([]);
+  const [drinkCounts, setDrinkCounts] = useState([]);
   const [lastPoll, setLastPoll] = useState(new Date());
-  const [pollCount, setPollCount] = useState(0);
-  const [useMockPolling, setUseMockPolling] = useState(true);
-  const [connectionStatus, setConnectionStatus] = useState("Sandbox mode");
+  const [connectionStatus, setConnectionStatus] = useState("Connecting...");
   const [lastError, setLastError] = useState("");
 
   useEffect(() => {
-    const interval = setInterval(async () => {
-      setLastPoll(new Date());
-      setPollCount((count) => count + 1);
+    let mounted = true;
 
-      if (useMockPolling) {
-        setConnectionStatus("Sandbox mode");
-        return;
+    async function checkSession() {
+      try {
+        const response = await fetch(apiUrl("/api/session"), {
+          credentials: "include",
+        });
+        const session = await response.json();
+
+        if (!mounted) return;
+
+        setAuthStatus(session.authenticated ? "authenticated" : "login");
+        if (!session.configured) {
+          setLastError("KDS login is not configured on the backend.");
+        }
+      } catch (error) {
+        if (!mounted) return;
+
+        setAuthStatus("login");
+        setLastError(error.message || "Unable to check login session");
+      }
+    }
+
+    checkSession();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (authStatus !== "authenticated") return undefined;
+
+    let mounted = true;
+
+    async function fetchDrinkCounts() {
+      const response = await fetch(apiUrl("/api/reports/drinks?range=today"), {
+        credentials: "include",
+      });
+
+      if (response.status === 401) {
+        setAuthStatus("login");
+        return [];
       }
 
+      if (!response.ok) {
+        throw new Error(`Failed to fetch drink report: ${response.status}`);
+      }
+
+      const report = await response.json();
+      return (report.totalsByName || []).map((drink) => ({
+        name: drink.name,
+        qty: drink.qty,
+      }));
+    }
+
+    async function fetchTickets() {
       try {
-        const url = API_BASE_URL ? `${API_BASE_URL}/api/tickets` : "/api/tickets";
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`Failed to fetch tickets: ${response.status}`);
+        const response = await fetch(apiUrl("/api/tickets"), {
+          credentials: "include",
+        });
+
+        if (response.status === 401) {
+          setAuthStatus("login");
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch tickets: ${response.status}`);
+        }
+
         const liveTickets = await response.json();
+        const liveDrinkCounts = await fetchDrinkCounts();
+
+        if (!mounted) return;
+
         setTickets(liveTickets.map(normalizeTicket));
-        setConnectionStatus("Connected to /api/tickets");
+        setDrinkCounts(liveDrinkCounts);
+        setLastPoll(new Date());
+        setConnectionStatus("Connected");
         setLastError("");
       } catch (error) {
-        setConnectionStatus("Live polling error");
-        setLastError(error.message || "Unknown polling error");
-        console.warn("Live polling failed. Keeping current tickets.", error);
-      }
-    }, POLL_INTERVAL_MS);
+        if (!mounted) return;
 
-    return () => clearInterval(interval);
-  }, [useMockPolling]);
+        setConnectionStatus("Offline");
+        setLastError(error.message || "Unknown polling error");
+      }
+    }
+
+    fetchTickets();
+
+    const interval = setInterval(fetchTickets, POLL_INTERVAL_MS);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [authStatus]);
 
   const activeTickets = tickets.filter((ticket) => ticket.status !== "done");
 
   const grouped = useMemo(() => {
     return STATUS_COLUMNS.reduce((acc, col) => {
-      acc[col.key] = activeTickets.filter((ticket) => ticket.status === col.key);
+      acc[col.key] = activeTickets.filter((ticket) => {
+        if (ticket.status !== col.key) return false;
+
+        if (col.key === "completed") {
+          return hasDrinkItems(ticket);
+        }
+
+        return true;
+      });
+
       return acc;
     }, {});
   }, [activeTickets]);
 
   function handleStatusChange(id, status) {
-    setTickets((current) => current.map((ticket) => ticket.id === id ? { ...ticket, status } : ticket));
+    setTickets((current) =>
+      current.map((ticket) =>
+        ticket.id === id ? { ...ticket, status } : ticket
+      )
+    );
 
-    if (!useMockPolling) {
-      const statusUrl = API_BASE_URL ? `${API_BASE_URL}/api/tickets/${id}/status` : `/api/tickets/${id}/status`;
-    fetch(statusUrl, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      }).catch((error) => {
+    fetch(apiUrl(`/api/tickets/${id}/status`), {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    })
+      .then((response) => {
+        if (response.status === 401) {
+          setAuthStatus("login");
+          throw new Error("Login required");
+        }
+
+        if (!response.ok) {
+          throw new Error(`Status update failed: ${response.status}`);
+        }
+      })
+      .catch((error) => {
         setLastError(`Status update failed: ${error.message}`);
       });
-    }
   }
 
-  function addMockTicket() {
-    const id = String(Math.floor(Math.random() * 900) + 100);
-    const options = KDS_TEST_MENU_ITEMS.map((name) => ({
-      name,
-      modifiers: name.includes("Latte") || name === "Cappuccino" || name === "Flat White"
-        ? [Math.random() > 0.5 ? "Oat milk" : "Whole milk", Math.random() > 0.5 ? "Iced" : "Hot"]
-        : name === "Mango" || name === "Strawberry" || name === "Strawberry Banana"
-          ? [Math.random() > 0.5 ? "Add protein" : "No dairy"]
-          : ["Regular"],
-    }));
-    const item = options[Math.floor(Math.random() * options.length)];
-    setTickets((current) => [
-      {
-        id,
-        orderNumber: id,
-        createdAt: Date.now(),
-        source: Math.random() > 0.5 ? "Square Register" : "Square Handheld",
-        status: "new",
-        items: [{ qty: 1, ...item }],
-      },
-      ...current,
-    ]);
+  async function handleLogout() {
+    await fetch(apiUrl("/api/logout"), {
+      method: "POST",
+      credentials: "include",
+    }).catch(() => {});
+
+    setTickets([]);
+    setAuthStatus("login");
+  }
+
+  if (authStatus === "checking") {
+    return (
+      <div className="min-h-screen bg-[#fbfaf7] text-neutral-950 flex items-center justify-center px-4">
+        <div className="rounded-3xl bg-white border border-neutral-200 shadow-sm p-6 text-xl font-black">
+          Loading Kitchen Display
+        </div>
+      </div>
+    );
+  }
+
+  if (authStatus === "login") {
+    return <LoginScreen onLogin={() => setAuthStatus("authenticated")} />;
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 p-4 md:p-6 text-neutral-950">
-      <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-        <div>
-          <div className="inline-flex items-center rounded-full bg-yellow-100 border border-yellow-200 text-yellow-900 px-3 py-1 text-sm font-bold mb-3">
-            Goldie’s Coffee Shop
+    <div className="min-h-screen bg-[#fbfaf7] text-neutral-950">
+      <header className="border-b-4 border-amber-400 bg-white/95 px-6 py-5">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center rounded-full bg-amber-100 border border-amber-200 text-amber-900 px-3 py-1 text-sm font-bold mb-3">
+              Goldie’s Coffee Shop
+            </div>
+
+            <h1 className="text-4xl md:text-5xl font-black tracking-tight">
+              Kitchen Display
+            </h1>
+
+            <p className="text-neutral-600 mt-2 text-lg">
+              Live Square orders
+            </p>
           </div>
-          <h1 className="text-4xl font-black tracking-tight">Kitchen Display</h1>
-          <p className="text-neutral-600 mt-1">Square register + handheld orders, polling every 3 seconds</p>
-          <p className="text-neutral-500 text-sm mt-1">Sandbox menu has 22 KDS items across Coffee, Not Coffee, and Smoothies. Retail and Community Can Kombucha are excluded.</p>
-          <p className="text-neutral-500 text-sm mt-2">Backend: <span className="font-semibold text-neutral-800">{BACKEND_LABEL}</span> (<span className="underline decoration-dotted">{BACKEND_URL}</span>)</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button onClick={addMockTicket} className="rounded-2xl bg-neutral-900 text-white px-4 py-3 font-bold shadow-sm">Add Test Ticket</button>
-          <button onClick={() => setUseMockPolling(!useMockPolling)} className="rounded-2xl bg-white border border-neutral-200 px-4 py-3 font-bold shadow-sm">
-            {useMockPolling ? "Sandbox Tickets" : "Live /api/tickets"}
-          </button>
+
+          <div className="flex flex-col items-start lg:items-end gap-3">
+            <div className="text-left lg:text-right">
+              <div className="text-3xl font-black">
+                {new Date().toLocaleTimeString([], {
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
+              </div>
+
+              <div className="text-sm text-neutral-500">
+                {new Date().toLocaleDateString([], {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="rounded-2xl border border-neutral-300 bg-white px-4 py-2 text-sm font-black text-neutral-700 transition hover:bg-neutral-100"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </header>
 
-      <section className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
-        <div className="rounded-2xl bg-white border border-neutral-200 p-4 shadow-sm">
-          <div className="text-sm text-neutral-500">Mode</div>
-          <div className="text-xl font-black">{useMockPolling ? "Sandbox" : "Live API"}</div>
-        </div>
-        <div className="rounded-2xl bg-white border border-neutral-200 p-4 shadow-sm">
-          <div className="text-sm text-neutral-500">Connection</div>
-          <div className="text-xl font-black">{connectionStatus}</div>
-        </div>
-        <div className="rounded-2xl bg-white border border-neutral-200 p-4 shadow-sm">
-          <div className="text-sm text-neutral-500">Last poll</div>
-          <div className="text-xl font-black">{lastPoll.toLocaleTimeString()}</div>
-        </div>
-        <div className="rounded-2xl bg-white border border-neutral-200 p-4 shadow-sm">
-          <div className="text-sm text-neutral-500">Poll count</div>
-          <div className="text-xl font-black">{pollCount}</div>
-        </div>
-      </section>
+      <main className="p-4 md:p-6 space-y-6">
+        <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+          <StatCard
+            label="Mode"
+            value="Live"
+            detail="Production"
+          />
 
-      {lastError && (
-        <div className="rounded-2xl bg-red-50 border border-red-100 text-red-900 px-4 py-3 mb-6 font-medium">
-          {lastError}
-        </div>
-      )}
+          <StatCard
+            label="Connection"
+            value={connectionStatus}
+            detail="Square API"
+          />
 
-      <MenuAccordion menu={CURRENT_MENU} />
+          <StatCard
+            label="Last poll"
+            value={lastPoll.toLocaleTimeString([], {
+              hour: "numeric",
+              minute: "2-digit",
+              second: "2-digit",
+            })}
+            detail="Every 3 seconds"
+          />
 
-      <main className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {STATUS_COLUMNS.map((column) => (
-          <section key={column.key} className="rounded-3xl bg-neutral-100 border border-neutral-200 p-3 min-h-[500px]">
-            <div className="flex items-center justify-between px-2 py-2 mb-2">
-              <h2 className="text-2xl font-black">{column.label}</h2>
-              <span className="rounded-full bg-white px-3 py-1 text-sm font-bold border border-neutral-200">{grouped[column.key]?.length || 0}</span>
-            </div>
-            <div className="space-y-3">
-              {grouped[column.key]?.length ? grouped[column.key].map((ticket) => (
-                <TicketCard key={ticket.id} ticket={ticket} onStatusChange={handleStatusChange} />
-              )) : (
-                <div className="rounded-2xl border border-dashed border-neutral-300 bg-white/60 p-8 text-center text-neutral-500">No tickets</div>
-              )}
-            </div>
-          </section>
-        ))}
+          <StatCard
+            label="Open tickets"
+            value={activeTickets.length}
+            detail="All active columns"
+          />
+        </section>
+
+        {lastError && (
+          <div className="rounded-2xl bg-red-50 border border-red-100 text-red-900 px-4 py-3 font-medium">
+            {lastError}
+          </div>
+        )}
+
+        <DailyDrinkCount drinkCounts={drinkCounts} />
+
+        <section className="grid grid-cols-1 xl:grid-cols-4 gap-4">
+          {STATUS_COLUMNS.map((column) => (
+            <section
+              key={column.key}
+              className={`rounded-3xl bg-white/70 border border-neutral-200 border-t-4 ${column.accent} p-4 shadow-sm min-h-[500px]`}
+            >
+              <div className="flex items-center justify-between px-1 py-2 mb-3">
+                <h2 className="text-2xl font-black">
+                  {column.label}
+                </h2>
+
+                <span
+                  className={`rounded-full px-3 py-1 text-sm font-black ${column.badge}`}
+                >
+                  {grouped[column.key]?.length || 0}
+                </span>
+              </div>
+
+              <div className="space-y-4">
+                {grouped[column.key]?.length ? (
+                  grouped[column.key].map((ticket) => (
+                    <TicketCard
+                      key={ticket.id}
+                      ticket={ticket}
+                      onStatusChange={handleStatusChange}
+                    />
+                  ))
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-neutral-300 bg-white/60 p-8 text-center text-neutral-500 font-semibold">
+                    No tickets
+                  </div>
+                )}
+              </div>
+            </section>
+          ))}
+        </section>
       </main>
     </div>
   );
