@@ -290,7 +290,19 @@ function addTicket(ticket) {
 
 function updateLocalTicketStatus(id, status) {
   tickets = tickets.map((ticket) =>
-    ticket.id === id ? { ...ticket, status } : ticket
+    ticket.id === id
+      ? {
+          ...ticket,
+          status,
+          completedAt: status === "done" ? Date.now() : ticket.completedAt,
+        }
+      : ticket
+  );
+}
+
+function updateLocalTicketName(id, customerName) {
+  tickets = tickets.map((ticket) =>
+    ticket.id === id ? { ...ticket, customerName } : ticket
   );
 }
 
@@ -464,6 +476,7 @@ function ticketFromDb(order, items = []) {
     orderNumber: order.order_number || order.square_order_id.slice(-4),
     customerName: order.customer_name || "",
     createdAt: new Date(order.created_at).getTime(),
+    completedAt: order.completed_at ? new Date(order.completed_at).getTime() : null,
     source: order.source || "Square Register",
     status: sanitizeStatus(order.status),
     diningOption: order.dining_option || "Order",
@@ -503,6 +516,9 @@ async function upsertTicket(ticket, rawOrder = null) {
       source: ticket.source || "Square Register",
       status,
       dining_option: ticket.diningOption || "Order",
+      completed_at: ticket.completedAt
+        ? new Date(ticket.completedAt).toISOString()
+        : null,
       square_state: rawOrder?.state || null,
       raw_order: rawOrder ? toJsonSafe(rawOrder) : null,
       updated_at: new Date().toISOString(),
@@ -595,10 +611,44 @@ async function setTicketStatus(id, status) {
     return sanitizedStatus;
   }
 
+  const updates = {
+    status: sanitizedStatus,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (sanitizedStatus === "done") {
+    updates.completed_at = new Date().toISOString();
+  }
+
+  const { data, error } = await supabase
+    .from("kds_orders")
+    .update(updates)
+    .eq("square_order_id", id)
+    .select("square_order_id")
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) {
+    const missingError = new Error(`Ticket ${id} was not found`);
+    missingError.statusCode = 404;
+    throw missingError;
+  }
+
+  return sanitizedStatus;
+}
+
+async function setTicketName(id, customerName) {
+  const normalizedName = String(customerName || "").trim();
+
+  if (!supabase) {
+    updateLocalTicketName(id, normalizedName);
+    return normalizedName;
+  }
+
   const { data, error } = await supabase
     .from("kds_orders")
     .update({
-      status: sanitizedStatus,
+      customer_name: normalizedName || null,
       updated_at: new Date().toISOString(),
     })
     .eq("square_order_id", id)
@@ -612,7 +662,37 @@ async function setTicketStatus(id, status) {
     throw missingError;
   }
 
-  return sanitizedStatus;
+  return normalizedName;
+}
+
+async function getCompletedTicketsToday() {
+  const start = getRangeStart("today");
+  const end = getRangeEnd("today");
+
+  if (!supabase) {
+    return tickets
+      .filter((ticket) => {
+        const completedAt = ticket.completedAt || ticket.createdAt;
+        return (
+          ticket.status === "done" &&
+          completedAt >= start.getTime() &&
+          completedAt <= end.getTime()
+        );
+      })
+      .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+  }
+
+  const { data: orders, error } = await supabase
+    .from("kds_orders")
+    .select("*")
+    .eq("status", "done")
+    .gte("completed_at", start.toISOString())
+    .lte("completed_at", end.toISOString())
+    .order("completed_at", { ascending: false });
+
+  if (error) throw error;
+
+  return (orders || []).map((order) => ticketFromDb(order, []));
 }
 
 function mapKDSStatusToSquareFulfillmentState(kdsStatus) {
@@ -841,6 +921,16 @@ app.get("/api/tickets", requireKdsAuth, async (req, res) => {
   }
 });
 
+app.get("/api/tickets/completed", requireKdsAuth, async (req, res) => {
+  try {
+    const completedTickets = await getCompletedTicketsToday();
+    res.json(completedTickets);
+  } catch (error) {
+    console.error("Error fetching completed tickets:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post("/api/square-sync", requireKdsAuth, async (req, res) => {
   try {
     const squareOrders = await fetchSquareOrders();
@@ -879,6 +969,19 @@ app.patch("/api/tickets/:id/status", requireKdsAuth, async (req, res) => {
     res.json({ ok: true, id, status: updatedStatus });
   } catch (error) {
     console.error("Error updating ticket status:", error);
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+});
+
+app.patch("/api/tickets/:id/name", requireKdsAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { customerName } = req.body;
+    const updatedName = await setTicketName(id, customerName);
+
+    res.json({ ok: true, id, customerName: updatedName });
+  } catch (error) {
+    console.error("Error updating ticket name:", error);
     res.status(error.statusCode || 500).json({ error: error.message });
   }
 });

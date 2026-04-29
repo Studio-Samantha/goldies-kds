@@ -82,6 +82,16 @@ function formatOrderTime(createdAt) {
   });
 }
 
+function formatCompletedTime(completedAt) {
+  if (!completedAt) return "—";
+
+  return new Date(completedAt).toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
 function getTimeClass(createdAt) {
   const mins = getMinutesElapsed(createdAt);
 
@@ -226,6 +236,12 @@ function normalizeTicket(ticket) {
       ticket.recipientName ||
       ticket.recipient_name ||
       "",
+    completedAt:
+      typeof ticket.completedAt === "number"
+        ? ticket.completedAt
+        : ticket.completedAt || ticket.completed_at
+          ? new Date(ticket.completedAt || ticket.completed_at).getTime()
+          : null,
     createdAt:
       typeof ticket.createdAt === "number"
         ? ticket.createdAt
@@ -253,7 +269,8 @@ function normalizeTicket(ticket) {
   };
 }
 
-function TicketCard({ ticket, onStatusChange }) {
+function TicketCard({ ticket, onStatusChange, onNameChange }) {
+  const [nameValue, setNameValue] = useState(ticket.customerName || "");
   const orderTime = formatOrderTime(ticket.createdAt);
   const timeClass = getTimeClass(ticket.createdAt);
   const visibleItems = getVisibleItems(ticket);
@@ -262,6 +279,17 @@ function TicketCard({ ticket, onStatusChange }) {
   const previousStatus = getPreviousStatus(ticket.status);
 
   let actions = [];
+
+  useEffect(() => {
+    setNameValue(ticket.customerName || "");
+  }, [ticket.customerName]);
+
+  function saveName() {
+    const nextName = nameValue.trim();
+    if (nextName === (ticket.customerName || "")) return;
+
+    onNameChange(ticket.id, nextName);
+  }
 
   if (ticket.status === "new") {
     actions = [
@@ -324,6 +352,20 @@ function TicketCard({ ticket, onStatusChange }) {
               {ticket.customerName}
             </div>
           )}
+
+          <input
+            type="text"
+            value={nameValue}
+            onChange={(event) => setNameValue(event.target.value)}
+            onBlur={saveName}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.currentTarget.blur();
+              }
+            }}
+            placeholder="Add name"
+            className="mt-2 w-full max-w-[180px] rounded-xl border border-neutral-200 bg-white px-3 py-1.5 text-sm font-bold outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+          />
 
           <div className="mt-2 inline-flex rounded-full bg-neutral-100 border border-neutral-200 px-3 py-1 text-xs font-black text-neutral-700">
             {ticket.diningOption}
@@ -554,6 +596,58 @@ function DrinkStats({ reports }) {
   );
 }
 
+function CompletedTransactions({ tickets }) {
+  return (
+    <section className="rounded-3xl bg-white border border-neutral-200 p-4 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+        <div>
+          <h2 className="text-2xl font-black">Completed Today</h2>
+          <p className="text-sm text-neutral-500">
+            Resets automatically each day
+          </p>
+        </div>
+
+        <div className="rounded-full bg-neutral-100 border border-neutral-200 px-4 py-2 text-sm font-black text-neutral-800">
+          {tickets.length} done
+        </div>
+      </div>
+
+      {tickets.length ? (
+        <div className="max-h-64 overflow-y-auto border border-neutral-200 rounded-2xl">
+          <table className="w-full text-left">
+            <thead className="sticky top-0 bg-neutral-50 text-xs uppercase text-neutral-500">
+              <tr>
+                <th className="px-3 py-2 font-black">Order</th>
+                <th className="px-3 py-2 font-black">Name</th>
+                <th className="px-3 py-2 font-black">Completed</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-100">
+              {tickets.map((ticket) => (
+                <tr key={ticket.id} className="text-sm">
+                  <td className="px-3 py-2 font-black">
+                    #{ticket.orderNumber}
+                  </td>
+                  <td className="px-3 py-2 font-bold text-neutral-700">
+                    {ticket.customerName || "—"}
+                  </td>
+                  <td className="px-3 py-2 font-bold text-neutral-700">
+                    {formatCompletedTime(ticket.completedAt)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 p-4 text-neutral-500 font-semibold">
+          No completed transactions yet today.
+        </div>
+      )}
+    </section>
+  );
+}
+
 function LoginScreen({ onLogin }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -642,6 +736,7 @@ function LoginScreen({ onLogin }) {
 export default function GoldiesKDS() {
   const [authStatus, setAuthStatus] = useState("checking");
   const [tickets, setTickets] = useState([]);
+  const [completedTickets, setCompletedTickets] = useState([]);
   const [drinkCounts, setDrinkCounts] = useState([]);
   const [drinkReports, setDrinkReports] = useState({});
   const [showStats, setShowStats] = useState(false);
@@ -715,6 +810,24 @@ export default function GoldiesKDS() {
       return reports;
     }
 
+    async function fetchCompletedTickets() {
+      const response = await fetch(apiUrl("/api/tickets/completed"), {
+        credentials: "include",
+      });
+
+      if (response.status === 401) {
+        setAuthStatus("login");
+        return [];
+      }
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch completed tickets: ${response.status}`);
+      }
+
+      const completed = await response.json();
+      return completed.map(normalizeTicket);
+    }
+
     function getTodayDrinkCounts(reports) {
       const today = reports.today || {};
 
@@ -762,6 +875,7 @@ export default function GoldiesKDS() {
 
         const liveTickets = await response.json();
         const liveReports = await fetchDrinkReports();
+        const liveCompletedTickets = await fetchCompletedTickets();
         const liveDrinkCounts =
           Object.keys(liveReports).length > 0
             ? getTodayDrinkCounts(liveReports)
@@ -770,6 +884,7 @@ export default function GoldiesKDS() {
         if (!mounted) return;
 
         setTickets(liveTickets.map(normalizeTicket));
+        setCompletedTickets(liveCompletedTickets);
         setDrinkCounts(liveDrinkCounts);
         setDrinkReports(liveReports);
         setLastPoll(new Date());
@@ -839,6 +954,34 @@ export default function GoldiesKDS() {
       });
   }
 
+  function handleNameChange(id, customerName) {
+    setTickets((current) =>
+      current.map((ticket) =>
+        ticket.id === id ? { ...ticket, customerName } : ticket
+      )
+    );
+
+    fetch(apiUrl(`/api/tickets/${id}/name`), {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ customerName }),
+    })
+      .then((response) => {
+        if (response.status === 401) {
+          setAuthStatus("login");
+          throw new Error("Login required");
+        }
+
+        if (!response.ok) {
+          throw new Error(`Name update failed: ${response.status}`);
+        }
+      })
+      .catch((error) => {
+        setLastError(`Name update failed: ${error.message}`);
+      });
+  }
+
   async function handleLogout() {
     await fetch(apiUrl("/api/logout"), {
       method: "POST",
@@ -846,6 +989,7 @@ export default function GoldiesKDS() {
     }).catch(() => {});
 
     setTickets([]);
+    setCompletedTickets([]);
     setDrinkCounts([]);
     setDrinkReports({});
     setAuthStatus("login");
@@ -992,6 +1136,7 @@ export default function GoldiesKDS() {
                       key={ticket.id}
                       ticket={ticket}
                       onStatusChange={handleStatusChange}
+                      onNameChange={handleNameChange}
                     />
                   ))
                 ) : (
@@ -1003,6 +1148,8 @@ export default function GoldiesKDS() {
             </section>
           ))}
         </section>
+
+        <CompletedTransactions tickets={completedTickets} />
       </main>
     </div>
   );

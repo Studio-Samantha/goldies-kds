@@ -6,6 +6,7 @@ create table if not exists public.kds_orders (
   source text not null default 'Square Register',
   status text not null default 'new' check (status in ('new', 'making', 'ready', 'completed', 'done')),
   dining_option text not null default 'Order',
+  completed_at timestamptz,
   square_state text,
   raw_order jsonb,
   updated_at timestamptz not null default now()
@@ -13,6 +14,9 @@ create table if not exists public.kds_orders (
 
 alter table public.kds_orders
   add column if not exists customer_name text;
+
+alter table public.kds_orders
+  add column if not exists completed_at timestamptz;
 
 create table if not exists public.kds_order_items (
   id bigserial primary key,
