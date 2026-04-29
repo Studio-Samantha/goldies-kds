@@ -204,10 +204,6 @@ function hasDrinkItems(ticket) {
 }
 
 function getVisibleItems(ticket) {
-  if (ticket.status === "completed") {
-    return getDrinkItems(ticket);
-  }
-
   return ticket.items;
 }
 
@@ -346,7 +342,6 @@ function TicketCard({ ticket, onStatusChange, onNameChange }) {
   const orderTime = formatOrderTime(ticket.createdAt);
   const timeClass = getTimeClass(ticket.createdAt);
   const visibleItems = getVisibleItems(ticket);
-  const drinkOnlyMode = ticket.status === "completed";
   const ticketHasDrinks = hasDrinkItems(ticket);
   const previousStatus = getPreviousStatus(ticket.status);
 
@@ -472,12 +467,6 @@ function TicketCard({ ticket, onStatusChange, onNameChange }) {
         </div>
       </div>
 
-      {drinkOnlyMode && (
-        <div className="rounded-xl bg-sky-50 border border-sky-100 px-3 py-2 text-xs font-bold text-sky-900">
-          Completed view shows drinks only
-        </div>
-      )}
-
       <div className="space-y-2">
         {visibleItems.length > 0 ? (
           visibleItems.map((item, idx) => (
@@ -507,7 +496,7 @@ function TicketCard({ ticket, onStatusChange, onNameChange }) {
           ))
         ) : (
           <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 p-4 text-sm text-neutral-500">
-            No drink items to show.
+            No items to show.
           </div>
         )}
       </div>
