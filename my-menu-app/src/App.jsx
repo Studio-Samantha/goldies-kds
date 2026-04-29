@@ -14,26 +14,26 @@ const STATUS_COLUMNS = [
   {
     key: "new",
     label: "New",
-    accent: "border-t-green-700",
-    badge: "bg-green-100 text-green-800",
+    accent: "border-t-[#0F4036]",
+    badge: "bg-[#0F4036]/10 text-[#0F4036]",
   },
   {
     key: "making",
     label: "Making",
-    accent: "border-t-amber-400",
-    badge: "bg-amber-100 text-amber-800",
+    accent: "border-t-[#CA862B]",
+    badge: "bg-[#CA862B]/15 text-[#8B5A1D]",
   },
   {
     key: "ready",
     label: "Ready",
-    accent: "border-t-emerald-700",
-    badge: "bg-emerald-100 text-emerald-800",
+    accent: "border-t-[#2C5F52]",
+    badge: "bg-[#2C5F52]/12 text-[#2C5F52]",
   },
   {
     key: "completed",
     label: "Completed",
-    accent: "border-t-neutral-700",
-    badge: "bg-neutral-200 text-neutral-800",
+    accent: "border-t-[#111111]",
+    badge: "bg-[#EEE0C5] text-[#111111]",
   },
 ];
 
@@ -193,9 +193,9 @@ function getBeverageCategory(itemName = "") {
 function getTimeClass(createdAt) {
   const mins = getMinutesElapsed(createdAt);
 
-  if (mins >= 10) return "text-red-700 bg-red-50 border-red-100";
-  if (mins >= 5) return "text-amber-700 bg-amber-50 border-amber-100";
-  return "text-emerald-700 bg-emerald-50 border-emerald-100";
+  if (mins >= 10) return "text-[#8B5A1D] bg-[#CA862B]/10 border-[#CA862B]/22";
+  if (mins >= 5) return "text-[#0F4036] bg-[#0F4036]/6 border-[#0F4036]/12";
+  return "text-[#0F4036] bg-[#EEE0C5]/65 border-[#CA862B]/18";
 }
 
 function isDrinkItem(itemName = "") {
@@ -374,7 +374,7 @@ function TicketCard({ ticket, onStatusChange, onNameChange }) {
       {
         label: "Start",
         status: "making",
-        className: "bg-green-700 text-white hover:bg-green-800",
+        className: "bg-[#0F4036] text-white hover:bg-[#0b352d]",
       },
     ];
   } else if (ticket.status === "making") {
@@ -382,7 +382,7 @@ function TicketCard({ ticket, onStatusChange, onNameChange }) {
       {
         label: "Ready",
         status: "ready",
-        className: "bg-amber-400 text-white hover:bg-amber-500",
+        className: "bg-[#CA862B] text-white hover:bg-[#b17420]",
       },
     ];
   } else if (ticket.status === "ready") {
@@ -391,7 +391,7 @@ function TicketCard({ ticket, onStatusChange, onNameChange }) {
         {
           label: "Complete Drinks",
           status: "completed",
-          className: "bg-neutral-900 text-white hover:bg-black",
+          className: "bg-[#111111] text-white hover:bg-black",
         },
       ];
     } else {
@@ -399,7 +399,7 @@ function TicketCard({ ticket, onStatusChange, onNameChange }) {
         {
           label: "Done",
           status: "done",
-          className: "bg-neutral-900 text-white hover:bg-black",
+          className: "bg-[#111111] text-white hover:bg-black",
         },
       ];
     }
@@ -408,31 +408,31 @@ function TicketCard({ ticket, onStatusChange, onNameChange }) {
       {
         label: "Done",
         status: "done",
-        className: "bg-neutral-900 text-white hover:bg-black",
+        className: "bg-[#111111] text-white hover:bg-black",
       },
     ];
   }
 
   return (
-    <article className="rounded-2xl bg-white border border-neutral-200 p-3 shadow-sm space-y-3">
+    <article className="rounded-2xl bg-[#FFFDF8] border border-[#CA862B]/18 p-3 shadow-[0_10px_24px_rgba(15,64,54,0.05)] space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-2xl font-black tracking-tight leading-none">
+          <div className="text-2xl font-black tracking-tight leading-none text-[#0F4036]">
             #{ticket.orderNumber}
           </div>
 
           {ticket.customerName ? (
-            <div className="mt-2 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2">
-              <div className="text-xs font-black uppercase tracking-wide text-emerald-700">
+            <div className="mt-2 rounded-xl border border-[#0F4036]/14 bg-[#0F4036]/6 px-3 py-2">
+              <div className="text-xs font-black uppercase tracking-wide text-[#0F4036]">
                 Name from Square
               </div>
-              <div className="mt-1 text-sm font-black text-neutral-900">
+              <div className="mt-1 text-sm font-black text-[#111111]">
                 {ticket.customerName}
               </div>
             </div>
           ) : (
             <label className="mt-2 block">
-              <span className="text-xs font-black uppercase tracking-wide text-neutral-500">
+              <span className="text-xs font-black uppercase tracking-wide text-[#0F4036]/70">
                 Name for callout
               </span>
               <input
@@ -448,22 +448,22 @@ function TicketCard({ ticket, onStatusChange, onNameChange }) {
                   }
                 }}
                 placeholder="Add name"
-                className="mt-1 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm font-bold outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                className="mt-1 w-full rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-bold outline-none focus:border-[#CA862B] focus:ring-2 focus:ring-[#CA862B]/15"
               />
             </label>
           )}
 
-          <div className="text-sm text-neutral-500 mt-1">
+          <div className="text-sm text-[#6A614F] mt-1">
             {ticket.source}
           </div>
 
           {ticket.employeeName && (
-            <div className="mt-1 text-sm font-semibold text-neutral-700">
+            <div className="mt-1 text-sm font-semibold text-[#111111]">
               Taken by {ticket.employeeName}
             </div>
           )}
 
-          <div className="mt-2 inline-flex rounded-full bg-neutral-100 border border-neutral-200 px-3 py-1 text-xs font-black text-neutral-700">
+          <div className="mt-2 inline-flex rounded-full bg-[#EEE0C5]/55 border border-[#CA862B]/18 px-3 py-1 text-xs font-black text-[#0F4036]">
             {ticket.diningOption}
           </div>
         </div>
@@ -480,15 +480,15 @@ function TicketCard({ ticket, onStatusChange, onNameChange }) {
           visibleItems.map((item, idx) => (
             <div
               key={`${ticket.id}-${idx}`}
-              className="border-t border-neutral-100 pt-2 first:border-t-0 first:pt-0"
+              className="border-t border-[#CA862B]/12 pt-2 first:border-t-0 first:pt-0"
             >
               <div className="flex gap-2 text-base font-bold leading-tight">
-                <span className="text-neutral-500">{item.qty}×</span>
-                <span>{item.name}</span>
+                <span className="text-[#6A614F]">{item.qty}×</span>
+                <span className="text-[#111111]">{item.name}</span>
               </div>
 
               {item.modifiers.length > 0 && (
-                <ul className="mt-1 ml-7 list-disc text-sm text-neutral-700 space-y-0.5">
+                <ul className="mt-1 ml-7 list-disc text-sm text-[#4E4637] space-y-0.5">
                   {item.modifiers.map((mod) => (
                     <li key={mod}>{mod}</li>
                   ))}
@@ -496,14 +496,14 @@ function TicketCard({ ticket, onStatusChange, onNameChange }) {
               )}
 
               {item.note && (
-                <div className="mt-2 rounded-xl bg-yellow-50 border border-yellow-100 px-3 py-2 text-sm font-medium text-yellow-900">
+                <div className="mt-2 rounded-xl bg-[#CA862B]/10 border border-[#CA862B]/18 px-3 py-2 text-sm font-medium text-[#8B5A1D]">
                   Note: {item.note}
                 </div>
               )}
             </div>
           ))
         ) : (
-          <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 p-4 text-sm text-neutral-500">
+          <div className="rounded-2xl border border-dashed border-[#CA862B]/22 bg-white/70 p-4 text-sm text-[#6A614F]">
             No items to show.
           </div>
         )}
@@ -515,7 +515,7 @@ function TicketCard({ ticket, onStatusChange, onNameChange }) {
             <button
               key={action.label}
               onClick={() => onStatusChange(ticket.id, action.status)}
-              className={`rounded-xl px-4 py-2.5 font-black transition ${action.className}`}
+              className={`rounded-xl px-4 py-2.5 font-black transition shadow-sm ${action.className}`}
             >
               {action.label}
             </button>
@@ -524,7 +524,7 @@ function TicketCard({ ticket, onStatusChange, onNameChange }) {
           {previousStatus && (
             <button
               onClick={() => onStatusChange(ticket.id, previousStatus)}
-              className="rounded-xl px-4 py-2 font-black transition bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-100"
+              className="rounded-xl px-4 py-2 font-black transition bg-white border border-[#CA862B]/24 text-[#0F4036] hover:bg-[#EEE0C5]/45"
             >
               Back
             </button>
@@ -537,14 +537,14 @@ function TicketCard({ ticket, onStatusChange, onNameChange }) {
 
 function StatCard({ label, value, detail }) {
   return (
-    <div className="rounded-xl bg-white border border-neutral-200/80 p-3 shadow-sm">
-      <div className="text-xs uppercase tracking-wide text-neutral-500 font-bold">
+    <div className="rounded-xl bg-[#FFFDF8] border border-[#CA862B]/18 p-3 shadow-sm">
+      <div className="text-xs uppercase tracking-wide text-[#6A614F] font-bold">
         {label}
       </div>
-      <div className="text-xl md:text-2xl font-black mt-1">
+      <div className="text-xl md:text-2xl font-black mt-1 text-[#111111]">
         {value}
       </div>
-      <div className="text-sm text-neutral-500 mt-1">
+      <div className="text-sm text-[#6A614F] mt-1">
         {detail}
       </div>
     </div>
@@ -555,16 +555,16 @@ function DailyDrinkCount({ drinkCounts }) {
   const totalDrinks = drinkCounts.reduce((sum, drink) => sum + drink.qty, 0);
 
   return (
-    <section className="rounded-2xl bg-white border border-neutral-200/80 p-4 shadow-sm">
+    <section className="rounded-2xl bg-[#FFFDF8] border border-[#CA862B]/18 p-4 shadow-sm">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
         <div>
-          <h2 className="text-xl md:text-2xl font-black">Today&apos;s Count</h2>
-          <p className="text-sm text-neutral-500">
+          <h2 className="text-xl md:text-2xl font-black text-[#0F4036]">Today&apos;s Count</h2>
+          <p className="text-sm text-[#6A614F]">
             Coffee, not coffee, and smoothies only. Resets automatically at midnight.
           </p>
         </div>
 
-        <div className="rounded-full bg-amber-100 border border-amber-200 px-3 py-1.5 text-sm font-black text-amber-900">
+        <div className="rounded-full bg-[#CA862B]/14 border border-[#CA862B]/26 px-3 py-1.5 text-sm font-black text-[#8B5A1D]">
           {totalDrinks} drinks
         </div>
       </div>
@@ -574,19 +574,19 @@ function DailyDrinkCount({ drinkCounts }) {
           {drinkCounts.map((drink) => (
             <div
               key={drink.name}
-              className="rounded-xl bg-neutral-50 border border-neutral-200/80 px-3 py-3"
+              className="rounded-xl bg-white border border-[#CA862B]/16 px-3 py-3"
             >
-              <div className="text-xl font-black">
+              <div className="text-xl font-black text-[#111111]">
                 {drink.qty}
               </div>
-              <div className="text-sm font-bold text-neutral-700 leading-tight">
+              <div className="text-sm font-bold text-[#4E4637] leading-tight">
                 {drink.name}
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 p-4 text-neutral-500 font-semibold">
+        <div className="rounded-2xl border border-dashed border-[#CA862B]/22 bg-white/70 p-4 text-[#6A614F] font-semibold">
           No drinks counted yet today.
         </div>
       )}
@@ -611,11 +611,11 @@ function BrandMark({ size = "md" }) {
 
 function DrinkStats({ reports }) {
   return (
-    <section className="rounded-2xl bg-white border border-neutral-200/80 p-4 shadow-sm">
+    <section className="rounded-2xl bg-[#FFFDF8] border border-[#0F4036]/12 p-4 shadow-sm">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
         <div>
-          <h2 className="text-xl md:text-2xl font-black">Drink Stats</h2>
-          <p className="text-sm text-neutral-500">
+          <h2 className="text-xl md:text-2xl font-black text-[#0F4036]">Drink Stats</h2>
+          <p className="text-sm text-[#6A614F]">
             Coffee, not coffee, and smoothies only
           </p>
         </div>
@@ -633,14 +633,14 @@ function DrinkStats({ reports }) {
           return (
             <div
               key={range.key}
-              className="rounded-xl bg-neutral-50 border border-neutral-200/80 p-4"
+              className="rounded-xl bg-white border border-[#0F4036]/10 p-4"
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="text-sm font-black text-neutral-600">
+                <div className="text-sm font-black text-[#0F4036]">
                   {range.label}
                 </div>
 
-                <div className="rounded-full bg-white border border-neutral-200/80 px-3 py-1 text-sm font-black">
+                <div className="rounded-full bg-[#EEE0C5]/65 border border-[#0F4036]/12 px-3 py-1 text-sm font-black text-[#111111]">
                   {total}
                 </div>
               </div>
@@ -649,12 +649,12 @@ function DrinkStats({ reports }) {
                 {["Coffee", "Not Coffee", "Smoothies"].map((category) => (
                   <div
                     key={category}
-                    className="rounded-lg bg-white border border-neutral-200/80 px-3 py-2"
+                    className="rounded-lg bg-[#FFFDF8] border border-[#0F4036]/10 px-3 py-2"
                   >
-                    <div className="text-lg font-black">
+                    <div className="text-lg font-black text-[#111111]">
                       {categories[category] || 0}
                     </div>
-                    <div className="text-xs font-bold text-neutral-500 leading-tight">
+                    <div className="text-xs font-bold text-[#6A614F] leading-tight">
                       {category}
                     </div>
                   </div>
@@ -662,16 +662,16 @@ function DrinkStats({ reports }) {
               </div>
 
               {report.totalsByName?.length > 0 && (
-                <div className="mt-4 border-t border-neutral-200 pt-3 space-y-2">
+                <div className="mt-4 border-t border-[#0F4036]/10 pt-3 space-y-2">
                   {report.totalsByName.slice(0, 4).map((drink) => (
                     <div
                       key={drink.name}
                       className="flex items-center justify-between gap-3 text-sm"
                     >
-                      <span className="font-bold text-neutral-700 truncate">
+                      <span className="font-bold text-[#111111] truncate">
                         {drink.name}
                       </span>
-                      <span className="font-black">
+                      <span className="font-black text-[#0F4036]">
                         {drink.qty}
                       </span>
                     </div>
@@ -690,24 +690,24 @@ function CompletedTransactions({ tickets }) {
   const [expandedTicketId, setExpandedTicketId] = useState(null);
 
   return (
-    <section className="rounded-2xl bg-white border border-neutral-200/80 p-4 shadow-sm">
+    <section className="rounded-2xl bg-[#FFFDF8] border border-[#CA862B]/18 p-4 shadow-sm">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
         <div>
-          <h2 className="text-xl md:text-2xl font-black">Completed Today</h2>
-          <p className="text-sm text-neutral-500">
+          <h2 className="text-xl md:text-2xl font-black text-[#0F4036]">Completed Today</h2>
+          <p className="text-sm text-[#6A614F]">
             Resets automatically each day
           </p>
         </div>
 
-        <div className="rounded-full bg-neutral-100 border border-neutral-200/80 px-3 py-1.5 text-sm font-black text-neutral-800">
+        <div className="rounded-full bg-[#EEE0C5]/75 border border-[#CA862B]/18 px-3 py-1.5 text-sm font-black text-[#111111]">
           {tickets.length} done
         </div>
       </div>
 
       {tickets.length ? (
-        <div className="max-h-56 overflow-y-auto border border-neutral-200/80 rounded-xl">
+        <div className="max-h-56 overflow-y-auto border border-[#CA862B]/16 rounded-xl bg-white">
           <table className="w-full text-left">
-            <thead className="sticky top-0 bg-neutral-50 text-xs uppercase text-neutral-500">
+            <thead className="sticky top-0 bg-[#EEE0C5]/55 text-xs uppercase text-[#6A614F]">
               <tr>
                 <th className="px-3 py-2 font-black">Order</th>
                 <th className="px-3 py-2 font-black">Name</th>
@@ -726,55 +726,55 @@ function CompletedTransactions({ tickets }) {
                             current === ticket.id ? null : ticket.id
                           )
                         }
-                        className="inline-flex items-center gap-2 text-left font-black text-neutral-950 hover:text-amber-700"
+                        className="inline-flex items-center gap-2 text-left font-black text-[#0F4036] hover:text-[#CA862B]"
                       >
                         <span>#{ticket.orderNumber}</span>
-                        <span className="text-neutral-400">
+                        <span className="text-[#6A614F]">
                           {expandedTicketId === ticket.id ? "▴" : "▾"}
                         </span>
                       </button>
                   </td>
-                  <td className="px-3 py-2 font-bold text-neutral-700">
+                  <td className="px-3 py-2 font-bold text-[#111111]">
                     {ticket.customerName || "—"}
                   </td>
-                  <td className="px-3 py-2 font-bold text-neutral-700">
+                  <td className="px-3 py-2 font-bold text-[#111111]">
                     {formatCompletedTime(ticket.completedAt)}
                   </td>
                   </tr>
 
                   {expandedTicketId === ticket.id && (
-                    <tr className="bg-neutral-50">
+                    <tr className="bg-[#FFFDF8]">
                       <td colSpan="3" className="px-3 py-3">
-                        <div className="rounded-xl border border-neutral-200 bg-white p-3 space-y-3">
+                        <div className="rounded-xl border border-[#CA862B]/16 bg-white p-3 space-y-3">
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
                             <div>
-                              <div className="text-xs font-black uppercase tracking-wide text-neutral-500">
+                              <div className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
                                 Source
                               </div>
-                              <div className="font-bold text-neutral-900">
+                              <div className="font-bold text-[#111111]">
                                 {ticket.source || "Square"}
                               </div>
                             </div>
                             <div>
-                              <div className="text-xs font-black uppercase tracking-wide text-neutral-500">
+                              <div className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
                                 Dining
                               </div>
-                              <div className="font-bold text-neutral-900">
+                              <div className="font-bold text-[#111111]">
                                 {ticket.diningOption || "Order"}
                               </div>
                             </div>
                             <div>
-                              <div className="text-xs font-black uppercase tracking-wide text-neutral-500">
+                              <div className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
                                 Taken by
                               </div>
-                              <div className="font-bold text-neutral-900">
+                              <div className="font-bold text-[#111111]">
                                 {ticket.employeeName || "—"}
                               </div>
                             </div>
                           </div>
 
                           <div>
-                            <div className="text-xs font-black uppercase tracking-wide text-neutral-500 mb-2">
+                            <div className="text-xs font-black uppercase tracking-wide text-[#6A614F] mb-2">
                               Items
                             </div>
                             <div className="space-y-2">
@@ -782,42 +782,42 @@ function CompletedTransactions({ tickets }) {
                                 ticket.items.map((item, idx) => (
                                   <div
                                     key={`${ticket.id}-detail-${idx}`}
-                                    className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2"
+                                    className="rounded-lg border border-[#CA862B]/10 bg-[#FFFDF8] px-3 py-2"
                                   >
                                     <div className="flex items-start justify-between gap-3">
-                                      <div className="font-bold text-neutral-900">
+                                      <div className="font-bold text-[#111111]">
                                         {item.qty}x {item.name}
                                       </div>
                                       {item.category && (
-                                        <div className="rounded-full bg-white border border-neutral-200 px-2 py-0.5 text-[11px] font-black text-neutral-600">
+                                        <div className="rounded-full bg-[#EEE0C5]/70 border border-[#CA862B]/12 px-2 py-0.5 text-[11px] font-black text-[#0F4036]">
                                           {item.category}
                                         </div>
                                       )}
                                     </div>
 
                                     {item.modifiers?.length > 0 && (
-                                      <div className="mt-1 text-sm text-neutral-600">
+                                      <div className="mt-1 text-sm text-[#4E4637]">
                                         {item.modifiers.join(", ")}
                                       </div>
                                     )}
 
                                     {item.note && (
-                                      <div className="mt-1 text-sm font-medium text-amber-800">
+                                      <div className="mt-1 text-sm font-medium text-[#8B5A1D]">
                                         Note: {item.note}
                                       </div>
                                     )}
                                   </div>
                                 ))
                               ) : (
-                                <div className="text-sm text-neutral-500">
+                                <div className="text-sm text-[#6A614F]">
                                   No item details available.
                                 </div>
                               )}
                             </div>
                           </div>
                         </div>
-                      </td>
-                    </tr>
+                        </td>
+                      </tr>
                   )}
                 </React.Fragment>
               ))}
@@ -825,7 +825,7 @@ function CompletedTransactions({ tickets }) {
           </table>
         </div>
       ) : (
-        <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 p-4 text-neutral-500 font-semibold">
+        <div className="rounded-2xl border border-dashed border-[#CA862B]/22 bg-white/70 p-4 text-[#6A614F] font-semibold">
           No completed transactions yet today.
         </div>
       )}
@@ -881,10 +881,10 @@ function OrdersByDayLookup({ defaultDate }) {
 
   return (
     <section className="space-y-2">
-      <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/70 border border-neutral-200/80 px-4 py-3">
+      <div className="flex items-center justify-between gap-3 rounded-2xl bg-[#FFFDF8]/85 border border-[#CA862B]/18 px-4 py-3">
         <div>
-          <h2 className="text-lg md:text-2xl font-black">Orders By Day</h2>
-          <p className="text-sm text-neutral-500">
+          <h2 className="text-lg md:text-2xl font-black text-[#0F4036]">Orders By Day</h2>
+          <p className="text-sm text-[#6A614F]">
             Search a single day of orders below
           </p>
         </div>
@@ -894,13 +894,13 @@ function OrdersByDayLookup({ defaultDate }) {
             type="date"
             value={date}
             onChange={(event) => setDate(event.target.value)}
-            className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm font-bold outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+            className="rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15"
           />
           <button
             type="button"
             onClick={() => runLookup(date)}
             disabled={loading}
-            className="rounded-xl bg-neutral-950 text-white px-4 py-2 text-sm font-black transition hover:bg-black disabled:cursor-not-allowed disabled:bg-neutral-300"
+            className="rounded-xl bg-[#0F4036] text-white px-4 py-2 text-sm font-black transition hover:bg-[#0b352d] disabled:cursor-not-allowed disabled:bg-neutral-300"
           >
             {loading ? "Looking up..." : "Lookup"}
           </button>
@@ -913,24 +913,24 @@ function OrdersByDayLookup({ defaultDate }) {
         </div>
       )}
 
-      <section className="rounded-2xl bg-white border border-neutral-200/80 p-4 shadow-sm">
+      <section className="rounded-2xl bg-[#FFFDF8] border border-[#CA862B]/18 p-4 shadow-sm">
         <div className="flex items-center justify-between gap-3 mb-3">
           <div>
-            <div className="text-sm font-black text-neutral-600">
+            <div className="text-sm font-black text-[#0F4036]">
               {searchedDate}
             </div>
-            <div className="text-xs text-neutral-500">Results for the selected day</div>
+            <div className="text-xs text-[#6A614F]">Results for the selected day</div>
           </div>
 
-          <div className="rounded-full bg-neutral-100 border border-neutral-200/80 px-3 py-1.5 text-sm font-black text-neutral-800">
+          <div className="rounded-full bg-[#EEE0C5]/75 border border-[#CA862B]/18 px-3 py-1.5 text-sm font-black text-[#111111]">
             {results.length} orders
           </div>
         </div>
 
         {results.length ? (
-          <div className="max-h-72 overflow-y-auto border border-neutral-200/80 rounded-xl">
+          <div className="max-h-72 overflow-y-auto border border-[#CA862B]/16 rounded-xl bg-white">
             <table className="w-full text-left">
-              <thead className="sticky top-0 bg-neutral-50 text-xs uppercase text-neutral-500">
+              <thead className="sticky top-0 bg-[#EEE0C5]/55 text-xs uppercase text-[#6A614F]">
                 <tr>
                   <th className="px-3 py-2 font-black">Order</th>
                   <th className="px-3 py-2 font-black">Name</th>
@@ -951,63 +951,63 @@ function OrdersByDayLookup({ defaultDate }) {
                               current === ticket.id ? null : ticket.id
                             )
                           }
-                          className="inline-flex items-center gap-2 text-left font-black text-neutral-950 hover:text-amber-700"
+                          className="inline-flex items-center gap-2 text-left font-black text-[#0F4036] hover:text-[#CA862B]"
                         >
                           <span>#{ticket.orderNumber}</span>
-                          <span className="text-neutral-400">
+                          <span className="text-[#6A614F]">
                             {expandedTicketId === ticket.id ? "▴" : "▾"}
                           </span>
                         </button>
                       </td>
-                      <td className="px-3 py-2 font-bold text-neutral-700">
+                      <td className="px-3 py-2 font-bold text-[#111111]">
                         {ticket.customerName || "—"}
                       </td>
                       <td className="px-3 py-2">
-                        <span className="rounded-full bg-neutral-100 border border-neutral-200 px-2.5 py-1 text-xs font-black uppercase text-neutral-700">
+                        <span className="rounded-full bg-[#EEE0C5]/75 border border-[#CA862B]/18 px-2.5 py-1 text-xs font-black uppercase text-[#111111]">
                           {ticket.status}
                         </span>
                       </td>
-                      <td className="px-3 py-2 font-bold text-neutral-700">
+                      <td className="px-3 py-2 font-bold text-[#111111]">
                         {ticket.diningOption || "Order"}
                       </td>
-                      <td className="px-3 py-2 font-bold text-neutral-700">
+                      <td className="px-3 py-2 font-bold text-[#111111]">
                         {formatOrderTime(ticket.createdAt)}
                       </td>
                     </tr>
 
                     {expandedTicketId === ticket.id && (
-                      <tr className="bg-neutral-50">
+                      <tr className="bg-[#FFFDF8]">
                         <td colSpan="5" className="px-3 py-3">
-                          <div className="rounded-xl border border-neutral-200 bg-white p-3 space-y-3">
+                          <div className="rounded-xl border border-[#CA862B]/16 bg-white p-3 space-y-3">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
                               <div>
-                                <div className="text-xs font-black uppercase tracking-wide text-neutral-500">
+                                <div className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
                                   Source
                                 </div>
-                                <div className="font-bold text-neutral-900">
+                                <div className="font-bold text-[#111111]">
                                   {ticket.source || "Square"}
                                 </div>
                               </div>
                               <div>
-                                <div className="text-xs font-black uppercase tracking-wide text-neutral-500">
+                                <div className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
                                   Dining
                                 </div>
-                                <div className="font-bold text-neutral-900">
+                                <div className="font-bold text-[#111111]">
                                   {ticket.diningOption || "Order"}
                                 </div>
                               </div>
                               <div>
-                                <div className="text-xs font-black uppercase tracking-wide text-neutral-500">
+                                <div className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
                                   Taken by
                                 </div>
-                                <div className="font-bold text-neutral-900">
+                                <div className="font-bold text-[#111111]">
                                   {ticket.employeeName || "—"}
                                 </div>
                               </div>
                             </div>
 
                             <div>
-                              <div className="text-xs font-black uppercase tracking-wide text-neutral-500 mb-2">
+                              <div className="text-xs font-black uppercase tracking-wide text-[#6A614F] mb-2">
                                 Items
                               </div>
                               <div className="space-y-2">
@@ -1015,34 +1015,34 @@ function OrdersByDayLookup({ defaultDate }) {
                                   ticket.items.map((item, idx) => (
                                     <div
                                       key={`${ticket.id}-lookup-${idx}`}
-                                      className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2"
+                                      className="rounded-lg border border-[#CA862B]/10 bg-[#FFFDF8] px-3 py-2"
                                     >
                                       <div className="flex items-start justify-between gap-3">
-                                        <div className="font-bold text-neutral-900">
+                                        <div className="font-bold text-[#111111]">
                                           {item.qty}x {item.name}
                                         </div>
                                         {item.category && (
-                                          <div className="rounded-full bg-white border border-neutral-200 px-2 py-0.5 text-[11px] font-black text-neutral-600">
+                                          <div className="rounded-full bg-[#EEE0C5]/70 border border-[#CA862B]/12 px-2 py-0.5 text-[11px] font-black text-[#0F4036]">
                                             {item.category}
                                           </div>
                                         )}
                                       </div>
 
                                       {item.modifiers?.length > 0 && (
-                                        <div className="mt-1 text-sm text-neutral-600">
+                                        <div className="mt-1 text-sm text-[#4E4637]">
                                           {item.modifiers.join(", ")}
                                         </div>
                                       )}
 
                                       {item.note && (
-                                        <div className="mt-1 text-sm font-medium text-amber-800">
+                                        <div className="mt-1 text-sm font-medium text-[#8B5A1D]">
                                           Note: {item.note}
                                         </div>
                                       )}
                                     </div>
                                   ))
                                 ) : (
-                                  <div className="text-sm text-neutral-500">
+                                  <div className="text-sm text-[#6A614F]">
                                     No item details available.
                                   </div>
                                 )}
@@ -1058,7 +1058,7 @@ function OrdersByDayLookup({ defaultDate }) {
             </table>
           </div>
         ) : (
-          <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 p-4 text-neutral-500 font-semibold">
+          <div className="rounded-2xl border border-dashed border-[#CA862B]/22 bg-white/70 p-4 text-[#6A614F] font-semibold">
             No orders found for {searchedDate || "that day"}.
           </div>
         )}
@@ -1100,23 +1100,23 @@ function LoginScreen({ onLogin }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#fbfaf7] text-neutral-950 flex items-center justify-center px-4">
-      <main className="w-full max-w-md rounded-3xl bg-white border border-neutral-200/80 shadow-sm p-6 flex flex-col items-center text-center">
+    <div className="min-h-screen bg-[#EEE0C5] text-[#111111] flex items-center justify-center px-4">
+      <main className="w-full max-w-md rounded-3xl bg-[#FFFDF8] border border-[#CA862B]/22 shadow-[0_20px_60px_rgba(15,64,54,0.08)] p-6 flex flex-col items-center text-center">
         <div className="flex items-center justify-center gap-4 mb-5">
           <BrandMark size="lg" />
         </div>
 
-        <h1 className="text-4xl font-black tracking-tight">
+        <h1 className="text-4xl font-black tracking-tight text-[#0F4036]">
           Kitchen Display
         </h1>
 
-        <p className="text-neutral-600 mt-2">
+        <p className="text-[#6A614F] mt-2">
           Enter the staff password to continue.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4 w-full">
           <label className="block text-left">
-            <span className="text-sm font-black text-neutral-700">
+            <span className="text-sm font-black text-[#0F4036]">
               Password
             </span>
             <input
@@ -1125,7 +1125,7 @@ function LoginScreen({ onLogin }) {
               onChange={(event) => setPassword(event.target.value)}
               autoComplete="current-password"
               autoFocus
-              className="mt-2 w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-lg font-bold outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+              className="mt-2 w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 text-lg font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15"
             />
           </label>
 
@@ -1138,7 +1138,7 @@ function LoginScreen({ onLogin }) {
           <button
             type="submit"
             disabled={submitting || !password}
-            className="w-full rounded-2xl bg-neutral-950 text-white px-4 py-3 font-black transition hover:bg-black disabled:cursor-not-allowed disabled:bg-neutral-300"
+            className="w-full rounded-2xl bg-[#0F4036] text-white px-4 py-3 font-black transition hover:bg-[#0b352d] disabled:cursor-not-allowed disabled:bg-neutral-300"
           >
             {submitting ? "Signing in..." : "Sign in"}
           </button>
@@ -1185,11 +1185,11 @@ function PasswordSettingsDialog({
 
   return (
     <div className="fixed inset-0 z-50 bg-neutral-950/50 backdrop-blur-sm px-4 py-6 flex items-center justify-center">
-      <div className="w-full max-w-lg rounded-3xl bg-white border border-neutral-200 shadow-2xl p-5 md:p-6">
+      <div className="w-full max-w-lg rounded-3xl bg-[#FFFDF8] border border-[#CA862B]/22 shadow-2xl p-5 md:p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-black">Change Password</h2>
-            <p className="text-sm text-neutral-500 mt-1">
+            <h2 className="text-2xl font-black text-[#0F4036]">Change Password</h2>
+            <p className="text-sm text-[#6A614F] mt-1">
               Requires the current password and saves to Supabase.
             </p>
           </div>
@@ -1197,7 +1197,7 @@ function PasswordSettingsDialog({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm font-black text-neutral-700 transition hover:bg-neutral-100"
+            className="rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
           >
             Close
           </button>
@@ -1205,7 +1205,7 @@ function PasswordSettingsDialog({
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           <label className="block">
-            <span className="text-sm font-black text-neutral-700">
+            <span className="text-sm font-black text-[#0F4036]">
               Current password
             </span>
             <input
@@ -1213,12 +1213,12 @@ function PasswordSettingsDialog({
               value={currentPassword}
               onChange={(event) => setCurrentPassword(event.target.value)}
               autoComplete="current-password"
-              className="mt-2 w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-lg font-bold outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+              className="mt-2 w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 text-lg font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15"
             />
           </label>
 
           <label className="block">
-            <span className="text-sm font-black text-neutral-700">
+            <span className="text-sm font-black text-[#0F4036]">
               New password
             </span>
             <input
@@ -1227,12 +1227,12 @@ function PasswordSettingsDialog({
               onChange={(event) => setNewPassword(event.target.value)}
               autoComplete="new-password"
               minLength={8}
-              className="mt-2 w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-lg font-bold outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+              className="mt-2 w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 text-lg font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15"
             />
           </label>
 
           <label className="block">
-            <span className="text-sm font-black text-neutral-700">
+            <span className="text-sm font-black text-[#0F4036]">
               Confirm new password
             </span>
             <input
@@ -1241,11 +1241,11 @@ function PasswordSettingsDialog({
               onChange={(event) => setConfirmPassword(event.target.value)}
               autoComplete="new-password"
               minLength={8}
-              className="mt-2 w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-lg font-bold outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+              className="mt-2 w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 text-lg font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15"
             />
           </label>
 
-          <div className="text-sm text-neutral-500">
+          <div className="text-sm text-[#6A614F]">
             Passwords are trimmed before saving and must be at least 8 characters.
           </div>
 
@@ -1259,7 +1259,7 @@ function PasswordSettingsDialog({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 font-black text-neutral-700 transition hover:bg-neutral-100"
+              className="rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
             >
               Cancel
             </button>
@@ -1267,7 +1267,7 @@ function PasswordSettingsDialog({
             <button
               type="submit"
               disabled={saving}
-              className="rounded-2xl bg-neutral-950 text-white px-4 py-3 font-black transition hover:bg-black disabled:cursor-not-allowed disabled:bg-neutral-300"
+              className="rounded-2xl bg-[#0F4036] text-white px-4 py-3 font-black transition hover:bg-[#0b352d] disabled:cursor-not-allowed disabled:bg-neutral-300"
             >
               {saving ? "Saving..." : "Save Password"}
             </button>
@@ -1641,8 +1641,8 @@ export default function GoldiesKDS() {
 
   if (authStatus === "checking") {
     return (
-      <div className="min-h-screen bg-[#fbfaf7] text-neutral-950 flex items-center justify-center px-4">
-        <div className="rounded-3xl bg-white border border-neutral-200 shadow-sm p-6 text-xl font-black">
+      <div className="min-h-screen bg-[#EEE0C5] text-[#111111] flex items-center justify-center px-4">
+        <div className="rounded-3xl bg-[#FFFDF8] border border-[#CA862B]/22 shadow-sm p-6 text-xl font-black text-[#0F4036]">
           Loading Kitchen Display
         </div>
       </div>
@@ -1654,18 +1654,18 @@ export default function GoldiesKDS() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fbfaf7] text-neutral-950">
-      <header className="border-b border-neutral-200/80 bg-white/95 backdrop-blur px-4 md:px-6 py-4">
+    <div className="min-h-screen bg-[#EEE0C5] text-[#111111]">
+      <header className="border-b border-[#CA862B]/22 bg-[#FFFDF8]/95 backdrop-blur px-4 md:px-6 py-4">
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
           <div className="flex items-center gap-4">
             <BrandMark />
 
             <div>
-              <h1 className="text-3xl md:text-4xl font-black tracking-tight">
+              <h1 className="text-3xl md:text-4xl font-black tracking-tight text-[#0F4036]">
                 Kitchen Display
               </h1>
 
-              <p className="text-neutral-600 mt-1 text-sm md:text-base">
+              <p className="text-[#6A614F] mt-1 text-sm md:text-base">
                 Live Square orders
               </p>
             </div>
@@ -1673,22 +1673,22 @@ export default function GoldiesKDS() {
 
           <div className="flex flex-col items-start xl:items-end gap-3">
             <div className="grid grid-cols-2 gap-2 w-full xl:w-auto">
-              <div className="rounded-xl bg-neutral-50 border border-neutral-200/80 px-3 py-2">
-                <div className="text-xs uppercase tracking-wide text-neutral-500 font-bold">
+              <div className="rounded-xl bg-[#EEE0C5]/50 border border-[#CA862B]/16 px-3 py-2">
+                <div className="text-xs uppercase tracking-wide text-[#6A614F] font-bold">
                   Time
                 </div>
-                <div className="text-xl font-black">
+                <div className="text-xl font-black text-[#111111]">
                   {new Date().toLocaleTimeString([], {
                     hour: "numeric",
                     minute: "2-digit",
                   })}
                 </div>
               </div>
-              <div className="rounded-xl bg-neutral-50 border border-neutral-200/80 px-3 py-2">
-                <div className="text-xs uppercase tracking-wide text-neutral-500 font-bold">
+              <div className="rounded-xl bg-[#EEE0C5]/50 border border-[#CA862B]/16 px-3 py-2">
+                <div className="text-xs uppercase tracking-wide text-[#6A614F] font-bold">
                   Date
                 </div>
-                <div className="text-xl font-black">
+                <div className="text-xl font-black text-[#111111]">
                   {new Date().toLocaleDateString([], {
                     weekday: "short",
                     month: "short",
@@ -1706,7 +1706,7 @@ export default function GoldiesKDS() {
                   setPasswordNotice("");
                   setShowPasswordModal(true);
                 }}
-                className="rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-black text-neutral-700 transition hover:bg-neutral-100"
+                className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
               >
                 Change Password
               </button>
@@ -1714,7 +1714,7 @@ export default function GoldiesKDS() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-black text-neutral-700 transition hover:bg-neutral-100"
+                className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
               >
                 Sign out
               </button>
@@ -1767,17 +1767,17 @@ export default function GoldiesKDS() {
         )}
 
         <section className="space-y-2">
-          <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/70 border border-neutral-200/80 px-4 py-3">
+          <div className="flex items-center justify-between gap-3 rounded-2xl bg-[#FFFDF8]/85 border border-[#CA862B]/18 px-4 py-3">
             <div>
-              <h2 className="text-lg md:text-2xl font-black">Today&apos;s Count</h2>
-              <p className="text-sm text-neutral-500">
+              <h2 className="text-lg md:text-2xl font-black text-[#0F4036]">Today&apos;s Count</h2>
+              <p className="text-sm text-[#6A614F]">
                 Drink totals, collapsed when not needed
               </p>
             </div>
             <button
               type="button"
               onClick={() => setShowTodayCount((current) => !current)}
-              className="rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-black text-neutral-700 transition hover:bg-neutral-100"
+              className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
             >
               {showTodayCount ? "Hide" : "Show"}
             </button>
@@ -1790,7 +1790,7 @@ export default function GoldiesKDS() {
           <button
             type="button"
             onClick={() => setShowStats((current) => !current)}
-            className="rounded-xl bg-neutral-950 text-white px-4 py-3 font-black transition hover:bg-black"
+            className="rounded-xl bg-[#0F4036] text-white px-4 py-3 font-black transition hover:bg-[#0b352d]"
           >
             {showStats ? "Hide Stats" : "View Stats"}
           </button>
@@ -1802,10 +1802,10 @@ export default function GoldiesKDS() {
           {STATUS_COLUMNS.map((column) => (
             <section
               key={column.key}
-              className={`rounded-2xl bg-gradient-to-b from-white to-neutral-50 border border-neutral-200/80 border-t-4 ${column.accent} p-3 shadow-sm xl:h-[calc(100vh-300px)] xl:min-h-[380px] flex flex-col`}
+              className={`rounded-2xl bg-[#FFFDF8] border border-[#CA862B]/18 border-t-4 ${column.accent} p-3 shadow-sm xl:h-[calc(100vh-300px)] xl:min-h-[380px] flex flex-col`}
             >
               <div className="flex items-center justify-between px-1 py-1.5 mb-2 shrink-0">
-                <h2 className="text-lg xl:text-xl font-black">
+                <h2 className="text-lg xl:text-xl font-black text-[#111111]">
                   {column.label}
                 </h2>
 
@@ -1827,7 +1827,7 @@ export default function GoldiesKDS() {
                     />
                   ))
                 ) : (
-                  <div className="rounded-2xl border border-dashed border-neutral-300 bg-white/60 p-8 text-center text-neutral-500 font-semibold">
+                  <div className="rounded-2xl border border-dashed border-[#CA862B]/22 bg-white/70 p-8 text-center text-[#6A614F] font-semibold">
                     No tickets
                   </div>
                 )}
@@ -1837,17 +1837,17 @@ export default function GoldiesKDS() {
         </section>
 
         <section className="space-y-2">
-          <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/70 border border-neutral-200/80 px-4 py-3">
+          <div className="flex items-center justify-between gap-3 rounded-2xl bg-[#FFFDF8]/85 border border-[#CA862B]/18 px-4 py-3">
             <div>
-              <h2 className="text-lg md:text-2xl font-black">Completed Today</h2>
-              <p className="text-sm text-neutral-500">
+              <h2 className="text-lg md:text-2xl font-black text-[#0F4036]">Completed Today</h2>
+              <p className="text-sm text-[#6A614F]">
                 Finished tickets, collapsed by default
               </p>
             </div>
             <button
               type="button"
               onClick={() => setShowCompletedToday((current) => !current)}
-              className="rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-black text-neutral-700 transition hover:bg-neutral-100"
+              className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
             >
               {showCompletedToday ? "Hide" : "Show"}
             </button>
