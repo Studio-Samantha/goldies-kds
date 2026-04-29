@@ -215,33 +215,61 @@ function parseCookies(cookieHeader = "") {
   }, {});
 }
 
-function signSession(expiresAt) {
+function encodeSessionPayload(payload) {
+  return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
+}
+
+function decodeSessionPayload(payload) {
+  try {
+    return JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function signSession(payload) {
   return crypto
     .createHmac("sha256", SESSION_SECRET)
-    .update(String(expiresAt))
+    .update(String(payload))
     .digest("hex");
 }
 
-function createSessionToken() {
+function createSessionToken(employeeName) {
   const expiresAt = Date.now() + SESSION_MAX_AGE_MS;
-  return `${expiresAt}.${signSession(expiresAt)}`;
+  const payload = encodeSessionPayload({
+    expiresAt,
+    employeeName: normalizeName(employeeName),
+  });
+  return `${payload}.${signSession(payload)}`;
 }
 
-function isValidSessionToken(token) {
+function getSessionFromToken(token) {
   if (!token) return false;
 
-  const [expiresAt, signature] = token.split(".");
-  const expiresAtMs = Number(expiresAt);
+  const [payload, signature] = token.split(".");
+  if (!payload || !signature) return null;
 
-  if (!expiresAtMs || expiresAtMs <= Date.now() || !signature) return false;
+  const expectedSignature = signSession(payload);
+  if (signature.length !== expectedSignature.length) return null;
 
-  const expectedSignature = signSession(expiresAt);
-  if (signature.length !== expectedSignature.length) return false;
-
-  return crypto.timingSafeEqual(
+  const matches = crypto.timingSafeEqual(
     Buffer.from(signature),
     Buffer.from(expectedSignature)
   );
+
+  if (!matches) return null;
+
+  const parsed = decodeSessionPayload(payload);
+  if (!parsed || !parsed.expiresAt || parsed.expiresAt <= Date.now()) return null;
+
+  return {
+    expiresAt: parsed.expiresAt,
+    employeeName: normalizeName(parsed.employeeName || ""),
+  };
+}
+
+function isValidSessionToken(token) {
+  return Boolean(getSessionFromToken(token));
 }
 
 function getCookieOptions(maxAge = SESSION_MAX_AGE_MS) {
@@ -424,11 +452,13 @@ function requireKdsAuth(req, res, next) {
   }
 
   const cookies = parseCookies(req.headers.cookie || "");
+  const session = getSessionFromToken(cookies[SESSION_COOKIE_NAME]);
 
-  if (!isValidSessionToken(cookies[SESSION_COOKIE_NAME])) {
+  if (!session) {
     return res.status(401).json({ error: "Login required" });
   }
 
+  req.kdsSession = session;
   return next();
 }
 
@@ -1432,22 +1462,30 @@ app.get("/api/health", (req, res) => {
 
 app.get("/api/session", (req, res) => {
   const cookies = parseCookies(req.headers.cookie || "");
-  const authenticated =
-    isKdsLoginConfigured() && isValidSessionToken(cookies[SESSION_COOKIE_NAME]);
+  const session = getSessionFromToken(cookies[SESSION_COOKIE_NAME]);
+  const authenticated = isKdsLoginConfigured() && Boolean(session);
 
   res.json({
     authenticated,
     configured: isKdsLoginConfigured(),
+    employeeName: session?.employeeName || "",
   });
 });
 
 app.post("/api/login", (req, res) => {
-  const { password } = req.body || {};
+  const password = req.body?.password;
+  const employeeName = normalizeName(
+    req.body?.employeeName || req.body?.employeeNumber || req.body?.employeeId || ""
+  );
 
   if (!isKdsLoginConfigured()) {
     return res.status(503).json({
       error: "KDS login is not configured. Set a password in the backend.",
     });
+  }
+
+  if (!employeeName) {
+    return res.status(400).json({ error: "Employee name or number is required" });
   }
 
   if (!isPasswordMatch(password)) {
@@ -1456,10 +1494,10 @@ app.post("/api/login", (req, res) => {
 
   res.setHeader(
     "Set-Cookie",
-    `${SESSION_COOKIE_NAME}=${encodeURIComponent(createSessionToken())}; ${getCookieOptions()}`
+    `${SESSION_COOKIE_NAME}=${encodeURIComponent(createSessionToken(employeeName))}; ${getCookieOptions()}`
   );
 
-  res.json({ ok: true });
+  res.json({ ok: true, employeeName });
 });
 
 app.post("/api/logout", (req, res) => {

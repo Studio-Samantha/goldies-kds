@@ -1115,6 +1115,7 @@ function OrdersByDayLookup({ defaultDate, collapsed, onToggle }) {
 }
 
 function LoginScreen({ onLogin, themeMode, onThemeToggle, themeStyle }) {
+  const [employeeName, setEmployeeName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -1129,16 +1130,17 @@ function LoginScreen({ onLogin, themeMode, onThemeToggle, themeStyle }) {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ password, employeeName }),
       });
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
         throw new Error(data.error || "Login failed");
       }
 
       setPassword("");
-      onLogin();
+      setEmployeeName("");
+      onLogin(data.employeeName || employeeName.trim());
     } catch (loginError) {
       setError(loginError.message || "Login failed");
     } finally {
@@ -1176,10 +1178,24 @@ function LoginScreen({ onLogin, themeMode, onThemeToggle, themeStyle }) {
         </h1>
 
         <p className="text-[#6A614F] mt-2">
-          Enter the staff password to continue.
+          Enter your employee name or number and the staff password to continue.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4 w-full">
+          <label className="block text-left">
+            <span className="text-sm font-black text-[#0F4036]">
+              Employee name or number
+            </span>
+            <input
+              type="text"
+              value={employeeName}
+              onChange={(event) => setEmployeeName(event.target.value)}
+              autoComplete="name"
+              autoFocus
+              className="mt-2 w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 text-lg font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15"
+            />
+          </label>
+
           <label className="block text-left">
             <span className="text-sm font-black text-[#0F4036]">
               Password
@@ -1202,7 +1218,7 @@ function LoginScreen({ onLogin, themeMode, onThemeToggle, themeStyle }) {
 
           <button
             type="submit"
-            disabled={submitting || !password}
+            disabled={submitting || !password || !employeeName.trim()}
             className="w-full rounded-2xl bg-[#0F4036] text-white px-4 py-3 font-black transition hover:bg-[#0b352d] disabled:cursor-not-allowed disabled:bg-neutral-300"
           >
             {submitting ? "Signing in..." : "Sign in"}
@@ -1350,6 +1366,7 @@ function PasswordSettingsDialog({
 export default function GoldiesKDS() {
   const [themeMode, setThemeMode] = useState(getSavedThemeMode);
   const [authStatus, setAuthStatus] = useState("checking");
+  const [signedInEmployee, setSignedInEmployee] = useState("");
   const [tickets, setTickets] = useState([]);
   const [completedTickets, setCompletedTickets] = useState([]);
   const [drinkCounts, setDrinkCounts] = useState([]);
@@ -1402,6 +1419,7 @@ export default function GoldiesKDS() {
         if (!mounted) return;
 
         setAuthStatus(session.authenticated ? "authenticated" : "login");
+        setSignedInEmployee(session.employeeName || "");
         if (!session.configured) {
           setLastError("KDS login is not configured on the backend.");
         }
@@ -1409,6 +1427,7 @@ export default function GoldiesKDS() {
         if (!mounted) return;
 
         setAuthStatus("login");
+        setSignedInEmployee("");
         setLastError(error.message || "Unable to check login session");
       }
     }
@@ -1720,6 +1739,7 @@ export default function GoldiesKDS() {
     setPasswordError("");
     setPasswordNotice("");
     setAuthStatus("login");
+    setSignedInEmployee("");
   }
 
   if (authStatus === "checking") {
@@ -1738,7 +1758,10 @@ export default function GoldiesKDS() {
   if (authStatus === "login") {
     return (
       <LoginScreen
-        onLogin={() => setAuthStatus("authenticated")}
+        onLogin={(employeeName) => {
+          setSignedInEmployee(employeeName);
+          setAuthStatus("authenticated");
+        }}
         themeMode={themeMode}
         onThemeToggle={() =>
           setThemeMode((current) => (current === "dark" ? "light" : "dark"))
@@ -1835,6 +1858,12 @@ export default function GoldiesKDS() {
             <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6A614F]">
               {APP_VERSION}
             </div>
+
+            {signedInEmployee && (
+              <div className="rounded-full border border-[#CA862B]/22 bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-[#0F4036]">
+                {signedInEmployee}
+              </div>
+            )}
           </div>
         </div>
       </header>
