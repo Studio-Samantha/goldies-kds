@@ -690,7 +690,14 @@ async function getCompletedTicketsToday() {
     .lte("completed_at", end.toISOString())
     .order("completed_at", { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    if (error.message?.includes("completed_at")) {
+      console.warn("completed_at column is not available yet; returning empty completed tickets list");
+      return [];
+    }
+
+    throw error;
+  }
 
   return (orders || []).map((order) => ticketFromDb(order, []));
 }

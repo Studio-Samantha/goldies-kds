@@ -875,7 +875,10 @@ export default function GoldiesKDS() {
 
         const liveTickets = await response.json();
         const liveReports = await fetchDrinkReports();
-        const liveCompletedTickets = await fetchCompletedTickets();
+        const liveCompletedTickets = await fetchCompletedTickets().catch((error) => {
+          setLastError(error.message || "Completed tickets unavailable");
+          return [];
+        });
         const liveDrinkCounts =
           Object.keys(liveReports).length > 0
             ? getTodayDrinkCounts(liveReports)
