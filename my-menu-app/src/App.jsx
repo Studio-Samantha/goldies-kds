@@ -6,6 +6,7 @@ const API_BASE_URL = import.meta.env.DEV
 const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
+const APP_VERSION = "v1.0.0";
 
 function apiUrl(path) {
   return API_BASE_URL ? `${API_BASE_URL}${path}` : path;
@@ -1177,6 +1178,10 @@ function LoginScreen({ onLogin, themeMode, onThemeToggle, themeStyle }) {
             {submitting ? "Signing in..." : "Sign in"}
           </button>
         </form>
+
+        <div className="mt-5 text-[11px] font-bold uppercase tracking-[0.18em] text-[#6A614F]">
+          {APP_VERSION}
+        </div>
       </main>
     </div>
   );
@@ -1788,6 +1793,10 @@ export default function GoldiesKDS() {
               >
                 Sign out
               </button>
+            </div>
+
+            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6A614F]">
+              {APP_VERSION}
             </div>
           </div>
         </div>
