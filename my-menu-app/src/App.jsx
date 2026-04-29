@@ -5,9 +5,20 @@ const API_BASE_URL = import.meta.env.DEV
   : "";
 const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
+const THEME_STORAGE_KEY = "goldies-kds-theme";
 
 function apiUrl(path) {
   return API_BASE_URL ? `${API_BASE_URL}${path}` : path;
+}
+
+function getSavedThemeMode() {
+  if (typeof window === "undefined") return "light";
+
+  try {
+    return window.localStorage.getItem(THEME_STORAGE_KEY) || "light";
+  } catch {
+    return "light";
+  }
 }
 
 const STATUS_COLUMNS = [
@@ -1079,7 +1090,7 @@ function OrdersByDayLookup({ defaultDate, collapsed, onToggle }) {
   );
 }
 
-function LoginScreen({ onLogin }) {
+function LoginScreen({ onLogin, themeMode, onThemeToggle, themeStyle }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -1112,7 +1123,18 @@ function LoginScreen({ onLogin }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#EEE0C5] text-[#111111] flex items-center justify-center px-4">
+    <div
+      className="relative min-h-screen bg-[#EEE0C5] text-[#111111] flex items-center justify-center px-4"
+      style={themeStyle}
+    >
+      <button
+        type="button"
+        onClick={onThemeToggle}
+        className="absolute right-4 top-4 rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+      >
+        {themeMode === "dark" ? "Light mode" : "Dark mode"}
+      </button>
+
       <main className="w-full max-w-md rounded-3xl bg-[#FFFDF8] border border-[#CA862B]/22 shadow-[0_20px_60px_rgba(15,64,54,0.08)] p-6 flex flex-col items-center text-center">
         <div className="flex items-center justify-center gap-4 mb-5">
           <BrandMark size="lg" />
@@ -1291,6 +1313,7 @@ function PasswordSettingsDialog({
 }
 
 export default function GoldiesKDS() {
+  const [themeMode, setThemeMode] = useState(getSavedThemeMode);
   const [authStatus, setAuthStatus] = useState("checking");
   const [tickets, setTickets] = useState([]);
   const [completedTickets, setCompletedTickets] = useState([]);
@@ -1308,6 +1331,18 @@ export default function GoldiesKDS() {
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
   const [lastError, setLastError] = useState("");
   const [defaultLookupDate] = useState(() => getLocalDateInputValue());
+  const themeStyle =
+    themeMode === "dark"
+      ? { filter: "invert(1) hue-rotate(180deg)" }
+      : undefined;
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, themeMode);
+    } catch {
+      // ignore storage failures
+    }
+  }, [themeMode]);
 
   useEffect(() => {
     if (!passwordNotice) return undefined;
@@ -1654,7 +1689,10 @@ export default function GoldiesKDS() {
 
   if (authStatus === "checking") {
     return (
-      <div className="min-h-screen bg-[#EEE0C5] text-[#111111] flex items-center justify-center px-4">
+      <div
+        className="min-h-screen bg-[#EEE0C5] text-[#111111] flex items-center justify-center px-4"
+        style={themeStyle}
+      >
         <div className="rounded-3xl bg-[#FFFDF8] border border-[#CA862B]/22 shadow-sm p-6 text-xl font-black text-[#0F4036]">
           Loading Kitchen Display
         </div>
@@ -1663,11 +1701,20 @@ export default function GoldiesKDS() {
   }
 
   if (authStatus === "login") {
-    return <LoginScreen onLogin={() => setAuthStatus("authenticated")} />;
+    return (
+      <LoginScreen
+        onLogin={() => setAuthStatus("authenticated")}
+        themeMode={themeMode}
+        onThemeToggle={() =>
+          setThemeMode((current) => (current === "dark" ? "light" : "dark"))
+        }
+        themeStyle={themeStyle}
+      />
+    );
   }
 
   return (
-    <div className="min-h-screen bg-[#EEE0C5] text-[#111111]">
+    <div className="min-h-screen bg-[#EEE0C5] text-[#111111]" style={themeStyle}>
       <header className="border-b border-[#CA862B]/22 bg-[#FFFDF8]/95 backdrop-blur px-4 md:px-6 py-4">
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -1712,6 +1759,16 @@ export default function GoldiesKDS() {
             </div>
 
             <div className="flex flex-wrap gap-2 justify-start xl:justify-end">
+              <button
+                type="button"
+                onClick={() =>
+                  setThemeMode((current) => (current === "dark" ? "light" : "dark"))
+                }
+                className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+              >
+                {themeMode === "dark" ? "Light mode" : "Dark mode"}
+              </button>
+
               <button
                 type="button"
                 onClick={() => {
