@@ -305,10 +305,10 @@ function TicketCard({ ticket, onStatusChange }) {
   }
 
   return (
-    <article className="rounded-3xl bg-white border border-neutral-200 p-4 shadow-sm space-y-4">
+    <article className="rounded-2xl bg-white border border-neutral-200 p-3 shadow-sm space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-3xl font-black tracking-tight leading-none">
+          <div className="text-2xl font-black tracking-tight leading-none">
             #{ticket.orderNumber}
           </div>
 
@@ -317,7 +317,7 @@ function TicketCard({ ticket, onStatusChange }) {
           </div>
 
           {ticket.customerName && (
-            <div className="mt-2 text-xl font-black text-neutral-900">
+            <div className="mt-2 text-lg font-black text-neutral-900">
               {ticket.customerName}
             </div>
           )}
@@ -335,19 +335,19 @@ function TicketCard({ ticket, onStatusChange }) {
       </div>
 
       {drinkOnlyMode && (
-        <div className="rounded-xl bg-sky-50 border border-sky-100 px-3 py-2 text-sm font-bold text-sky-900">
+        <div className="rounded-xl bg-sky-50 border border-sky-100 px-3 py-2 text-xs font-bold text-sky-900">
           Completed view shows drinks only
         </div>
       )}
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {visibleItems.length > 0 ? (
           visibleItems.map((item, idx) => (
             <div
               key={`${ticket.id}-${idx}`}
-              className="border-t border-neutral-100 pt-3 first:border-t-0 first:pt-0"
+              className="border-t border-neutral-100 pt-2 first:border-t-0 first:pt-0"
             >
-              <div className="flex gap-2 text-lg font-bold leading-tight">
+              <div className="flex gap-2 text-base font-bold leading-tight">
                 <span className="text-neutral-500">{item.qty}×</span>
                 <span>{item.name}</span>
               </div>
@@ -380,7 +380,7 @@ function TicketCard({ ticket, onStatusChange }) {
             <button
               key={action.label}
               onClick={() => onStatusChange(ticket.id, action.status)}
-              className={`rounded-2xl px-4 py-3 font-black transition ${action.className}`}
+              className={`rounded-xl px-4 py-2.5 font-black transition ${action.className}`}
             >
               {action.label}
             </button>
@@ -389,7 +389,7 @@ function TicketCard({ ticket, onStatusChange }) {
           {previousStatus && (
             <button
               onClick={() => onStatusChange(ticket.id, previousStatus)}
-              className="rounded-2xl px-4 py-2 font-black transition bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-100"
+              className="rounded-xl px-4 py-2 font-black transition bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-100"
             >
               Back
             </button>
@@ -845,18 +845,18 @@ export default function GoldiesKDS() {
 
   return (
     <div className="min-h-screen bg-[#fbfaf7] text-neutral-950">
-      <header className="border-b-4 border-amber-400 bg-white/95 px-6 py-5">
+      <header className="border-b-4 border-amber-400 bg-white/95 px-4 md:px-6 py-4">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <div className="inline-flex items-center rounded-full bg-amber-100 border border-amber-200 text-amber-900 px-3 py-1 text-sm font-bold mb-3">
               Goldie’s Coffee Shop
             </div>
 
-            <h1 className="text-4xl md:text-5xl font-black tracking-tight">
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight">
               Kitchen Display
             </h1>
 
-            <p className="text-neutral-600 mt-2 text-lg">
+            <p className="text-neutral-600 mt-1 text-base">
               Live Square orders
             </p>
           </div>
@@ -890,7 +890,7 @@ export default function GoldiesKDS() {
         </div>
       </header>
 
-      <main className="p-4 md:p-6 space-y-6">
+      <main className="p-3 md:p-4 space-y-4">
         <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
           <StatCard
             label="Mode"
@@ -941,14 +941,14 @@ export default function GoldiesKDS() {
 
         {showStats && <DrinkStats reports={drinkReports} />}
 
-        <section className="grid grid-cols-1 xl:grid-cols-4 gap-4">
+        <section className="grid grid-cols-1 xl:grid-cols-4 gap-3">
           {STATUS_COLUMNS.map((column) => (
             <section
               key={column.key}
-              className={`rounded-3xl bg-white/70 border border-neutral-200 border-t-4 ${column.accent} p-4 shadow-sm min-h-[500px]`}
+              className={`rounded-2xl bg-white/70 border border-neutral-200 border-t-4 ${column.accent} p-3 shadow-sm xl:h-[calc(100vh-330px)] xl:min-h-[360px] flex flex-col`}
             >
-              <div className="flex items-center justify-between px-1 py-2 mb-3">
-                <h2 className="text-2xl font-black">
+              <div className="flex items-center justify-between px-1 py-1.5 mb-2 shrink-0">
+                <h2 className="text-xl font-black">
                   {column.label}
                 </h2>
 
@@ -959,7 +959,7 @@ export default function GoldiesKDS() {
                 </span>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3 xl:overflow-y-auto xl:pr-1">
                 {grouped[column.key]?.length ? (
                   grouped[column.key].map((ticket) => (
                     <TicketCard
