@@ -34,6 +34,15 @@ const STATUS_COLUMNS = [
   },
 ];
 
+const REPORT_RANGES = [
+  { key: "today", label: "Today" },
+  { key: "yesterday", label: "Yesterday" },
+  { key: "last7", label: "Last 7 Days" },
+  { key: "last30", label: "Last 30 Days" },
+  { key: "thisMonth", label: "This Month" },
+  { key: "thisYear", label: "This Year" },
+];
+
 const DRINK_MENU_ITEMS = new Set([
   "Americano",
   "Cappuccino",
@@ -438,6 +447,83 @@ function DailyDrinkCount({ drinkCounts }) {
   );
 }
 
+function DrinkStats({ reports }) {
+  return (
+    <section className="rounded-3xl bg-white border border-neutral-200 p-4 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+        <div>
+          <h2 className="text-2xl font-black">Drink Stats</h2>
+          <p className="text-sm text-neutral-500">
+            Totals include completed orders
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+        {REPORT_RANGES.map((range) => {
+          const report = reports[range.key] || {};
+          const categories = report.totalsByCategory || {};
+          const total =
+            Number(categories.Coffee || 0) +
+            Number(categories["Not Coffee"] || 0) +
+            Number(categories.Smoothies || 0);
+
+          return (
+            <div
+              key={range.key}
+              className="rounded-2xl bg-neutral-50 border border-neutral-200 p-4"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="text-sm font-black text-neutral-600">
+                  {range.label}
+                </div>
+
+                <div className="rounded-full bg-white border border-neutral-200 px-3 py-1 text-sm font-black">
+                  {total}
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                {["Coffee", "Not Coffee", "Smoothies"].map((category) => (
+                  <div
+                    key={category}
+                    className="rounded-xl bg-white border border-neutral-200 px-3 py-2"
+                  >
+                    <div className="text-xl font-black">
+                      {categories[category] || 0}
+                    </div>
+                    <div className="text-xs font-bold text-neutral-500 leading-tight">
+                      {category}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {report.totalsByName?.length > 0 && (
+                <div className="mt-4 border-t border-neutral-200 pt-3 space-y-2">
+                  {report.totalsByName.slice(0, 3).map((drink) => (
+                    <div
+                      key={drink.name}
+                      className="flex items-center justify-between gap-3 text-sm"
+                    >
+                      <span className="font-bold text-neutral-700 truncate">
+                        {drink.name}
+                      </span>
+                      <span className="font-black">
+                        {drink.qty}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function LoginScreen({ onLogin }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -523,6 +609,7 @@ export default function GoldiesKDS() {
   const [authStatus, setAuthStatus] = useState("checking");
   const [tickets, setTickets] = useState([]);
   const [drinkCounts, setDrinkCounts] = useState([]);
+  const [drinkReports, setDrinkReports] = useState({});
   const [lastPoll, setLastPoll] = useState(new Date());
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
   const [lastError, setLastError] = useState("");
@@ -563,6 +650,45 @@ export default function GoldiesKDS() {
 
     let mounted = true;
 
+    async function fetchDrinkReports() {
+      const reports = {};
+
+      await Promise.all(
+        REPORT_RANGES.map(async (range) => {
+          const response = await fetch(
+            apiUrl(`/api/reports/drinks?range=${range.key}`),
+            {
+              credentials: "include",
+            }
+          );
+
+          if (response.status === 401) {
+            setAuthStatus("login");
+            return;
+          }
+
+          if (!response.ok) {
+            throw new Error(
+              `Failed to fetch ${range.label} drink report: ${response.status}`
+            );
+          }
+
+          reports[range.key] = await response.json();
+        })
+      );
+
+      return reports;
+    }
+
+    function getTodayDrinkCounts(reports) {
+      const today = reports.today || {};
+
+      return (today.totalsByName || []).map((drink) => ({
+        name: drink.name,
+        qty: drink.qty,
+      }));
+    }
+
     async function fetchDrinkCounts() {
       const response = await fetch(apiUrl("/api/reports/drinks?range=today"), {
         credentials: "include",
@@ -600,12 +726,17 @@ export default function GoldiesKDS() {
         }
 
         const liveTickets = await response.json();
-        const liveDrinkCounts = await fetchDrinkCounts();
+        const liveReports = await fetchDrinkReports();
+        const liveDrinkCounts =
+          Object.keys(liveReports).length > 0
+            ? getTodayDrinkCounts(liveReports)
+            : await fetchDrinkCounts();
 
         if (!mounted) return;
 
         setTickets(liveTickets.map(normalizeTicket));
         setDrinkCounts(liveDrinkCounts);
+        setDrinkReports(liveReports);
         setLastPoll(new Date());
         setConnectionStatus("Connected");
         setLastError("");
@@ -680,6 +811,8 @@ export default function GoldiesKDS() {
     }).catch(() => {});
 
     setTickets([]);
+    setDrinkCounts([]);
+    setDrinkReports({});
     setAuthStatus("login");
   }
 
@@ -782,6 +915,8 @@ export default function GoldiesKDS() {
         )}
 
         <DailyDrinkCount drinkCounts={drinkCounts} />
+
+        <DrinkStats reports={drinkReports} />
 
         <section className="grid grid-cols-1 xl:grid-cols-4 gap-4">
           {STATUS_COLUMNS.map((column) => (

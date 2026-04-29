@@ -650,7 +650,9 @@ function getRangeStart(range) {
   const now = new Date();
   const start = new Date(now);
 
-  if (range === "last7") {
+  if (range === "yesterday") {
+    start.setDate(now.getDate() - 1);
+  } else if (range === "last7") {
     start.setDate(now.getDate() - 6);
   } else if (range === "thisMonth") {
     start.setDate(1);
@@ -667,16 +669,29 @@ function getRangeStart(range) {
   return start;
 }
 
+function getRangeEnd(range) {
+  const now = new Date();
+
+  if (range !== "yesterday") return now;
+
+  const end = new Date(now);
+  end.setDate(now.getDate() - 1);
+  end.setHours(23, 59, 59, 999);
+  return end;
+}
+
 async function getDrinkReport(range = "today") {
   if (!supabase) {
-    return buildDrinkReport(tickets, getRangeStart(range));
+    return buildDrinkReport(tickets, getRangeStart(range), getRangeEnd(range));
   }
 
   const start = getRangeStart(range);
+  const end = getRangeEnd(range);
   const { data: orders, error: orderError } = await supabase
     .from("kds_orders")
     .select("square_order_id, created_at")
-    .gte("created_at", start.toISOString());
+    .gte("created_at", start.toISOString())
+    .lte("created_at", end.toISOString());
 
   if (orderError) throw orderError;
   if (!orders.length) return buildDrinkReport([], start);
@@ -705,10 +720,10 @@ async function getDrinkReport(range = "today") {
       })),
   }));
 
-  return buildDrinkReport(reportTickets, start);
+  return buildDrinkReport(reportTickets, start, end);
 }
 
-function buildDrinkReport(reportTickets, start) {
+function buildDrinkReport(reportTickets, start, end = new Date()) {
   const totalsByName = new Map();
   const totalsByCategory = {
     Coffee: 0,
@@ -718,6 +733,7 @@ function buildDrinkReport(reportTickets, start) {
 
   for (const ticket of reportTickets) {
     if (ticket.createdAt && ticket.createdAt < start.getTime()) continue;
+    if (ticket.createdAt && ticket.createdAt > end.getTime()) continue;
 
     for (const item of ticket.items || []) {
       const category = item.category || getDrinkCategory(item.name);
@@ -732,6 +748,7 @@ function buildDrinkReport(reportTickets, start) {
   return {
     range: "custom",
     startAt: start.toISOString(),
+    endAt: end.toISOString(),
     totalsByName: Array.from(totalsByName.entries())
       .map(([name, qty]) => ({ name, qty, category: getDrinkCategory(name) }))
       .sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name)),
@@ -891,7 +908,14 @@ app.post("/api/square-webhook", async (req, res) => {
 
 app.get("/api/reports/drinks", requireKdsAuth, async (req, res) => {
   try {
-    const allowedRanges = new Set(["today", "last7", "thisMonth", "last30", "thisYear"]);
+    const allowedRanges = new Set([
+      "today",
+      "yesterday",
+      "last7",
+      "last30",
+      "thisMonth",
+      "thisYear",
+    ]);
     const range = allowedRanges.has(req.query.range) ? req.query.range : "today";
     const report = await getDrinkReport(range);
 
