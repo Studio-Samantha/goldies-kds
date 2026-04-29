@@ -804,8 +804,8 @@ function LoginScreen({ onLogin }) {
 
   return (
     <div className="min-h-screen bg-[#fbfaf7] text-neutral-950 flex items-center justify-center px-4">
-      <main className="w-full max-w-md rounded-3xl bg-white border border-neutral-200/80 shadow-sm p-6">
-        <div className="flex items-center gap-4 mb-5">
+      <main className="w-full max-w-md rounded-3xl bg-white border border-neutral-200/80 shadow-sm p-6 flex flex-col items-center text-center">
+        <div className="flex items-center justify-center gap-4 mb-5">
           <BrandMark size="lg" />
         </div>
 
@@ -817,8 +817,8 @@ function LoginScreen({ onLogin }) {
           Enter the staff password to continue.
         </p>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <label className="block">
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4 w-full">
+          <label className="block text-left">
             <span className="text-sm font-black text-neutral-700">
               Password
             </span>
