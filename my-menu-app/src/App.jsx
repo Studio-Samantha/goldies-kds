@@ -833,7 +833,7 @@ function CompletedTransactions({ tickets }) {
   );
 }
 
-function OrdersByDayLookup({ defaultDate }) {
+function OrdersByDayLookup({ defaultDate, collapsed, onToggle }) {
   const [date, setDate] = useState(defaultDate);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -889,180 +889,192 @@ function OrdersByDayLookup({ defaultDate }) {
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-          <input
-            type="date"
-            value={date}
-            onChange={(event) => setDate(event.target.value)}
-            className="rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15"
-          />
-          <button
-            type="button"
-            onClick={() => runLookup(date)}
-            disabled={loading}
-            className="rounded-xl bg-[#0F4036] text-white px-4 py-2 text-sm font-black transition hover:bg-[#0b352d] disabled:cursor-not-allowed disabled:bg-neutral-300"
-          >
-            {loading ? "Looking up..." : "Lookup"}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onToggle}
+          className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+        >
+          {collapsed ? "Show" : "Hide"}
+        </button>
       </div>
 
-      {error && (
-        <div className="rounded-xl bg-red-50 border border-red-100 text-red-900 px-4 py-3 font-medium">
-          {error}
-        </div>
-      )}
+      {!collapsed && (
+        <>
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center rounded-2xl bg-[#FFFDF8] border border-[#CA862B]/18 px-4 py-3">
+            <input
+              type="date"
+              value={date}
+              onChange={(event) => setDate(event.target.value)}
+              className="rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15"
+            />
+            <button
+              type="button"
+              onClick={() => runLookup(date)}
+              disabled={loading}
+              className="rounded-xl bg-[#0F4036] text-white px-4 py-2 text-sm font-black transition hover:bg-[#0b352d] disabled:cursor-not-allowed disabled:bg-neutral-300"
+            >
+              {loading ? "Looking up..." : "Lookup"}
+            </button>
+          </div>
 
-      <section className="rounded-2xl bg-[#FFFDF8] border border-[#CA862B]/18 p-4 shadow-sm">
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <div>
-            <div className="text-sm font-black text-[#0F4036]">
-              {searchedDate}
+          {error && (
+            <div className="rounded-xl bg-red-50 border border-red-100 text-red-900 px-4 py-3 font-medium">
+              {error}
             </div>
-            <div className="text-xs text-[#6A614F]">Results for the selected day</div>
-          </div>
+          )}
 
-          <div className="rounded-full bg-[#EEE0C5]/75 border border-[#CA862B]/18 px-3 py-1.5 text-sm font-black text-[#111111]">
-            {results.length} orders
-          </div>
-        </div>
+          <section className="rounded-2xl bg-[#FFFDF8] border border-[#CA862B]/18 p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div>
+                <div className="text-sm font-black text-[#0F4036]">
+                  {searchedDate}
+                </div>
+                <div className="text-xs text-[#6A614F]">Results for the selected day</div>
+              </div>
 
-        {results.length ? (
-          <div className="max-h-72 overflow-y-auto border border-[#CA862B]/16 rounded-xl bg-white">
-            <table className="w-full text-left">
-              <thead className="sticky top-0 bg-[#EEE0C5]/55 text-xs uppercase text-[#6A614F]">
-                <tr>
-                  <th className="px-3 py-2 font-black">Order</th>
-                  <th className="px-3 py-2 font-black">Name</th>
-                  <th className="px-3 py-2 font-black">Status</th>
-                  <th className="px-3 py-2 font-black">Dining</th>
-                  <th className="px-3 py-2 font-black">Time</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100">
-                {results.map((ticket) => (
-                  <React.Fragment key={ticket.id}>
-                    <tr className="text-sm align-top">
-                      <td className="px-3 py-2 font-black">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setExpandedTicketId((current) =>
-                              current === ticket.id ? null : ticket.id
-                            )
-                          }
-                          className="inline-flex items-center gap-2 text-left font-black text-[#0F4036] hover:text-[#CA862B]"
-                        >
-                          <span>#{ticket.orderNumber}</span>
-                          <span className="text-[#6A614F]">
-                            {expandedTicketId === ticket.id ? "▴" : "▾"}
-                          </span>
-                        </button>
-                      </td>
-                      <td className="px-3 py-2 font-bold text-[#111111]">
-                        {ticket.customerName || "—"}
-                      </td>
-                      <td className="px-3 py-2">
-                        <span className="rounded-full bg-[#EEE0C5]/75 border border-[#CA862B]/18 px-2.5 py-1 text-xs font-black uppercase text-[#111111]">
-                          {ticket.status}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 font-bold text-[#111111]">
-                        {ticket.diningOption || "Order"}
-                      </td>
-                      <td className="px-3 py-2 font-bold text-[#111111]">
-                        {formatOrderTime(ticket.createdAt)}
-                      </td>
+              <div className="rounded-full bg-[#EEE0C5]/75 border border-[#CA862B]/18 px-3 py-1.5 text-sm font-black text-[#111111]">
+                {results.length} orders
+              </div>
+            </div>
+
+            {results.length ? (
+              <div className="max-h-72 overflow-y-auto border border-[#CA862B]/16 rounded-xl bg-white">
+                <table className="w-full text-left">
+                  <thead className="sticky top-0 bg-[#EEE0C5]/55 text-xs uppercase text-[#6A614F]">
+                    <tr>
+                      <th className="px-3 py-2 font-black">Order</th>
+                      <th className="px-3 py-2 font-black">Name</th>
+                      <th className="px-3 py-2 font-black">Status</th>
+                      <th className="px-3 py-2 font-black">Dining</th>
+                      <th className="px-3 py-2 font-black">Time</th>
                     </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-100">
+                    {results.map((ticket) => (
+                      <React.Fragment key={ticket.id}>
+                        <tr className="text-sm align-top">
+                          <td className="px-3 py-2 font-black">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setExpandedTicketId((current) =>
+                                  current === ticket.id ? null : ticket.id
+                                )
+                              }
+                              className="inline-flex items-center gap-2 text-left font-black text-[#0F4036] hover:text-[#CA862B]"
+                            >
+                              <span>#{ticket.orderNumber}</span>
+                              <span className="text-[#6A614F]">
+                                {expandedTicketId === ticket.id ? "▴" : "▾"}
+                              </span>
+                            </button>
+                          </td>
+                          <td className="px-3 py-2 font-bold text-[#111111]">
+                            {ticket.customerName || "—"}
+                          </td>
+                          <td className="px-3 py-2">
+                            <span className="rounded-full bg-[#EEE0C5]/75 border border-[#CA862B]/18 px-2.5 py-1 text-xs font-black uppercase text-[#111111]">
+                              {ticket.status}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 font-bold text-[#111111]">
+                            {ticket.diningOption || "Order"}
+                          </td>
+                          <td className="px-3 py-2 font-bold text-[#111111]">
+                            {formatOrderTime(ticket.createdAt)}
+                          </td>
+                        </tr>
 
-                    {expandedTicketId === ticket.id && (
-                      <tr className="bg-[#FFFDF8]">
-                        <td colSpan="5" className="px-3 py-3">
-                          <div className="rounded-xl border border-[#CA862B]/16 bg-white p-3 space-y-3">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-                              <div>
-                                <div className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
-                                  Source
-                                </div>
-                                <div className="font-bold text-[#111111]">
-                                  {ticket.source || "Square"}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
-                                  Dining
-                                </div>
-                                <div className="font-bold text-[#111111]">
-                                  {ticket.diningOption || "Order"}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
-                                  Taken by
-                                </div>
-                                <div className="font-bold text-[#111111]">
-                                  {ticket.employeeName || "—"}
-                                </div>
-                              </div>
-                            </div>
-
-                            <div>
-                              <div className="text-xs font-black uppercase tracking-wide text-[#6A614F] mb-2">
-                                Items
-                              </div>
-                              <div className="space-y-2">
-                                {(ticket.items || []).length ? (
-                                  ticket.items.map((item, idx) => (
-                                    <div
-                                      key={`${ticket.id}-lookup-${idx}`}
-                                      className="rounded-lg border border-[#CA862B]/10 bg-[#FFFDF8] px-3 py-2"
-                                    >
-                                      <div className="flex items-start justify-between gap-3">
-                                        <div className="font-bold text-[#111111]">
-                                          {item.qty}x {item.name}
-                                        </div>
-                                        {item.category && (
-                                          <div className="rounded-full bg-[#EEE0C5]/70 border border-[#CA862B]/12 px-2 py-0.5 text-[11px] font-black text-[#0F4036]">
-                                            {item.category}
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      {item.modifiers?.length > 0 && (
-                                        <div className="mt-1 text-sm text-[#4E4637]">
-                                          {item.modifiers.join(", ")}
-                                        </div>
-                                      )}
-
-                                      {item.note && (
-                                        <div className="mt-1 text-sm font-medium text-[#8B5A1D]">
-                                          Note: {item.note}
-                                        </div>
-                                      )}
+                        {expandedTicketId === ticket.id && (
+                          <tr className="bg-[#FFFDF8]">
+                            <td colSpan="5" className="px-3 py-3">
+                              <div className="rounded-xl border border-[#CA862B]/16 bg-white p-3 space-y-3">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                                  <div>
+                                    <div className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
+                                      Source
                                     </div>
-                                  ))
-                                ) : (
-                                  <div className="text-sm text-[#6A614F]">
-                                    No item details available.
+                                    <div className="font-bold text-[#111111]">
+                                      {ticket.source || "Square"}
+                                    </div>
                                   </div>
-                                )}
+                                  <div>
+                                    <div className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
+                                      Dining
+                                    </div>
+                                    <div className="font-bold text-[#111111]">
+                                      {ticket.diningOption || "Order"}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <div className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
+                                      Taken by
+                                    </div>
+                                    <div className="font-bold text-[#111111]">
+                                      {ticket.employeeName || "—"}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <div className="text-xs font-black uppercase tracking-wide text-[#6A614F] mb-2">
+                                    Items
+                                  </div>
+                                  <div className="space-y-2">
+                                    {(ticket.items || []).length ? (
+                                      ticket.items.map((item, idx) => (
+                                        <div
+                                          key={`${ticket.id}-lookup-${idx}`}
+                                          className="rounded-lg border border-[#CA862B]/10 bg-[#FFFDF8] px-3 py-2"
+                                        >
+                                          <div className="flex items-start justify-between gap-3">
+                                            <div className="font-bold text-[#111111]">
+                                              {item.qty}x {item.name}
+                                            </div>
+                                            {item.category && (
+                                              <div className="rounded-full bg-[#EEE0C5]/70 border border-[#CA862B]/12 px-2 py-0.5 text-[11px] font-black text-[#0F4036]">
+                                                {item.category}
+                                              </div>
+                                            )}
+                                          </div>
+
+                                          {item.modifiers?.length > 0 && (
+                                            <div className="mt-1 text-sm text-[#4E4637]">
+                                              {item.modifiers.join(", ")}
+                                            </div>
+                                          )}
+
+                                          {item.note && (
+                                            <div className="mt-1 text-sm font-medium text-[#8B5A1D]">
+                                              Note: {item.note}
+                                            </div>
+                                          )}
+                                        </div>
+                                      ))
+                                    ) : (
+                                      <div className="text-sm text-[#6A614F]">
+                                        No item details available.
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-dashed border-[#CA862B]/22 bg-white/70 p-4 text-[#6A614F] font-semibold">
-            No orders found for {searchedDate || "that day"}.
-          </div>
-        )}
-      </section>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-[#CA862B]/22 bg-white/70 p-4 text-[#6A614F] font-semibold">
+                No orders found for {searchedDate || "that day"}.
+              </div>
+            )}
+          </section>
+        </>
+      )}
     </section>
   );
 }
@@ -1287,6 +1299,7 @@ export default function GoldiesKDS() {
   const [showStats, setShowStats] = useState(false);
   const [showTodayCount, setShowTodayCount] = useState(false);
   const [showCompletedToday, setShowCompletedToday] = useState(false);
+  const [showOrdersByDay, setShowOrdersByDay] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordError, setPasswordError] = useState("");
   const [passwordNotice, setPasswordNotice] = useState("");
@@ -1856,7 +1869,11 @@ export default function GoldiesKDS() {
           {showCompletedToday && <CompletedTransactions tickets={completedTickets} />}
         </section>
 
-        <OrdersByDayLookup defaultDate={defaultLookupDate} />
+        <OrdersByDayLookup
+          defaultDate={defaultLookupDate}
+          collapsed={!showOrdersByDay}
+          onToggle={() => setShowOrdersByDay((current) => !current)}
+        />
       </main>
 
       <PasswordSettingsDialog
