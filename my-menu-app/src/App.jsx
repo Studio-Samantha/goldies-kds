@@ -610,6 +610,7 @@ export default function GoldiesKDS() {
   const [tickets, setTickets] = useState([]);
   const [drinkCounts, setDrinkCounts] = useState([]);
   const [drinkReports, setDrinkReports] = useState({});
+  const [showStats, setShowStats] = useState(false);
   const [lastPoll, setLastPoll] = useState(new Date());
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
   const [lastError, setLastError] = useState("");
@@ -916,7 +917,17 @@ export default function GoldiesKDS() {
 
         <DailyDrinkCount drinkCounts={drinkCounts} />
 
-        <DrinkStats reports={drinkReports} />
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => setShowStats((current) => !current)}
+            className="rounded-2xl bg-neutral-950 text-white px-4 py-3 font-black transition hover:bg-black"
+          >
+            {showStats ? "Hide Stats" : "View Stats"}
+          </button>
+        </div>
+
+        {showStats && <DrinkStats reports={drinkReports} />}
 
         <section className="grid grid-cols-1 xl:grid-cols-4 gap-4">
           {STATUS_COLUMNS.map((column) => (
