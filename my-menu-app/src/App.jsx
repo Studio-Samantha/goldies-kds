@@ -468,7 +468,7 @@ function DailyDrinkCount({ drinkCounts }) {
     <section className="rounded-3xl bg-white border border-neutral-200 p-4 shadow-sm">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
         <div>
-          <h2 className="text-2xl font-black">Today’s Drink Count</h2>
+          <h2 className="text-2xl font-black">Today&apos;s Count</h2>
           <p className="text-sm text-neutral-500">
             Resets automatically at midnight
           </p>
@@ -740,6 +740,7 @@ export default function GoldiesKDS() {
   const [drinkCounts, setDrinkCounts] = useState([]);
   const [drinkReports, setDrinkReports] = useState({});
   const [showStats, setShowStats] = useState(false);
+  const [showTodayCount, setShowTodayCount] = useState(false);
   const [lastPoll, setLastPoll] = useState(new Date());
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
   const [lastError, setLastError] = useState("");
@@ -1100,7 +1101,20 @@ export default function GoldiesKDS() {
           </div>
         )}
 
-        <DailyDrinkCount drinkCounts={drinkCounts} />
+        <section className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-2xl font-black">Today&apos;s Count</h2>
+            <button
+              type="button"
+              onClick={() => setShowTodayCount((current) => !current)}
+              className="rounded-2xl border border-neutral-300 bg-white px-4 py-2 text-sm font-black text-neutral-700 transition hover:bg-neutral-100"
+            >
+              {showTodayCount ? "Hide" : "Show"}
+            </button>
+          </div>
+
+          {showTodayCount && <DailyDrinkCount drinkCounts={drinkCounts} />}
+        </section>
 
         <div className="flex justify-end">
           <button
