@@ -1022,6 +1022,49 @@ app.post("/api/square-sync", requireKdsAuth, async (req, res) => {
   }
 });
 
+app.get("/api/square-debug", requireKdsAuth, async (req, res) => {
+  try {
+    const now = new Date();
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const { paymentsApi } = squareClient;
+    const paymentResponse = await paymentsApi.listPayments(
+      yesterday.toISOString(),
+      now.toISOString(),
+      "DESC",
+      undefined,
+      SQUARE_LOCATION_ID,
+      undefined,
+      undefined,
+      undefined,
+      10
+    );
+    const payments = paymentResponse.result.payments || [];
+
+    res.json({
+      ok: true,
+      environment: SQUARE_ENVIRONMENT,
+      locationId: SQUARE_LOCATION_ID,
+      checkedFrom: yesterday.toISOString(),
+      checkedTo: now.toISOString(),
+      paymentCount: payments.length,
+      payments: payments.map((payment) => ({
+        id: payment.id,
+        orderId: payment.orderId || null,
+        locationId: payment.locationId || null,
+        status: payment.status || null,
+        createdAt: payment.createdAt || null,
+        amount:
+          payment.amountMoney?.amount !== undefined
+            ? String(payment.amountMoney.amount)
+            : null,
+      })),
+    });
+  } catch (error) {
+    console.error("Square debug error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.patch("/api/tickets/:id/status", requireKdsAuth, async (req, res) => {
   try {
     const { id } = req.params;
