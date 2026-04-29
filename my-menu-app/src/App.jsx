@@ -281,7 +281,10 @@ function TicketCard({ ticket, onStatusChange, onNameChange }) {
   let actions = [];
 
   useEffect(() => {
-    setNameValue(ticket.customerName || "");
+    const nextName = ticket.customerName || "";
+    if (nextName) {
+      setNameValue(nextName);
+    }
   }, [ticket.customerName]);
 
   function saveName() {
@@ -353,16 +356,18 @@ function TicketCard({ ticket, onStatusChange, onNameChange }) {
             </div>
           )}
 
-          <input
-            type="text"
-            value={nameValue}
-            onChange={(event) => setNameValue(event.target.value)}
-            onBlur={saveName}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.currentTarget.blur();
-              }
-            }}
+            <input
+              type="text"
+              value={nameValue}
+              onChange={(event) => setNameValue(event.target.value)}
+              onBlur={saveName}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  saveName();
+                  event.currentTarget.blur();
+                }
+              }}
             placeholder="Add name"
             className="mt-2 w-full max-w-[180px] rounded-xl border border-neutral-200 bg-white px-3 py-1.5 text-sm font-bold outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
           />
