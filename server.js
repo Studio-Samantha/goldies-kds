@@ -406,6 +406,27 @@ function getDiningOption(order) {
   return "Order";
 }
 
+function getSquareCustomerName(order) {
+  const fulfillment = order.fulfillments?.[0] || {};
+  const pickupRecipient = fulfillment.pickupDetails?.recipient || {};
+  const deliveryRecipient = fulfillment.deliveryDetails?.recipient || {};
+  const shipmentRecipient = fulfillment.shipmentDetails?.recipient || {};
+  const tenders = order.tenders || [];
+  const firstTenderCustomer =
+    tenders.find((tender) => tender.customerId || tender.buyerEmailAddress) || {};
+  const rawName =
+    pickupRecipient.displayName ||
+    deliveryRecipient.displayName ||
+    shipmentRecipient.displayName ||
+    order.metadata?.customer_name ||
+    order.metadata?.customerName ||
+    order.metadata?.name ||
+    firstTenderCustomer.customerId ||
+    "";
+
+  return String(rawName).trim();
+}
+
 function normalizeSquareOrder(order) {
   const items = [];
 
@@ -428,6 +449,7 @@ function normalizeSquareOrder(order) {
   return {
     id: order.id,
     orderNumber: order.orderNumber || order.id.slice(-4),
+    customerName: getSquareCustomerName(order),
     createdAt: new Date(order.createdAt || Date.now()).getTime(),
     source: "Square Register",
     status: getSquareOrderStatus(order),
@@ -440,6 +462,7 @@ function ticketFromDb(order, items = []) {
   return {
     id: order.square_order_id,
     orderNumber: order.order_number || order.square_order_id.slice(-4),
+    customerName: order.customer_name || "",
     createdAt: new Date(order.created_at).getTime(),
     source: order.source || "Square Register",
     status: sanitizeStatus(order.status),
@@ -475,6 +498,7 @@ async function upsertTicket(ticket, rawOrder = null) {
     {
       square_order_id: ticket.id,
       order_number: ticket.orderNumber,
+      customer_name: ticket.customerName || null,
       created_at: createdAt,
       source: ticket.source || "Square Register",
       status,
@@ -842,6 +866,7 @@ app.post("/api/test-ticket", requireKdsAuth, async (req, res) => {
     const ticket = {
       id,
       orderNumber: id.slice(-4),
+      customerName: "Test Customer",
       createdAt: Date.now(),
       source: "Local Test API",
       status: "new",

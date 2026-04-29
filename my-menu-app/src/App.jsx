@@ -217,6 +217,12 @@ function normalizeTicket(ticket) {
       ticket.order_number ||
       ticket.ticketName ||
       "—",
+    customerName:
+      ticket.customerName ||
+      ticket.customer_name ||
+      ticket.recipientName ||
+      ticket.recipient_name ||
+      "",
     createdAt:
       typeof ticket.createdAt === "number"
         ? ticket.createdAt
@@ -309,6 +315,12 @@ function TicketCard({ ticket, onStatusChange }) {
           <div className="text-sm text-neutral-500 mt-1">
             {ticket.source}
           </div>
+
+          {ticket.customerName && (
+            <div className="mt-2 text-xl font-black text-neutral-900">
+              {ticket.customerName}
+            </div>
+          )}
 
           <div className="mt-2 inline-flex rounded-full bg-neutral-100 border border-neutral-200 px-3 py-1 text-xs font-black text-neutral-700">
             {ticket.diningOption}
