@@ -1065,6 +1065,35 @@ app.post("/api/square-sync", requireKdsAuth, async (req, res) => {
   }
 });
 
+app.get("/api/square-sync", requireKdsAuth, async (req, res) => {
+  try {
+    const locations = await getSquareLocations();
+    const locationIds = uniqueLocationIds(locations);
+    const [squareOrders, paymentOrders] = await Promise.all([
+      fetchSquareOrders(),
+      fetchSquarePaymentOrders(),
+    ]);
+
+    res.json({
+      ok: true,
+      method: "POST",
+      locationId: SQUARE_LOCATION_ID,
+      accessibleLocations: locations.map((location) => ({
+        id: location.id || null,
+        name: location.name || null,
+        status: location.status || null,
+        type: location.type || null,
+      })),
+      queriedLocationCount: locationIds.length,
+      foundFromOrders: squareOrders.length,
+      foundFromPayments: paymentOrders.length,
+    });
+  } catch (error) {
+    console.error("Square sync status error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get("/api/square-debug", requireKdsAuth, async (req, res) => {
   try {
     const now = new Date();
