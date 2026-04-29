@@ -841,6 +841,29 @@ app.get("/api/tickets", requireKdsAuth, async (req, res) => {
   }
 });
 
+app.post("/api/square-sync", requireKdsAuth, async (req, res) => {
+  try {
+    const squareOrders = await fetchSquareOrders();
+    const savedTickets = [];
+
+    for (const order of squareOrders) {
+      const ticket = normalizeSquareOrder(order);
+      const savedTicket = await upsertTicket(ticket, order);
+      savedTickets.push(savedTicket);
+    }
+
+    res.json({
+      ok: true,
+      found: squareOrders.length,
+      saved: savedTickets.length,
+      orderIds: savedTickets.map((ticket) => ticket.id),
+    });
+  } catch (error) {
+    console.error("Error syncing Square orders:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.patch("/api/tickets/:id/status", requireKdsAuth, async (req, res) => {
   try {
     const { id } = req.params;
