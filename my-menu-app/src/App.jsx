@@ -463,13 +463,13 @@ function DailyDrinkCount({ drinkCounts }) {
 }
 
 function BrandMark({ size = "md" }) {
-  const dimensions = size === "lg" ? "h-24 w-24" : "h-14 w-14";
+  const dimensions = size === "lg" ? "h-28 w-56" : "h-16 w-36";
 
   return (
     <img
       src={LOGO_URL}
       alt="Goldie's Coffee Shop"
-      className={`${dimensions} rounded-full border border-amber-200 bg-white object-contain shadow-sm`}
+      className={`${dimensions} object-contain`}
       onError={(event) => {
         event.currentTarget.style.display = "none";
       }}
