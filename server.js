@@ -1336,7 +1336,7 @@ function buildDrinkReport(reportTickets, start, end = new Date()) {
 
     for (const item of ticket.items || []) {
       const category = item.category || getDrinkCategory(item.name);
-      if (category !== "Coffee") continue;
+      if (!category) continue;
 
       const qty = Number(item.qty || 1);
       totalsByName.set(item.name, (totalsByName.get(item.name) || 0) + qty);

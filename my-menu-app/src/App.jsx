@@ -97,6 +97,92 @@ function matchesAnyPattern(value, patterns = []) {
   return patterns.some((pattern) => pattern.test(text));
 }
 
+function getBeverageCategory(itemName = "") {
+  const name = String(itemName || "").trim();
+  const lower = name.toLowerCase();
+
+  if (
+    [
+      "Americano",
+      "Cappuccino",
+      "Cold Brew",
+      "Drip",
+      "Drip Refill",
+      "Espresso",
+      "Flat White",
+      "Gibraltar",
+      "Latte",
+      "Pour Over",
+      "Drip Refill",
+    ].includes(name)
+  ) {
+    return "Coffee";
+  }
+
+  if (
+    matchesAnyPattern(lower, [
+      /\blatte\b/i,
+      /\bcoffee\b/i,
+      /\bespresso\b/i,
+      /\bamericano\b/i,
+      /\bcappuccino\b/i,
+      /\bmocha\b/i,
+      /\bmacchiato\b/i,
+      /\bcold brew\b/i,
+      /\bdrip\b/i,
+      /\bpour over\b/i,
+      /\bgibraltar\b/i,
+      /\bflat white\b/i,
+    ])
+  ) {
+    return "Coffee";
+  }
+
+  if (
+    [
+      "Chai Latte",
+      "Hot Chocolate",
+      "London Fog",
+      "Matcha Latte",
+      "Steamer",
+      "Teas",
+      "Refresher-Strawberry Mango",
+    ].includes(name)
+  ) {
+    return "Not Coffee";
+  }
+
+  if (
+    matchesAnyPattern(lower, [
+      /\bmatcha\b/i,
+      /\bchai\b/i,
+      /\btea\b/i,
+      /\bteas\b/i,
+      /\bsteamer\b/i,
+      /\brefresher\b/i,
+      /\bhot chocolate\b/i,
+      /\bfog\b/i,
+    ])
+  ) {
+    return "Not Coffee";
+  }
+
+  if (
+    [
+      "Chocolate P/B Banana",
+      "Greens",
+      "Mango",
+      "Strawberry",
+      "Strawberry Banana",
+    ].includes(name) ||
+    /smoothie/i.test(name)
+  ) {
+    return "Smoothies";
+  }
+
+  return null;
+}
+
 function getTimeClass(createdAt) {
   const mins = getMinutesElapsed(createdAt);
 
@@ -106,54 +192,7 @@ function getTimeClass(createdAt) {
 }
 
 function isDrinkItem(itemName = "") {
-  if (DRINK_MENU_ITEMS.has(itemName)) return true;
-
-  const lower = itemName.toLowerCase();
-
-  return [
-    "latte",
-    "coffee",
-    "espresso",
-    "americano",
-    "cappuccino",
-    "mocha",
-    "macchiato",
-    "matcha",
-    "chai",
-    "tea",
-    "teas",
-    "steamer",
-    "smoothie",
-    "refresher",
-    "cold brew",
-    "drip",
-    "hot chocolate",
-    "fog",
-    "pour over",
-    "gibraltar",
-  ].some((keyword) => lower.includes(keyword));
-}
-
-function isCoffeeCountItem(itemName = "") {
-  const name = String(itemName || "").trim();
-  if (["Americano", "Cappuccino", "Cold Brew", "Drip", "Drip Refill", "Espresso", "Flat White", "Gibraltar", "Latte", "Pour Over"].includes(name)) {
-    return true;
-  }
-
-  return matchesAnyPattern(name, [
-    /\blatte\b/i,
-    /\bcoffee\b/i,
-    /\bespresso\b/i,
-    /\bamericano\b/i,
-    /\bcappuccino\b/i,
-    /\bmocha\b/i,
-    /\bmacchiato\b/i,
-    /\bcold brew\b/i,
-    /\bdrip\b/i,
-    /\bpour over\b/i,
-    /\bgibraltar\b/i,
-    /\bflat white\b/i,
-  ]);
+  return Boolean(getBeverageCategory(itemName));
 }
 
 function getDrinkItems(ticket) {
@@ -237,7 +276,7 @@ function getDailyDrinkCounts(tickets) {
     .filter((ticket) => isToday(ticket.createdAt))
     .forEach((ticket) => {
       ticket.items.forEach((item) => {
-        if (!isCoffeeCountItem(item.name)) return;
+        if (!getBeverageCategory(item.name)) return;
 
         const qty = Number(item.qty || 1);
         counts[item.name] = (counts[item.name] || 0) + qty;
@@ -524,7 +563,7 @@ function DailyDrinkCount({ drinkCounts }) {
         <div>
           <h2 className="text-xl md:text-2xl font-black">Today&apos;s Count</h2>
           <p className="text-sm text-neutral-500">
-            Coffee drinks only, resets automatically at midnight
+            Coffee, not coffee, and smoothies only. Resets automatically at midnight.
           </p>
         </div>
 
@@ -580,7 +619,7 @@ function DrinkStats({ reports }) {
         <div>
           <h2 className="text-xl md:text-2xl font-black">Drink Stats</h2>
           <p className="text-sm text-neutral-500">
-            Totals include completed orders
+            Coffee, not coffee, and smoothies only
           </p>
         </div>
       </div>
@@ -588,6 +627,7 @@ function DrinkStats({ reports }) {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
         {REPORT_RANGES.map((range) => {
           const report = reports[range.key] || {};
+          const categories = report.totalsByCategory || {};
           const total = (report.totalsByName || []).reduce(
             (sum, drink) => sum + Number(drink.qty || 0),
             0
@@ -606,6 +646,22 @@ function DrinkStats({ reports }) {
                 <div className="rounded-full bg-white border border-neutral-200/80 px-3 py-1 text-sm font-black">
                   {total}
                 </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                {["Coffee", "Not Coffee", "Smoothies"].map((category) => (
+                  <div
+                    key={category}
+                    className="rounded-lg bg-white border border-neutral-200/80 px-3 py-2"
+                  >
+                    <div className="text-lg font-black">
+                      {categories[category] || 0}
+                    </div>
+                    <div className="text-xs font-bold text-neutral-500 leading-tight">
+                      {category}
+                    </div>
+                  </div>
+                ))}
               </div>
 
               {report.totalsByName?.length > 0 && (
