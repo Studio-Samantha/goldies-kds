@@ -1284,6 +1284,64 @@ function getRangeEnd(range) {
   return end;
 }
 
+function getDayRange(dateString) {
+  const parsed = new Date(`${dateString}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return null;
+
+  const start = new Date(parsed);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(parsed);
+  end.setHours(23, 59, 59, 999);
+
+  return { start, end };
+}
+
+async function getTicketsForDay(dateString) {
+  const range = getDayRange(dateString);
+  if (!range) {
+    const error = new Error("Invalid date");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!supabase) {
+    return tickets
+      .filter((ticket) => ticket.createdAt >= range.start.getTime() && ticket.createdAt <= range.end.getTime())
+      .sort((a, b) => b.createdAt - a.createdAt);
+  }
+
+  const { data: orders, error } = await supabase
+    .from("kds_orders")
+    .select("square_order_id, order_number, customer_name, created_at, updated_at, source, status, dining_option, raw_order")
+    .gte("created_at", range.start.toISOString())
+    .lte("created_at", range.end.toISOString())
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  if (!orders.length) return [];
+
+  const orderIds = orders.map((order) => order.square_order_id);
+  const { data: items, error: itemsError } = await supabase
+    .from("kds_order_items")
+    .select("*")
+    .in("order_id", orderIds)
+    .order("id", { ascending: true });
+
+  if (itemsError) throw itemsError;
+
+  const itemsByOrderId = new Map();
+  for (const item of items || []) {
+    const existing = itemsByOrderId.get(item.order_id) || [];
+    existing.push(item);
+    itemsByOrderId.set(item.order_id, existing);
+  }
+
+  return orders.map((order) =>
+    ticketFromDb(order, itemsByOrderId.get(order.square_order_id) || [])
+  );
+}
+
 async function getDrinkReport(range = "today") {
   if (!supabase) {
     return buildDrinkReport(tickets, getRangeStart(range), getRangeEnd(range));
@@ -1492,6 +1550,26 @@ app.get("/api/tickets/search", requireKdsAuth, async (req, res) => {
   } catch (error) {
     console.error("Error searching tickets:", error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/tickets/day", requireKdsAuth, async (req, res) => {
+  try {
+    const date = String(req.query.date || "").trim();
+    if (!date) {
+      return res.status(400).json({ error: "date is required" });
+    }
+
+    const ticketsForDay = await getTicketsForDay(date);
+    res.json({
+      ok: true,
+      date,
+      count: ticketsForDay.length,
+      tickets: ticketsForDay,
+    });
+  } catch (error) {
+    console.error("Error fetching tickets for day:", error);
+    res.status(error.statusCode || 500).json({ error: error.message });
   }
 });
 

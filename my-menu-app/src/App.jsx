@@ -92,6 +92,13 @@ function formatCompletedTime(completedAt) {
   });
 }
 
+function getLocalDateInputValue(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function matchesAnyPattern(value, patterns = []) {
   const text = String(value || "").toLowerCase();
   return patterns.some((pattern) => pattern.test(text));
@@ -826,6 +833,240 @@ function CompletedTransactions({ tickets }) {
   );
 }
 
+function OrdersByDayLookup({ defaultDate }) {
+  const [date, setDate] = useState(defaultDate);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [results, setResults] = useState([]);
+  const [expandedTicketId, setExpandedTicketId] = useState(null);
+  const [searchedDate, setSearchedDate] = useState(defaultDate);
+
+  async function runLookup(nextDate = date) {
+    const trimmedDate = String(nextDate || "").trim();
+    if (!trimmedDate) return;
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(apiUrl(`/api/tickets/day?date=${trimmedDate}`), {
+        credentials: "include",
+      });
+
+      if (response.status === 401) {
+        throw new Error("Login required");
+      }
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || `Lookup failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setResults((data.tickets || []).map(normalizeTicket));
+      setSearchedDate(data.date || trimmedDate);
+      setExpandedTicketId(null);
+    } catch (lookupError) {
+      setError(lookupError.message || "Lookup failed");
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    runLookup(defaultDate);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <section className="space-y-2">
+      <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/70 border border-neutral-200/80 px-4 py-3">
+        <div>
+          <h2 className="text-lg md:text-2xl font-black">Orders By Day</h2>
+          <p className="text-sm text-neutral-500">
+            Search a single day of orders below
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+          <input
+            type="date"
+            value={date}
+            onChange={(event) => setDate(event.target.value)}
+            className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm font-bold outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+          />
+          <button
+            type="button"
+            onClick={() => runLookup(date)}
+            disabled={loading}
+            className="rounded-xl bg-neutral-950 text-white px-4 py-2 text-sm font-black transition hover:bg-black disabled:cursor-not-allowed disabled:bg-neutral-300"
+          >
+            {loading ? "Looking up..." : "Lookup"}
+          </button>
+        </div>
+      </div>
+
+      {error && (
+        <div className="rounded-xl bg-red-50 border border-red-100 text-red-900 px-4 py-3 font-medium">
+          {error}
+        </div>
+      )}
+
+      <section className="rounded-2xl bg-white border border-neutral-200/80 p-4 shadow-sm">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div>
+            <div className="text-sm font-black text-neutral-600">
+              {searchedDate}
+            </div>
+            <div className="text-xs text-neutral-500">Results for the selected day</div>
+          </div>
+
+          <div className="rounded-full bg-neutral-100 border border-neutral-200/80 px-3 py-1.5 text-sm font-black text-neutral-800">
+            {results.length} orders
+          </div>
+        </div>
+
+        {results.length ? (
+          <div className="max-h-72 overflow-y-auto border border-neutral-200/80 rounded-xl">
+            <table className="w-full text-left">
+              <thead className="sticky top-0 bg-neutral-50 text-xs uppercase text-neutral-500">
+                <tr>
+                  <th className="px-3 py-2 font-black">Order</th>
+                  <th className="px-3 py-2 font-black">Name</th>
+                  <th className="px-3 py-2 font-black">Status</th>
+                  <th className="px-3 py-2 font-black">Dining</th>
+                  <th className="px-3 py-2 font-black">Time</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-100">
+                {results.map((ticket) => (
+                  <React.Fragment key={ticket.id}>
+                    <tr className="text-sm align-top">
+                      <td className="px-3 py-2 font-black">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedTicketId((current) =>
+                              current === ticket.id ? null : ticket.id
+                            )
+                          }
+                          className="inline-flex items-center gap-2 text-left font-black text-neutral-950 hover:text-amber-700"
+                        >
+                          <span>#{ticket.orderNumber}</span>
+                          <span className="text-neutral-400">
+                            {expandedTicketId === ticket.id ? "▴" : "▾"}
+                          </span>
+                        </button>
+                      </td>
+                      <td className="px-3 py-2 font-bold text-neutral-700">
+                        {ticket.customerName || "—"}
+                      </td>
+                      <td className="px-3 py-2">
+                        <span className="rounded-full bg-neutral-100 border border-neutral-200 px-2.5 py-1 text-xs font-black uppercase text-neutral-700">
+                          {ticket.status}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 font-bold text-neutral-700">
+                        {ticket.diningOption || "Order"}
+                      </td>
+                      <td className="px-3 py-2 font-bold text-neutral-700">
+                        {formatOrderTime(ticket.createdAt)}
+                      </td>
+                    </tr>
+
+                    {expandedTicketId === ticket.id && (
+                      <tr className="bg-neutral-50">
+                        <td colSpan="5" className="px-3 py-3">
+                          <div className="rounded-xl border border-neutral-200 bg-white p-3 space-y-3">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                              <div>
+                                <div className="text-xs font-black uppercase tracking-wide text-neutral-500">
+                                  Source
+                                </div>
+                                <div className="font-bold text-neutral-900">
+                                  {ticket.source || "Square"}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-xs font-black uppercase tracking-wide text-neutral-500">
+                                  Dining
+                                </div>
+                                <div className="font-bold text-neutral-900">
+                                  {ticket.diningOption || "Order"}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-xs font-black uppercase tracking-wide text-neutral-500">
+                                  Taken by
+                                </div>
+                                <div className="font-bold text-neutral-900">
+                                  {ticket.employeeName || "—"}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div>
+                              <div className="text-xs font-black uppercase tracking-wide text-neutral-500 mb-2">
+                                Items
+                              </div>
+                              <div className="space-y-2">
+                                {(ticket.items || []).length ? (
+                                  ticket.items.map((item, idx) => (
+                                    <div
+                                      key={`${ticket.id}-lookup-${idx}`}
+                                      className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2"
+                                    >
+                                      <div className="flex items-start justify-between gap-3">
+                                        <div className="font-bold text-neutral-900">
+                                          {item.qty}x {item.name}
+                                        </div>
+                                        {item.category && (
+                                          <div className="rounded-full bg-white border border-neutral-200 px-2 py-0.5 text-[11px] font-black text-neutral-600">
+                                            {item.category}
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {item.modifiers?.length > 0 && (
+                                        <div className="mt-1 text-sm text-neutral-600">
+                                          {item.modifiers.join(", ")}
+                                        </div>
+                                      )}
+
+                                      {item.note && (
+                                        <div className="mt-1 text-sm font-medium text-amber-800">
+                                          Note: {item.note}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="text-sm text-neutral-500">
+                                    No item details available.
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 p-4 text-neutral-500 font-semibold">
+            No orders found for {searchedDate || "that day"}.
+          </div>
+        )}
+      </section>
+    </section>
+  );
+}
+
 function LoginScreen({ onLogin }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -1053,6 +1294,7 @@ export default function GoldiesKDS() {
   const [lastPoll, setLastPoll] = useState(new Date());
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
   const [lastError, setLastError] = useState("");
+  const [defaultLookupDate] = useState(() => getLocalDateInputValue());
 
   useEffect(() => {
     if (!passwordNotice) return undefined;
@@ -1613,6 +1855,8 @@ export default function GoldiesKDS() {
 
           {showCompletedToday && <CompletedTransactions tickets={completedTickets} />}
         </section>
+
+        <OrdersByDayLookup defaultDate={defaultLookupDate} />
       </main>
 
       <PasswordSettingsDialog
