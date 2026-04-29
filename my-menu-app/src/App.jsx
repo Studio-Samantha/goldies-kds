@@ -92,6 +92,11 @@ function formatCompletedTime(completedAt) {
   });
 }
 
+function matchesAnyPattern(value, patterns = []) {
+  const text = String(value || "").toLowerCase();
+  return patterns.some((pattern) => pattern.test(text));
+}
+
 function getTimeClass(createdAt) {
   const mins = getMinutesElapsed(createdAt);
 
@@ -127,6 +132,28 @@ function isDrinkItem(itemName = "") {
     "pour over",
     "gibraltar",
   ].some((keyword) => lower.includes(keyword));
+}
+
+function isCoffeeCountItem(itemName = "") {
+  const name = String(itemName || "").trim();
+  if (["Americano", "Cappuccino", "Cold Brew", "Drip", "Drip Refill", "Espresso", "Flat White", "Gibraltar", "Latte", "Pour Over"].includes(name)) {
+    return true;
+  }
+
+  return matchesAnyPattern(name, [
+    /\blatte\b/i,
+    /\bcoffee\b/i,
+    /\bespresso\b/i,
+    /\bamericano\b/i,
+    /\bcappuccino\b/i,
+    /\bmocha\b/i,
+    /\bmacchiato\b/i,
+    /\bcold brew\b/i,
+    /\bdrip\b/i,
+    /\bpour over\b/i,
+    /\bgibraltar\b/i,
+    /\bflat white\b/i,
+  ]);
 }
 
 function getDrinkItems(ticket) {
@@ -210,7 +237,7 @@ function getDailyDrinkCounts(tickets) {
     .filter((ticket) => isToday(ticket.createdAt))
     .forEach((ticket) => {
       ticket.items.forEach((item) => {
-        if (!isDrinkItem(item.name)) return;
+        if (!isCoffeeCountItem(item.name)) return;
 
         const qty = Number(item.qty || 1);
         counts[item.name] = (counts[item.name] || 0) + qty;
@@ -497,7 +524,7 @@ function DailyDrinkCount({ drinkCounts }) {
         <div>
           <h2 className="text-xl md:text-2xl font-black">Today&apos;s Count</h2>
           <p className="text-sm text-neutral-500">
-            Resets automatically at midnight
+            Coffee drinks only, resets automatically at midnight
           </p>
         </div>
 
@@ -561,11 +588,10 @@ function DrinkStats({ reports }) {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
         {REPORT_RANGES.map((range) => {
           const report = reports[range.key] || {};
-          const categories = report.totalsByCategory || {};
-          const total =
-            Number(categories.Coffee || 0) +
-            Number(categories["Not Coffee"] || 0) +
-            Number(categories.Smoothies || 0);
+          const total = (report.totalsByName || []).reduce(
+            (sum, drink) => sum + Number(drink.qty || 0),
+            0
+          );
 
           return (
             <div
@@ -582,25 +608,9 @@ function DrinkStats({ reports }) {
                 </div>
               </div>
 
-              <div className="mt-4 grid grid-cols-3 gap-2">
-                {["Coffee", "Not Coffee", "Smoothies"].map((category) => (
-                  <div
-                    key={category}
-                    className="rounded-lg bg-white border border-neutral-200/80 px-3 py-2"
-                  >
-                    <div className="text-lg font-black">
-                      {categories[category] || 0}
-                    </div>
-                    <div className="text-xs font-bold text-neutral-500 leading-tight">
-                      {category}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
               {report.totalsByName?.length > 0 && (
                 <div className="mt-4 border-t border-neutral-200 pt-3 space-y-2">
-                  {report.totalsByName.slice(0, 3).map((drink) => (
+                  {report.totalsByName.slice(0, 4).map((drink) => (
                     <div
                       key={drink.name}
                       className="flex items-center justify-between gap-3 text-sm"

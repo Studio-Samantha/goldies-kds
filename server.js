@@ -141,6 +141,11 @@ function normalizeName(name = "") {
   return String(name).trim();
 }
 
+function matchesAnyPattern(value, patterns = []) {
+  const text = String(value || "").toLowerCase();
+  return patterns.some((pattern) => pattern.test(text));
+}
+
 function getDrinkCategory(itemName = "") {
   const name = normalizeName(itemName);
   const lower = name.toLowerCase();
@@ -150,35 +155,35 @@ function getDrinkCategory(itemName = "") {
   if (SMOOTHIE_DRINKS.has(name)) return "Smoothies";
 
   if (
-    [
-      "latte",
-      "coffee",
-      "espresso",
-      "americano",
-      "cappuccino",
-      "mocha",
-      "macchiato",
-      "cold brew",
-      "drip",
-      "pour over",
-      "gibraltar",
-      "flat white",
-    ].some((keyword) => lower.includes(keyword))
+    matchesAnyPattern(lower, [
+      /\blatte\b/,
+      /\bcoffee\b/,
+      /\bespresso\b/,
+      /\bamericano\b/,
+      /\bcappuccino\b/,
+      /\bmocha\b/,
+      /\bmacchiato\b/,
+      /\bcold brew\b/,
+      /\bdrip\b/,
+      /\bpour over\b/,
+      /\bgibraltar\b/,
+      /\bflat white\b/,
+    ])
   ) {
     return "Coffee";
   }
 
   if (
-    [
-      "matcha",
-      "chai",
-      "tea",
-      "teas",
-      "steamer",
-      "refresher",
-      "hot chocolate",
-      "fog",
-    ].some((keyword) => lower.includes(keyword))
+    matchesAnyPattern(lower, [
+      /\bmatcha\b/,
+      /\bchai\b/,
+      /\btea\b/,
+      /\bteas\b/,
+      /\bsteamer\b/,
+      /\brefresher\b/,
+      /\bhot chocolate\b/,
+      /\bfog\b/,
+    ])
   ) {
     return "Not Coffee";
   }
@@ -1331,7 +1336,7 @@ function buildDrinkReport(reportTickets, start, end = new Date()) {
 
     for (const item of ticket.items || []) {
       const category = item.category || getDrinkCategory(item.name);
-      if (!category) continue;
+      if (category !== "Coffee") continue;
 
       const qty = Number(item.qty || 1);
       totalsByName.set(item.name, (totalsByName.get(item.name) || 0) + qty);
