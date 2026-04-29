@@ -583,7 +583,7 @@ function ticketFromDb(order, items = []) {
     orderNumber: order.order_number || order.square_order_id.slice(-4),
     customerName: order.customer_name || "",
     createdAt: new Date(order.created_at).getTime(),
-    completedAt: order.completed_at ? new Date(order.completed_at).getTime() : null,
+    completedAt: order.updated_at ? new Date(order.updated_at).getTime() : null,
     source: order.source || "Square Register",
     status: sanitizeStatus(order.status),
     diningOption: order.dining_option || "Order",
@@ -623,9 +623,6 @@ async function upsertTicket(ticket, rawOrder = null) {
       source: ticket.source || "Square Register",
       status,
       dining_option: ticket.diningOption || "Order",
-      completed_at: ticket.completedAt
-        ? new Date(ticket.completedAt).toISOString()
-        : null,
       square_state: rawOrder?.state || null,
       raw_order: rawOrder ? toJsonSafe(rawOrder) : null,
       updated_at: new Date().toISOString(),
@@ -724,10 +721,6 @@ async function setTicketStatus(id, status) {
     updated_at: new Date().toISOString(),
   };
 
-  if (sanitizedStatus === "done") {
-    updates.completed_at = new Date().toISOString();
-  }
-
   const { data, error } = await supabase
     .from("kds_orders")
     .update(updates)
@@ -792,18 +785,13 @@ async function getCompletedTicketsToday() {
 
   const { data: orders, error } = await supabase
     .from("kds_orders")
-    .select("*")
+    .select("square_order_id, order_number, customer_name, created_at, updated_at, source, status, dining_option")
     .eq("status", "done")
-    .gte("completed_at", start.toISOString())
-    .lte("completed_at", end.toISOString())
-    .order("completed_at", { ascending: false });
+    .gte("updated_at", start.toISOString())
+    .lte("updated_at", end.toISOString())
+    .order("updated_at", { ascending: false });
 
   if (error) {
-    if (error.message?.includes("completed_at")) {
-      console.warn("completed_at column is not available yet; returning empty completed tickets list");
-      return [];
-    }
-
     throw error;
   }
 
