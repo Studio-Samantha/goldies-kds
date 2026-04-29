@@ -84,6 +84,7 @@ app.use(express.json());
 
 let lastSquareSyncAt = 0;
 const squareCustomerNameCache = new Map();
+const squareEmployeeNameCache = new Map();
 let tickets = [
   {
     id: "local-101",
@@ -356,39 +357,41 @@ async function fetchSquareOrders() {
   }
 }
 
-async function fetchSquarePaymentOrders() {
+async function fetchSquarePaymentOrders(payments = null) {
   try {
     const { ordersApi, paymentsApi } = squareClient;
     const now = new Date();
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const locations = await getSquareLocations();
     const locationIds = uniqueLocationIds(locations);
-    const payments = [];
+    const paymentList = payments || [];
     const orders = [];
 
-    for (const locationId of locationIds) {
-      try {
-        const response = await paymentsApi.listPayments(
-          yesterday.toISOString(),
-          now.toISOString(),
-          "DESC",
-          undefined,
-          locationId,
-          undefined,
-          undefined,
-          undefined,
-          100
-        );
-        payments.push(...(response.result.payments || []));
-      } catch (error) {
-        console.error(
-          `Error fetching Square payments for location ${locationId}:`,
-          error.message
-        );
+    if (!payments) {
+      for (const locationId of locationIds) {
+        try {
+          const response = await paymentsApi.listPayments(
+            yesterday.toISOString(),
+            now.toISOString(),
+            "DESC",
+            undefined,
+            locationId,
+            undefined,
+            undefined,
+            undefined,
+            100
+          );
+          paymentList.push(...(response.result.payments || []));
+        } catch (error) {
+          console.error(
+            `Error fetching Square payments for location ${locationId}:`,
+            error.message
+          );
+        }
       }
     }
 
-    for (const payment of dedupePayments(payments)) {
+    for (const payment of dedupePayments(paymentList)) {
       if (!payment.orderId) continue;
 
       try {
@@ -409,6 +412,41 @@ async function fetchSquarePaymentOrders() {
     console.error("Error fetching Square payments:", error.message);
     return [];
   }
+}
+
+async function buildPaymentEmployeeMap(payments = []) {
+  const employeeMap = new Map();
+  const teamMemberIds = [
+    ...new Set(
+      payments
+        .map((payment) => String(payment.teamMemberId || payment.employeeId || "").trim())
+        .filter(Boolean)
+    ),
+  ];
+
+  const namesByTeamMemberId = new Map();
+
+  for (const teamMemberId of teamMemberIds) {
+    const name = await getSquareTeamMemberName(teamMemberId);
+    namesByTeamMemberId.set(teamMemberId, name);
+  }
+
+  for (const payment of dedupePayments(payments)) {
+    if (!payment.orderId) continue;
+
+    const teamMemberId = String(payment.teamMemberId || payment.employeeId || "").trim();
+    const employeeName = teamMemberId ? namesByTeamMemberId.get(teamMemberId) || "" : "";
+    if (employeeName) {
+      employeeMap.set(payment.orderId, employeeName);
+      continue;
+    }
+
+    if (!employeeMap.has(payment.orderId)) {
+      employeeMap.set(payment.orderId, "");
+    }
+  }
+
+  return employeeMap;
 }
 
 function dedupeOrders(orders) {
@@ -532,6 +570,8 @@ function getSquareCustomerNameFromFields(order) {
   const deliveryRecipient = fulfillment.deliveryDetails?.recipient || {};
   const shipmentRecipient = fulfillment.shipmentDetails?.recipient || {};
   const rawName =
+    order.ticketName ||
+    order.ticket_name ||
     pickupRecipient.displayName ||
     deliveryRecipient.displayName ||
     shipmentRecipient.displayName ||
@@ -541,6 +581,34 @@ function getSquareCustomerNameFromFields(order) {
     "";
 
   return String(rawName).trim();
+}
+
+async function getSquareTeamMemberName(teamMemberId) {
+  const normalizedId = String(teamMemberId || "").trim();
+  if (!normalizedId) return "";
+
+  if (squareEmployeeNameCache.has(normalizedId)) {
+    return squareEmployeeNameCache.get(normalizedId) || "";
+  }
+
+  try {
+    const response = await squareClient.teamApi.retrieveTeamMember(normalizedId);
+    const teamMember = response.result.teamMember || {};
+    const resolvedName =
+      [teamMember.givenName, teamMember.familyName]
+        .filter(Boolean)
+        .join(" ")
+        .trim() ||
+      String(teamMember.emailAddress || "").trim() ||
+      "";
+
+    squareEmployeeNameCache.set(normalizedId, resolvedName);
+    return resolvedName;
+  } catch (error) {
+    squareEmployeeNameCache.set(normalizedId, "");
+    console.error(`Error retrieving Square team member ${normalizedId}:`, error.message);
+    return "";
+  }
 }
 
 function getSquareCustomerIds(order) {
@@ -605,7 +673,46 @@ async function getSquareCustomerName(order) {
   return "";
 }
 
-async function normalizeSquareOrder(order) {
+function getEmployeeLookupIds(order, payment = null) {
+  const tenders = order.tenders || [];
+
+  return [
+    order.employeeId,
+    order.employee_id,
+    order.teamMemberId,
+    order.team_member_id,
+    payment?.employeeId,
+    payment?.employee_id,
+    payment?.teamMemberId,
+    payment?.team_member_id,
+    ...tenders.flatMap((tender) => [tender.teamMemberId, tender.team_member_id]),
+  ]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+}
+
+async function getSquareEmployeeName(order, payment = null) {
+  const metadataName =
+    order.metadata?.employee_name ||
+    order.metadata?.employeeName ||
+    order.metadata?.staff_name ||
+    order.metadata?.staffName ||
+    "";
+
+  if (metadataName) return String(metadataName).trim();
+
+  const ids = [...new Set(getEmployeeLookupIds(order, payment))];
+  if (!ids.length) return "";
+
+  for (const id of ids) {
+    const teamMemberName = await getSquareTeamMemberName(id);
+    if (teamMemberName) return teamMemberName;
+  }
+
+  return "";
+}
+
+async function normalizeSquareOrder(order, payment = null) {
   const items = [];
 
   for (const lineItem of order.lineItems || []) {
@@ -628,6 +735,7 @@ async function normalizeSquareOrder(order) {
     id: order.id,
     orderNumber: order.orderNumber || order.id.slice(-4),
     customerName: await getSquareCustomerName(order),
+    employeeName: await getSquareEmployeeName(order, payment),
     createdAt: new Date(order.createdAt || Date.now()).getTime(),
     source: "Square Register",
     status: "new",
@@ -641,6 +749,7 @@ function ticketFromDb(order, items = []) {
     id: order.square_order_id,
     orderNumber: order.order_number || order.square_order_id.slice(-4),
     customerName: order.customer_name || "",
+    employeeName: order.employee_name || order.raw_order?.employeeName || "",
     createdAt: new Date(order.created_at).getTime(),
     completedAt: order.updated_at ? new Date(order.updated_at).getTime() : null,
     source: order.source || "Square Register",
@@ -664,7 +773,7 @@ async function upsertTicket(ticket, rawOrder = null) {
 
   const { data: existingOrder, error: existingError } = await supabase
     .from("kds_orders")
-    .select("status")
+    .select("status, customer_name, raw_order")
     .eq("square_order_id", ticket.id)
     .maybeSingle();
 
@@ -677,13 +786,22 @@ async function upsertTicket(ticket, rawOrder = null) {
     {
       square_order_id: ticket.id,
       order_number: ticket.orderNumber,
-      customer_name: ticket.customerName || null,
+      customer_name: ticket.customerName || existingOrder?.customer_name || null,
       created_at: createdAt,
       source: ticket.source || "Square Register",
       status,
       dining_option: ticket.diningOption || "Order",
       square_state: rawOrder?.state || null,
-      raw_order: rawOrder ? toJsonSafe(rawOrder) : null,
+      raw_order: rawOrder
+        ? toJsonSafe({
+            ...rawOrder,
+            employeeName:
+              ticket.employeeName ||
+              existingOrder?.raw_order?.employeeName ||
+              rawOrder.employeeName ||
+              null,
+          })
+        : existingOrder?.raw_order || null,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "square_order_id" }
@@ -725,10 +843,12 @@ async function syncRecentSquareOrders() {
 
   lastSquareSyncAt = now;
   const squareOrders = await fetchSquareOrders();
-  const paymentOrders = await fetchSquarePaymentOrders();
+  const squarePayments = await fetchSquarePayments();
+  const paymentOrders = await fetchSquarePaymentOrders(squarePayments);
+  const employeeNameByOrderId = await buildPaymentEmployeeMap(squarePayments);
 
   for (const order of dedupeOrders([...squareOrders, ...paymentOrders])) {
-    const ticket = await normalizeSquareOrder(order);
+    const ticket = await normalizeSquareOrder(order, employeeNameByOrderId.get(order.id) || null);
     await upsertTicket(ticket, order);
   }
 }
@@ -865,6 +985,7 @@ function ticketMatchesQuery(ticket, query) {
     String(ticket.id || "").toLowerCase().includes(q) ||
     String(ticket.orderNumber || "").toLowerCase().includes(q) ||
     String(ticket.customerName || "").toLowerCase().includes(q) ||
+    String(ticket.employeeName || "").toLowerCase().includes(q) ||
     String(ticket.diningOption || "").toLowerCase().includes(q) ||
     (ticket.items || []).some((item) => {
       return (

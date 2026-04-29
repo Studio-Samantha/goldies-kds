@@ -236,6 +236,12 @@ function normalizeTicket(ticket) {
       ticket.recipientName ||
       ticket.recipient_name ||
       "",
+    employeeName:
+      ticket.employeeName ||
+      ticket.employee_name ||
+      ticket.takenBy ||
+      ticket.taken_by ||
+      "",
     completedAt:
       typeof ticket.completedAt === "number"
         ? ticket.completedAt
@@ -350,27 +356,43 @@ function TicketCard({ ticket, onStatusChange, onNameChange }) {
             {ticket.source}
           </div>
 
-          {ticket.customerName && (
-            <div className="mt-2 text-lg font-black text-neutral-900">
-              {ticket.customerName}
+          {ticket.customerName ? (
+            <div className="mt-2 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2">
+              <div className="text-xs font-black uppercase tracking-wide text-emerald-700">
+                Name from Square
+              </div>
+              <div className="mt-1 text-sm font-black text-neutral-900">
+                {ticket.customerName}
+              </div>
             </div>
+          ) : (
+            <label className="mt-2 block">
+              <span className="text-xs font-black uppercase tracking-wide text-neutral-500">
+                Name for callout
+              </span>
+              <input
+                type="text"
+                value={nameValue}
+                onChange={(event) => setNameValue(event.target.value)}
+                onBlur={saveName}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    saveName();
+                    event.currentTarget.blur();
+                  }
+                }}
+                placeholder="Add name"
+                className="mt-1 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm font-bold outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+              />
+            </label>
           )}
 
-            <input
-              type="text"
-              value={nameValue}
-              onChange={(event) => setNameValue(event.target.value)}
-              onBlur={saveName}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  saveName();
-                  event.currentTarget.blur();
-                }
-              }}
-            placeholder="Add name"
-            className="mt-2 w-full max-w-[180px] rounded-xl border border-neutral-200 bg-white px-3 py-1.5 text-sm font-bold outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
-          />
+          {ticket.employeeName && (
+            <div className="mt-1 text-sm font-semibold text-neutral-700">
+              Taken by {ticket.employeeName}
+            </div>
+          )}
 
           <div className="mt-2 inline-flex rounded-full bg-neutral-100 border border-neutral-200 px-3 py-1 text-xs font-black text-neutral-700">
             {ticket.diningOption}
