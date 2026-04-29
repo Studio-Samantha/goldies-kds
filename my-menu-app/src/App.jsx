@@ -1178,14 +1178,12 @@ function LoginScreen({ onLogin, themeMode, onThemeToggle, themeStyle }) {
         </h1>
 
         <p className="text-[#6A614F] mt-2">
-          Enter your employee name or number and the staff password to continue.
+          Enter your name and the staff password to continue.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4 w-full">
           <label className="block text-left">
-            <span className="text-sm font-black text-[#0F4036]">
-              Employee name or number
-            </span>
+            <span className="text-sm font-black text-[#0F4036]">Name</span>
             <input
               type="text"
               value={employeeName}
@@ -1194,20 +1192,24 @@ function LoginScreen({ onLogin, themeMode, onThemeToggle, themeStyle }) {
               autoFocus
               className="mt-2 w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 text-lg font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15"
             />
+            <div className="mt-1 text-xs font-semibold text-[#6A614F]">
+              Use your employee name or number.
+            </div>
           </label>
 
           <label className="block text-left">
-            <span className="text-sm font-black text-[#0F4036]">
-              Password
-            </span>
+            <span className="text-sm font-black text-[#0F4036]">Password</span>
             <input
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               autoComplete="current-password"
-              autoFocus
+              placeholder="espresso"
               className="mt-2 w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 text-lg font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15"
             />
+            <div className="mt-1 text-xs font-semibold text-[#6A614F]">
+              Staff password is espresso.
+            </div>
           </label>
 
           {error && (
