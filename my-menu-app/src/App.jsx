@@ -809,6 +809,115 @@ export default function GoldiesKDS() {
 
     let mounted = true;
 
+    async function fetchBoardAndTodayCounts() {
+      try {
+        const [ticketsResponse, drinkResponse] = await Promise.all([
+          fetch(apiUrl("/api/tickets"), {
+            credentials: "include",
+          }),
+          fetch(apiUrl("/api/reports/drinks?range=today"), {
+            credentials: "include",
+          }),
+        ]);
+
+        if (ticketsResponse.status === 401 || drinkResponse.status === 401) {
+          setAuthStatus("login");
+          return;
+        }
+
+        if (!ticketsResponse.ok) {
+          throw new Error(`Failed to fetch tickets: ${ticketsResponse.status}`);
+        }
+
+        if (!drinkResponse.ok) {
+          throw new Error(`Failed to fetch drink report: ${drinkResponse.status}`);
+        }
+
+        const liveTickets = await ticketsResponse.json();
+        const todayReport = await drinkResponse.json();
+
+        if (!mounted) return;
+
+        setTickets(liveTickets.map(normalizeTicket));
+        setDrinkCounts(
+          (todayReport.totalsByName || []).map((drink) => ({
+            name: drink.name,
+            qty: drink.qty,
+          }))
+        );
+        setLastPoll(new Date());
+        setConnectionStatus("Connected");
+        setLastError("");
+      } catch (error) {
+        if (!mounted) return;
+
+        setConnectionStatus("Offline");
+        setLastError(error.message || "Unknown polling error");
+      }
+    }
+
+    fetchBoardAndTodayCounts();
+
+    const interval = setInterval(fetchBoardAndTodayCounts, POLL_INTERVAL_MS);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [authStatus]);
+
+  useEffect(() => {
+    if (authStatus !== "authenticated" || !showCompletedToday) return undefined;
+
+    let mounted = true;
+
+    async function fetchCompletedTickets() {
+      const response = await fetch(apiUrl("/api/tickets/completed"), {
+        credentials: "include",
+      });
+
+      if (response.status === 401) {
+        setAuthStatus("login");
+        return [];
+      }
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch completed tickets: ${response.status}`);
+      }
+
+      const completed = await response.json();
+      return completed.map(normalizeTicket);
+    }
+
+    async function refreshCompletedTickets() {
+      try {
+        const liveCompletedTickets = await fetchCompletedTickets();
+
+        if (!mounted) return;
+
+        setCompletedTickets(liveCompletedTickets);
+      } catch (error) {
+        if (!mounted) return;
+
+        setLastError(error.message || "Completed tickets unavailable");
+      }
+    }
+
+    refreshCompletedTickets();
+
+    const interval = setInterval(refreshCompletedTickets, 10000);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [authStatus, showCompletedToday]);
+
+  useEffect(() => {
+    if (authStatus !== "authenticated" || !showStats) return undefined;
+
+    let mounted = true;
+
     async function fetchDrinkReports() {
       const reports = {};
 
@@ -839,106 +948,29 @@ export default function GoldiesKDS() {
       return reports;
     }
 
-    async function fetchCompletedTickets() {
-      const response = await fetch(apiUrl("/api/tickets/completed"), {
-        credentials: "include",
-      });
-
-      if (response.status === 401) {
-        setAuthStatus("login");
-        return [];
-      }
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch completed tickets: ${response.status}`);
-      }
-
-      const completed = await response.json();
-      return completed.map(normalizeTicket);
-    }
-
-    function getTodayDrinkCounts(reports) {
-      const today = reports.today || {};
-
-      return (today.totalsByName || []).map((drink) => ({
-        name: drink.name,
-        qty: drink.qty,
-      }));
-    }
-
-    async function fetchDrinkCounts() {
-      const response = await fetch(apiUrl("/api/reports/drinks?range=today"), {
-        credentials: "include",
-      });
-
-      if (response.status === 401) {
-        setAuthStatus("login");
-        return [];
-      }
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch drink report: ${response.status}`);
-      }
-
-      const report = await response.json();
-      return (report.totalsByName || []).map((drink) => ({
-        name: drink.name,
-        qty: drink.qty,
-      }));
-    }
-
-    async function fetchTickets() {
+    async function refreshDrinkReports() {
       try {
-        const response = await fetch(apiUrl("/api/tickets"), {
-          credentials: "include",
-        });
-
-        if (response.status === 401) {
-          setAuthStatus("login");
-          return;
-        }
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch tickets: ${response.status}`);
-        }
-
-        const liveTickets = await response.json();
         const liveReports = await fetchDrinkReports();
-        const liveCompletedTickets = await fetchCompletedTickets().catch((error) => {
-          setLastError(error.message || "Completed tickets unavailable");
-          return [];
-        });
-        const liveDrinkCounts =
-          Object.keys(liveReports).length > 0
-            ? getTodayDrinkCounts(liveReports)
-            : await fetchDrinkCounts();
 
         if (!mounted) return;
 
-        setTickets(liveTickets.map(normalizeTicket));
-        setCompletedTickets(liveCompletedTickets);
-        setDrinkCounts(liveDrinkCounts);
         setDrinkReports(liveReports);
-        setLastPoll(new Date());
-        setConnectionStatus("Connected");
-        setLastError("");
       } catch (error) {
         if (!mounted) return;
 
-        setConnectionStatus("Offline");
-        setLastError(error.message || "Unknown polling error");
+        setLastError(error.message || "Drink stats unavailable");
       }
     }
 
-    fetchTickets();
+    refreshDrinkReports();
 
-    const interval = setInterval(fetchTickets, POLL_INTERVAL_MS);
+    const interval = setInterval(refreshDrinkReports, 60000);
 
     return () => {
       mounted = false;
       clearInterval(interval);
     };
-  }, [authStatus]);
+  }, [authStatus, showStats]);
 
   const activeTickets = tickets.filter((ticket) => ticket.status !== "done");
 
