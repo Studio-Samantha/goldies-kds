@@ -9,10 +9,27 @@ const SQUARE_ENVIRONMENT = process.env.SQUARE_ENVIRONMENT || "sandbox";
 const SQUARE_ACCESS_TOKEN = process.env.SQUARE_ACCESS_TOKEN;
 const SQUARE_LOCATION_ID = process.env.SQUARE_LOCATION_ID;
 
+// Add error handling for missing environment variables
+if (!SQUARE_ACCESS_TOKEN) {
+  console.error("ERROR: SQUARE_ACCESS_TOKEN environment variable is required");
+  process.exit(1);
+}
+
+if (!SQUARE_LOCATION_ID) {
+  console.error("ERROR: SQUARE_LOCATION_ID environment variable is required");
+  process.exit(1);
+}
+
+console.log("Initializing Square client...");
+console.log(`Environment: ${SQUARE_ENVIRONMENT}`);
+console.log(`Location ID: ${SQUARE_LOCATION_ID ? "Set" : "Missing"}`);
+
 const squareClient = new Client({
   accessToken: SQUARE_ACCESS_TOKEN,
   environment: SQUARE_ENVIRONMENT === "production" ? Environment.Production : Environment.Sandbox,
 });
+
+console.log("Square client initialized successfully");
 
 app.use(cors());
 app.use(express.json());
@@ -318,6 +335,8 @@ app.post("/api/square-webhook", async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Goldie's KDS backend running at http://localhost:${PORT}`);
-  console.log(`Square environment: ${SQUARE_ENVIRONMENT}`);
+  console.log(`🚀 Goldie's KDS backend running on port ${PORT}`);
+  console.log(`🌍 Environment: ${SQUARE_ENVIRONMENT}`);
+  console.log(`🏪 Location ID: ${SQUARE_LOCATION_ID}`);
+  console.log(`🔗 Ready to receive requests!`);
 });
