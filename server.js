@@ -315,29 +315,40 @@ async function fetchSquareOrders() {
     const { ordersApi } = squareClient;
     const now = new Date();
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const locations = await getSquareLocations();
+    const locationIds = uniqueLocationIds(locations);
+    const orders = [];
 
-    const response = await ordersApi.searchOrders({
-      locationIds: [SQUARE_LOCATION_ID],
-      query: {
-        filter: {
-          dateTimeFilter: {
-            createdAt: {
-              startAt: yesterday.toISOString(),
-              endAt: now.toISOString(),
+    for (const locationId of locationIds) {
+      try {
+        const response = await ordersApi.searchOrders({
+          locationIds: [locationId],
+          query: {
+            filter: {
+              dateTimeFilter: {
+                createdAt: {
+                  startAt: yesterday.toISOString(),
+                  endAt: now.toISOString(),
+                },
+              },
+              stateFilter: {
+                states: ["OPEN", "COMPLETED"],
+              },
+            },
+            sort: {
+              sortField: "CREATED_AT",
+              sortOrder: "DESC",
             },
           },
-          stateFilter: {
-            states: ["OPEN", "COMPLETED"],
-          },
-        },
-        sort: {
-          sortField: "CREATED_AT",
-          sortOrder: "DESC",
-        },
-      },
-    });
+        });
 
-    return response.result.orders || [];
+        orders.push(...(response.result.orders || []));
+      } catch (error) {
+        console.error(`Error searching Square orders for location ${locationId}:`, error.message);
+      }
+    }
+
+    return dedupeOrders(orders);
   } catch (error) {
     console.error("Error fetching Square orders:", error.message);
     return [];
@@ -349,21 +360,34 @@ async function fetchSquarePaymentOrders() {
     const { ordersApi, paymentsApi } = squareClient;
     const now = new Date();
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const response = await paymentsApi.listPayments(
-      yesterday.toISOString(),
-      now.toISOString(),
-      "DESC",
-      undefined,
-      SQUARE_LOCATION_ID,
-      undefined,
-      undefined,
-      undefined,
-      100
-    );
-    const payments = response.result.payments || [];
+    const locations = await getSquareLocations();
+    const locationIds = uniqueLocationIds(locations);
+    const payments = [];
     const orders = [];
 
-    for (const payment of payments) {
+    for (const locationId of locationIds) {
+      try {
+        const response = await paymentsApi.listPayments(
+          yesterday.toISOString(),
+          now.toISOString(),
+          "DESC",
+          undefined,
+          locationId,
+          undefined,
+          undefined,
+          undefined,
+          100
+        );
+        payments.push(...(response.result.payments || []));
+      } catch (error) {
+        console.error(
+          `Error fetching Square payments for location ${locationId}:`,
+          error.message
+        );
+      }
+    }
+
+    for (const payment of dedupePayments(payments)) {
       if (!payment.orderId) continue;
 
       try {
@@ -394,6 +418,37 @@ function dedupeOrders(orders) {
   }
 
   return Array.from(byId.values());
+}
+
+function dedupePayments(payments) {
+  const byId = new Map();
+
+  for (const payment of payments) {
+    if (payment?.id) byId.set(payment.id, payment);
+  }
+
+  return Array.from(byId.values());
+}
+
+function uniqueLocationIds(locations = []) {
+  const ids = new Set([SQUARE_LOCATION_ID]);
+
+  for (const location of locations) {
+    if (location?.id) ids.add(location.id);
+  }
+
+  return Array.from(ids).filter(Boolean);
+}
+
+async function getSquareLocations() {
+  try {
+    const { locationsApi } = squareClient;
+    const response = await locationsApi.listLocations();
+    return response.result.locations || [];
+  } catch (error) {
+    console.error("Error listing Square locations:", error.message);
+    return [];
+  }
 }
 
 function getSquareOrderStatus(order) {
@@ -1026,19 +1081,31 @@ app.get("/api/square-debug", requireKdsAuth, async (req, res) => {
   try {
     const now = new Date();
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const locations = await getSquareLocations();
     const { paymentsApi } = squareClient;
-    const paymentResponse = await paymentsApi.listPayments(
-      yesterday.toISOString(),
-      now.toISOString(),
-      "DESC",
-      undefined,
-      SQUARE_LOCATION_ID,
-      undefined,
-      undefined,
-      undefined,
-      10
-    );
-    const payments = paymentResponse.result.payments || [];
+    const payments = [];
+
+    for (const locationId of uniqueLocationIds(locations)) {
+      try {
+        const paymentResponse = await paymentsApi.listPayments(
+          yesterday.toISOString(),
+          now.toISOString(),
+          "DESC",
+          undefined,
+          locationId,
+          undefined,
+          undefined,
+          undefined,
+          10
+        );
+        payments.push(...(paymentResponse.result.payments || []));
+      } catch (error) {
+        console.error(
+          `Square debug payment fetch failed for location ${locationId}:`,
+          error.message
+        );
+      }
+    }
 
     res.json({
       ok: true,
@@ -1046,6 +1113,12 @@ app.get("/api/square-debug", requireKdsAuth, async (req, res) => {
       locationId: SQUARE_LOCATION_ID,
       checkedFrom: yesterday.toISOString(),
       checkedTo: now.toISOString(),
+      accessibleLocations: locations.map((location) => ({
+        id: location.id || null,
+        name: location.name || null,
+        status: location.status || null,
+        type: location.type || null,
+      })),
       paymentCount: payments.length,
       payments: payments.map((payment) => ({
         id: payment.id,
