@@ -691,17 +691,22 @@ function getDiningOption(order) {
 
   if (type === "DELIVERY" || type === "SHIPMENT") return "Delivery";
   if (type === "PICKUP") return "Pickup";
+  if (type.includes("DINE")) return "For here";
+  if (type.includes("DRIVE")) return "Drive thru";
 
   const metadataValue =
     order.metadata?.dining_option ||
     order.metadata?.diningOption ||
     order.metadata?.order_type ||
+    order.metadata?.service_type ||
+    order.metadata?.serviceType ||
     order.metadata?.orderType ||
     "";
   const value = String(metadataValue).toLowerCase();
 
   if (value.includes("delivery")) return "Delivery";
   if (value.includes("pickup") || value.includes("pick up")) return "Pickup";
+  if (value.includes("drive")) return "Drive thru";
   if (
     value.includes("to go") ||
     value.includes("togo") ||

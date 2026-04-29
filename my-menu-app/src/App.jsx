@@ -232,6 +232,7 @@ function formatDiningOption(ticket) {
 
   if (value.includes("delivery")) return "Delivery";
   if (value.includes("pickup") || value.includes("pick up")) return "Pickup";
+  if (value.includes("drive")) return "Drive thru";
   if (
     value.includes("to go") ||
     value.includes("togo") ||
