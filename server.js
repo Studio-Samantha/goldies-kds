@@ -344,6 +344,58 @@ async function fetchSquareOrders() {
   }
 }
 
+async function fetchSquarePaymentOrders() {
+  try {
+    const { ordersApi, paymentsApi } = squareClient;
+    const now = new Date();
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const response = await paymentsApi.listPayments(
+      yesterday.toISOString(),
+      now.toISOString(),
+      "DESC",
+      undefined,
+      SQUARE_LOCATION_ID,
+      undefined,
+      undefined,
+      undefined,
+      100
+    );
+    const payments = response.result.payments || [];
+    const orders = [];
+
+    for (const payment of payments) {
+      if (!payment.orderId) continue;
+
+      try {
+        const orderResponse = await ordersApi.retrieveOrder(payment.orderId);
+        if (orderResponse.result.order) {
+          orders.push(orderResponse.result.order);
+        }
+      } catch (error) {
+        console.error(
+          `Error retrieving Square order for payment ${payment.id}:`,
+          error.message
+        );
+      }
+    }
+
+    return orders;
+  } catch (error) {
+    console.error("Error fetching Square payments:", error.message);
+    return [];
+  }
+}
+
+function dedupeOrders(orders) {
+  const byId = new Map();
+
+  for (const order of orders) {
+    if (order?.id) byId.set(order.id, order);
+  }
+
+  return Array.from(byId.values());
+}
+
 function getSquareOrderStatus(order) {
   const fulfillment = order.fulfillments?.[0] || {};
   const fulfillmentState = (fulfillment.state || "").toUpperCase();
@@ -562,8 +614,9 @@ async function syncRecentSquareOrders() {
 
   lastSquareSyncAt = now;
   const squareOrders = await fetchSquareOrders();
+  const paymentOrders = await fetchSquarePaymentOrders();
 
-  for (const order of squareOrders) {
+  for (const order of dedupeOrders([...squareOrders, ...paymentOrders])) {
     const ticket = normalizeSquareOrder(order);
     await upsertTicket(ticket, order);
   }
@@ -752,9 +805,14 @@ function getWebhookOrderId(event) {
     event.data?.object?.order_created?.order_id ||
     event.data?.object?.order_updated?.order_id ||
     event.data?.object?.order?.id ||
+    event.data?.object?.payment?.order_id ||
     event.data?.id ||
     null
   );
+}
+
+function getWebhookPaymentId(event) {
+  return event.data?.object?.payment?.id || event.data?.id || null;
 }
 
 function getRangeStart(range) {
@@ -941,9 +999,10 @@ app.get("/api/tickets/completed", requireKdsAuth, async (req, res) => {
 app.post("/api/square-sync", requireKdsAuth, async (req, res) => {
   try {
     const squareOrders = await fetchSquareOrders();
+    const paymentOrders = await fetchSquarePaymentOrders();
     const savedTickets = [];
 
-    for (const order of squareOrders) {
+    for (const order of dedupeOrders([...squareOrders, ...paymentOrders])) {
       const ticket = normalizeSquareOrder(order);
       const savedTicket = await upsertTicket(ticket, order);
       savedTickets.push(savedTicket);
@@ -952,8 +1011,10 @@ app.post("/api/square-sync", requireKdsAuth, async (req, res) => {
     res.json({
       ok: true,
       found: squareOrders.length,
+      foundFromPayments: paymentOrders.length,
       saved: savedTickets.length,
       orderIds: savedTickets.map((ticket) => ticket.id),
+      orderNumbers: savedTickets.map((ticket) => ticket.orderNumber),
     });
   } catch (error) {
     console.error("Error syncing Square orders:", error);
@@ -1037,8 +1098,23 @@ app.post("/api/square-webhook", async (req, res) => {
 
     console.log("Square webhook received:", event.type || "unknown event");
 
-    if (event.type === "order.created" || event.type === "order.updated") {
-      const orderId = getWebhookOrderId(event);
+    if (
+      event.type === "order.created" ||
+      event.type === "order.updated" ||
+      event.type === "payment.created" ||
+      event.type === "payment.updated"
+    ) {
+      let orderId = getWebhookOrderId(event);
+
+      if (!orderId && event.type.startsWith("payment.")) {
+        const paymentId = getWebhookPaymentId(event);
+
+        if (paymentId) {
+          const { paymentsApi } = squareClient;
+          const paymentResponse = await paymentsApi.getPayment(paymentId);
+          orderId = paymentResponse.result.payment?.orderId || null;
+        }
+      }
 
       if (orderId) {
         const { ordersApi } = squareClient;
