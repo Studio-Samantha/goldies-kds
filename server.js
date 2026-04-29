@@ -975,7 +975,7 @@ async function getCompletedTicketsToday() {
 
   const { data: orders, error } = await supabase
     .from("kds_orders")
-    .select("square_order_id, order_number, customer_name, created_at, updated_at, source, status, dining_option")
+    .select("square_order_id, order_number, customer_name, created_at, updated_at, source, status, dining_option, raw_order")
     .eq("status", "done")
     .gte("updated_at", start.toISOString())
     .lte("updated_at", end.toISOString())
@@ -985,7 +985,25 @@ async function getCompletedTicketsToday() {
     throw error;
   }
 
-  return (orders || []).map((order) => ticketFromDb(order, []));
+  const orderIds = (orders || []).map((order) => order.square_order_id);
+  const { data: items, error: itemsError } = await supabase
+    .from("kds_order_items")
+    .select("*")
+    .in("order_id", orderIds)
+    .order("id", { ascending: true });
+
+  if (itemsError) throw itemsError;
+
+  const itemsByOrderId = new Map();
+  for (const item of items || []) {
+    const existing = itemsByOrderId.get(item.order_id) || [];
+    existing.push(item);
+    itemsByOrderId.set(item.order_id, existing);
+  }
+
+  return (orders || []).map((order) =>
+    ticketFromDb(order, itemsByOrderId.get(order.square_order_id) || [])
+  );
 }
 
 function ticketMatchesQuery(ticket, query) {
