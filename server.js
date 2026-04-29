@@ -19,6 +19,7 @@ const VALID_STATUSES = new Set(["new", "making", "ready", "completed", "done"]);
 const SQUARE_SYNC_INTERVAL_MS = 30 * 1000;
 const SESSION_COOKIE_NAME = "goldies_kds_session";
 const SESSION_MAX_AGE_MS = 1000 * 60 * 60 * 12;
+const KDS_PASSWORD_SETTING_KEY = "kds_password";
 
 if (!SQUARE_ACCESS_TOKEN) {
   console.error("ERROR: SQUARE_ACCESS_TOKEN environment variable is required");
@@ -43,12 +44,6 @@ const supabase =
 if (!supabase) {
   console.warn(
     "WARNING: Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY for persistent storage."
-  );
-}
-
-if (!KDS_PASSWORD) {
-  console.warn(
-    "WARNING: KDS_PASSWORD is not configured. KDS login is disabled until this env var is set."
   );
 }
 
@@ -85,6 +80,12 @@ app.use(express.json());
 let lastSquareSyncAt = 0;
 const squareCustomerNameCache = new Map();
 const squareEmployeeNameCache = new Map();
+let kdsPasswordState = {
+  source: "unconfigured",
+  passwordHash: null,
+  passwordSalt: null,
+  plaintextPassword: null,
+};
 let tickets = [
   {
     id: "local-101",
@@ -252,22 +253,168 @@ function getCookieOptions(maxAge = SESSION_MAX_AGE_MS) {
     .join("; ");
 }
 
-function isPasswordMatch(password) {
-  if (!KDS_PASSWORD || !password) return false;
+function normalizePasswordInput(password = "") {
+  return String(password || "").trim();
+}
 
-  const provided = Buffer.from(String(password));
-  const expected = Buffer.from(String(KDS_PASSWORD));
+function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
+  const hash = crypto.scryptSync(String(password), salt, 64).toString("hex");
 
+  return {
+    salt,
+    hash,
+  };
+}
+
+function verifyPassword(password, salt, hash) {
+  const candidate = normalizePasswordInput(password);
+  if (!candidate || !salt || !hash) return false;
+
+  try {
+    const derived = crypto.scryptSync(candidate, salt, 64);
+    const expected = Buffer.from(hash, "hex");
+
+    if (derived.length !== expected.length) return false;
+
+    return crypto.timingSafeEqual(derived, expected);
+  } catch (error) {
+    return false;
+  }
+}
+
+function isKdsLoginConfigured() {
   return (
-    provided.length === expected.length &&
-    crypto.timingSafeEqual(provided, expected)
+    kdsPasswordState.source === "supabase" ||
+    kdsPasswordState.source === "env" ||
+    kdsPasswordState.source === "memory"
   );
 }
 
+async function loadKdsPasswordState() {
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("kds_settings")
+        .select("setting_key, password_hash, password_salt, updated_at")
+        .eq("setting_key", KDS_PASSWORD_SETTING_KEY)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data?.password_hash && data?.password_salt) {
+        kdsPasswordState = {
+          source: "supabase",
+          passwordHash: data.password_hash,
+          passwordSalt: data.password_salt,
+          plaintextPassword: null,
+        };
+
+        return kdsPasswordState;
+      }
+    } catch (error) {
+      console.warn(
+        `WARNING: Unable to load stored KDS password from Supabase: ${error.message}. Falling back to environment password if available.`
+      );
+    }
+  }
+
+  if (KDS_PASSWORD) {
+    kdsPasswordState = {
+      source: "env",
+      passwordHash: null,
+      passwordSalt: null,
+      plaintextPassword: String(KDS_PASSWORD),
+    };
+  } else {
+    kdsPasswordState = {
+      source: "unconfigured",
+      passwordHash: null,
+      passwordSalt: null,
+      plaintextPassword: null,
+    };
+  }
+
+  return kdsPasswordState;
+}
+
+async function persistKdsPassword(password) {
+  const normalizedPassword = normalizePasswordInput(password);
+  if (!normalizedPassword) {
+    const error = new Error("New password cannot be empty");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const { salt, hash } = hashPassword(normalizedPassword);
+
+  if (supabase) {
+    const { error } = await supabase.from("kds_settings").upsert(
+      {
+        setting_key: KDS_PASSWORD_SETTING_KEY,
+        password_hash: hash,
+        password_salt: salt,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "setting_key" }
+    );
+
+    if (error) throw error;
+
+    kdsPasswordState = {
+      source: "supabase",
+      passwordHash: hash,
+      passwordSalt: salt,
+      plaintextPassword: null,
+    };
+
+    return {
+      source: "supabase",
+      passwordLength: normalizedPassword.length,
+    };
+  }
+
+  kdsPasswordState = {
+    source: "memory",
+    passwordHash: hash,
+    passwordSalt: salt,
+    plaintextPassword: null,
+  };
+
+  return {
+    source: "memory",
+    passwordLength: normalizedPassword.length,
+  };
+}
+
+function isPasswordMatch(password) {
+  const normalizedPassword = normalizePasswordInput(password);
+  if (!normalizedPassword || !isKdsLoginConfigured()) return false;
+
+  if (kdsPasswordState.source === "supabase" || kdsPasswordState.source === "memory") {
+    return verifyPassword(
+      normalizedPassword,
+      kdsPasswordState.passwordSalt,
+      kdsPasswordState.passwordHash
+    );
+  }
+
+  if (kdsPasswordState.source === "env") {
+    const provided = Buffer.from(normalizedPassword);
+    const expected = Buffer.from(String(kdsPasswordState.plaintextPassword || ""));
+
+    return (
+      provided.length === expected.length &&
+      crypto.timingSafeEqual(provided, expected)
+    );
+  }
+
+  return false;
+}
+
 function requireKdsAuth(req, res, next) {
-  if (!KDS_PASSWORD) {
+  if (!isKdsLoginConfigured()) {
     return res.status(503).json({
-      error: "KDS login is not configured. Set KDS_PASSWORD on the backend.",
+      error: "KDS login is not configured. Set a password in the backend.",
     });
   }
 
@@ -1209,6 +1356,8 @@ app.get("/api/health", (req, res) => {
     service: "Goldie's KDS backend",
     environment: SQUARE_ENVIRONMENT,
     storage: supabase ? "supabase" : "memory",
+    loginConfigured: isKdsLoginConfigured(),
+    passwordSource: kdsPasswordState.source,
     time: new Date().toISOString(),
   });
 });
@@ -1216,20 +1365,20 @@ app.get("/api/health", (req, res) => {
 app.get("/api/session", (req, res) => {
   const cookies = parseCookies(req.headers.cookie || "");
   const authenticated =
-    Boolean(KDS_PASSWORD) && isValidSessionToken(cookies[SESSION_COOKIE_NAME]);
+    isKdsLoginConfigured() && isValidSessionToken(cookies[SESSION_COOKIE_NAME]);
 
   res.json({
     authenticated,
-    configured: Boolean(KDS_PASSWORD),
+    configured: isKdsLoginConfigured(),
   });
 });
 
 app.post("/api/login", (req, res) => {
   const { password } = req.body || {};
 
-  if (!KDS_PASSWORD) {
+  if (!isKdsLoginConfigured()) {
     return res.status(503).json({
-      error: "KDS login is not configured. Set KDS_PASSWORD on the backend.",
+      error: "KDS login is not configured. Set a password in the backend.",
     });
   }
 
@@ -1252,6 +1401,51 @@ app.post("/api/logout", (req, res) => {
   );
 
   res.json({ ok: true });
+});
+
+app.patch("/api/password", requireKdsAuth, async (req, res) => {
+  try {
+    const currentPassword = normalizePasswordInput(req.body?.currentPassword);
+    const newPassword = normalizePasswordInput(req.body?.newPassword);
+    const confirmPassword = normalizePasswordInput(req.body?.confirmPassword);
+
+    if (!currentPassword) {
+      return res.status(400).json({ error: "Current password is required" });
+    }
+
+    if (!newPassword) {
+      return res.status(400).json({ error: "New password is required" });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        error: "New password must be at least 8 characters long",
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        error: "New password and confirmation do not match",
+      });
+    }
+
+    if (!isPasswordMatch(currentPassword)) {
+      return res.status(401).json({ error: "Current password is incorrect" });
+    }
+
+    const result = await persistKdsPassword(newPassword);
+
+    res.json({
+      ok: true,
+      message:
+        result.source === "supabase"
+          ? "Password updated."
+          : "Password updated in memory only because Supabase is not configured.",
+    });
+  } catch (error) {
+    console.error("Error updating password:", error);
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
 });
 
 app.get("/api/tickets", requireKdsAuth, async (req, res) => {
@@ -1548,10 +1742,27 @@ app.get("/api/reports/drinks", requireKdsAuth, async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+async function bootstrap() {
+  await loadKdsPasswordState();
+
   console.log(`Goldie's KDS backend running on port ${PORT}`);
   console.log(`Environment: ${SQUARE_ENVIRONMENT}`);
   console.log(`Location ID: ${SQUARE_LOCATION_ID}`);
   console.log(`Storage: ${supabase ? "Supabase" : "Memory fallback"}`);
-  console.log("Ready to receive requests!");
+  console.log(`KDS login source: ${kdsPasswordState.source}`);
+
+  if (!isKdsLoginConfigured()) {
+    console.warn(
+      "WARNING: KDS login is not configured. Set KDS_PASSWORD or store a password in Supabase."
+    );
+  }
+
+  app.listen(PORT, () => {
+    console.log("Ready to receive requests!");
+  });
+}
+
+bootstrap().catch((error) => {
+  console.error("Failed to boot KDS backend:", error);
+  process.exit(1);
 });

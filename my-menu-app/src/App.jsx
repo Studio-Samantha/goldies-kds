@@ -851,6 +851,136 @@ function LoginScreen({ onLogin }) {
   );
 }
 
+function PasswordSettingsDialog({
+  open,
+  onClose,
+  onSubmit,
+  saving,
+  error,
+}) {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  useEffect(() => {
+    if (!open) {
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    }
+  }, [open]);
+
+  if (!open) return null;
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    await onSubmit({
+      currentPassword,
+      newPassword,
+      confirmPassword,
+      clear: () => {
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      },
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-neutral-950/50 backdrop-blur-sm px-4 py-6 flex items-center justify-center">
+      <div className="w-full max-w-lg rounded-3xl bg-white border border-neutral-200 shadow-2xl p-5 md:p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-black">Change Password</h2>
+            <p className="text-sm text-neutral-500 mt-1">
+              Requires the current password and saves to Supabase.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm font-black text-neutral-700 transition hover:bg-neutral-100"
+          >
+            Close
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+          <label className="block">
+            <span className="text-sm font-black text-neutral-700">
+              Current password
+            </span>
+            <input
+              type="password"
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+              autoComplete="current-password"
+              className="mt-2 w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-lg font-bold outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+            />
+          </label>
+
+          <label className="block">
+            <span className="text-sm font-black text-neutral-700">
+              New password
+            </span>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              autoComplete="new-password"
+              minLength={8}
+              className="mt-2 w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-lg font-bold outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+            />
+          </label>
+
+          <label className="block">
+            <span className="text-sm font-black text-neutral-700">
+              Confirm new password
+            </span>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              autoComplete="new-password"
+              minLength={8}
+              className="mt-2 w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-lg font-bold outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+            />
+          </label>
+
+          <div className="text-sm text-neutral-500">
+            Passwords are trimmed before saving and must be at least 8 characters.
+          </div>
+
+          {error && (
+            <div className="rounded-2xl bg-red-50 border border-red-100 text-red-900 px-4 py-3 font-medium">
+              {error}
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row justify-end gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 font-black text-neutral-700 transition hover:bg-neutral-100"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-2xl bg-neutral-950 text-white px-4 py-3 font-black transition hover:bg-black disabled:cursor-not-allowed disabled:bg-neutral-300"
+            >
+              {saving ? "Saving..." : "Save Password"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function GoldiesKDS() {
   const [authStatus, setAuthStatus] = useState("checking");
   const [tickets, setTickets] = useState([]);
@@ -860,9 +990,23 @@ export default function GoldiesKDS() {
   const [showStats, setShowStats] = useState(false);
   const [showTodayCount, setShowTodayCount] = useState(false);
   const [showCompletedToday, setShowCompletedToday] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordNotice, setPasswordNotice] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
   const [lastPoll, setLastPoll] = useState(new Date());
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
   const [lastError, setLastError] = useState("");
+
+  useEffect(() => {
+    if (!passwordNotice) return undefined;
+
+    const timeout = setTimeout(() => {
+      setPasswordNotice("");
+    }, 6000);
+
+    return () => clearTimeout(timeout);
+  }, [passwordNotice]);
 
   useEffect(() => {
     let mounted = true;
@@ -1137,6 +1281,50 @@ export default function GoldiesKDS() {
       });
   }
 
+  async function handlePasswordChange({
+    currentPassword,
+    newPassword,
+    confirmPassword,
+    clear,
+  }) {
+    setPasswordSaving(true);
+    setPasswordError("");
+
+    try {
+      const response = await fetch(apiUrl("/api/password"), {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+          confirmPassword,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (response.status === 401) {
+        setAuthStatus("login");
+        throw new Error(data.error || "Login required");
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || `Password update failed: ${response.status}`);
+      }
+
+      clear();
+      setShowPasswordModal(false);
+      setPasswordNotice(
+        data.message || "Password updated. Sign out to test the new password."
+      );
+    } catch (error) {
+      setPasswordError(error.message || "Password update failed");
+    } finally {
+      setPasswordSaving(false);
+    }
+  }
+
   async function handleLogout() {
     await fetch(apiUrl("/api/logout"), {
       method: "POST",
@@ -1147,6 +1335,9 @@ export default function GoldiesKDS() {
     setCompletedTickets([]);
     setDrinkCounts([]);
     setDrinkReports({});
+    setShowPasswordModal(false);
+    setPasswordError("");
+    setPasswordNotice("");
     setAuthStatus("login");
   }
 
@@ -1209,13 +1400,27 @@ export default function GoldiesKDS() {
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-black text-neutral-700 transition hover:bg-neutral-100"
-            >
-              Sign out
-            </button>
+            <div className="flex flex-wrap gap-2 justify-start xl:justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setPasswordError("");
+                  setPasswordNotice("");
+                  setShowPasswordModal(true);
+                }}
+                className="rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-black text-neutral-700 transition hover:bg-neutral-100"
+              >
+                Change Password
+              </button>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-black text-neutral-700 transition hover:bg-neutral-100"
+              >
+                Sign out
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -1254,6 +1459,12 @@ export default function GoldiesKDS() {
         {lastError && (
           <div className="rounded-xl bg-red-50 border border-red-100 text-red-900 px-4 py-3 font-medium">
             {lastError}
+          </div>
+        )}
+
+        {passwordNotice && (
+          <div className="rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-900 px-4 py-3 font-medium">
+            {passwordNotice}
           </div>
         )}
 
@@ -1347,6 +1558,17 @@ export default function GoldiesKDS() {
           {showCompletedToday && <CompletedTransactions tickets={completedTickets} />}
         </section>
       </main>
+
+      <PasswordSettingsDialog
+        open={showPasswordModal}
+        onClose={() => {
+          setShowPasswordModal(false);
+          setPasswordError("");
+        }}
+        onSubmit={handlePasswordChange}
+        saving={passwordSaving}
+        error={passwordError}
+      />
     </div>
   );
 }

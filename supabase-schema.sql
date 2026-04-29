@@ -34,3 +34,10 @@ create index if not exists kds_orders_status_idx on public.kds_orders(status);
 create index if not exists kds_orders_created_at_idx on public.kds_orders(created_at desc);
 create index if not exists kds_order_items_order_id_idx on public.kds_order_items(order_id);
 create index if not exists kds_order_items_category_idx on public.kds_order_items(category);
+
+create table if not exists public.kds_settings (
+  setting_key text primary key,
+  password_hash text not null,
+  password_salt text not null,
+  updated_at timestamptz not null default now()
+);
