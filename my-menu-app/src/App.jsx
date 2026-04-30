@@ -2360,7 +2360,7 @@ function LoginScreen({
       </main>
 
       <div className="mt-6 flex justify-center px-4 pointer-events-auto sm:absolute sm:bottom-4 sm:left-0 sm:right-0 sm:z-30 sm:mt-0 sm:pb-[env(safe-area-inset-bottom)]">
-        <BrandFooter onPitchClick={() => setShowPitch(true)} />
+        <BrandFooter onPitchClick={openPitchPage} />
       </div>
     </div>
   );
@@ -2513,6 +2513,11 @@ export default function GoldiesKDS() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showReleaseNotes, setShowReleaseNotes] = useState(false);
   const [showPitch, setShowPitch] = useState(false);
+  const [pitchHash, setPitchHash] = useState(() => {
+    if (typeof window === "undefined") return "";
+
+    return window.location.hash || "";
+  });
   const [modeHelp, setModeHelp] = useState(null);
   const [settingsHelp, setSettingsHelp] = useState(null);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
@@ -2550,9 +2555,10 @@ export default function GoldiesKDS() {
     authStatus === "authenticated" &&
     isWebServicesReminderDay &&
     !hideWebServicesReminder;
-  const isPitchPreviewRoute =
-    typeof window !== "undefined" &&
-    (window.location.hash === "#pitch-preview" ||
+  const isPitchRoute =
+    pitchHash === "#learn-more" ||
+    pitchHash === "#pitch-preview" ||
+    (typeof window !== "undefined" &&
       window.location.search.includes("pitch-preview"));
   const trainingThemeStyle = isTrainingMode
     ? themeMode === "dark"
@@ -2638,6 +2644,17 @@ export default function GoldiesKDS() {
       // ignore storage failures
     }
   }, [hideWebServicesReminder]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const syncPitchHash = () => {
+      setPitchHash(window.location.hash || "");
+    };
+
+    window.addEventListener("hashchange", syncPitchHash);
+    return () => window.removeEventListener("hashchange", syncPitchHash);
+  }, []);
 
   useEffect(() => {
     if (!passwordNotice) return undefined;
@@ -2876,6 +2893,27 @@ export default function GoldiesKDS() {
   const activeTickets = displayedTickets.filter((ticket) => ticket.status !== "done");
   const hasOpenTickets = activeTickets.length > 0;
 
+  const openPitchPage = () => {
+    setShowPitch(true);
+
+    if (typeof window !== "undefined") {
+      window.location.hash = "learn-more";
+    }
+  };
+
+  const closePitchPage = () => {
+    setShowPitch(false);
+
+    if (typeof window !== "undefined") {
+      window.history.replaceState(
+        null,
+        "",
+        window.location.pathname + window.location.search
+      );
+      setPitchHash("");
+    }
+  };
+
   const grouped = useMemo(() => {
     return STATUS_COLUMNS.reduce((acc, col) => {
       acc[col.key] = activeTickets.filter((ticket) => {
@@ -3037,6 +3075,7 @@ export default function GoldiesKDS() {
     setSignedInEmployee("");
     setHideWebServicesReminder(false);
     setShowPitch(false);
+    setPitchHash("");
   }
 
   let content;
@@ -3426,7 +3465,7 @@ export default function GoldiesKDS() {
         />
 
         <div className="fixed bottom-3 left-0 right-0 z-40 flex justify-center px-4 pb-[env(safe-area-inset-bottom)] pointer-events-auto sm:relative sm:bottom-auto sm:left-auto sm:right-auto sm:z-30 sm:px-0 sm:pb-2">
-          <BrandFooter onPitchClick={() => setShowPitch(true)} />
+          <BrandFooter onPitchClick={openPitchPage} />
         </div>
       </main>
       </div>
@@ -3447,21 +3486,8 @@ export default function GoldiesKDS() {
 
   return (
     <>
-      {isPitchPreviewRoute ? (
-        <PitchPage
-          open={isPitchPreviewRoute}
-          onBack={() => {
-            if (typeof window !== "undefined") {
-              window.history.replaceState(
-                null,
-                "",
-                window.location.pathname + window.location.search
-              );
-            }
-          }}
-        />
-      ) : showPitch ? (
-        <PitchPage open={showPitch} onBack={() => setShowPitch(false)} />
+      {isPitchRoute || showPitch ? (
+        <PitchPage open={isPitchRoute || showPitch} onBack={closePitchPage} />
       ) : (
         content
       )}
