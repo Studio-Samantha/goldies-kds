@@ -1153,11 +1153,7 @@ function ticketFromDb(order, items = []) {
     customerName: order.customer_name || "",
     employeeName: order.employee_name || order.raw_order?.employeeName || "",
     createdAt: new Date(order.created_at).getTime(),
-    completedAt: order.completed_at
-      ? new Date(order.completed_at).getTime()
-      : order.updated_at
-        ? new Date(order.updated_at).getTime()
-        : null,
+    completedAt: order.updated_at ? new Date(order.updated_at).getTime() : null,
     source: order.source || "Square Register",
     status: sanitizeStatus(order.status),
     diningOption: order.dining_option || "Order",
@@ -1307,12 +1303,6 @@ async function setTicketStatus(id, status) {
     updated_at: statusUpdatedAt,
   };
 
-  if (sanitizedStatus === "completed" || sanitizedStatus === "done") {
-    updates.completed_at = statusUpdatedAt;
-  } else {
-    updates.completed_at = null;
-  }
-
   const { data, error } = await supabase
     .from("kds_orders")
     .update(updates)
@@ -1375,37 +1365,17 @@ async function getCompletedTicketsToday() {
       .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
   }
 
-  const selectColumns =
-    "square_order_id, order_number, customer_name, created_at, completed_at, updated_at, source, status, dining_option, raw_order";
-  const [completedResult, legacyResult] = await Promise.all([
-    supabase
-      .from("kds_orders")
-      .select(selectColumns)
-      .in("status", ["completed", "done"])
-      .gte("completed_at", start.toISOString())
-      .lte("completed_at", end.toISOString()),
-    supabase
-      .from("kds_orders")
-      .select(selectColumns)
-      .in("status", ["completed", "done"])
-      .is("completed_at", null)
-      .gte("updated_at", start.toISOString())
-      .lte("updated_at", end.toISOString()),
-  ]);
+  const { data: orders, error } = await supabase
+    .from("kds_orders")
+    .select("square_order_id, order_number, customer_name, created_at, updated_at, source, status, dining_option, raw_order")
+    .in("status", ["completed", "done"])
+    .gte("updated_at", start.toISOString())
+    .lte("updated_at", end.toISOString())
+    .order("updated_at", { ascending: false });
 
-  if (completedResult.error) throw completedResult.error;
-  if (legacyResult.error) throw legacyResult.error;
-
-  const orderMap = new Map();
-  for (const order of [...(completedResult.data || []), ...(legacyResult.data || [])]) {
-    orderMap.set(order.square_order_id, order);
+  if (error) {
+    throw error;
   }
-
-  const orders = Array.from(orderMap.values()).sort((a, b) => {
-    const aTime = new Date(a.completed_at || a.updated_at || a.created_at).getTime();
-    const bTime = new Date(b.completed_at || b.updated_at || b.created_at).getTime();
-    return bTime - aTime;
-  });
 
   const orderIds = (orders || []).map((order) => order.square_order_id);
   if (!orderIds.length) return [];
@@ -1582,7 +1552,7 @@ async function getTicketsForDay(dateString) {
 
   const { data: orders, error } = await supabase
     .from("kds_orders")
-    .select("square_order_id, order_number, customer_name, created_at, completed_at, updated_at, source, status, dining_option, raw_order")
+    .select("square_order_id, order_number, customer_name, created_at, updated_at, source, status, dining_option, raw_order")
     .gte("created_at", range.start.toISOString())
     .lte("created_at", range.end.toISOString())
     .order("created_at", { ascending: false });
