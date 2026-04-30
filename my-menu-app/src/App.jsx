@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.7.2";
+const APP_VERSION = "v1.7.3";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v1";
@@ -24,8 +24,18 @@ const SETTINGS_HELP_TEXT =
 const DINING_OPTIONS = ["For here", "To go", "Pickup", "Delivery", "Drive thru"];
 const RELEASE_NOTES = [
   {
-    version: "v1.7.2",
+    version: "v1.7.3",
     date: "Current build",
+    summary: "Added the POS-flexible marketing message.",
+    items: [
+      "The Learn More page now explains that DrinkFlow is built first for Square and designed to grow with Shopify, Clover, Lightspeed, and other POS workflows by request.",
+      "The FAQ now clarifies that new POS connectors must be scoped around accessible order data, APIs, or webhooks.",
+      "The marketing page keeps the promise honest while showing the product can grow beyond the first Square-connected shop.",
+    ],
+  },
+  {
+    version: "v1.7.2",
+    date: "Previous build",
     summary: "Added the Goldie's living case study.",
     items: [
       "The Learn More page now links to a dedicated Goldie's Coffee & Goods case study.",
