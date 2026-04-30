@@ -199,7 +199,7 @@ let tickets = [
     createdAt: Date.now() - 1000 * 60 * 3,
     source: "Local Test API",
     status: "new",
-    diningOption: "Order",
+    diningOption: "Unspecified",
     items: [
       {
         name: "Latte",
@@ -932,6 +932,12 @@ function getDiningOption(order) {
   if (type.includes("DRIVE")) return "Drive thru";
 
   const metadataValue =
+    order.diningOption ||
+    order.dining_option ||
+    order.orderType ||
+    order.order_type ||
+    order.serviceType ||
+    order.service_type ||
     order.metadata?.dining_option ||
     order.metadata?.diningOption ||
     order.metadata?.order_type ||
@@ -963,7 +969,7 @@ function getDiningOption(order) {
     return "For here";
   }
 
-  return "Order";
+  return "";
 }
 
 function getSquareCustomerNameFromFields(order) {
@@ -1150,6 +1156,12 @@ async function normalizeSquareOrder(order, payment = null) {
 }
 
 function ticketFromDb(order, items = []) {
+  const rawDiningOption = getDiningOption(order.raw_order || {});
+  const storedDiningOption =
+    order.dining_option && order.dining_option !== "Order"
+      ? order.dining_option
+      : "";
+
   return {
     id: order.square_order_id,
     orderNumber: order.order_number || order.square_order_id.slice(-4),
@@ -1159,7 +1171,7 @@ function ticketFromDb(order, items = []) {
     completedAt: order.updated_at ? new Date(order.updated_at).getTime() : null,
     source: order.source || "Square Register",
     status: sanitizeStatus(order.status),
-    diningOption: order.dining_option || "Order",
+    diningOption: storedDiningOption || rawDiningOption || "",
     items: items.map((item) => ({
       id: item.square_line_item_uid || String(item.id),
       name: item.name || "Unnamed item",
@@ -1195,7 +1207,7 @@ async function upsertTicket(ticket, rawOrder = null) {
       created_at: createdAt,
       source: ticket.source || "Square Register",
       status,
-      dining_option: ticket.diningOption || "Order",
+      dining_option: ticket.diningOption || null,
       square_state: rawOrder?.state || null,
       raw_order: rawOrder
         ? toJsonSafe({
@@ -2035,7 +2047,7 @@ app.post("/api/test-ticket", requireKdsAuth, async (req, res) => {
       createdAt: Date.now(),
       source: "Local Test API",
       status: "new",
-      diningOption: "Order",
+      diningOption: "Unspecified",
       items: [
         {
           name: "Test Cappuccino",

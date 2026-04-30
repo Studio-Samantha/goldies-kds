@@ -8,7 +8,7 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.3.1";
+const APP_VERSION = "v1.3.2";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -19,8 +19,18 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.3.1",
+    version: "v1.3.2",
     date: "Current build",
+    summary: "Cleaned up dining labels and service trademark text.",
+    items: [
+      "Orders By Day now shows Square dining and fulfillment labels instead of the generic Order fallback.",
+      "Dining labels can be toggled on or off in the live ticket columns.",
+      "Footer trademark text now includes both Square and Supabase.",
+    ],
+  },
+  {
+    version: "v1.3.1",
+    date: "Previous build",
     summary: "Stabilized Orders By Day while live polling is running.",
     items: [
       "Orders By Day no longer re-runs the lookup on every live board poll.",
@@ -1064,6 +1074,7 @@ function formatDiningOption(ticket) {
     ticket.dining_option ||
     ticket.fulfillmentType ||
     ticket.fulfillment_type ||
+    ticket.fulfillment?.type ||
     ticket.orderType ||
     ticket.order_type ||
     ticket.serviceChargeType ||
@@ -1074,6 +1085,7 @@ function formatDiningOption(ticket) {
   const value = String(raw).toLowerCase();
 
   if (value.includes("delivery")) return "Delivery";
+  if (value.includes("shipment") || value.includes("shipping")) return "Delivery";
   if (value.includes("pickup") || value.includes("pick up")) return "Pickup";
   if (value.includes("drive")) return "Drive thru";
   if (
@@ -1095,7 +1107,7 @@ function formatDiningOption(ticket) {
     return "For here";
   }
 
-  return "Order";
+  return "Unspecified";
 }
 
 function isToday(timestamp) {
@@ -1314,7 +1326,7 @@ function createTrainingTickets() {
   ].map(normalizeTicket);
 }
 
-function TicketCard({ ticket, onStatusChange, onNameChange }) {
+function TicketCard({ ticket, onStatusChange, onNameChange, showDiningOption }) {
   const [nameValue, setNameValue] = useState(ticket.customerName || "");
   const orderTime = formatOrderTime(ticket.createdAt);
   const timeClass = getTimeClass(ticket.createdAt);
@@ -1432,9 +1444,11 @@ function TicketCard({ ticket, onStatusChange, onNameChange }) {
             </div>
           )}
 
-          <div className="mt-2 inline-flex rounded-full bg-[#EEE0C5]/55 border border-[#CA862B]/18 px-3 py-1 text-xs font-black text-[#0F4036]">
-            {ticket.diningOption}
-          </div>
+          {showDiningOption && ticket.diningOption && (
+            <div className="mt-2 inline-flex rounded-full bg-[#EEE0C5]/55 border border-[#CA862B]/18 px-3 py-1 text-xs font-black text-[#0F4036]">
+              {ticket.diningOption}
+            </div>
+          )}
         </div>
 
         <div
@@ -1603,16 +1617,20 @@ function WatermarkLayer({ trainingMode = false }) {
 function BrandFooter({ className = "" }) {
   return (
     <div
-      className={`relative z-30 inline-flex items-center rounded-full border border-white/70 bg-[rgba(255,253,248,0.84)] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5A4F3E] shadow-[0_8px_18px_rgba(15,64,54,0.06)] backdrop-blur-md ${className}`}
+      className={`relative z-30 inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-full border border-white/70 bg-[rgba(255,253,248,0.84)] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5A4F3E] shadow-[0_8px_18px_rgba(15,64,54,0.06)] backdrop-blur-md ${className}`}
     >
       <span>Studio Samantha © 2026</span>
-      <span className="mx-2 text-[#CA862B]/70">•</span>
+      <span className="text-[#CA862B]/70">•</span>
       <a
         href="/learn-more.html"
         className="cursor-pointer normal-case tracking-normal text-[#0F4036] transition hover:text-[#CA862B] focus:outline-none focus-visible:text-[#CA862B]"
       >
         Learn more
       </a>
+      <span className="text-[#CA862B]/70">•</span>
+      <span className="normal-case tracking-normal">
+        Square and Supabase trademarks belong to their owners.
+      </span>
     </div>
   );
 }
@@ -1896,7 +1914,7 @@ function CompletedTransactions({ tickets }) {
                                 Dining
                               </div>
                               <div className="font-bold text-[#111111]">
-                                {ticket.diningOption || "Order"}
+                                {ticket.diningOption || "Unspecified"}
                               </div>
                             </div>
                             <div>
@@ -2148,7 +2166,7 @@ function OrdersByDayLookup({
                             </span>
                           </td>
                           <td className="px-3 py-2 font-bold text-[#111111]">
-                            {ticket.diningOption || "Order"}
+                            {ticket.diningOption || "Unspecified"}
                           </td>
                           <td className="px-3 py-2 font-bold text-[#111111]">
                             {formatOrderTime(ticket.createdAt)}
@@ -2173,7 +2191,7 @@ function OrdersByDayLookup({
                                       Dining
                                     </div>
                                     <div className="font-bold text-[#111111]">
-                                      {ticket.diningOption || "Order"}
+                                      {ticket.diningOption || "Unspecified"}
                                     </div>
                                   </div>
                                   <div>
@@ -2600,6 +2618,7 @@ export default function GoldiesKDS() {
   const [showTodayCount, setShowTodayCount] = useState(false);
   const [showCompletedToday, setShowCompletedToday] = useState(false);
   const [showOrdersByDay, setShowOrdersByDay] = useState(false);
+  const [showDiningOnTickets, setShowDiningOnTickets] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showReleaseNotes, setShowReleaseNotes] = useState(false);
   const [showPitch, setShowPitch] = useState(false);
@@ -3458,7 +3477,19 @@ export default function GoldiesKDS() {
           )}
         </section>
 
-        <div className="flex justify-end">
+        <div className="flex flex-wrap justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => setShowDiningOnTickets((current) => !current)}
+            className={`rounded-xl px-4 py-3 text-sm font-black transition shadow-sm ${
+              showDiningOnTickets
+                ? "bg-[#0F4036] text-white hover:bg-[#0b352d]"
+                : "border border-[#CA862B]/22 bg-white text-[#0F4036] hover:bg-[#EEE0C5]/45"
+            }`}
+            title="Show or hide Square dining and fulfillment labels on ticket cards."
+          >
+            {showDiningOnTickets ? "Hide Dining" : "Show Dining"}
+          </button>
           <button
             type="button"
             onClick={() => setShowStats((current) => !current)}
@@ -3500,6 +3531,7 @@ export default function GoldiesKDS() {
                       ticket={ticket}
                       onStatusChange={handleStatusChange}
                       onNameChange={handleNameChange}
+                      showDiningOption={showDiningOnTickets}
                     />
                   ))
                 ) : (
