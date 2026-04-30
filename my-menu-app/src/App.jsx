@@ -7,11 +7,20 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.1.7";
+const APP_VERSION = "v1.1.8";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-30";
 const RELEASE_NOTES = [
+  {
+    version: "v1.1.8",
+    date: "Current build",
+    summary: "Settings now shows a help icon everywhere it appears.",
+    items: [
+      "The Settings menu now has a question-mark help button on login and the dashboard.",
+      "The help popup explains what Settings contains.",
+    ],
+  },
   {
     version: "v1.1.7",
     date: "Current build",
@@ -1916,6 +1925,7 @@ function LoginScreen({
   onChangePassword,
   suggestFixHref,
   onVersionClickMenu,
+  onInfoClickMenu,
 }) {
   const [employeeName, setEmployeeName] = useState("");
   const [password, setPassword] = useState("");
@@ -2004,6 +2014,7 @@ function LoginScreen({
             showPasswordAction={false}
             suggestFixHref={suggestFixHref}
             onVersionClick={onVersionClickMenu}
+            onInfoClick={onInfoClickMenu}
           />
         </div>
       </div>
@@ -2761,6 +2772,12 @@ export default function GoldiesKDS() {
             setShowSettingsMenu(false);
             setShowReleaseNotes(true);
           }}
+          onInfoClickMenu={() =>
+            setModeHelp({
+              title: "Settings",
+              body: "Settings holds the app tools you may need: theme, password change, support, and release notes.",
+            })
+          }
         />
         <SoftOpeningDialog
           open={showSoftOpeningNote}
