@@ -7,7 +7,7 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.2.2";
+const APP_VERSION = "v1.2.4";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -19,12 +19,12 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.2.2",
+    version: "v1.2.4",
     date: "Current build",
-    summary: "Training mode now has a stronger practice-only color scheme.",
+    summary: "Training mode now has clearly different light and dark practice colors.",
     items: [
-      "Training mode now looks obviously different from the live board.",
-      "The settings menu still stays clear of the dashboard cards on smaller screens.",
+      "Training light mode uses a brighter blue practice look.",
+      "Training dark mode uses a deeper navy practice look.",
     ],
   },
   {
@@ -2667,19 +2667,28 @@ export default function GoldiesKDS() {
   const trainingThemeStyle = isTrainingMode
     ? themeMode === "dark"
       ? {
-          backgroundColor: "#0f172a",
-          color: "#e2e8f0",
-          filter: "hue-rotate(185deg) saturate(0.95) brightness(0.98) contrast(1.06)",
+          backgroundColor: "#020617",
+          backgroundImage:
+            "radial-gradient(circle at top, rgba(59,130,246,0.28), rgba(15,23,42,0.98) 52%, rgba(2,6,23,1) 100%)",
+          color: "#dbeafe",
+          colorScheme: "dark",
         }
       : {
-          backgroundColor: "#dbeafe",
-          color: "#1e3a8a",
-          filter: "hue-rotate(190deg) saturate(1.18) brightness(1.02) contrast(1.04)",
+          backgroundColor: "#eff6ff",
+          backgroundImage:
+            "radial-gradient(circle at top, rgba(147,197,253,0.38), rgba(219,234,254,0.94) 48%, rgba(191,219,254,1) 100%)",
+          color: "#1d4ed8",
         }
     : undefined;
   const themeStyle =
     themeMode === "dark"
-      ? { filter: "invert(1) hue-rotate(180deg)" }
+      ? {
+          backgroundColor: "#0B1220",
+          backgroundImage:
+            "radial-gradient(circle at top, rgba(59,130,246,0.12), rgba(11,18,32,0.98) 48%, rgba(3,7,18,1) 100%)",
+          color: "#E5E7EB",
+          colorScheme: "dark",
+        }
       : undefined;
   const [trainingTickets, setTrainingTickets] = useState(() =>
     createTrainingTickets()
