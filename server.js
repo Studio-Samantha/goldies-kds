@@ -36,6 +36,14 @@ const ALERT_EMAIL_FROM =
   ALERT_EMAIL_TO ||
   "";
 const VALID_STATUSES = new Set(["new", "making", "ready", "completed", "done"]);
+const VALID_DINING_OPTIONS = new Set([
+  "For here",
+  "To go",
+  "Pickup",
+  "Delivery",
+  "Drive thru",
+  "Unspecified",
+]);
 const SQUARE_SYNC_INTERVAL_MS = 30 * 1000;
 const SQUARE_HEALTH_CHECK_INTERVAL_MS = 30 * 1000;
 const SQUARE_HEALTH_ALERT_COOLDOWN_MS = 15 * 60 * 1000;
@@ -841,6 +849,12 @@ function updateLocalTicketName(id, customerName) {
   );
 }
 
+function updateLocalTicketDiningOption(id, diningOption) {
+  tickets = tickets.map((ticket) =>
+    ticket.id === id ? { ...ticket, diningOption } : ticket
+  );
+}
+
 function getLocalActiveTickets() {
   return tickets.filter((ticket) => ticket.status !== "done");
 }
@@ -1156,20 +1170,28 @@ function getDiningOption(order) {
   if (type.includes("DINE")) return "For here";
   if (type.includes("DRIVE")) return "Drive thru";
 
+  const metadataCandidates = [
+    order.diningOption,
+    order.dining_option,
+    order.orderType,
+    order.order_type,
+    order.serviceType,
+    order.service_type,
+    order.metadata?.dining_option,
+    order.metadata?.diningOption,
+    order.metadata?.order_type,
+    order.metadata?.service_type,
+    order.metadata?.serviceType,
+    order.metadata?.orderType,
+    (order.lineItems || order.line_items || [])
+      .map((item) => item.note || item.notes || item.name || "")
+      .join(" "),
+  ];
   const metadataValue =
-    order.diningOption ||
-    order.dining_option ||
-    order.orderType ||
-    order.order_type ||
-    order.serviceType ||
-    order.service_type ||
-    order.metadata?.dining_option ||
-    order.metadata?.diningOption ||
-    order.metadata?.order_type ||
-    order.metadata?.service_type ||
-    order.metadata?.serviceType ||
-    order.metadata?.orderType ||
-    "";
+    metadataCandidates.find((candidate) => {
+      const normalized = String(candidate || "").trim().toLowerCase();
+      return normalized && normalized !== "unspecified" && normalized !== "order";
+    }) || "";
   const value = String(metadataValue).toLowerCase();
 
   if (value.includes("delivery")) return "Delivery";
@@ -1610,6 +1632,39 @@ async function setTicketName(id, customerName) {
   }
 
   return normalizedName;
+}
+
+async function setTicketDiningOption(id, diningOption) {
+  const normalizedDiningOption = String(diningOption || "").trim() || "Unspecified";
+
+  if (!VALID_DINING_OPTIONS.has(normalizedDiningOption)) {
+    const error = new Error("Invalid dining option");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!supabase) {
+    updateLocalTicketDiningOption(id, normalizedDiningOption);
+    return normalizedDiningOption;
+  }
+
+  const { data, error } = await supabase
+    .from("kds_orders")
+    .update({
+      dining_option: normalizedDiningOption,
+    })
+    .eq("square_order_id", id)
+    .select("square_order_id")
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) {
+    const missingError = new Error(`Ticket ${id} was not found`);
+    missingError.statusCode = 404;
+    throw missingError;
+  }
+
+  return normalizedDiningOption;
 }
 
 async function getCompletedTicketsToday() {
@@ -2582,6 +2637,19 @@ app.patch("/api/tickets/:id/name", requireKdsAuth, async (req, res) => {
     res.json({ ok: true, id, customerName: updatedName });
   } catch (error) {
     console.error("Error updating ticket name:", error);
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+});
+
+app.patch("/api/tickets/:id/dining-option", requireKdsAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { diningOption } = req.body;
+    const updatedDiningOption = await setTicketDiningOption(id, diningOption);
+
+    res.json({ ok: true, id, diningOption: updatedDiningOption });
+  } catch (error) {
+    console.error("Error updating ticket dining option:", error);
     res.status(error.statusCode || 500).json({ error: error.message });
   }
 });

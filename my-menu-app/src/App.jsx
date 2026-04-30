@@ -9,7 +9,7 @@ const LOGO_DARK_URL = "/goldies-logo-white.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.5.8";
+const APP_VERSION = "v1.5.9";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -18,10 +18,20 @@ const SOFT_OPENING_DATE = "2026-04-30";
 const WEB_SERVICES_REMINDER_DATE = "2026-05-02";
 const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
+const DINING_OPTIONS = ["For here", "To go", "Pickup", "Delivery", "Drive thru"];
 const RELEASE_NOTES = [
   {
-    version: "v1.5.8",
+    version: "v1.5.9",
     date: "Current build",
+    summary: "Added a ticket service dropdown.",
+    items: [
+      "Ticket cards now let staff set For here, To go, Pickup, Delivery, or Drive thru directly.",
+      "Service labels can also be inferred from Square item notes like to go or for here.",
+    ],
+  },
+  {
+    version: "v1.5.8",
+    date: "Previous build",
     summary: "Kept food-only tickets out of the drink KDS columns.",
     items: [
       "The live New, Making, Ready, and Completed columns now only show tickets with drink items.",
@@ -1226,18 +1236,27 @@ function getPreviousStatus(status) {
 }
 
 function formatDiningOption(ticket) {
+  const itemNotes = (ticket.items || [])
+    .map((item) => [item.note, ...(item.modifiers || [])].filter(Boolean).join(" "))
+    .join(" ");
+  const candidates = [
+    ticket.diningOption,
+    ticket.dining_option,
+    ticket.fulfillmentType,
+    ticket.fulfillment_type,
+    ticket.fulfillment?.type,
+    ticket.orderType,
+    ticket.order_type,
+    ticket.serviceChargeType,
+    ticket.service_charge_type,
+    ticket.fulfillment,
+    itemNotes,
+  ];
   const raw =
-    ticket.diningOption ||
-    ticket.dining_option ||
-    ticket.fulfillmentType ||
-    ticket.fulfillment_type ||
-    ticket.fulfillment?.type ||
-    ticket.orderType ||
-    ticket.order_type ||
-    ticket.serviceChargeType ||
-    ticket.service_charge_type ||
-    ticket.fulfillment ||
-    "";
+    candidates.find((candidate) => {
+      const normalized = String(candidate || "").trim().toLowerCase();
+      return normalized && normalized !== "unspecified" && normalized !== "order";
+    }) || "";
 
   const value = String(raw).toLowerCase();
 
@@ -1483,7 +1502,13 @@ function createTrainingTickets() {
   ].map(normalizeTicket);
 }
 
-function TicketCard({ ticket, onStatusChange, onNameChange, showDiningOption }) {
+function TicketCard({
+  ticket,
+  onStatusChange,
+  onNameChange,
+  onDiningOptionChange,
+  showDiningOption,
+}) {
   const [nameValue, setNameValue] = useState(ticket.customerName || "");
   const orderTime = formatOrderTime(ticket.createdAt);
   const timeClass = getTimeClass(ticket.createdAt);
@@ -1493,9 +1518,6 @@ function TicketCard({ ticket, onStatusChange, onNameChange, showDiningOption }) 
   const hasSpecificDiningOption =
     ticket.diningOption &&
     !["Unspecified", "Order"].includes(ticket.diningOption);
-  const diningLabel = hasSpecificDiningOption
-    ? ticket.diningOption
-    : "Ask: for here or to go";
 
   let actions = [];
 
@@ -1608,15 +1630,25 @@ function TicketCard({ ticket, onStatusChange, onNameChange, showDiningOption }) 
           )}
 
           {showDiningOption && (
-            <div
-              className={`mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-black ${
-                hasSpecificDiningOption
-                  ? "bg-[#EEE0C5]/55 border-[#CA862B]/18 text-[#0F4036]"
-                  : "bg-[#FFF4E8] border-[#CA862B]/28 text-[#8B5A1D]"
-              }`}
-            >
-              Service: {diningLabel}
-            </div>
+            <label className="mt-2 block">
+              <span className="text-xs font-black uppercase tracking-wide text-[#0F4036]/70">
+                Service
+              </span>
+              <select
+                value={hasSpecificDiningOption ? ticket.diningOption : ""}
+                onChange={(event) =>
+                  onDiningOptionChange(ticket.id, event.target.value)
+                }
+                className="mt-1 w-full rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-black text-[#0F4036] outline-none focus:border-[#CA862B] focus:ring-2 focus:ring-[#CA862B]/15"
+              >
+                <option value="">Set service</option>
+                {DINING_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
           )}
         </div>
 
@@ -3753,6 +3785,43 @@ export default function GoldiesKDS() {
       });
   }
 
+  function handleDiningOptionChange(id, diningOption) {
+    if (isTrainingMode) {
+      setTrainingTickets((current) =>
+        current.map((ticket) =>
+          ticket.id === id ? { ...ticket, diningOption } : ticket
+        )
+      );
+      return;
+    }
+
+    setTickets((current) =>
+      current.map((ticket) =>
+        ticket.id === id ? { ...ticket, diningOption } : ticket
+      )
+    );
+
+    fetch(apiUrl(`/api/tickets/${id}/dining-option`), {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ diningOption }),
+    })
+      .then((response) => {
+        if (response.status === 401) {
+          setAuthStatus("login");
+          throw new Error("Login required");
+        }
+
+        if (!response.ok) {
+          throw new Error(`Service update failed: ${response.status}`);
+        }
+      })
+      .catch((error) => {
+        setLastError(`Service update failed: ${error.message}`);
+      });
+  }
+
   async function handlePasswordChange({
     currentPassword,
     newPassword,
@@ -4195,6 +4264,7 @@ export default function GoldiesKDS() {
                       ticket={ticket}
                       onStatusChange={handleStatusChange}
                       onNameChange={handleNameChange}
+                      onDiningOptionChange={handleDiningOptionChange}
                       showDiningOption={showDiningOnTickets}
                     />
                   ))
