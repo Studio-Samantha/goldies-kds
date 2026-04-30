@@ -9,7 +9,7 @@ const LOGO_DARK_URL = "/goldies-logo-white.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.5.6";
+const APP_VERSION = "v1.5.8";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -20,8 +20,26 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.5.6",
+    version: "v1.5.8",
     date: "Current build",
+    summary: "Kept food-only tickets out of the drink KDS columns.",
+    items: [
+      "The live New, Making, Ready, and Completed columns now only show tickets with drink items.",
+      "Food-only Square orders no longer sit in the active drink workflow.",
+    ],
+  },
+  {
+    version: "v1.5.7",
+    date: "Previous build",
+    summary: "Made for-here/to-go labels visible on live tickets.",
+    items: [
+      "Ticket cards now show the Square dining/service label by default.",
+      "If Square does not send a dining option, the ticket prompts staff to ask whether it is for here or to go.",
+    ],
+  },
+  {
+    version: "v1.5.6",
+    date: "Previous build",
     summary: "Added this-year owner revenue reporting.",
     items: [
       "Drink Revenue now includes Today, Yesterday, 7 Days, 30 Days, This Month, and This Year.",
@@ -1472,6 +1490,12 @@ function TicketCard({ ticket, onStatusChange, onNameChange, showDiningOption }) 
   const visibleItems = getVisibleItems(ticket);
   const ticketHasDrinks = hasDrinkItems(ticket);
   const previousStatus = getPreviousStatus(ticket.status);
+  const hasSpecificDiningOption =
+    ticket.diningOption &&
+    !["Unspecified", "Order"].includes(ticket.diningOption);
+  const diningLabel = hasSpecificDiningOption
+    ? ticket.diningOption
+    : "Ask: for here or to go";
 
   let actions = [];
 
@@ -1583,9 +1607,15 @@ function TicketCard({ ticket, onStatusChange, onNameChange, showDiningOption }) 
             </div>
           )}
 
-          {showDiningOption && ticket.diningOption && (
-            <div className="mt-2 inline-flex rounded-full bg-[#EEE0C5]/55 border border-[#CA862B]/18 px-3 py-1 text-xs font-black text-[#0F4036]">
-              {ticket.diningOption}
+          {showDiningOption && (
+            <div
+              className={`mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-black ${
+                hasSpecificDiningOption
+                  ? "bg-[#EEE0C5]/55 border-[#CA862B]/18 text-[#0F4036]"
+                  : "bg-[#FFF4E8] border-[#CA862B]/28 text-[#8B5A1D]"
+              }`}
+            >
+              Service: {diningLabel}
             </div>
           )}
         </div>
@@ -1880,9 +1910,9 @@ function SettingsPopover({
               type="button"
               onClick={onToggleDiningOnTickets}
               className="w-full rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-left text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-              title="Show or hide Square dining and fulfillment labels on ticket cards."
+              title="Show or hide Square dining and service labels on ticket cards."
             >
-              {showDiningOnTickets ? "Hide Dining on Tickets" : "Show Dining on Tickets"}
+              {showDiningOnTickets ? "Hide Service on Tickets" : "Show Service on Tickets"}
             </button>
           )}
 
@@ -3205,7 +3235,7 @@ export default function GoldiesKDS() {
   const [showTodayCount, setShowTodayCount] = useState(false);
   const [showCompletedToday, setShowCompletedToday] = useState(false);
   const [showOrdersByDay, setShowOrdersByDay] = useState(false);
-  const [showDiningOnTickets, setShowDiningOnTickets] = useState(false);
+  const [showDiningOnTickets, setShowDiningOnTickets] = useState(true);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showOwnerLogin, setShowOwnerLogin] = useState(false);
   const [showOwnerReports, setShowOwnerReports] = useState(false);
@@ -3623,17 +3653,15 @@ export default function GoldiesKDS() {
   const displayedConnectionStatus = isTrainingMode
     ? "Training mode"
     : connectionStatus;
-  const activeTickets = displayedTickets.filter((ticket) => ticket.status !== "done");
+  const activeTickets = displayedTickets.filter(
+    (ticket) => ticket.status !== "done" && hasDrinkItems(ticket)
+  );
   const hasOpenTickets = activeTickets.length > 0;
 
   const grouped = useMemo(() => {
     return STATUS_COLUMNS.reduce((acc, col) => {
       acc[col.key] = activeTickets.filter((ticket) => {
         if (ticket.status !== col.key) return false;
-
-        if (col.key === "completed") {
-          return hasDrinkItems(ticket);
-        }
 
         return true;
       });
