@@ -1317,12 +1317,13 @@ function WatermarkLayer({ trainingMode = false }) {
       style={{
         backgroundImage: `url(${LOGO_URL})`,
         backgroundRepeat: "repeat",
-        backgroundSize: "280px auto",
+        backgroundSize: "240px auto",
         backgroundPosition: "center top",
-        opacity: trainingMode ? 0.055 : 0.028,
+        opacity: trainingMode ? 0.08 : 0.06,
         transform: "rotate(-8deg) scale(1.08)",
         transformOrigin: "center",
-        filter: trainingMode ? "saturate(0.9)" : "grayscale(1)",
+        mixBlendMode: "multiply",
+        filter: trainingMode ? "saturate(0.95) contrast(1.02)" : "grayscale(1) contrast(1.05)",
       }}
     />
   );
