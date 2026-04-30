@@ -234,8 +234,6 @@ function getTodayDateKey() {
 }
 
 function SoftOpeningDialog({ open, onClose }) {
-  if (!open) return null;
-
   const confetti = useMemo(
     () =>
       Array.from({ length: 18 }, (_, index) => {
@@ -256,6 +254,8 @@ function SoftOpeningDialog({ open, onClose }) {
       }),
     []
   );
+
+  if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] flex items-center justify-center p-4">
