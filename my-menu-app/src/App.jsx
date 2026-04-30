@@ -7,7 +7,7 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.1.20";
+const APP_VERSION = "v1.1.21";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -20,10 +20,10 @@ const RELEASE_NOTES = [
   {
     version: "v1.1.21",
     date: "Current build",
-    summary: "A temporary preview link was added for the Studio Samantha pitch page.",
+    summary: "The Studio Samantha pitch page is now the real Learn more page.",
     items: [
-      "The live Learn more page stays simple.",
-      "A preview route lets you inspect the fancier pitch layout before it is used anywhere else.",
+      "The Learn more link now opens the polished Studio Samantha pitch page.",
+      "The page is no longer treated as a temporary preview.",
     ],
   },
   {
@@ -502,101 +502,6 @@ function PitchPage({ open, onBack }) {
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "linear-gradient(180deg, rgba(255,255,255,0.3), rgba(255,255,255,0) 28%, rgba(15,64,54,0.03) 100%)",
-        }}
-      />
-      <WatermarkLayer trainingMode={false} />
-
-      <div className="relative z-10 mx-auto flex min-h-full w-full max-w-6xl flex-col px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
-        <div className="flex items-center justify-between gap-3">
-          <div className="rounded-full border border-[#CA862B]/14 bg-[rgba(255,253,248,0.88)] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-[#5A4F3E] shadow-sm backdrop-blur-md">
-            Studio Samantha
-          </div>
-
-          <button
-            type="button"
-            onClick={onBack}
-            className="rounded-xl border border-[#CA862B]/14 bg-[rgba(255,253,248,0.88)] px-4 py-2 text-sm font-black text-[#0F4036] shadow-sm transition hover:bg-white/90"
-          >
-            Back to app
-          </button>
-        </div>
-
-        <div className="mt-8 rounded-[1.75rem] border border-white/70 bg-[rgba(255,253,248,0.92)] p-6 shadow-[0_28px_80px_rgba(15,64,54,0.14)] backdrop-blur-xl">
-          <div className="flex items-center gap-4">
-            <BrandMark size="lg" />
-          </div>
-
-          <h1 className="mt-6 text-4xl font-black tracking-tight text-[#0F4036]">
-            Goldie&apos;s KDS
-          </h1>
-          <p className="mt-3 max-w-3xl text-lg leading-8 text-[#2D261C]">
-            A simple kitchen display system for Square shops. It keeps tickets,
-            counts, and daily lookups in one place without making the screen
-            busy.
-          </p>
-
-          <div className="mt-6 space-y-5 text-base leading-7 text-[#2D261C]">
-            <p>
-              Live orders flow into New, Making, Ready, Completed, and Done.
-              Staff can change ticket status, add callout names, and see who is
-              signed in.
-            </p>
-
-            <p>
-              The dashboard includes today&apos;s counts, completed orders,
-              reports, order lookup by day, training mode, and a support link
-              for quick help.
-            </p>
-
-            <p>
-              Branding, colors, and the footer can be matched to each shop so
-              the app feels like part of the business instead of a generic
-              tool.
-            </p>
-          </div>
-
-          <div className="mt-8 grid gap-3 sm:grid-cols-2">
-            {[
-              "Live Square order board",
-              "Daily counts and reports",
-              "Training mode for practice",
-              "Password and support tools",
-            ].map((item) => (
-              <div
-                key={item}
-                className="rounded-2xl border border-[#CA862B]/14 bg-white px-4 py-3 shadow-sm text-sm font-semibold text-[#0F4036]"
-              >
-                {item}
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-8 rounded-2xl border border-[#CA862B]/14 bg-[#EEE0C5]/45 px-4 py-4">
-            <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
-              Contact
-            </div>
-            <p className="mt-2 text-sm leading-6 text-[#2D261C]">
-              Use Suggest Fix to reach Samantha about setup, improvements, or a
-              custom version for another Square shop.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PitchPreviewPage({ open, onBack }) {
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 overflow-auto bg-[radial-gradient(circle_at_top,_rgba(255,253,248,0.98),_rgba(238,224,197,1)_55%,_rgba(230,210,173,1)_100%)] text-[#111111]">
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
             "linear-gradient(180deg, rgba(255,255,255,0.32), rgba(255,255,255,0) 28%, rgba(15,64,54,0.03) 100%)",
         }}
       />
@@ -605,7 +510,7 @@ function PitchPreviewPage({ open, onBack }) {
       <div className="relative z-10 mx-auto flex min-h-full w-full max-w-6xl flex-col px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
         <div className="flex items-center justify-between gap-3">
           <div className="rounded-full border border-[#CA862B]/14 bg-[rgba(255,253,248,0.88)] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-[#5A4F3E] shadow-sm backdrop-blur-md">
-            Preview only
+            Studio Samantha
           </div>
 
           <button
@@ -619,18 +524,18 @@ function PitchPreviewPage({ open, onBack }) {
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
           <section className="rounded-[1.75rem] border border-white/70 bg-[rgba(255,253,248,0.92)] p-6 shadow-[0_28px_80px_rgba(15,64,54,0.14)] backdrop-blur-xl">
-          <div className="flex items-center gap-4">
-            <BrandMark size="lg" />
-          </div>
+            <div className="flex items-center gap-4">
+              <BrandMark size="lg" />
+            </div>
 
-          <h1 className="mt-6 text-4xl font-black tracking-tight text-[#0F4036]">
-            Studio Samantha
-          </h1>
-          <p className="mt-3 max-w-2xl text-lg leading-8 text-[#2D261C]">
-            Custom Square tools for coffee shops and small businesses that need
-            a polished display, simple staff workflows, and a better-looking
-            daily operation.
-          </p>
+            <h1 className="mt-6 text-4xl font-black tracking-tight text-[#0F4036]">
+              Studio Samantha
+            </h1>
+            <p className="mt-3 max-w-2xl text-lg leading-8 text-[#2D261C]">
+              Custom Square tools for coffee shops and small businesses that
+              need a polished display, simple staff workflows, and a
+              better-looking daily operation.
+            </p>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {[
@@ -3543,7 +3448,7 @@ export default function GoldiesKDS() {
   return (
     <>
       {isPitchPreviewRoute ? (
-        <PitchPreviewPage
+        <PitchPage
           open={isPitchPreviewRoute}
           onBack={() => {
             if (typeof window !== "undefined") {
