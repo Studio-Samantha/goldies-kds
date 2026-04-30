@@ -8,7 +8,7 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.3.2";
+const APP_VERSION = "v1.3.3";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -19,8 +19,17 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.3.2",
+    version: "v1.3.3",
     date: "Current build",
+    summary: "Polished the KDS visual controls.",
+    items: [
+      "Dark mode now uses Goldie's jewel green and gold instead of slate blue.",
+      "The dining label toggle moved into Settings to keep the board cleaner.",
+    ],
+  },
+  {
+    version: "v1.3.2",
+    date: "Previous build",
     summary: "Cleaned up dining labels and service trademark text.",
     items: [
       "Orders By Day now shows Square dining and fulfillment labels instead of the generic Order fallback.",
@@ -1670,6 +1679,8 @@ function SettingsPopover({
   onClose,
   themeMode,
   onThemeToggle,
+  showDiningOnTickets,
+  onToggleDiningOnTickets,
   onChangePassword,
   suggestFixHref,
   onVersionClick,
@@ -1713,6 +1724,17 @@ function SettingsPopover({
             onToggle={onThemeToggle}
             hint="Switch between the light and dark dashboard themes."
           />
+
+          {onToggleDiningOnTickets && (
+            <button
+              type="button"
+              onClick={onToggleDiningOnTickets}
+              className="w-full rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-left text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+              title="Show or hide Square dining and fulfillment labels on ticket cards."
+            >
+              {showDiningOnTickets ? "Hide Dining on Tickets" : "Show Dining on Tickets"}
+            </button>
+          )}
 
           {showPasswordAction && (
             <button
@@ -2688,10 +2710,10 @@ export default function GoldiesKDS() {
   const themeStyle =
     themeMode === "dark"
       ? {
-          backgroundColor: "#0B1220",
+          backgroundColor: "#06231F",
           backgroundImage:
-            "radial-gradient(circle at top, rgba(59,130,246,0.12), rgba(11,18,32,0.98) 48%, rgba(3,7,18,1) 100%)",
-          color: "#E5E7EB",
+            "radial-gradient(circle at top, rgba(202,134,43,0.22), rgba(15,64,54,0.98) 44%, rgba(6,35,31,1) 100%)",
+          color: "#FFF7EA",
           colorScheme: "dark",
         }
       : undefined;
@@ -3326,6 +3348,10 @@ export default function GoldiesKDS() {
                       current === "dark" ? "light" : "dark"
                     )
                   }
+                  showDiningOnTickets={showDiningOnTickets}
+                  onToggleDiningOnTickets={() =>
+                    setShowDiningOnTickets((current) => !current)
+                  }
                   showPasswordAction={true}
                   onChangePassword={() => {
                     setShowSettingsMenu(false);
@@ -3477,19 +3503,7 @@ export default function GoldiesKDS() {
           )}
         </section>
 
-        <div className="flex flex-wrap justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => setShowDiningOnTickets((current) => !current)}
-            className={`rounded-xl px-4 py-3 text-sm font-black transition shadow-sm ${
-              showDiningOnTickets
-                ? "bg-[#0F4036] text-white hover:bg-[#0b352d]"
-                : "border border-[#CA862B]/22 bg-white text-[#0F4036] hover:bg-[#EEE0C5]/45"
-            }`}
-            title="Show or hide Square dining and fulfillment labels on ticket cards."
-          >
-            {showDiningOnTickets ? "Hide Dining" : "Show Dining"}
-          </button>
+        <div className="flex justify-end">
           <button
             type="button"
             onClick={() => setShowStats((current) => !current)}
