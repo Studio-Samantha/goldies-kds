@@ -7,7 +7,7 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.1.11";
+const APP_VERSION = "v1.1.12";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-30";
@@ -15,11 +15,11 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.1.11",
+    version: "v1.1.12",
     date: "Current build",
-    summary: "The login Settings help button now opens the explanation popup.",
+    summary: "Settings help now opens from both the login screen and dashboard.",
     items: [
-      "The question-mark button next to Settings now opens the help popup on login.",
+      "The question-mark button next to Settings now opens the help popup on both screens.",
       "The help popup explains what Settings contains.",
     ],
   },
@@ -2283,6 +2283,7 @@ export default function GoldiesKDS() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showReleaseNotes, setShowReleaseNotes] = useState(false);
   const [modeHelp, setModeHelp] = useState(null);
+  const [settingsHelp, setSettingsHelp] = useState(null);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [hideSoftOpeningNote, setHideSoftOpeningNote] = useState(false);
   const [hiddenReleaseNotesVersion, setHiddenReleaseNotesVersion] = useState(() => {
@@ -2805,7 +2806,7 @@ export default function GoldiesKDS() {
           onToggleSettings={() => setShowSettingsMenu((current) => !current)}
           onCloseSettings={() => setShowSettingsMenu(false)}
           onSettingsHelp={() =>
-            setModeHelp({
+            setSettingsHelp({
               title: "Settings",
               body: SETTINGS_HELP_TEXT,
             })
@@ -2902,7 +2903,7 @@ export default function GoldiesKDS() {
                   <button
                     type="button"
                     onClick={() =>
-                      setModeHelp({
+                      setSettingsHelp({
                         title: "Settings",
                         body: SETTINGS_HELP_TEXT,
                       })
@@ -3191,6 +3192,12 @@ export default function GoldiesKDS() {
         title={modeHelp?.title || ""}
         body={modeHelp?.body || ""}
         onClose={() => setModeHelp(null)}
+      />
+      <HelpDialog
+        open={Boolean(settingsHelp)}
+        title={settingsHelp?.title || ""}
+        body={settingsHelp?.body || ""}
+        onClose={() => setSettingsHelp(null)}
       />
     </>
   );
