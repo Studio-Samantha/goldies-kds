@@ -9,7 +9,7 @@ const LOGO_DARK_URL = "/goldies-logo-white.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.4.0";
+const APP_VERSION = "v1.5.0";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -20,8 +20,17 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.4.0",
+    version: "v1.5.0",
     date: "Current build",
+    summary: "Added Owner Login for private drink revenue reports.",
+    items: [
+      "Owner Login opens a separate financial dashboard.",
+      "Owner reports show Coffee, Not Coffee, and Smoothies revenue from Square order data.",
+    ],
+  },
+  {
+    version: "v1.4.0",
+    date: "Previous build",
     summary: "Added average drink making time.",
     items: [
       "The top dashboard now shows Avg Drink Time for completed drink tickets.",
@@ -1728,6 +1737,7 @@ function SettingsPopover({
   onThemeToggle,
   showDiningOnTickets,
   onToggleDiningOnTickets,
+  onOwnerLogin,
   onChangePassword,
   suggestFixHref,
   onVersionClick,
@@ -1790,6 +1800,16 @@ function SettingsPopover({
               className="w-full rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-left text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
             >
               Change Password
+            </button>
+          )}
+
+          {onOwnerLogin && (
+            <button
+              type="button"
+              onClick={onOwnerLogin}
+              className="w-full rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-left text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+            >
+              Owner Login
             </button>
           )}
 
@@ -2336,6 +2356,268 @@ function OrdersByDayLookup({
   );
 }
 
+const OWNER_REPORT_RANGES = [
+  { key: "today", label: "Today" },
+  { key: "yesterday", label: "Yesterday" },
+  { key: "last7", label: "7 Days" },
+  { key: "last30", label: "30 Days" },
+  { key: "thisMonth", label: "Month" },
+];
+
+function OwnerLoginDialog({ open, onClose, onLogin, themeMode }) {
+  const [ownerName, setOwnerName] = useState("Owner");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  if (!open) return null;
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setSubmitting(true);
+    setError("");
+
+    try {
+      const response = await fetch(apiUrl("/api/owner/login"), {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ownerName, password }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Owner login failed");
+      }
+
+      const data = await response.json();
+      setPassword("");
+      onLogin(data.ownerName || ownerName || "Owner");
+    } catch (loginError) {
+      setError(loginError.message || "Owner login failed");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className={`fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] flex items-center justify-center p-4 ${themeMode === "dark" ? "goldies-dark" : ""}`}>
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-md rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)] p-5 space-y-4"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
+              Owner Login
+            </div>
+            <h2 className="mt-1 text-2xl font-black text-[#0F4036]">
+              Financial Reports
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+          >
+            Close
+          </button>
+        </div>
+
+        <label className="block text-left">
+          <span className="text-sm font-black text-[#0F4036]">Name</span>
+          <input
+            type="text"
+            value={ownerName}
+            onChange={(event) => setOwnerName(event.target.value)}
+            className="mt-2 w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 text-lg font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15"
+          />
+        </label>
+
+        <label className="block text-left">
+          <span className="text-sm font-black text-[#0F4036]">Password</span>
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className="mt-2 w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 text-lg font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15"
+          />
+        </label>
+
+        {error && (
+          <div className="rounded-2xl bg-red-50 border border-red-100 text-red-900 px-4 py-3 font-medium">
+            {error}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full rounded-2xl bg-[#0F4036] text-white px-4 py-3 font-black transition hover:bg-[#0b352d] disabled:cursor-not-allowed disabled:bg-neutral-300"
+        >
+          {submitting ? "Signing in..." : "Open Owner Reports"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function OwnerReportsView({ ownerName, onClose, themeMode }) {
+  const [range, setRange] = useState("today");
+  const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function fetchReport() {
+      try {
+        setLoading(true);
+        setError("");
+        const response = await fetch(
+          apiUrl(`/api/owner/reports/drink-revenue?range=${range}`),
+          { credentials: "include" }
+        );
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error || `Report unavailable: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (mounted) setReport(data);
+      } catch (reportError) {
+        if (mounted) setError(reportError.message || "Report unavailable");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    fetchReport();
+    return () => {
+      mounted = false;
+    };
+  }, [range]);
+
+  async function handleLogout() {
+    await fetch(apiUrl("/api/owner/logout"), {
+      method: "POST",
+      credentials: "include",
+    }).catch(() => {});
+    onClose();
+  }
+
+  return (
+    <div className={`fixed inset-0 z-50 overflow-auto bg-[radial-gradient(circle_at_top,_rgba(255,253,248,0.98),_rgba(238,224,197,1)_55%,_rgba(230,210,173,1)_100%)] p-4 text-[#111111] ${themeMode === "dark" ? "goldies-dark" : ""}`}>
+      <div className="mx-auto max-w-6xl space-y-4">
+        <header className="flex flex-col gap-3 rounded-3xl border border-white/70 bg-[rgba(255,253,248,0.92)] p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+          <div>
+            <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
+              Owner Reports
+            </div>
+            <h1 className="mt-1 text-3xl font-black text-[#0F4036]">
+              Drink Revenue
+            </h1>
+            <p className="mt-1 text-sm text-[#6A614F]">
+              Coffee, Not Coffee, and Smoothies only
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-[#CA862B]/18 bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-[#0F4036]">
+              {ownerName || "Owner"}
+            </span>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="rounded-xl bg-[#0F4036] px-4 py-2 text-sm font-black text-white transition hover:bg-[#0b352d]"
+            >
+              Sign out
+            </button>
+          </div>
+        </header>
+
+        <section className="rounded-3xl border border-white/70 bg-[rgba(255,253,248,0.92)] p-4 shadow-sm">
+          <div className="mb-4 flex flex-wrap gap-2">
+            {OWNER_REPORT_RANGES.map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => setRange(option.key)}
+                className={`rounded-xl px-4 py-2 text-sm font-black transition ${
+                  range === option.key
+                    ? "bg-[#0F4036] text-white"
+                    : "border border-[#CA862B]/22 bg-white text-[#0F4036] hover:bg-[#EEE0C5]/45"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+
+          {error && (
+            <div className="rounded-2xl bg-red-50 border border-red-100 text-red-900 px-4 py-3 font-medium">
+              {error}
+            </div>
+          )}
+
+          {loading ? (
+            <div className="rounded-2xl border border-dashed border-[#CA862B]/22 bg-white/70 p-8 text-center font-semibold text-[#6A614F]">
+              Loading owner report
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                <StatCard
+                  label="Drink Revenue"
+                  value={report?.totalRevenue || "$0.00"}
+                  detail={`${report?.orderCount || 0} drink orders`}
+                />
+                <StatCard
+                  label="Drink Units"
+                  value={report?.totalUnits || 0}
+                  detail="Coffee, not coffee, smoothies"
+                />
+                <StatCard
+                  label="Avg Drink Order"
+                  value={report?.averageDrinkOrderValue || "$0.00"}
+                  detail="Revenue per drink order"
+                />
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+                {(report?.totalsByCategory || []).map((item) => (
+                  <div
+                    key={item.category}
+                    className="rounded-2xl border border-[#CA862B]/16 bg-white px-4 py-4 shadow-sm"
+                  >
+                    <div className="text-sm font-black text-[#0F4036]">
+                      {item.category}
+                    </div>
+                    <div className="mt-2 text-3xl font-black text-[#111111]">
+                      {item.revenue}
+                    </div>
+                    <div className="mt-1 text-sm font-semibold text-[#6A614F]">
+                      {item.units} units sold
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
+
 function LoginScreen({
   onLogin,
   themeMode,
@@ -2346,6 +2628,7 @@ function LoginScreen({
   onCloseSettings,
   onSettingsHelp,
   onChangePassword,
+  onOwnerLogin,
   suggestFixHref,
   onVersionClickMenu,
 }) {
@@ -2456,6 +2739,7 @@ function LoginScreen({
             onClose={onCloseSettings}
             themeMode={themeMode}
             onThemeToggle={onThemeToggle}
+            onOwnerLogin={onOwnerLogin}
             showPasswordAction={false}
             suggestFixHref={suggestFixHref}
             onVersionClick={onVersionClickMenu}
@@ -2695,6 +2979,9 @@ export default function GoldiesKDS() {
   const [showOrdersByDay, setShowOrdersByDay] = useState(false);
   const [showDiningOnTickets, setShowDiningOnTickets] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showOwnerLogin, setShowOwnerLogin] = useState(false);
+  const [showOwnerReports, setShowOwnerReports] = useState(false);
+  const [signedInOwner, setSignedInOwner] = useState("");
   const [showReleaseNotes, setShowReleaseNotes] = useState(false);
   const [showPitch, setShowPitch] = useState(false);
   const [pitchHash, setPitchHash] = useState(() => {
@@ -2863,17 +3150,26 @@ export default function GoldiesKDS() {
   useEffect(() => {
     let mounted = true;
 
-    async function checkSession() {
+    async function checkSessions() {
       try {
-        const response = await fetch(apiUrl("/api/session"), {
-          credentials: "include",
-        });
-        const session = await response.json();
+        const [staffResponse, ownerResponse] = await Promise.all([
+          fetch(apiUrl("/api/session"), {
+            credentials: "include",
+          }),
+          fetch(apiUrl("/api/owner/session"), {
+            credentials: "include",
+          }),
+        ]);
+        const session = await staffResponse.json();
+        const ownerSession = await ownerResponse.json().catch(() => ({}));
 
         if (!mounted) return;
 
         setAuthStatus(session.authenticated ? "authenticated" : "login");
         setSignedInEmployee(session.employeeName || "");
+        if (ownerSession.authenticated) {
+          setSignedInOwner(ownerSession.ownerName || "Owner");
+        }
         if (!session.configured) {
           setLastError("KDS login is not configured on the backend.");
         }
@@ -2886,7 +3182,7 @@ export default function GoldiesKDS() {
       }
     }
 
-    checkSession();
+    checkSessions();
 
     return () => {
       mounted = false;
@@ -3321,6 +3617,14 @@ export default function GoldiesKDS() {
             setPasswordNotice("");
             setShowPasswordModal(true);
           }}
+          onOwnerLogin={() => {
+            setShowSettingsMenu(false);
+            if (signedInOwner) {
+              setShowOwnerReports(true);
+            } else {
+              setShowOwnerLogin(true);
+            }
+          }}
           suggestFixHref={buildSupportMailto()}
           onVersionClickMenu={() => {
             setShowSettingsMenu(false);
@@ -3437,6 +3741,14 @@ export default function GoldiesKDS() {
                   onToggleDiningOnTickets={() =>
                     setShowDiningOnTickets((current) => !current)
                   }
+                  onOwnerLogin={() => {
+                    setShowSettingsMenu(false);
+                    if (signedInOwner) {
+                      setShowOwnerReports(true);
+                    } else {
+                      setShowOwnerLogin(true);
+                    }
+                  }}
                   showPasswordAction={true}
                   onChangePassword={() => {
                     setShowSettingsMenu(false);
@@ -3722,6 +4034,23 @@ export default function GoldiesKDS() {
         body={settingsHelp?.body || ""}
         onClose={() => setSettingsHelp(null)}
       />
+      <OwnerLoginDialog
+        open={showOwnerLogin}
+        themeMode={themeMode}
+        onClose={() => setShowOwnerLogin(false)}
+        onLogin={(ownerName) => {
+          setSignedInOwner(ownerName || "Owner");
+          setShowOwnerLogin(false);
+          setShowOwnerReports(true);
+        }}
+      />
+      {showOwnerReports && (
+        <OwnerReportsView
+          ownerName={signedInOwner || "Owner"}
+          themeMode={themeMode}
+          onClose={() => setShowOwnerReports(false)}
+        />
+      )}
       <WebServicesReminderDialog
         open={showWebServicesReminder}
         onClose={() => setHideWebServicesReminder(true)}

@@ -15,6 +15,7 @@ const SQUARE_LOCATION_ID = process.env.SQUARE_LOCATION_ID;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const KDS_PASSWORD = process.env.KDS_PASSWORD;
+const OWNER_PASSWORD = process.env.OWNER_PASSWORD || "Goldie123";
 const SESSION_SECRET = process.env.SESSION_SECRET || SQUARE_ACCESS_TOKEN;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || process.env.FRONTEND_ORIGIN || "";
 const ALERT_SMTP_HOST = process.env.ALERT_SMTP_HOST || "";
@@ -39,6 +40,7 @@ const SQUARE_SYNC_INTERVAL_MS = 30 * 1000;
 const SQUARE_HEALTH_CHECK_INTERVAL_MS = 30 * 1000;
 const SQUARE_HEALTH_ALERT_COOLDOWN_MS = 15 * 60 * 1000;
 const SESSION_COOKIE_NAME = "goldies_kds_session";
+const OWNER_SESSION_COOKIE_NAME = "goldies_owner_session";
 const SESSION_MAX_AGE_MS = 1000 * 60 * 60 * 12;
 const KDS_PASSWORD_SETTING_KEY = "kds_password";
 
@@ -373,6 +375,35 @@ function formatDurationSeconds(seconds) {
   return `${mins}m ${String(secs).padStart(2, "0")}s`;
 }
 
+function getMoneyAmountCents(money) {
+  const amount = Number(money?.amount ?? money?.amount_money ?? 0);
+  return Number.isFinite(amount) ? amount : 0;
+}
+
+function getLineItemAmountCents(lineItem = {}) {
+  const total =
+    getMoneyAmountCents(lineItem.totalMoney) ||
+    getMoneyAmountCents(lineItem.total_money) ||
+    getMoneyAmountCents(lineItem.grossSalesMoney) ||
+    getMoneyAmountCents(lineItem.gross_sales_money);
+  if (total) return total;
+
+  const unit =
+    getMoneyAmountCents(lineItem.basePriceMoney) ||
+    getMoneyAmountCents(lineItem.base_price_money) ||
+    getMoneyAmountCents(lineItem.variationTotalPriceMoney) ||
+    getMoneyAmountCents(lineItem.variation_total_price_money);
+  const qty = Number.parseFloat(lineItem.quantity || "1") || 1;
+  return Math.round(unit * qty);
+}
+
+function formatCurrency(cents) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format((Number(cents) || 0) / 100);
+}
+
 function parseCookies(cookieHeader = "") {
   return cookieHeader.split(";").reduce((cookies, cookie) => {
     const [rawName, ...rawValue] = cookie.trim().split("=");
@@ -407,6 +438,17 @@ function createSessionToken(employeeName) {
   const payload = encodeSessionPayload({
     expiresAt,
     employeeName: normalizeName(employeeName),
+    role: "staff",
+  });
+  return `${payload}.${signSession(payload)}`;
+}
+
+function createOwnerSessionToken(ownerName = "Owner") {
+  const expiresAt = Date.now() + SESSION_MAX_AGE_MS;
+  const payload = encodeSessionPayload({
+    expiresAt,
+    ownerName: normalizeName(ownerName) || "Owner",
+    role: "owner",
   });
   return `${payload}.${signSession(payload)}`;
 }
@@ -433,6 +475,8 @@ function getSessionFromToken(token) {
   return {
     expiresAt: parsed.expiresAt,
     employeeName: normalizeName(parsed.employeeName || ""),
+    ownerName: normalizeName(parsed.ownerName || ""),
+    role: parsed.role || "staff",
   };
 }
 
@@ -612,6 +656,19 @@ function isPasswordMatch(password) {
   return false;
 }
 
+function isOwnerPasswordMatch(password) {
+  const normalizedPassword = normalizePasswordInput(password);
+  if (!normalizedPassword || !OWNER_PASSWORD) return false;
+
+  const provided = Buffer.from(normalizedPassword);
+  const expected = Buffer.from(String(OWNER_PASSWORD));
+
+  return (
+    provided.length === expected.length &&
+    crypto.timingSafeEqual(provided, expected)
+  );
+}
+
 function requireKdsAuth(req, res, next) {
   if (!isKdsLoginConfigured()) {
     return res.status(503).json({
@@ -627,6 +684,18 @@ function requireKdsAuth(req, res, next) {
   }
 
   req.kdsSession = session;
+  return next();
+}
+
+function requireOwnerAuth(req, res, next) {
+  const cookies = parseCookies(req.headers.cookie || "");
+  const session = getSessionFromToken(cookies[OWNER_SESSION_COOKIE_NAME]);
+
+  if (!session || session.role !== "owner") {
+    return res.status(401).json({ error: "Owner login required" });
+  }
+
+  req.ownerSession = session;
   return next();
 }
 
@@ -1852,6 +1921,83 @@ function buildDrinkReport(reportTickets, start, end = new Date()) {
   };
 }
 
+function buildOwnerDrinkRevenueReport(orders = [], start, end) {
+  const categories = {
+    Coffee: { category: "Coffee", revenueCents: 0, units: 0 },
+    "Not Coffee": { category: "Not Coffee", revenueCents: 0, units: 0 },
+    Smoothies: { category: "Smoothies", revenueCents: 0, units: 0 },
+  };
+  const orderIds = new Set();
+
+  for (const order of orders || []) {
+    const rawOrder = order.raw_order || {};
+    const lineItems = rawOrder.lineItems || rawOrder.line_items || [];
+    let orderHasDrink = false;
+
+    for (const lineItem of lineItems) {
+      const name = lineItem.name || "";
+      const category = getDrinkCategory(name);
+      if (!category) continue;
+
+      const qty = Number.parseFloat(lineItem.quantity || "1") || 1;
+      const amountCents = getLineItemAmountCents(lineItem);
+
+      categories[category].units += qty;
+      categories[category].revenueCents += amountCents;
+      orderHasDrink = true;
+    }
+
+    if (orderHasDrink) orderIds.add(order.square_order_id);
+  }
+
+  const totalsByCategory = Object.values(categories).map((item) => ({
+    ...item,
+    revenue: formatCurrency(item.revenueCents),
+  }));
+  const totalRevenueCents = totalsByCategory.reduce(
+    (sum, item) => sum + item.revenueCents,
+    0
+  );
+  const totalUnits = totalsByCategory.reduce((sum, item) => sum + item.units, 0);
+
+  return {
+    startAt: start.toISOString(),
+    endAt: end.toISOString(),
+    orderCount: orderIds.size,
+    totalUnits,
+    totalRevenueCents,
+    totalRevenue: formatCurrency(totalRevenueCents),
+    averageDrinkOrderValueCents: orderIds.size
+      ? Math.round(totalRevenueCents / orderIds.size)
+      : 0,
+    averageDrinkOrderValue: formatCurrency(
+      orderIds.size ? Math.round(totalRevenueCents / orderIds.size) : 0
+    ),
+    totalsByCategory,
+  };
+}
+
+async function getOwnerDrinkRevenueReport(range = "today") {
+  const start = getRangeStart(range);
+  const end = getRangeEnd(range);
+
+  if (!supabase) {
+    return buildOwnerDrinkRevenueReport([], start, end);
+  }
+
+  await syncRecentSquareOrders();
+
+  const { data: orders, error } = await supabase
+    .from("kds_orders")
+    .select("square_order_id, created_at, raw_order")
+    .gte("created_at", start.toISOString())
+    .lte("created_at", end.toISOString());
+
+  if (error) throw error;
+
+  return buildOwnerDrinkRevenueReport(orders || [], start, end);
+}
+
 app.get("/api/health", (req, res) => {
   res.json({
     ok: true,
@@ -1954,6 +2100,57 @@ app.post("/api/logout", (req, res) => {
   );
 
   res.json({ ok: true });
+});
+
+app.get("/api/owner/session", (req, res) => {
+  const cookies = parseCookies(req.headers.cookie || "");
+  const session = getSessionFromToken(cookies[OWNER_SESSION_COOKIE_NAME]);
+
+  res.json({
+    authenticated: Boolean(session && session.role === "owner"),
+    ownerName: session?.ownerName || "",
+  });
+});
+
+app.post("/api/owner/login", (req, res) => {
+  const password = req.body?.password;
+  const ownerName = normalizeName(req.body?.ownerName || "Owner");
+
+  if (!isOwnerPasswordMatch(password)) {
+    return res.status(401).json({ error: "Invalid owner password" });
+  }
+
+  res.setHeader(
+    "Set-Cookie",
+    `${OWNER_SESSION_COOKIE_NAME}=${encodeURIComponent(createOwnerSessionToken(ownerName))}; ${getCookieOptions()}`
+  );
+
+  res.json({ ok: true, ownerName });
+});
+
+app.post("/api/owner/logout", (req, res) => {
+  res.setHeader(
+    "Set-Cookie",
+    `${OWNER_SESSION_COOKIE_NAME}=; ${getCookieOptions(0)}`
+  );
+
+  res.json({ ok: true });
+});
+
+app.get("/api/owner/reports/drink-revenue", requireOwnerAuth, async (req, res) => {
+  try {
+    const allowedRanges = new Set(["today", "yesterday", "last7", "last30", "thisMonth"]);
+    const range = allowedRanges.has(req.query.range) ? req.query.range : "today";
+    const report = await getOwnerDrinkRevenueReport(range);
+
+    res.json({
+      ...report,
+      range,
+    });
+  } catch (error) {
+    console.error("Error fetching owner drink revenue report:", error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.patch("/api/password", requireKdsAuth, async (req, res) => {
