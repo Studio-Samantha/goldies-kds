@@ -339,6 +339,31 @@
       .photo-caption strong {
         color: #fff;
       }
+      .customer-section {
+        background: var(--paper);
+      }
+      .customer-grid {
+        margin-top: 30px;
+        grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+        align-items: center;
+      }
+      .customer-shot {
+        overflow: hidden;
+        border: 1px solid rgba(15, 64, 54, 0.14);
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: var(--shadow);
+      }
+      .customer-shot img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        object-fit: cover;
+        object-position: center top;
+      }
+      .customer-note {
+        padding: 22px;
+      }
       .showcase-grid {
         margin-top: 30px;
         grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
@@ -563,7 +588,7 @@
         .nav-links a:not(.button) { display: none; }
         .hero { min-height: 88vh; }
         .hero-visual { display: none; }
-        .features, .showcase-grid, .price-grid, .onboarding-grid {
+        .features, .showcase-grid, .price-grid, .onboarding-grid, .customer-grid {
           grid-template-columns: 1fr;
         }
         .lane-grid {
@@ -687,6 +712,27 @@
           <div class="photo-caption">
             <span><strong>Demo visual:</strong> live drink columns, ready tickets, daily numbers, and hourly volume in one counter-friendly view.</span>
             <span>Shop-specific branding and feature choices happen during setup.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section customer-section">
+      <div class="section-inner">
+        <p class="eyebrow">Current customer example</p>
+        <h2>Goldie&apos;s runs on a branded login with a custom watermarked background.</h2>
+        <div class="grid customer-grid">
+          <div class="customer-note">
+            <p class="section-copy">
+              Each shop can get its own visual identity: logo, colors, custom domain,
+              owner access, support links, and the exact tools the team needs on day one.
+            </p>
+            <p class="section-copy">
+              The same product can feel like it belongs to the shop using it, not like a generic restaurant app.
+            </p>
+          </div>
+          <div class="customer-shot">
+            <img src="/goldies-login-screenshot.png" alt="Goldie's KDS branded login screen with a watermarked background" />
           </div>
         </div>
       </div>
