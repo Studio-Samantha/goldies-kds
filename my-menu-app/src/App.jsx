@@ -1296,7 +1296,7 @@ function SettingsPopover({
   if (!open) return null;
 
   return (
-    <div className="absolute right-0 top-full z-40 mt-2 w-[min(20rem,calc(100vw-2rem))] rounded-2xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_18px_50px_rgba(0,0,0,0.16)] overflow-hidden">
+    <div className="fixed inset-x-4 top-16 z-50 mx-auto w-[min(20rem,calc(100vw-2rem))] max-h-[calc(100vh-5rem)] overflow-y-auto rounded-2xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_18px_50px_rgba(0,0,0,0.16)] sm:absolute sm:right-0 sm:top-full sm:mt-2 sm:inset-x-auto sm:max-h-none">
       <div className="flex items-center justify-between border-b border-[#CA862B]/16 px-4 py-3">
         <div>
           <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
