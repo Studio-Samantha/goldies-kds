@@ -1178,7 +1178,7 @@ function LoginScreen({ onLogin, themeMode, onThemeToggle, themeStyle }) {
         </h1>
 
         <p className="text-[#6A614F] mt-2">
-          Enter the staff name and password to continue.
+          Enter your name and password to continue.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4 w-full">
