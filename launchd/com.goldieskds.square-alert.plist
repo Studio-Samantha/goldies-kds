@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>com.goldieskds.square-alert</string>
+
+    <key>ProgramArguments</key>
+    <array>
+      <string>/Users/fullsailuniversity-samanthacarey/Desktop/goldies-kds-main/scripts/square_offline_notify.sh</string>
+    </array>
+
+    <key>StartInterval</key>
+    <integer>60</integer>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/goldies-kds-square-alert.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/tmp/goldies-kds-square-alert.err</string>
+  </dict>
+</plist>
