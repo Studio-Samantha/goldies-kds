@@ -6,10 +6,19 @@ const API_BASE_URL = import.meta.env.DEV
 const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
-const APP_VERSION = "v1.0.4";
+const APP_VERSION = "v1.0.5";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const RELEASE_NOTES = [
+  {
+    version: "v1.0.5",
+    date: "Current build",
+    summary: "You can now show or hide the login password while typing.",
+    items: [
+      "The login password field has a Show / Hide toggle.",
+      "This makes it easier to check the password before signing in.",
+    ],
+  },
   {
     version: "v1.0.4",
     date: "Current build",
@@ -1264,6 +1273,7 @@ function LoginScreen({
   const [submitting, setSubmitting] = useState(false);
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [lockoutUntil, setLockoutUntil] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
   const lockoutActive = lockoutUntil > Date.now();
 
   useEffect(() => {
@@ -1380,13 +1390,22 @@ function LoginScreen({
 
           <label className="block text-left">
             <span className="text-sm font-black text-[#0F4036]">Password</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              autoComplete="current-password"
-              className="mt-2 w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 text-lg font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15"
-            />
+            <div className="mt-2 relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                autoComplete="current-password"
+                className="w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 pr-24 text-lg font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((current) => !current)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl border border-[#CA862B]/18 bg-[#FFFDF8] px-3 py-1.5 text-xs font-black uppercase tracking-[0.14em] text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
           </label>
 
           {error && (
