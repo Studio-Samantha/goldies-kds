@@ -99,6 +99,10 @@ function getAlertMailer() {
     host: ALERT_SMTP_HOST,
     port: ALERT_SMTP_PORT,
     secure: ALERT_SMTP_SECURE,
+    requireTLS: !ALERT_SMTP_SECURE,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
     auth: {
       user: ALERT_SMTP_USER,
       pass: ALERT_SMTP_PASS,
