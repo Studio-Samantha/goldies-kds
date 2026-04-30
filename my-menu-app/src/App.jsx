@@ -8,6 +8,19 @@ const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const APP_VERSION = "v1.0.0";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
+const RELEASE_NOTES = [
+  {
+    version: "v1.0.0",
+    date: "Current build",
+    items: [
+      "Live Square order sync into the KDS",
+      "Login gate with shared staff access",
+      "Customer names, callout names, and taken-by support",
+      "Collapsible Today, Completed Today, Stats, and Orders By Day panels",
+      "Light and dark mode with Goldie’s branding",
+    ],
+  },
+];
 
 function apiUrl(path) {
   return API_BASE_URL ? `${API_BASE_URL}${path}` : path;
@@ -33,6 +46,58 @@ function buildSupportMailto() {
   );
 
   return `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
+}
+
+function ReleaseNotesDialog({ open, onClose }) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] flex items-center justify-center p-4">
+      <div className="w-full max-w-2xl rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)] overflow-hidden">
+        <div className="flex items-center justify-between gap-4 border-b border-[#CA862B]/18 px-5 py-4">
+          <div>
+            <div className="text-sm font-black uppercase tracking-[0.18em] text-[#6A614F]">
+              Release Notes
+            </div>
+            <h2 className="text-2xl font-black text-[#0F4036]">What&apos;s changed</h2>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+          >
+            Close
+          </button>
+        </div>
+
+        <div className="max-h-[70vh] overflow-y-auto px-5 py-4 space-y-4">
+          {RELEASE_NOTES.map((release) => (
+            <section
+              key={release.version}
+              className="rounded-2xl border border-[#CA862B]/16 bg-white px-4 py-4"
+            >
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <div className="text-lg font-black text-[#111111]">{release.version}</div>
+                  <div className="text-sm font-semibold text-[#6A614F]">{release.date}</div>
+                </div>
+              </div>
+
+              <ul className="mt-3 space-y-2 text-sm text-[#2D261C]">
+                {release.items.map((item) => (
+                  <li key={item} className="flex gap-2">
+                    <span className="mt-1 h-2 w-2 rounded-full bg-[#CA862B] shrink-0" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function getSavedThemeMode() {
@@ -1147,7 +1212,7 @@ function OrdersByDayLookup({ defaultDate, collapsed, onToggle }) {
   );
 }
 
-function LoginScreen({ onLogin, themeMode, onThemeToggle, themeStyle }) {
+function LoginScreen({ onLogin, themeMode, onThemeToggle, themeStyle, onVersionClick }) {
   const [employeeName, setEmployeeName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -1200,6 +1265,14 @@ function LoginScreen({ onLogin, themeMode, onThemeToggle, themeStyle }) {
       >
         Suggest Fix
       </a>
+
+      <button
+        type="button"
+        onClick={onVersionClick}
+        className="absolute right-4 top-28 text-[11px] font-black uppercase tracking-[0.18em] text-[#0F4036] underline decoration-[#CA862B]/70 decoration-2 underline-offset-4"
+      >
+        {APP_VERSION} · What&apos;s new
+      </button>
 
       <main className="w-full max-w-md rounded-3xl bg-[#FFFDF8] border border-[#CA862B]/22 shadow-[0_20px_60px_rgba(15,64,54,0.08)] p-6 flex flex-col items-center text-center">
         <div className="flex items-center justify-center gap-4 mb-5">
@@ -1408,6 +1481,7 @@ export default function GoldiesKDS() {
   const [showCompletedToday, setShowCompletedToday] = useState(false);
   const [showOrdersByDay, setShowOrdersByDay] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showReleaseNotes, setShowReleaseNotes] = useState(false);
   const [passwordError, setPasswordError] = useState("");
   const [passwordNotice, setPasswordNotice] = useState("");
   const [passwordSaving, setPasswordSaving] = useState(false);
@@ -1802,6 +1876,7 @@ export default function GoldiesKDS() {
           setThemeMode((current) => (current === "dark" ? "light" : "dark"))
         }
         themeStyle={themeStyle}
+        onVersionClick={() => setShowReleaseNotes(true)}
       />
     );
   }
@@ -1891,7 +1966,13 @@ export default function GoldiesKDS() {
             </div>
 
             <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6A614F]">
-              {APP_VERSION}
+              <button
+                type="button"
+                onClick={() => setShowReleaseNotes(true)}
+                className="underline decoration-[#CA862B]/70 decoration-2 underline-offset-4"
+              >
+                {APP_VERSION} · What&apos;s new
+              </button>
             </div>
 
             {signedInEmployee && (
@@ -2058,6 +2139,10 @@ export default function GoldiesKDS() {
         onSubmit={handlePasswordChange}
         saving={passwordSaving}
         error={passwordError}
+      />
+      <ReleaseNotesDialog
+        open={showReleaseNotes}
+        onClose={() => setShowReleaseNotes(false)}
       />
     </div>
   );
