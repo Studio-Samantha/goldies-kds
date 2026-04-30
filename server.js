@@ -1394,20 +1394,67 @@ async function getDrinkReport(range = "today") {
     return buildDrinkReport(tickets, getRangeStart(range), getRangeEnd(range));
   }
 
+  await syncRecentSquareOrders();
+
   const start = getRangeStart(range);
   const end = getRangeEnd(range);
-  const { data: orders, error: orderError } = await supabase
-    .from("kds_orders")
-    .select("square_order_id, created_at")
-    .gte("created_at", start.toISOString())
-    .lte("created_at", end.toISOString());
+  const selectColumns = "square_order_id, created_at, updated_at";
 
-  if (orderError) throw orderError;
+  let orders = [];
+
+  if (range === "today") {
+    const [createdResult, updatedResult] = await Promise.all([
+      supabase
+        .from("kds_orders")
+        .select(selectColumns)
+        .gte("created_at", start.toISOString())
+        .lte("created_at", end.toISOString()),
+      supabase
+        .from("kds_orders")
+        .select(selectColumns)
+        .gte("updated_at", start.toISOString())
+        .lte("updated_at", end.toISOString()),
+    ]);
+
+    if (createdResult.error) throw createdResult.error;
+    if (updatedResult.error) throw updatedResult.error;
+
+    const orderMap = new Map();
+    for (const order of [...(createdResult.data || []), ...(updatedResult.data || [])]) {
+      const existing = orderMap.get(order.square_order_id);
+      const createdAt = new Date(order.created_at).getTime();
+      const updatedAt = order.updated_at ? new Date(order.updated_at).getTime() : createdAt;
+      const effectiveCreatedAt = Math.max(createdAt, updatedAt);
+
+      if (!existing || effectiveCreatedAt > existing.createdAt) {
+        orderMap.set(order.square_order_id, {
+          ...order,
+          createdAt: effectiveCreatedAt,
+        });
+      }
+    }
+
+    orders = Array.from(orderMap.values());
+  } else {
+    const { data, error: orderError } = await supabase
+      .from("kds_orders")
+      .select(selectColumns)
+      .gte("created_at", start.toISOString())
+      .lte("created_at", end.toISOString());
+
+    if (orderError) throw orderError;
+
+    orders = (data || []).map((order) => ({
+      ...order,
+      createdAt: new Date(order.created_at).getTime(),
+    }));
+  }
+
   if (!orders.length) return buildDrinkReport([], start);
 
   const orderIds = orders.map((order) => order.square_order_id);
   const orderDateById = new Map(
-    orders.map((order) => [order.square_order_id, new Date(order.created_at).getTime()])
+    orders.map((order) => [order.square_order_id, order.createdAt])
   );
 
   const { data: items, error: itemsError } = await supabase
