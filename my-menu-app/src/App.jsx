@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.7.3";
+const APP_VERSION = "v1.7.4";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v1";
@@ -24,8 +24,19 @@ const SETTINGS_HELP_TEXT =
 const DINING_OPTIONS = ["For here", "To go", "Pickup", "Delivery", "Drive thru"];
 const RELEASE_NOTES = [
   {
-    version: "v1.7.3",
+    version: "v1.7.4",
     date: "Current build",
+    summary: "Added the themed shop survey and Lite preview.",
+    items: [
+      "The marketing site now has a DrinkFlow-themed survey page that can save responses to Supabase.",
+      "The Learn More page now shows an example of what DrinkFlow Lite looks like: live KDS columns without the owner portal or custom domain.",
+      "The hero and Lite pricing now show a $2.99/month starting point.",
+      "The a la carte section now gives clearer examples of small post-launch improvements.",
+    ],
+  },
+  {
+    version: "v1.7.3",
+    date: "Previous build",
     summary: "Added the POS-flexible marketing message.",
     items: [
       "The Learn More page now explains that DrinkFlow is built first for Square and designed to grow with Shopify, Clover, Lightspeed, and other POS workflows by request.",

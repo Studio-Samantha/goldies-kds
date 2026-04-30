@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DrinkFlow KDS Shop Survey | Studio Samantha</title>
+    <meta
+      name="description"
+      content="A short DrinkFlow KDS survey for coffee shops, drink counters, food trucks, and small businesses using Square, Shopify, Clover, Lightspeed, or other POS systems."
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://goldieskds.com/drinkflow-survey" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://goldieskds.com/drinkflow-survey" />
+    <meta property="og:title" content="DrinkFlow KDS Shop Survey" />
+    <meta
+      property="og:description"
+      content="Help shape a lightweight KDS and reporting tool for coffee shops, drink counters, food trucks, and small local shops."
+    />
+    <meta property="og:image" content="https://goldieskds.com/drinkflow-ipad-kds.png" />
+    <style>
+      :root {
+        --paper: #fffdf8;
+        --cream: #f6efe1;
+        --green: #0f4036;
+        --gold: #ca862b;
+        --ink: #15130f;
+        --muted: #665f52;
+        --line: rgba(15, 64, 54, 0.14);
+        --shadow: 0 22px 70px rgba(15, 64, 54, 0.16);
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 86% 8%, rgba(202, 134, 43, 0.16), transparent 28%),
+          linear-gradient(180deg, #fffdf8 0%, #f6efe1 56%, #fffdf8 100%);
+      }
+      a { color: inherit; }
+      .nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px clamp(16px, 4vw, 48px);
+        background: rgba(255, 253, 248, 0.86);
+        border-bottom: 1px solid rgba(15, 64, 54, 0.08);
+        backdrop-filter: blur(18px);
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--green);
+        font-weight: 950;
+        text-decoration: none;
+      }
+      .brand-mark {
+        display: grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        background: var(--green);
+        color: #fff;
+      }
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+      .button, .nav-links a, button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        padding: 0 14px;
+        border-radius: 8px;
+        border: 1px solid rgba(15, 64, 54, 0.16);
+        background: #fff;
+        color: var(--green);
+        font: inherit;
+        font-size: 14px;
+        font-weight: 900;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .button.primary, button {
+        background: var(--green);
+        color: #fff;
+        border-color: var(--green);
+      }
+      main {
+        padding: clamp(28px, 5vw, 70px) clamp(16px, 4vw, 48px) 58px;
+      }
+      .shell {
+        width: min(1180px, 100%);
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: minmax(0, 0.72fr) minmax(360px, 1fr);
+        gap: clamp(24px, 5vw, 70px);
+        align-items: start;
+      }
+      .intro {
+        position: sticky;
+        top: 24px;
+      }
+      .eyebrow {
+        margin: 0 0 12px;
+        color: var(--gold);
+        font-size: 12px;
+        font-weight: 950;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin: 0 0 18px;
+        color: var(--green);
+        font-size: clamp(42px, 6vw, 78px);
+        line-height: 0.95;
+        letter-spacing: 0;
+      }
+      h2 {
+        margin: 0 0 12px;
+        color: var(--green);
+        font-size: 22px;
+        line-height: 1.15;
+      }
+      p {
+        color: var(--muted);
+        line-height: 1.6;
+      }
+      .lead {
+        max-width: 640px;
+        font-size: 19px;
+      }
+      .visual {
+        position: relative;
+        margin-top: 26px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: linear-gradient(135deg, rgba(15, 64, 54, 0.96), rgba(18, 16, 12, 0.94));
+        color: #fff;
+        overflow: hidden;
+        padding: 22px;
+        box-shadow: var(--shadow);
+      }
+      .visual::after {
+        content: "";
+        position: absolute;
+        right: 12px;
+        top: 12px;
+        width: 140px;
+        height: 140px;
+        background: url("/studio-samantha-leaf.png") center / contain no-repeat;
+        opacity: 0.16;
+      }
+      .visual strong {
+        position: relative;
+        z-index: 1;
+        display: block;
+        font-size: 28px;
+        line-height: 1.06;
+      }
+      .visual span {
+        position: relative;
+        z-index: 1;
+        display: block;
+        margin-top: 12px;
+        color: rgba(255, 255, 255, 0.74);
+        line-height: 1.55;
+      }
+      .form-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.86);
+        padding: clamp(18px, 3vw, 30px);
+        box-shadow: var(--shadow);
+      }
+      .field {
+        padding: 18px 0;
+        border-top: 1px solid rgba(15, 64, 54, 0.1);
+      }
+      .field:first-child {
+        border-top: 0;
+        padding-top: 0;
+      }
+      label, legend {
+        display: block;
+        margin: 0 0 10px;
+        color: var(--green);
+        font-weight: 950;
+      }
+      input[type="text"],
+      input[type="email"],
+      select,
+      textarea {
+        width: 100%;
+        min-height: 46px;
+        border: 1px solid rgba(15, 64, 54, 0.16);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--ink);
+        padding: 10px 12px;
+        font: inherit;
+      }
+      textarea {
+        min-height: 112px;
+        resize: vertical;
+      }
+      fieldset {
+        margin: 0;
+        padding: 0;
+        border: 0;
+      }
+      .choices {
+        display: grid;
+        gap: 8px;
+      }
+      .choice {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        border: 1px solid rgba(15, 64, 54, 0.12);
+        border-radius: 8px;
+        background: rgba(255, 253, 248, 0.82);
+        padding: 10px 12px;
+        color: var(--muted);
+        font-weight: 750;
+      }
+      .choice input {
+        margin-top: 3px;
+        accent-color: var(--green);
+      }
+      .two {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .status {
+        min-height: 24px;
+        margin: 12px 0 0;
+        color: var(--green);
+        font-weight: 850;
+      }
+      .hidden-field {
+        position: absolute;
+        left: -9999px;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+      }
+
+      @media (max-width: 900px) {
+        .shell {
+          grid-template-columns: 1fr;
+        }
+        .intro {
+          position: static;
+        }
+      }
+
+      @media (max-width: 560px) {
+        .nav {
+          align-items: flex-start;
+        }
+        .nav-links a:not(.button) {
+          display: none;
+        }
+        .two {
+          grid-template-columns: 1fr;
+        }
+        h1 {
+          font-size: 42px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="nav">
+      <a class="brand" href="/drinkflow-kds" aria-label="DrinkFlow home">
+        <span class="brand-mark">DF</span>
+        <span>DrinkFlow KDS</span>
+      </a>
+      <div class="nav-links">
+        <a href="/drinkflow-kds">Learn More</a>
+        <a href="/case-study/goldies">Case Study</a>
+        <a class="button primary" href="mailto:samantha@studiosamantha.com?subject=DrinkFlow%20KDS%20survey">Contact</a>
+      </div>
+    </nav>
+
+    <main>
+      <div class="shell">
+        <section class="intro">
+          <p class="eyebrow">2-minute shop survey</p>
+          <h1>Help shape DrinkFlow before it grows too fast.</h1>
+          <p class="lead">
+            This survey helps decide which POS connectors, reports, screens, and pricing options matter most
+            for coffee shops, drink counters, food trucks, smoothie bars, and small local shops.
+          </p>
+          <div class="visual">
+            <strong>Built first for Square&reg;. Starting at $2.99/month for Lite.</strong>
+            <span>Every answer helps keep DrinkFlow practical, affordable, and grounded in real counter workflows.</span>
+          </div>
+        </section>
+
+        <form class="form-card" id="survey-form">
+          <div class="field two">
+            <div>
+              <label for="shop-name">Shop or business name</label>
+              <input id="shop-name" name="shopName" type="text" autocomplete="organization" />
+            </div>
+            <div>
+              <label for="email">Email for updates or demo</label>
+              <input id="email" name="email" type="email" autocomplete="email" />
+            </div>
+          </div>
+
+          <div class="field two">
+            <div>
+              <label for="business-type">What type of business do you run?</label>
+              <input id="business-type" name="businessType" type="text" placeholder="Coffee shop, food truck, smoothie bar..." />
+            </div>
+            <div>
+              <label for="pos-system">What POS or order system do you use?</label>
+              <select id="pos-system" name="posSystem">
+                <option value="">Select one</option>
+                <option>Square</option>
+                <option>Shopify</option>
+                <option>Clover</option>
+                <option>Toast</option>
+                <option>Lightspeed</option>
+                <option>Other</option>
+                <option>Not sure</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="current-kds">Do you currently use a KDS?</label>
+            <select id="current-kds" name="currentKds">
+              <option value="">Select one</option>
+              <option>Yes</option>
+              <option>No</option>
+              <option>We use paper tickets</option>
+              <option>We use a tablet or phone workaround</option>
+              <option>Not sure</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="current-workflow">What is the most frustrating part of your current order workflow?</label>
+            <textarea id="current-workflow" name="currentWorkflow"></textarea>
+          </div>
+
+          <div class="field">
+            <fieldset>
+              <legend>What screen would you most likely use?</legend>
+              <div class="choices two">
+                <label class="choice"><input type="checkbox" name="screens" value="iPad/tablet" /> iPad/tablet</label>
+                <label class="choice"><input type="checkbox" name="screens" value="Phone" /> Phone</label>
+                <label class="choice"><input type="checkbox" name="screens" value="Monitor" /> Monitor</label>
+                <label class="choice"><input type="checkbox" name="screens" value="TV" /> TV</label>
+                <label class="choice"><input type="checkbox" name="screens" value="Existing POS screen" /> Existing POS screen</label>
+                <label class="choice"><input type="checkbox" name="screens" value="Not sure" /> Not sure</label>
+              </div>
+            </fieldset>
+          </div>
+
+          <div class="field">
+            <label for="needs">Would you need owner reports or just the live ticket screen?</label>
+            <select id="needs" name="needs">
+              <option value="">Select one</option>
+              <option>Live ticket screen only</option>
+              <option>Owner reports too</option>
+              <option>Both, eventually</option>
+              <option>Not sure yet</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <fieldset>
+              <legend>Which features sound most useful?</legend>
+              <div class="choices">
+                <label class="choice"><input type="checkbox" name="features" value="Live order columns" /> Live order columns</label>
+                <label class="choice"><input type="checkbox" name="features" value="Oldest tickets first" /> Oldest tickets first</label>
+                <label class="choice"><input type="checkbox" name="features" value="Drink-only counts" /> Drink-only counts</label>
+                <label class="choice"><input type="checkbox" name="features" value="Hourly rush graph" /> Hourly rush graph</label>
+                <label class="choice"><input type="checkbox" name="features" value="Average drinks per order" /> Average drinks per order</label>
+                <label class="choice"><input type="checkbox" name="features" value="CSV, Excel, PDF reports" /> CSV, Excel, PDF reports</label>
+                <label class="choice"><input type="checkbox" name="features" value="Branded login" /> Branded login</label>
+                <label class="choice"><input type="checkbox" name="features" value="Custom domain" /> Custom domain</label>
+                <label class="choice"><input type="checkbox" name="features" value="POS integration help" /> POS integration help</label>
+              </div>
+            </fieldset>
+          </div>
+
+          <div class="field two">
+            <div>
+              <label for="pricing">Which price feels reasonable?</label>
+              <select id="pricing" name="pricing">
+                <option value="">Select one</option>
+                <option>$2.99/month Lite</option>
+                <option>$25/year Lite</option>
+                <option>$60/year full KDS</option>
+                <option>$6.99/month</option>
+                <option>I would need to see a demo</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div>
+              <label for="custom-branding">Would custom branding matter?</label>
+              <select id="custom-branding" name="customBranding">
+                <option value="">Select one</option>
+                <option>Yes, very much</option>
+                <option>Maybe</option>
+                <option>No, simple is fine</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="notes">Anything else you wish a small-shop KDS did better?</label>
+            <textarea id="notes" name="notes"></textarea>
+          </div>
+
+          <input class="hidden-field" name="company" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" />
+          <button type="submit">Send survey</button>
+          <p class="status" id="survey-status" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </main>
+
+    <script>
+      const form = document.getElementById("survey-form");
+      const status = document.getElementById("survey-status");
+
+      function getCheckedValues(formData, name) {
+        return formData.getAll(name).map((value) => String(value || "").trim()).filter(Boolean);
+      }
+
+      form?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const formData = new FormData(form);
+        const submitButton = form.querySelector("button[type='submit']");
+        const payload = {
+          shopName: formData.get("shopName") || "",
+          email: formData.get("email") || "",
+          businessType: formData.get("businessType") || "",
+          posSystem: formData.get("posSystem") || "",
+          currentKds: formData.get("currentKds") || "",
+          currentWorkflow: formData.get("currentWorkflow") || "",
+          screens: getCheckedValues(formData, "screens"),
+          needs: formData.get("needs") || "",
+          features: getCheckedValues(formData, "features"),
+          pricing: formData.get("pricing") || "",
+          customBranding: formData.get("customBranding") || "",
+          notes: formData.get("notes") || "",
+          company: formData.get("company") || "",
+          source: "drinkflow-survey",
+          pagePath: window.location.pathname,
+          referrer: document.referrer || "",
+        };
+
+        status.textContent = "Sending...";
+        submitButton.disabled = true;
+
+        try {
+          const response = await fetch("/api/drinkflow-surveys", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const data = await response.json().catch(() => ({}));
+
+          if (!response.ok || data.ok === false) {
+            throw new Error(data.error || "Could not save the survey right now.");
+          }
+
+          status.textContent = data.message || "Thank you. Your feedback was saved.";
+          form.reset();
+        } catch (error) {
+          status.textContent = error.message || "Could not save the survey right now.";
+        } finally {
+          submitButton.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>

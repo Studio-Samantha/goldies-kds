@@ -139,3 +139,30 @@ create index if not exists drinkflow_leads_created_at_idx
 
 create index if not exists drinkflow_leads_source_idx
   on public.drinkflow_leads(source);
+
+create table if not exists public.drinkflow_surveys (
+  id bigserial primary key,
+  email text not null default '',
+  shop_name text not null default '',
+  business_type text not null default '',
+  pos_system text not null default '',
+  current_kds text not null default '',
+  current_workflow text not null default '',
+  screens jsonb not null default '[]'::jsonb,
+  needs text not null default '',
+  features jsonb not null default '[]'::jsonb,
+  pricing text not null default '',
+  custom_branding text not null default '',
+  notes text not null default '',
+  source text not null default 'survey',
+  page_path text not null default '',
+  referrer text not null default '',
+  user_agent text not null default '',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists drinkflow_surveys_created_at_idx
+  on public.drinkflow_surveys(created_at desc);
+
+create index if not exists drinkflow_surveys_pos_system_idx
+  on public.drinkflow_surveys(pos_system);

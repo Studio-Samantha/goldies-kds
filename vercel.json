@@ -12,6 +12,14 @@
       "destination": "/learn-more.html"
     },
     {
+      "source": "/drinkflow-survey",
+      "destination": "/survey.html"
+    },
+    {
+      "source": "/survey",
+      "destination": "/survey.html"
+    },
+    {
       "source": "/case-study/goldies",
       "destination": "/case-study-goldies.html"
     },

@@ -834,6 +834,40 @@
         color: var(--green);
         font-weight: 800;
       }
+      .lite-demo {
+        background: #fff;
+      }
+      .lite-demo-grid {
+        margin-top: 30px;
+        grid-template-columns: minmax(0, 0.56fr) minmax(360px, 1fr);
+        align-items: center;
+      }
+      .lite-demo-list {
+        display: grid;
+        gap: 10px;
+        margin-top: 18px;
+      }
+      .lite-demo-list span {
+        display: block;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(246, 239, 225, 0.54);
+        color: var(--muted);
+        padding: 12px 14px;
+        font-weight: 800;
+      }
+      .lite-screen .screen-bar {
+        background: #12100c;
+      }
+      .lite-screen .lane-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+      .lite-screen .lane {
+        min-height: 230px;
+      }
+      .lite-screen .ticket {
+        background: #fff7e8;
+      }
       .pricing {
         background: var(--green);
         color: #fff;
@@ -977,6 +1011,27 @@
         margin: 10px 0 0;
         color: rgba(255, 255, 255, 0.78);
         line-height: 1.7;
+      }
+      .a-la-carte-grid {
+        margin-top: 18px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+      .a-la-carte-item {
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.08);
+        padding: 14px;
+      }
+      .a-la-carte-item strong {
+        display: block;
+        color: #fff;
+      }
+      .a-la-carte-item span {
+        display: block;
+        margin-top: 6px;
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 13px;
+        line-height: 1.5;
       }
       .support-mini {
         border: 1px solid rgba(255, 255, 255, 0.16);
@@ -1299,7 +1354,7 @@
         .proof-inner {
           transform: translateY(-18px);
         }
-        .features, .showcase-grid, .price-grid, .onboarding-grid, .customer-grid, .comparison-grid, .comparison-savings, .proof-inner, .faq-grid, .support-card-inner, .founder-grid, .founder-points, .case-proof-inner {
+        .features, .showcase-grid, .price-grid, .onboarding-grid, .customer-grid, .comparison-grid, .comparison-savings, .proof-inner, .faq-grid, .support-card-inner, .founder-grid, .founder-points, .case-proof-inner, .lite-demo-grid, .a-la-carte-grid {
           grid-template-columns: 1fr;
         }
         .case-proof {
@@ -1310,6 +1365,9 @@
           justify-self: start;
         }
         .lane-grid {
+          grid-template-columns: 1fr;
+        }
+        .lite-screen .lane-grid {
           grid-template-columns: 1fr;
         }
         .lane {
@@ -1383,6 +1441,7 @@
         <a href="#features">Features</a>
         <a href="#reports">Reports</a>
         <a href="#pricing">Pricing</a>
+        <a href="/drinkflow-survey">Survey</a>
         <a class="button" href="/?demo=training">Open demo</a>
       </div>
     </nav>
@@ -1404,7 +1463,7 @@
           <div class="hero-stats" aria-label="Product highlights">
             <div class="hero-stat"><strong>Live</strong><span>Square&reg; order board</span></div>
             <div class="hero-stat"><strong>PDF</strong><span>Owner reports</span></div>
-            <div class="hero-stat"><strong>$60</strong><span>Launch annual price</span></div>
+            <div class="hero-stat"><strong>$2.99</strong><span>Lite starts monthly</span></div>
           </div>
         </div>
         <div class="hero-product" aria-label="DrinkFlow KDS product visual">
@@ -1766,7 +1825,8 @@
           <article class="price-card">
             <h3>DrinkFlow Lite</h3>
             <span class="price-tag">Hosted by DrinkFlow</span>
-            <div class="price">$25 <small>/ year</small></div>
+            <div class="price">$2.99 <small>/ month</small></div>
+            <p>Or $25/year for the same stripped-down hosted board.</p>
             <p>For trucks, pop-ups, and tiny counters that need a calm live order screen without owner reports.</p>
             <details>
               <summary>What&apos;s included</summary>
@@ -1818,7 +1878,7 @@
           <summary>How the savings compare to per-screen KDS pricing</summary>
           <p>
             Square&reg; publishes KDS pricing at $20-$30/month per device, or $240-$360/year per KDS screen before required plan costs.
-            DrinkFlow Lite can save roughly $215-$335/year for one screen before setup, while DrinkFlow KDS can save roughly $180-$300/year
+            DrinkFlow Lite can save roughly $204-$324/year for one screen on monthly pricing before setup, while DrinkFlow KDS can save roughly $180-$300/year
             after the first year. Savings are estimates based on published U.S. KDS pricing and do not include Square&reg; plan costs,
             payment processing, travel, or optional custom work.
           </p>
@@ -1838,6 +1898,73 @@
               <h4>Small updates</h4>
               <span class="support-price">$25+</span>
               <span>Simple feature additions, wording changes, report tweaks, or small workflow adjustments.</span>
+            </div>
+          </div>
+          <div class="grid a-la-carte-grid" aria-label="A la carte examples">
+            <div class="a-la-carte-item">
+              <strong>New reports</strong>
+              <span>Add a monthly PDF, a different chart, or a cleaner owner summary.</span>
+            </div>
+            <div class="a-la-carte-item">
+              <strong>Workflow changes</strong>
+              <span>Rename columns, simplify the board, or add a shop-specific status.</span>
+            </div>
+            <div class="a-la-carte-item">
+              <strong>Theme polish</strong>
+              <span>Refresh colors, login visuals, watermarks, or seasonal brand touches.</span>
+            </div>
+            <div class="a-la-carte-item">
+              <strong>Integration research</strong>
+              <span>Scope whether another POS can feed clean order data into DrinkFlow.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section lite-demo" id="lite-demo">
+      <div class="section-inner">
+        <p class="eyebrow">DrinkFlow Lite example</p>
+        <h2>The stripped-down version is just the board.</h2>
+        <div class="grid lite-demo-grid">
+          <div>
+            <p class="section-copy">
+              Lite is for tiny counters, trucks, pop-ups, or shops that want a simple hosted screen
+              before they need owner reports. It keeps the KDS calm: live columns, oldest tickets
+              first, and quick status movement.
+            </p>
+            <div class="lite-demo-list">
+              <span>No owner portal</span>
+              <span>No custom domain</span>
+              <span>No monthly report exports</span>
+              <span>Just the live DrinkFlow-hosted KDS</span>
+            </div>
+          </div>
+          <div class="screen lite-screen" aria-label="Example DrinkFlow Lite board">
+            <div class="screen-bar">
+              <span class="screen-logo">DF</span>
+              <strong>DrinkFlow Lite</strong>
+            </div>
+            <div class="screen-body">
+              <div class="lane-grid">
+                <div class="lane">
+                  <div class="lane-head">New</div>
+                  <div class="ticket"><strong>#104 <em>8:04</em></strong><span>1 Latte<br />1 Chai</span></div>
+                  <div class="ticket"><strong>#105 <em>8:06</em></strong><span>2 Cold Brews</span></div>
+                </div>
+                <div class="lane">
+                  <div class="lane-head">Making</div>
+                  <div class="ticket"><strong>#103 <em>8:02</em></strong><span>1 Matcha<br />1 Cappuccino</span></div>
+                </div>
+                <div class="lane">
+                  <div class="lane-head">Ready</div>
+                  <div class="ticket"><strong>#102 <em>8:00</em></strong><span>1 Americano</span></div>
+                </div>
+                <div class="lane">
+                  <div class="lane-head">Completed</div>
+                  <div class="ticket"><strong>#101 <em>7:58</em></strong><span>2 Iced Lattes</span></div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1928,6 +2055,7 @@
         <div>
           <h2>Give the counter a calmer screen.</h2>
           <p>Custom-domain, Square&reg;-connected KDS builds for coffee shops, smoothie shops, food trucks, and drink counters.</p>
+          <p><a class="button" href="/drinkflow-survey">Take the 2-minute shop survey</a></p>
         </div>
         <form class="lead-form" id="lead-form">
           <label for="lead-email">Stay updated as DrinkFlow adds more features</label>

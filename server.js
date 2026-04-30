@@ -175,6 +175,14 @@ function cleanLeadText(value, maxLength = 160) {
     .slice(0, maxLength);
 }
 
+function cleanLeadList(value, maxItems = 12, maxItemLength = 80) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => cleanLeadText(item, maxItemLength))
+    .filter(Boolean)
+    .slice(0, maxItems);
+}
+
 console.log("Initializing Square client...");
 console.log(`Environment: ${SQUARE_ENVIRONMENT}`);
 console.log(`Location ID: ${SQUARE_LOCATION_ID ? "Set" : "Missing"}`);
@@ -3055,6 +3063,78 @@ app.post("/api/drinkflow-leads", async (req, res) => {
   } catch (error) {
     console.error("Error handling DrinkFlow lead:", error);
     res.status(500).json({ ok: false, error: "Could not save that email right now." });
+  }
+});
+
+app.post("/api/drinkflow-surveys", async (req, res) => {
+  try {
+    const email = normalizeLeadEmail(req.body?.email);
+    const honeypot = cleanLeadText(req.body?.company, 80);
+
+    if (honeypot) {
+      return res.json({ ok: true, message: "Thanks. Your survey was received." });
+    }
+
+    if (email && !isValidLeadEmail(email)) {
+      return res.status(400).json({ ok: false, error: "Enter a valid email address or leave it blank." });
+    }
+
+    if (!supabase) {
+      return res.status(503).json({
+        ok: false,
+        error: "Survey storage is not configured yet.",
+      });
+    }
+
+    const survey = {
+      email,
+      shop_name: cleanLeadText(req.body?.shopName, 120),
+      business_type: cleanLeadText(req.body?.businessType, 120),
+      pos_system: cleanLeadText(req.body?.posSystem, 80),
+      current_kds: cleanLeadText(req.body?.currentKds, 120),
+      current_workflow: cleanLeadText(req.body?.currentWorkflow, 1000),
+      screens: cleanLeadList(req.body?.screens, 8, 80),
+      needs: cleanLeadText(req.body?.needs, 160),
+      features: cleanLeadList(req.body?.features, 14, 100),
+      pricing: cleanLeadText(req.body?.pricing, 120),
+      custom_branding: cleanLeadText(req.body?.customBranding, 80),
+      notes: cleanLeadText(req.body?.notes, 1000),
+      source: cleanLeadText(req.body?.source || "survey", 80),
+      page_path: cleanLeadText(req.body?.pagePath, 200),
+      referrer: cleanLeadText(req.body?.referrer || req.get("referer") || "", 300),
+      user_agent: cleanLeadText(req.get("user-agent") || "", 500),
+    };
+
+    const hasUsefulAnswer =
+      survey.email ||
+      survey.shop_name ||
+      survey.business_type ||
+      survey.pos_system ||
+      survey.current_workflow ||
+      survey.features.length > 0;
+
+    if (!hasUsefulAnswer) {
+      return res.status(400).json({ ok: false, error: "Answer at least one question before submitting." });
+    }
+
+    const { error } = await supabase.from("drinkflow_surveys").insert(survey);
+
+    if (error) {
+      console.error("Error saving DrinkFlow survey:", error);
+      const missingTable =
+        error.code === "42P01" || /drinkflow_surveys|schema cache/i.test(error.message || "");
+      return res.status(missingTable ? 503 : 500).json({
+        ok: false,
+        error: missingTable
+          ? "Survey table is not installed in Supabase yet. Run the latest supabase-schema.sql."
+          : "Could not save that survey right now.",
+      });
+    }
+
+    res.json({ ok: true, message: "Thank you. Your feedback was saved." });
+  } catch (error) {
+    console.error("Error handling DrinkFlow survey:", error);
+    res.status(500).json({ ok: false, error: "Could not save that survey right now." });
   }
 });
 
