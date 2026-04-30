@@ -2176,10 +2176,10 @@ function buildCoffeeShopAdvice(report, range) {
     {
       title: "Ticket value",
       body: averageCents >= 900
-        ? `Average drink order value is strong at ${report?.averageDrinkOrderValue || "$0.00"}. ${multiDrinkCount} of ${orderCount} drink orders had 2+ drinks. Protect speed and consistency before pushing more add-ons.`
+        ? `Average drink order value is strong at ${report?.averageDrinkOrderValue || "$0.00"}. ${multiDrinkRate}% of individual drink orders contained 2 or more drinks. Protect speed and consistency before pushing more add-ons.`
         : averageCents >= 600
-          ? `Average drink order value is healthy at ${report?.averageDrinkOrderValue || "$0.00"}. ${multiDrinkRate}% of drink orders had 2+ drinks. ${healthyTicketMove}`
-          : `Average drink order value is modest at ${report?.averageDrinkOrderValue || "$0.00"}. ${multiDrinkCount} of ${orderCount} drink orders had 2+ drinks. ${modestTicketMove}`,
+          ? `Average drink order value is healthy at ${report?.averageDrinkOrderValue || "$0.00"}. ${multiDrinkRate}% of individual drink orders contained 2 or more drinks. ${healthyTicketMove}`
+          : `Average drink order value is modest at ${report?.averageDrinkOrderValue || "$0.00"}. ${multiDrinkRate}% of individual drink orders contained 2 or more drinks. ${modestTicketMove}`,
     },
     {
       title: "Slow-window move",
@@ -3821,9 +3821,9 @@ function OwnerReportsView({ ownerName, onClose, themeMode }) {
                   detail="Coffee, not coffee, smoothies"
                 />
                 <StatCard
-                  label="2+ Drink Orders"
-                  value={`${report?.multiDrinkOrderCount || 0} / ${report?.orderCount || 0}`}
-                  detail={`${report?.multiDrinkOrderRate || 0}% of drink orders`}
+                  label="Orders With 2+ Drinks"
+                  value={`${report?.multiDrinkOrderRate || 0}%`}
+                  detail={`${report?.multiDrinkOrderCount || 0} of ${report?.orderCount || 0} individual drink orders`}
                 />
               </div>
 
