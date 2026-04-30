@@ -7,7 +7,7 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.1.13";
+const APP_VERSION = "v1.1.14";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-30";
@@ -15,12 +15,12 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.1.13",
+    version: "v1.1.14",
     date: "Current build",
-    summary: "The login screen now gives the Settings buttons more room on phones.",
+    summary: "Studio Samantha now appears at the bottom of the login screen and dashboard.",
     items: [
-      "The login screen now keeps the Settings buttons clear of the sign-in card on mobile phones.",
-      "The question-mark button next to Settings still opens the help popup.",
+      "A small Studio Samantha copyright line now sits at the bottom of the login screen.",
+      "The same footer also appears at the bottom of the dashboard.",
     ],
   },
   {
@@ -1329,6 +1329,14 @@ function WatermarkLayer({ trainingMode = false }) {
   );
 }
 
+function BrandFooter() {
+  return (
+    <div className="mt-6 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6A614F]">
+      Studio Samantha © 2026
+    </div>
+  );
+}
+
 function ModeToggle({ active, label, onToggle, hint, onInfoClick }) {
   return (
     <div className="inline-flex items-center gap-1.5">
@@ -2130,6 +2138,8 @@ function LoginScreen({
             {submitting ? "Signing in..." : "Sign in"}
           </button>
         </form>
+
+        <BrandFooter />
 
       </main>
     </div>
@@ -3159,6 +3169,10 @@ export default function GoldiesKDS() {
           trainingMode={isTrainingMode}
           trainingTickets={displayedTickets}
         />
+
+        <div className="flex justify-center pb-2">
+          <BrandFooter />
+        </div>
       </main>
       </div>
 
