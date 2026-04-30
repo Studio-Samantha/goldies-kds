@@ -7,11 +7,20 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.1.5";
+const APP_VERSION = "v1.1.6";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-30";
 const RELEASE_NOTES = [
+  {
+    version: "v1.1.6",
+    date: "Current build",
+    summary: "The password screen was made simpler.",
+    items: [
+      "The password change screen no longer mentions Supabase.",
+      "The password rule is now shorter and easier to read.",
+    ],
+  },
   {
     version: "v1.1.5",
     date: "Current build",
@@ -2092,7 +2101,7 @@ function PasswordSettingsDialog({
           <div>
             <h2 className="text-2xl font-black text-[#0F4036]">Change Password</h2>
             <p className="text-sm text-[#6A614F] mt-1">
-              Requires the current password and saves to Supabase.
+              Requires the current password.
             </p>
           </div>
 
@@ -2148,7 +2157,7 @@ function PasswordSettingsDialog({
           </label>
 
           <div className="text-sm text-[#6A614F]">
-            Passwords are trimmed before saving and must be at least 8 characters.
+            Passwords must be at least 8 characters.
           </div>
 
           {error && (
