@@ -604,7 +604,7 @@ function StatCard({ label, value, detail }) {
   );
 }
 
-function DailyDrinkCount({ drinkCounts }) {
+function DailyDrinkCount({ drinkCounts, orderCount }) {
   const totalDrinks = drinkCounts.reduce((sum, drink) => sum + drink.qty, 0);
 
   return (
@@ -618,7 +618,7 @@ function DailyDrinkCount({ drinkCounts }) {
         </div>
 
         <div className="rounded-full bg-[#CA862B]/14 border border-[#CA862B]/26 px-3 py-1.5 text-sm font-black text-[#8B5A1D]">
-          {totalDrinks} drinks
+          {orderCount} orders / {totalDrinks} drinks
         </div>
       </div>
 
@@ -1401,6 +1401,7 @@ export default function GoldiesKDS() {
   const [tickets, setTickets] = useState([]);
   const [completedTickets, setCompletedTickets] = useState([]);
   const [drinkCounts, setDrinkCounts] = useState([]);
+  const [drinkOrderCount, setDrinkOrderCount] = useState(0);
   const [drinkReports, setDrinkReports] = useState({});
   const [showStats, setShowStats] = useState(false);
   const [showTodayCount, setShowTodayCount] = useState(false);
@@ -1511,6 +1512,7 @@ export default function GoldiesKDS() {
             qty: drink.qty,
           }))
         );
+        setDrinkOrderCount(todayReport.orderCount || 0);
         setLastPoll(new Date());
         setConnectionStatus("Connected");
         setLastError("");
@@ -1766,6 +1768,7 @@ export default function GoldiesKDS() {
     setTickets([]);
     setCompletedTickets([]);
     setDrinkCounts([]);
+    setDrinkOrderCount(0);
     setDrinkReports({});
     setShowPasswordModal(false);
     setPasswordError("");
@@ -1960,7 +1963,9 @@ export default function GoldiesKDS() {
             </button>
           </div>
 
-          {showTodayCount && <DailyDrinkCount drinkCounts={drinkCounts} />}
+          {showTodayCount && (
+            <DailyDrinkCount drinkCounts={drinkCounts} orderCount={drinkOrderCount} />
+          )}
         </section>
 
         <div className="flex justify-end">

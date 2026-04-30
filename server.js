@@ -1505,6 +1505,9 @@ function buildDrinkReport(reportTickets, start, end = new Date()) {
     range: "custom",
     startAt: start.toISOString(),
     endAt: end.toISOString(),
+    orderCount: reportTickets.filter((ticket) =>
+      (ticket.items || []).some((item) => getDrinkCategory(item.name))
+    ).length,
     totalsByName: Array.from(totalsByName.entries())
       .map(([name, qty]) => ({ name, qty, category: getDrinkCategory(name) }))
       .sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name)),
