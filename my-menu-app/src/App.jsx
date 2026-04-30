@@ -1272,7 +1272,7 @@ function LoginScreen({ onLogin, themeMode, onThemeToggle, themeStyle, onVersionC
         onClick={onVersionClick}
         className="absolute right-4 top-28 text-[11px] font-black uppercase tracking-[0.18em] text-[#0F4036] underline decoration-[#CA862B]/70 decoration-2 underline-offset-4"
       >
-        {APP_VERSION} · What&apos;s new
+        {APP_VERSION} · what&apos;s new?
       </button>
 
       <main className="w-full max-w-md rounded-3xl bg-[#FFFDF8] border border-[#CA862B]/22 shadow-[0_20px_60px_rgba(15,64,54,0.08)] p-6 flex flex-col items-center text-center">
@@ -1972,7 +1972,7 @@ export default function GoldiesKDS() {
                 onClick={() => setShowReleaseNotes(true)}
                 className="underline decoration-[#CA862B]/70 decoration-2 underline-offset-4"
               >
-                {APP_VERSION} · What&apos;s new
+                {APP_VERSION} · what&apos;s new?
               </button>
             </div>
 
