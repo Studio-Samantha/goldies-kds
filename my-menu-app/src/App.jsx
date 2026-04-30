@@ -7,7 +7,7 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.1.25";
+const APP_VERSION = "v1.1.26";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -18,12 +18,12 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.1.25",
+    version: "v1.1.26",
     date: "Current build",
-    summary: "The login Learn more link now uses a direct page link so it is more reliable.",
+    summary: "The Learn more link now opens a dedicated page so it is more reliable.",
     items: [
-      "The Learn more control now uses a real hash link.",
-      "This makes the pitch page easier to open on phones.",
+      "The Learn more control now opens its own page.",
+      "This avoids the blank page problem on phones.",
     ],
   },
   {
@@ -1576,7 +1576,7 @@ function WatermarkLayer({ trainingMode = false }) {
   );
 }
 
-function BrandFooter({ className = "", onPitchClick }) {
+function BrandFooter({ className = "" }) {
   return (
     <div
       className={`relative z-30 inline-flex items-center rounded-full border border-white/70 bg-[rgba(255,253,248,0.84)] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5A4F3E] shadow-[0_8px_18px_rgba(15,64,54,0.06)] backdrop-blur-md ${className}`}
@@ -1584,8 +1584,7 @@ function BrandFooter({ className = "", onPitchClick }) {
       <span>Studio Samantha © 2026</span>
       <span className="mx-2 text-[#CA862B]/70">•</span>
       <a
-        href="#learn-more"
-        onClick={onPitchClick}
+        href="/learn-more.html"
         className="cursor-pointer normal-case tracking-normal text-[#0F4036] transition hover:text-[#CA862B] focus:outline-none focus-visible:text-[#CA862B]"
       >
         Learn more
@@ -2397,10 +2396,7 @@ function LoginScreen({
         </form>
 
         <div className="mt-8 flex justify-center pb-1 pointer-events-auto">
-          <BrandFooter
-            onPitchClick={openPitchPage}
-            className="max-w-full px-4 py-2 text-[11px] sm:text-[10px]"
-          />
+          <BrandFooter className="max-w-full px-4 py-2 text-[11px] sm:text-[10px]" />
         </div>
       </main>
     </div>
@@ -3523,11 +3519,7 @@ export default function GoldiesKDS() {
 
   return (
     <>
-      {isPitchRoute || showPitch ? (
-        <PitchPage open={isPitchRoute || showPitch} onBack={closePitchPage} />
-      ) : (
-        content
-      )}
+      {content}
       <ReleaseNotesDialog
         open={showReleaseNotes}
         onClose={() => setShowReleaseNotes(false)}
