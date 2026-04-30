@@ -802,21 +802,56 @@
       }
       .price-grid {
         margin-top: 28px;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
       }
       .price-card {
+        position: relative;
+        overflow: hidden;
         padding: 22px;
         border-radius: 8px;
         border: 1px solid rgba(255, 255, 255, 0.18);
         background: rgba(255, 255, 255, 0.1);
       }
+      .price-card::after {
+        content: "";
+        position: absolute;
+        right: -36px;
+        top: -42px;
+        width: 120px;
+        height: 120px;
+        border-radius: 999px;
+        background: rgba(202, 134, 43, 0.12);
+        pointer-events: none;
+      }
+      .price-card > * {
+        position: relative;
+        z-index: 1;
+      }
       .price-card.featured {
         background: #fff;
         color: var(--ink);
       }
+      .price-card.accent {
+        border-color: rgba(202, 134, 43, 0.48);
+        background: rgba(202, 134, 43, 0.16);
+      }
       .price-card h3 {
         margin: 0;
         font-size: 18px;
+      }
+      .price-tag {
+        display: inline-flex;
+        margin-top: 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.14);
+        padding: 6px 10px;
+        color: inherit;
+        font-size: 12px;
+        font-weight: 900;
+      }
+      .price-card.featured .price-tag {
+        background: rgba(15, 64, 54, 0.08);
+        color: var(--green);
       }
       .price {
         margin-top: 12px;
@@ -833,6 +868,31 @@
         opacity: 0.78;
         line-height: 1.6;
       }
+      .price-card details {
+        margin-top: 14px;
+        border-top: 1px solid rgba(255, 255, 255, 0.16);
+        padding-top: 12px;
+      }
+      .price-card.featured details {
+        border-top-color: rgba(15, 64, 54, 0.12);
+      }
+      .price-card summary {
+        cursor: pointer;
+        font-weight: 950;
+      }
+      .price-card ul {
+        margin: 10px 0 0;
+        padding-left: 18px;
+        color: inherit;
+        opacity: 0.78;
+        line-height: 1.6;
+      }
+      .pricing-note {
+        margin-top: 16px;
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 13px;
+        line-height: 1.6;
+      }
       .support-card {
         margin-top: 18px;
         border: 1px solid rgba(255, 255, 255, 0.18);
@@ -842,6 +902,23 @@
           rgba(255, 255, 255, 0.1);
         padding: 22px;
         color: #fff;
+      }
+      .savings-details {
+        margin-top: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+        padding: 18px 22px;
+      }
+      .savings-details summary {
+        cursor: pointer;
+        font-weight: 950;
+      }
+      .savings-details p {
+        margin: 10px 0 0;
+        color: rgba(255, 255, 255, 0.76);
+        line-height: 1.7;
       }
       .support-card-inner {
         display: grid;
@@ -1563,34 +1640,73 @@
     <section class="section pricing" id="pricing">
       <div class="section-inner">
         <p class="eyebrow">Simple launch pricing</p>
-        <h2>Priced for independent shops that need one focused tool.</h2>
+        <h2>Start with the screen. Add the insight when you need it.</h2>
         <p class="section-copy">
-          This works best as a low-friction subscription with a setup fee for Square&reg; connection,
-          custom domain setup, branding, testing, debugging, and tailoring the feature set to the way each shop works.
-          DrinkFlow connects through the Square&reg; API, so the shop needs to already use Square&reg; for orders or payments.
+          DrinkFlow connects through the Square&reg; API, so the shop needs to already use Square&reg;
+          for orders or payments. Lite keeps the live KDS simple on a DrinkFlow-hosted URL.
+          KDS adds the owner portal, reports, branding, and custom-domain polish.
         </p>
         <div class="grid price-grid">
+          <article class="price-card">
+            <h3>DrinkFlow Lite</h3>
+            <span class="price-tag">Hosted by DrinkFlow</span>
+            <div class="price">$25 <small>/ year</small></div>
+            <p>For trucks, pop-ups, and tiny counters that need a calm live order screen without owner reports.</p>
+            <details>
+              <summary>What&apos;s included</summary>
+              <ul>
+                <li>Live New, Making, Ready, and Completed columns</li>
+                <li>Oldest tickets first</li>
+                <li>Square&reg; connection and basic drink filtering</li>
+                <li>Phone, iPad, monitor, or TV browser display</li>
+                <li>DrinkFlow-hosted URL, no custom domain</li>
+              </ul>
+            </details>
+          </article>
           <article class="price-card featured">
-            <h3>Annual</h3>
+            <h3>DrinkFlow KDS</h3>
+            <span class="price-tag">Custom domain included</span>
             <div class="price">$60 <small>/ year</small></div>
-            <p>Best for shops ready to keep the KDS running after launch.</p>
+            <p>The full setup: polished KDS, branded login, custom domain, owner reports, and drink analytics.</p>
+            <details open>
+              <summary>What&apos;s included</summary>
+              <ul>
+                <li>Everything in Lite</li>
+                <li>Owner portal with drink analytics</li>
+                <li>Hourly volume, average drinks, and 2+ drink order rate</li>
+                <li>CSV, Excel, and branded PDF reports</li>
+                <li>Branded login, custom categories, and custom domain setup</li>
+              </ul>
+            </details>
           </article>
-          <article class="price-card">
-            <h3>Monthly</h3>
-            <div class="price">$6.99 <small>/ month</small></div>
-            <p>A lower commitment option that still keeps the tool affordable.</p>
-          </article>
-          <article class="price-card">
-            <h3>Setup</h3>
-            <div class="price">$50 <small>one time</small></div>
-            <p>Covers onboarding, custom domain setup, shop branding, Square&reg; connection, debugging, launch checks, and adding or removing features based on what the shop actually needs.</p>
-          </article>
-          <article class="price-card">
-            <h3>On-site setup</h3>
-            <div class="price">100 <small>mile radius</small></div>
-            <p>Local in-person setup is available for shops within 100 miles for an additional travel/setup fee.</p>
+          <article class="price-card accent">
+            <h3>A la carte</h3>
+            <span class="price-tag">After launch</span>
+            <div class="price">$25+ <small>updates</small></div>
+            <p>For thoughtful additions after launch: new reports, workflow changes, themes, and extra polish.</p>
+            <details>
+              <summary>How it works</summary>
+              <ul>
+                <li>Small updates start at $25</li>
+                <li>Medium or larger features are quoted first</li>
+                <li>Custom visual themes can use Studio Samantha artwork</li>
+                <li>Source-code handoff can be discussed separately later</li>
+              </ul>
+            </details>
           </article>
         </div>
+        <p class="pricing-note">
+          Setup starts at $35 for Lite or $50 for KDS. Local in-person setup is available within 100 miles for an additional travel/setup fee.
+        </p>
+        <details class="savings-details">
+          <summary>How the savings compare to per-screen KDS pricing</summary>
+          <p>
+            Square&reg; publishes KDS pricing at $20-$30/month per device, or $240-$360/year per KDS screen before required plan costs.
+            DrinkFlow Lite can save roughly $215-$335/year for one screen before setup, while DrinkFlow KDS can save roughly $180-$300/year
+            after the first year. Savings are estimates based on published U.S. KDS pricing and do not include Square&reg; plan costs,
+            payment processing, travel, or optional custom work.
+          </p>
+        </details>
         <div class="support-card">
           <div class="support-card-inner">
             <div>
