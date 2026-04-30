@@ -2241,8 +2241,6 @@ function OwnerSnapshotHistory({
   error,
   tableMissing,
 }) {
-  const [exportMenuOpen, setExportMenuOpen] = useState(false);
-
   return (
     <section className="rounded-2xl border border-[#CA862B]/16 bg-white p-4 shadow-sm">
       <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
@@ -2251,10 +2249,10 @@ function OwnerSnapshotHistory({
             Owner History
           </div>
           <h2 className="mt-1 text-xl font-black text-[#0F4036]">
-            Saved Monthly Snapshots
+            Saved Report Archive
           </h2>
           <p className="mt-1 text-sm font-semibold text-[#6A614F]">
-            Save the current read, then download month-by-month CSV records.
+            Optional long-term record for comparing owner reads over time.
           </p>
         </div>
 
@@ -2278,44 +2276,8 @@ function OwnerSnapshotHistory({
             disabled={saving || tableMissing}
             className="rounded-xl bg-[#0F4036] px-4 py-2 text-sm font-black text-white transition hover:bg-[#0b352d] disabled:cursor-not-allowed disabled:bg-neutral-300"
           >
-            {saving ? "Saving..." : "Save Snapshot"}
+            {saving ? "Saving..." : "Save to Archive"}
           </button>
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setExportMenuOpen((current) => !current)}
-              disabled={tableMissing}
-              className="w-full rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Export
-            </button>
-
-            {exportMenuOpen && !tableMissing && (
-              <div className="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-2xl border border-[#CA862B]/18 bg-white shadow-[0_18px_45px_rgba(15,64,54,0.16)]">
-                <a
-                  href={apiUrl(`/api/owner/snapshots.csv?month=${month}`)}
-                  className="block px-4 py-3 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-                  onClick={() => setExportMenuOpen(false)}
-                >
-                  CSV for Excel
-                </a>
-                <button
-                  type="button"
-                  disabled
-                  className="block w-full px-4 py-3 text-left text-sm font-black text-[#6A614F] opacity-60"
-                >
-                  Excel workbook soon
-                </button>
-                <button
-                  type="button"
-                  disabled
-                  className="block w-full px-4 py-3 text-left text-sm font-black text-[#6A614F] opacity-60"
-                >
-                  PDF report soon
-                </button>
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
@@ -3543,6 +3505,7 @@ function OwnerReportsView({ ownerName, onClose, themeMode }) {
   const [snapshotNotice, setSnapshotNotice] = useState("");
   const [snapshotError, setSnapshotError] = useState("");
   const [snapshotSaving, setSnapshotSaving] = useState(false);
+  const [reportExportMenuOpen, setReportExportMenuOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -3770,21 +3733,63 @@ function OwnerReportsView({ ownerName, onClose, themeMode }) {
         )}
 
         <section className="rounded-3xl border border-white/70 bg-[rgba(255,253,248,0.92)] p-4 shadow-sm">
-          <div className="mb-4 flex flex-wrap gap-2">
-            {OWNER_REPORT_RANGES.map((option) => (
+          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-wrap gap-2">
+              {OWNER_REPORT_RANGES.map((option) => (
+                <button
+                  key={option.key}
+                  type="button"
+                  onClick={() => {
+                    setRange(option.key);
+                    setReportExportMenuOpen(false);
+                  }}
+                  className={`rounded-xl px-4 py-2 text-sm font-black transition ${
+                    range === option.key
+                      ? "bg-[#0F4036] text-white"
+                      : "border border-[#CA862B]/22 bg-white text-[#0F4036] hover:bg-[#EEE0C5]/45"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="relative">
               <button
-                key={option.key}
                 type="button"
-                onClick={() => setRange(option.key)}
-                className={`rounded-xl px-4 py-2 text-sm font-black transition ${
-                  range === option.key
-                    ? "bg-[#0F4036] text-white"
-                    : "border border-[#CA862B]/22 bg-white text-[#0F4036] hover:bg-[#EEE0C5]/45"
-                }`}
+                onClick={() => setReportExportMenuOpen((current) => !current)}
+                disabled={loading || Boolean(error)}
+                className="w-full rounded-xl bg-[#0F4036] px-4 py-2 text-sm font-black text-white transition hover:bg-[#0b352d] disabled:cursor-not-allowed disabled:bg-neutral-300 lg:w-auto"
               >
-                {option.label}
+                Download Report
               </button>
-            ))}
+
+              {reportExportMenuOpen && !loading && !error && (
+                <div className="absolute right-0 z-20 mt-2 w-60 overflow-hidden rounded-2xl border border-[#CA862B]/18 bg-white shadow-[0_18px_45px_rgba(15,64,54,0.16)]">
+                  <a
+                    href={apiUrl(`/api/owner/reports/drink-revenue.csv?range=${range}`)}
+                    className="block px-4 py-3 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                    onClick={() => setReportExportMenuOpen(false)}
+                  >
+                    CSV
+                  </a>
+                  <a
+                    href={apiUrl(`/api/owner/reports/drink-revenue.xlsx?range=${range}`)}
+                    className="block px-4 py-3 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                    onClick={() => setReportExportMenuOpen(false)}
+                  >
+                    Excel workbook
+                  </a>
+                  <a
+                    href={apiUrl(`/api/owner/reports/drink-revenue.pdf?range=${range}`)}
+                    className="block px-4 py-3 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                    onClick={() => setReportExportMenuOpen(false)}
+                  >
+                    PDF report
+                  </a>
+                </div>
+              )}
+            </div>
           </div>
 
           {error && (

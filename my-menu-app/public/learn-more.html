@@ -3,418 +3,682 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Coffee Shop KDS | Studio Samantha</title>
+    <title>DrinkFlow KDS: Built for Coffee & Drink Shops | Studio Samantha</title>
     <style>
       :root {
-        --cream: #fffdf8;
-        --sand: #eee0c5;
-        --sand-2: #e6d2ad;
+        --paper: #fffdf8;
+        --cream: #f6efe1;
         --green: #0f4036;
-        --green-2: #123e35;
+        --green-2: #173f38;
         --gold: #ca862b;
-        --text: #2d261c;
-        --muted: #6a614f;
+        --blue: #2f6f8f;
+        --ink: #15130f;
+        --muted: #665f52;
+        --line: rgba(15, 64, 54, 0.14);
+        --shadow: 0 20px 60px rgba(15, 64, 54, 0.16);
       }
+
       * { box-sizing: border-box; }
-      html, body { margin: 0; min-height: 100%; }
+      html { scroll-behavior: smooth; }
       body {
+        margin: 0;
         font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        color: #111;
-        background:
-          radial-gradient(circle at top, rgba(255,253,248,0.98), rgba(238,224,197,1) 55%, rgba(230,210,173,1) 100%);
+        color: var(--ink);
+        background: var(--paper);
       }
-      .bg {
+      a { color: inherit; }
+      .nav {
         position: fixed;
-        inset: 0;
-        pointer-events: none;
-        background:
-          linear-gradient(180deg, rgba(255,255,255,0.32), rgba(255,255,255,0) 28%, rgba(15,64,54,0.03) 100%);
-      }
-      .wrap {
-        position: relative;
-        z-index: 1;
-        max-width: 1140px;
-        margin: 0 auto;
-        padding: 20px 16px 32px;
-      }
-      .topbar {
+        z-index: 20;
+        top: 0;
+        left: 0;
+        right: 0;
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 12px;
+        padding: 14px clamp(16px, 4vw, 48px);
+        background: rgba(255, 253, 248, 0.86);
+        border-bottom: 1px solid rgba(15, 64, 54, 0.08);
+        backdrop-filter: blur(18px);
       }
-      .pill, .button, .card, .metric, .sample, .cta {
-        border-radius: 22px;
-        border: 1px solid rgba(202,134,43,.14);
-        background: rgba(255,253,248,.92);
-        box-shadow: 0 28px 80px rgba(15,64,54,.12);
-        backdrop-filter: blur(14px);
-      }
-      .pill {
-        display: inline-flex;
+      .brand {
+        display: flex;
         align-items: center;
-        padding: 10px 14px;
-        font-size: 11px;
-        font-weight: 900;
-        letter-spacing: .18em;
-        text-transform: uppercase;
-        color: #5a4f3e;
+        gap: 10px;
+        font-weight: 950;
+        color: var(--green);
         text-decoration: none;
-        white-space: nowrap;
       }
-      .button {
+      .brand-mark {
+        display: grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        background: var(--green);
+        color: #fff;
+        font-size: 15px;
+      }
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .nav-links a, .button {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 10px 16px;
+        min-height: 40px;
+        padding: 0 14px;
+        border-radius: 8px;
         font-size: 14px;
-        font-weight: 900;
-        color: var(--green);
+        font-weight: 850;
         text-decoration: none;
-        background: rgba(255,253,248,.92);
       }
+      .nav-links a {
+        color: var(--muted);
+      }
+      .button {
+        border: 1px solid rgba(15, 64, 54, 0.14);
+        background: #fff;
+        color: var(--green);
+      }
+      .button.primary {
+        border-color: var(--green);
+        background: var(--green);
+        color: #fff;
+      }
+
       .hero {
-        margin-top: 32px;
-        padding: 24px;
+        position: relative;
+        min-height: 94vh;
+        display: grid;
+        align-items: end;
+        overflow: hidden;
+        padding: 92px clamp(16px, 4vw, 48px) 46px;
+        background:
+          linear-gradient(90deg, rgba(15, 64, 54, 0.94), rgba(15, 64, 54, 0.76) 45%, rgba(15, 64, 54, 0.26)),
+          url("/goldies-logo-owner.png");
+        background-size: cover, min(900px, 120vw);
+        background-position: center, right 12% center;
+        background-repeat: no-repeat;
+      }
+      .hero::after {
+        content: "";
+        position: absolute;
+        inset: auto 0 0 0;
+        height: 34%;
+        background: linear-gradient(0deg, rgba(255, 253, 248, 1), rgba(255, 253, 248, 0));
+      }
+      .hero-inner {
+        position: relative;
+        z-index: 1;
+        max-width: 1180px;
+        width: 100%;
+        margin: 0 auto;
+        display: grid;
+        gap: 28px;
+        grid-template-columns: minmax(0, 1fr);
       }
       .eyebrow {
-        font-size: 11px;
-        font-weight: 900;
+        margin: 0;
+        font-size: 12px;
+        font-weight: 950;
+        letter-spacing: 0.16em;
         text-transform: uppercase;
-        letter-spacing: .18em;
-        color: var(--muted);
       }
+      .hero .eyebrow { color: rgba(255, 255, 255, 0.72); }
       h1 {
-        margin: 16px 0 0;
-        font-size: clamp(38px, 5vw, 64px);
-        line-height: .95;
-        letter-spacing: -0.04em;
-        color: var(--green);
+        max-width: 760px;
+        margin: 10px 0 0;
+        font-size: clamp(44px, 8vw, 92px);
+        line-height: 0.98;
+        letter-spacing: 0;
+        color: #fff;
       }
       .lead {
-        max-width: 760px;
-        margin: 14px 0 0;
-        font-size: clamp(18px, 2vw, 22px);
-        line-height: 1.6;
-        color: var(--text);
+        max-width: 680px;
+        margin: 18px 0 0;
+        color: rgba(255, 255, 255, 0.88);
+        font-size: clamp(18px, 2vw, 23px);
+        line-height: 1.55;
       }
-      .grid {
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
         margin-top: 24px;
-        display: grid;
-        gap: 18px;
       }
-      .feature-grid {
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      .hero-actions .button {
+        min-height: 48px;
+        padding: 0 18px;
       }
-      .feature {
-        padding: 18px;
-      }
-      .feature h3, .section-title {
-        margin: 0;
-        font-size: 13px;
-        font-weight: 900;
-        letter-spacing: .18em;
-        text-transform: uppercase;
+      .hero-actions .button.primary {
+        background: #fff;
+        border-color: #fff;
         color: var(--green);
       }
-      .feature p, .section-body, .sample small, .cta p {
-        margin: 10px 0 0;
-        color: var(--text);
-        line-height: 1.6;
-        font-size: 14px;
+      .hero-actions .button {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.34);
+        color: #fff;
       }
-      .columns {
-        margin-top: 18px;
-        display: grid;
-        gap: 18px;
-        grid-template-columns: 1fr;
-      }
-      .dashboard {
-        padding: 18px;
-      }
-      .metrics {
-        display: grid;
-        gap: 12px;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-      .metric {
-        padding: 16px;
-      }
-      .metric .label {
-        font-size: 11px;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: .18em;
-        color: var(--muted);
-      }
-      .metric .value {
-        margin-top: 6px;
-        font-size: 32px;
-        line-height: 1;
-        font-weight: 900;
-        color: var(--green);
-      }
-      .sample {
-        margin-top: 12px;
-        padding: 16px;
-      }
-      .owner-panel {
-        margin-top: 18px;
-        padding: 18px;
-      }
-      .owner-row {
+      .hero-stats {
         display: grid;
         gap: 10px;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        margin-top: 12px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        max-width: 640px;
+        margin-top: 28px;
       }
-      .owner-note {
-        border-radius: 16px;
-        border: 1px solid rgba(202,134,43,.14);
-        background: rgba(255,253,248,.78);
+      .hero-stat {
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.12);
         padding: 14px;
+        color: #fff;
+        backdrop-filter: blur(12px);
       }
-      .sample-head {
+      .hero-stat strong {
+        display: block;
+        font-size: 25px;
+        line-height: 1;
+      }
+      .hero-stat span {
+        display: block;
+        margin-top: 7px;
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 12px;
+        font-weight: 850;
+        text-transform: uppercase;
+      }
+
+      .section {
+        padding: 64px clamp(16px, 4vw, 48px);
+      }
+      .section-inner {
+        max-width: 1180px;
+        margin: 0 auto;
+      }
+      .section h2 {
+        max-width: 820px;
+        margin: 8px 0 0;
+        color: var(--green);
+        font-size: clamp(32px, 4vw, 54px);
+        line-height: 1.04;
+        letter-spacing: 0;
+      }
+      .section-copy {
+        max-width: 760px;
+        margin: 14px 0 0;
+        color: var(--muted);
+        font-size: 17px;
+        line-height: 1.7;
+      }
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+      .features {
+        margin-top: 28px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 12px 34px rgba(15, 64, 54, 0.08);
+      }
+      .feature {
+        padding: 20px;
+      }
+      .icon {
+        display: grid;
+        place-items: center;
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
+        background: rgba(202, 134, 43, 0.14);
+        color: var(--green);
+        font-weight: 950;
+      }
+      .feature h3, .mini-title {
+        margin: 14px 0 0;
+        color: var(--green);
+        font-size: 15px;
+      }
+      .feature p, .mini-copy {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      .showcase {
+        background: var(--cream);
+      }
+      .showcase-grid {
+        margin-top: 30px;
+        grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+        align-items: start;
+      }
+      .screen {
+        overflow: hidden;
+        border: 1px solid rgba(15, 64, 54, 0.18);
+        border-radius: 8px;
+        background: #fdfaf2;
+        box-shadow: var(--shadow);
+      }
+      .screen-bar {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-      }
-      .sample-title {
-        font-size: 12px;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: .18em;
-        color: var(--muted);
-      }
-      .sample-order {
-        margin-top: 6px;
-        font-size: 22px;
-        font-weight: 900;
-        color: #111;
-      }
-      .badge {
-        border-radius: 999px;
-        padding: 6px 12px;
-        background: rgba(238,224,197,.62);
-        color: var(--green);
-        font-size: 11px;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: .16em;
-      }
-      .lines {
-        margin-top: 12px;
-        display: grid;
-        gap: 8px;
-      }
-      .line {
-        border-radius: 14px;
-        background: rgba(238,224,197,.42);
-        padding: 10px 12px;
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--text);
-      }
-      .cta {
-        margin-top: 18px;
-        padding: 18px;
-        background: #0f4036;
+        padding: 14px;
+        background: var(--green);
         color: #fff;
       }
-      .cta .section-title {
-        color: rgba(255,255,255,.72);
+      .screen-logo {
+        max-width: 128px;
+        max-height: 40px;
+        object-fit: contain;
+        filter: brightness(0) invert(1);
       }
-      .cta p {
-        color: rgba(255,255,255,.9);
+      .screen-body {
+        padding: 16px;
       }
-      .footer {
-        margin-top: 18px;
-        padding-bottom: env(safe-area-inset-bottom);
+      .lane-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
       }
-      .footer a {
+      .lane {
+        border: 1px solid rgba(15, 64, 54, 0.12);
+        border-radius: 8px;
+        background: #fff;
+        min-height: 260px;
+      }
+      .lane-head {
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(15, 64, 54, 0.1);
+        color: var(--green);
+        font-size: 12px;
+        font-weight: 950;
+        text-transform: uppercase;
+      }
+      .ticket {
+        margin: 10px;
+        padding: 12px;
+        border-radius: 8px;
+        background: #f7efdf;
+      }
+      .ticket strong {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        color: var(--ink);
+      }
+      .ticket span {
+        display: block;
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+      .owner-card {
+        padding: 18px;
+      }
+      .owner-metrics {
+        margin-top: 14px;
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .metric {
+        border: 1px solid rgba(15, 64, 54, 0.1);
+        border-radius: 8px;
+        background: #fff;
+        padding: 14px;
+      }
+      .metric span {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 950;
+        text-transform: uppercase;
+      }
+      .metric strong {
+        display: block;
+        margin-top: 7px;
+        color: var(--green);
+        font-size: 28px;
+        line-height: 1;
+      }
+      .bars {
+        height: 170px;
+        margin-top: 16px;
+        padding: 14px;
+        border-radius: 8px;
+        background: #fff;
+        border: 1px solid rgba(15, 64, 54, 0.1);
+      }
+      .volume-chart {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      .advice-list {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .advice {
+        border: 1px solid rgba(15, 64, 54, 0.1);
+        border-radius: 8px;
+        background: #fff;
+        padding: 12px;
+      }
+      .advice strong {
+        display: block;
+        color: var(--green);
+        font-size: 13px;
+      }
+      .advice span {
+        display: block;
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      .pricing {
+        background: var(--green);
+        color: #fff;
+      }
+      .pricing .eyebrow, .pricing h2, .pricing .section-copy {
+        color: #fff;
+      }
+      .price-grid {
+        margin-top: 28px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      .price-card {
+        padding: 22px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .price-card.featured {
+        background: #fff;
+        color: var(--ink);
+      }
+      .price-card h3 {
+        margin: 0;
+        font-size: 18px;
+      }
+      .price {
+        margin-top: 12px;
+        font-size: 42px;
+        line-height: 1;
+        font-weight: 950;
+      }
+      .price small {
+        font-size: 15px;
+        color: var(--muted);
+      }
+      .price-card p {
         color: inherit;
+        opacity: 0.78;
+        line-height: 1.6;
       }
-      @media (min-width: 900px) {
-        .columns {
-          grid-template-columns: 1.15fr .85fr;
+      .cta-band {
+        padding: 56px clamp(16px, 4vw, 48px);
+        background: #12100c;
+        color: #fff;
+      }
+      .cta-inner {
+        max-width: 1180px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+      }
+      .cta-inner h2 {
+        margin: 0;
+        font-size: clamp(30px, 4vw, 52px);
+        line-height: 1.04;
+      }
+      .cta-inner p {
+        margin: 10px 0 0;
+        color: rgba(255, 255, 255, 0.72);
+      }
+      footer {
+        padding: 28px clamp(16px, 4vw, 48px);
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+      footer .section-inner {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+      }
+
+      @media (max-width: 900px) {
+        .nav-links a:not(.button) { display: none; }
+        .hero { min-height: 88vh; }
+        .features, .showcase-grid, .price-grid {
+          grid-template-columns: 1fr;
+        }
+        .lane-grid {
+          grid-template-columns: 1fr;
+        }
+        .lane {
+          min-height: auto;
+        }
+        .hero-stats, .owner-metrics {
+          grid-template-columns: 1fr;
+        }
+        .cta-inner, footer .section-inner {
+          align-items: flex-start;
+          flex-direction: column;
         }
       }
     </style>
   </head>
   <body>
-    <div class="bg"></div>
-    <main class="wrap">
-      <div class="topbar">
-        <a class="pill" href="https://www.studiosamantha.com" target="_blank" rel="noreferrer">
-          Studio Samantha
-        </a>
-        <a class="button" href="/">Back to app</a>
+    <nav class="nav" aria-label="Main navigation">
+      <a class="brand" href="#">
+        <span class="brand-mark">DF</span>
+        <span>DrinkFlow KDS</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#reports">Reports</a>
+        <a href="#pricing">Pricing</a>
+        <a class="button" href="/">Open demo</a>
       </div>
+    </nav>
 
-      <section class="hero card">
-        <div class="eyebrow">Studio Samantha</div>
-        <h1>Built for coffee and drink shops.</h1>
-        <p class="lead">
-          Get a custom Square-connected KDS for cafes, coffee bars, smoothie
-          shops, and drink counters that need fast tickets, clean drink counts,
-          and owner reporting without a pile of pricey subscriptions.
+    <header class="hero">
+      <div class="hero-inner">
+        <div>
+          <p class="eyebrow">Built for coffee bars, smoothie shops, and drink counters</p>
+          <h1>Drink orders move faster when the screen is made for drinks.</h1>
+          <p class="lead">
+            DrinkFlow KDS turns Square orders into a clean live board, daily drink counts,
+            rush-hour visibility, and owner-ready reports for small shops that do not need
+            a restaurant-sized software stack.
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="mailto:samantha@studiosamantha.com?subject=DrinkFlow%20KDS%20setup">Ask about setup</a>
+            <a class="button" href="#pricing">See pricing</a>
+          </div>
+          <div class="hero-stats" aria-label="Product highlights">
+            <div class="hero-stat"><strong>Live</strong><span>Square order board</span></div>
+            <div class="hero-stat"><strong>PDF</strong><span>Owner reports</span></div>
+            <div class="hero-stat"><strong>$60</strong><span>Launch annual price</span></div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="section" id="features">
+      <div class="section-inner">
+        <p class="eyebrow">What makes it different</p>
+        <h2>A lightweight KDS tuned for the way drink shops actually work.</h2>
+        <p class="section-copy">
+          Most kitchen display systems are built around entrees, courses, kitchen stations,
+          and large restaurant workflows. DrinkFlow KDS focuses on the counter: readable
+          tickets, fast status moves, counted drink categories, and owner visibility.
         </p>
-
-        <div class="grid feature-grid">
-          <div class="feature card">
-            <h3>Live board</h3>
-            <p>New, Making, Ready, Completed, and Done stay readable during the rush.</p>
-          </div>
-          <div class="feature card">
-            <h3>Drink counts</h3>
-            <p>Coffee, not coffee, smoothies, completed tickets, and daily totals stay easy to scan.</p>
-          </div>
-          <div class="feature card">
-            <h3>Staff tools</h3>
-            <p>Password controls, support, and training mode stay built in.</p>
-          </div>
-          <div class="feature card">
-            <h3>Owner insights</h3>
-            <p>Revenue, category mix, average ticket value, and hourly volume help owners spot rushes.</p>
-          </div>
+        <div class="grid features">
+          <article class="card feature">
+            <div class="icon">01</div>
+            <h3>Drink-first tickets</h3>
+            <p>Coffee, not coffee, and smoothies stay easy to scan while non-drink retail stays out of drink totals.</p>
+          </article>
+          <article class="card feature">
+            <div class="icon">02</div>
+            <h3>Counter flow</h3>
+            <p>New, Making, Ready, Completed, and Done give staff a simple rhythm during rushes.</p>
+          </article>
+          <article class="card feature">
+            <div class="icon">03</div>
+            <h3>Owner reports</h3>
+            <p>Download CSV, Excel, or branded PDF reports for the selected time period.</p>
+          </article>
+          <article class="card feature">
+            <div class="icon">04</div>
+            <h3>Shop-branded</h3>
+            <p>Colors, logos, labels, password tools, and training mode can be tailored for each shop.</p>
+          </article>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section class="columns">
-        <div class="dashboard card">
-          <div class="eyebrow">Example dashboard</div>
-          <div class="metrics">
-            <div class="metric">
-              <div class="label">Open orders</div>
-              <div class="value">12</div>
+    <section class="section showcase" id="reports">
+      <div class="section-inner">
+        <p class="eyebrow">Live board and owner portal</p>
+        <h2>Daily operations on the floor. Business signals in the back office.</h2>
+        <div class="grid showcase-grid">
+          <div class="screen" aria-label="Example KDS board">
+            <div class="screen-bar">
+              <img class="screen-logo" src="/goldies-logo-owner.png" alt="Sample coffee shop logo" />
+              <strong>Thursday Rush</strong>
             </div>
-            <div class="metric">
-              <div class="label">Drinks today</div>
-              <div class="value">31</div>
-            </div>
-            <div class="metric">
-              <div class="label">Peak hour</div>
-              <div class="value">8 AM</div>
-            </div>
-            <div class="metric">
-              <div class="label">Completed</div>
-              <div class="value">18</div>
-            </div>
-          </div>
-
-          <div class="sample">
-            <div class="sample-head">
-              <div>
-                <div class="sample-title">Live order preview</div>
-                <div class="sample-order">#R90W</div>
-              </div>
-              <div class="badge">8:12 AM</div>
-            </div>
-            <div style="margin-top: 10px; font-weight: 700; color: var(--muted);">
-              Sammy
-            </div>
-            <div class="lines">
-              <div class="line">1 Americano</div>
-              <div class="line">1 Iced Latte</div>
-              <div class="line">1 Blueberry Muffin</div>
-            </div>
-            <small>Cards, names, and drink counts stay visible without clutter.</small>
-          </div>
-
-          <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));">
-            <div class="sample">
-              <div class="sample-title">Making</div>
-              <div class="sample-order" style="font-size: 18px;">#Q42X</div>
-              <div class="lines">
-                <div class="line">2 Cappuccinos</div>
-                <div class="line">1 Oat Latte</div>
-              </div>
-            </div>
-            <div class="sample">
-              <div class="sample-title">Ready</div>
-              <div class="sample-order" style="font-size: 18px;">#V17K</div>
-              <div class="lines">
-                <div class="line">2 Cold Brews</div>
-                <div class="line">1 Croissant</div>
+            <div class="screen-body">
+              <div class="lane-grid">
+                <div class="lane">
+                  <div class="lane-head">New</div>
+                  <div class="ticket"><strong>#R90W <em>8:12</em></strong><span>1 Americano<br />1 Iced Latte<br />1 Blueberry Muffin</span></div>
+                  <div class="ticket"><strong>#M18J <em>8:15</em></strong><span>2 Honey Lattes<br />1 Matcha</span></div>
+                </div>
+                <div class="lane">
+                  <div class="lane-head">Making</div>
+                  <div class="ticket"><strong>#Q42X <em>8:18</em></strong><span>2 Cappuccinos<br />1 Oat Latte</span></div>
+                </div>
+                <div class="lane">
+                  <div class="lane-head">Ready</div>
+                  <div class="ticket"><strong>#V17K <em>8:20</em></strong><span>2 Cold Brews<br />1 Croissant</span></div>
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="owner-panel card">
-            <div class="eyebrow">Owner portal example</div>
-            <div class="owner-row">
-              <div class="metric">
-                <div class="label">Drink revenue</div>
-                <div class="value">$487</div>
+          <aside class="card owner-card">
+            <p class="eyebrow">Owner portal example</p>
+            <h3 class="mini-title">Drink Revenue</h3>
+            <p class="mini-copy">Coffee, Not Coffee, and Smoothies only.</p>
+            <div class="owner-metrics">
+              <div class="metric"><span>Revenue</span><strong>$487</strong></div>
+              <div class="metric"><span>Peak hour</span><strong>9 AM</strong></div>
+              <div class="metric"><span>Top lane</span><strong>Coffee</strong></div>
+              <div class="metric"><span>2+ drinks</span><strong>27%</strong></div>
+            </div>
+            <div class="bars" aria-label="Example hourly order volume line graph">
+              <svg class="volume-chart" viewBox="0 0 420 150" role="img" aria-label="Hourly orders plotted from 6 AM to 1 PM">
+                <line x1="24" y1="118" x2="396" y2="118" stroke="#e9d8b7" stroke-width="2" />
+                <line x1="24" y1="82" x2="396" y2="82" stroke="#f0e6d2" stroke-width="1" />
+                <line x1="24" y1="46" x2="396" y2="46" stroke="#f0e6d2" stroke-width="1" />
+                <polyline points="24,110 76,96 128,58 180,28 232,46 284,84 336,98 388,72" fill="none" stroke="#ca862b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+                <polygon points="24,110 76,96 128,58 180,28 232,46 284,84 336,98 388,72 388,118 24,118" fill="rgba(202,134,43,0.14)" />
+                <circle cx="180" cy="28" r="7" fill="#0f4036" />
+                <text x="24" y="140" fill="#665f52" font-size="11" font-weight="700">6A</text>
+                <text x="119" y="140" fill="#665f52" font-size="11" font-weight="700">8A</text>
+                <text x="171" y="20" fill="#0f4036" font-size="12" font-weight="900">Peak</text>
+                <text x="277" y="140" fill="#665f52" font-size="11" font-weight="700">11A</text>
+                <text x="374" y="140" fill="#665f52" font-size="11" font-weight="700">1P</text>
+              </svg>
+            </div>
+            <div class="advice-list">
+              <div class="advice">
+                <strong>Staffing and bar flow</strong>
+                <span>9 AM is the strongest hour. Stage cold cups and milk before the rush, then keep one person focused on handoff.</span>
               </div>
-              <div class="metric">
-                <div class="label">Peak hour</div>
-                <div class="value">9 AM</div>
-              </div>
-              <div class="metric">
-                <div class="label">Top lane</div>
-                <div class="value" style="font-size: 26px;">Coffee</div>
-              </div>
-              <div class="metric">
-                <div class="label">2+ drinks</div>
-                <div class="value">14/52</div>
+              <div class="advice">
+                <strong>Ticket behavior</strong>
+                <span>27% of individual drink orders contain 2 or more drinks. Keep add-on prompts light until speed is protected.</span>
               </div>
             </div>
-            <div class="owner-note" style="margin-top: 12px;">
-              <div class="section-title">Coffee shop guidance</div>
-              <p class="section-body">
-                The owner view can save daily reads, hourly rush patterns,
-                ticket-value notes, and monthly CSV exports so the shop can
-                compare what changed over time.
-              </p>
-            </div>
-          </div>
+            <p class="mini-copy">
+              Owners can export the current report as CSV, Excel, or a branded PDF with
+              the shop logo, hourly volume graph, category mix, and tailored advice.
+            </p>
+          </aside>
         </div>
+      </div>
+    </section>
 
-        <div class="grid">
-          <div class="card feature">
-            <div class="section-title">What it can do</div>
-            <p class="section-body">
-              Live Square&reg; drink orders in a simple board, customer names and
-              employee tracking when available, owner reports, hourly volume,
-              history, and daily order lookup.
-            </p>
-            <p class="section-body">
-              Training mode is included for practice without live data, and each
-              version can be branded for the coffee shop or drink counter using it.
-            </p>
-            <p class="section-body">
-              The private owner portal can track drink revenue, hourly volume,
-              saved advice snapshots, and month-by-month CSV downloads.
-            </p>
-          </div>
-
-          <div class="cta">
-            <div class="section-title">Ready to talk?</div>
-            <p>Email me about setup, customization, or a copy for another coffee or drink shop.</p>
-            <div style="margin-top: 14px; font-weight: 800; font-size: 14px;">samantha@studiosamantha.com</div>
-          </div>
+    <section class="section pricing" id="pricing">
+      <div class="section-inner">
+        <p class="eyebrow">Simple launch pricing</p>
+        <h2>Priced for independent shops that need one focused tool.</h2>
+        <p class="section-copy">
+          This works best as a low-friction subscription with a setup fee for Square connection,
+          branding, testing, and handoff.
+        </p>
+        <div class="grid price-grid">
+          <article class="price-card featured">
+            <h3>Annual</h3>
+            <div class="price">$60 <small>/ year</small></div>
+            <p>Best for shops ready to keep the KDS running after launch.</p>
+          </article>
+          <article class="price-card">
+            <h3>Monthly</h3>
+            <div class="price">$6.99 <small>/ month</small></div>
+            <p>A lower commitment option that still keeps the tool affordable.</p>
+          </article>
+          <article class="price-card">
+            <h3>Setup</h3>
+            <div class="price">$35 <small>one time</small></div>
+            <p>Covers onboarding, shop branding, Square connection, and launch checks.</p>
+          </article>
         </div>
+      </div>
+    </section>
 
-        <div class="footer">
-          <div class="card" style="padding: 16px 18px;">
-            <div class="section-title">Policy note</div>
-            <p class="section-body" style="margin-top: 8px;">
-              Goldie's KDS code and custom implementation are proprietary
-              property of Studio Samantha. Goldie's data is used for Goldie's
-              internal dashboard unless approved otherwise.
-              <a href="/policy.html">Read the privacy and ownership details.</a>
-            </p>
-            <p class="section-body">
-              Square&reg; is a registered trademark of Block, Inc. Supabase&reg;
-              is a registered trademark of Supabase, Inc. This product is
-              independent and not affiliated with, sponsored by, or endorsed by
-              those companies.
-            </p>
-          </div>
+    <section class="cta-band">
+      <div class="cta-inner">
+        <div>
+          <h2>Give the counter a calmer screen.</h2>
+          <p>Custom Square-connected KDS builds for coffee shops, smoothie shops, and drink counters.</p>
         </div>
-      </section>
-    </main>
+        <a class="button primary" href="mailto:samantha@studiosamantha.com?subject=DrinkFlow%20KDS%20setup">Start a conversation</a>
+      </div>
+    </section>
+
+    <footer>
+      <div class="section-inner">
+        <div>
+          <strong>Studio Samantha</strong><br />
+          Custom web tools for small businesses.
+        </div>
+        <div>
+          Square&reg; and Supabase&reg; are trademarks of their respective owners.
+          This product is independent and not affiliated with or endorsed by Square or Supabase.
+          <a href="/policy.html">Policy details</a>
+        </div>
+      </div>
+    </footer>
   </body>
-  </html>
+</html>

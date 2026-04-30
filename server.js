@@ -3,7 +3,11 @@ process.env.TZ = process.env.KDS_TIME_ZONE || process.env.TZ || "America/Chicago
 const express = require("express");
 const cors = require("cors");
 const crypto = require("crypto");
+const ExcelJS = require("exceljs");
+const fs = require("fs");
 const nodemailer = require("nodemailer");
+const path = require("path");
+const PDFDocument = require("pdfkit");
 const { createClient } = require("@supabase/supabase-js");
 const { Client, Environment } = require("square");
 
@@ -2388,6 +2392,578 @@ function ownerSnapshotToCsv(snapshots = []) {
     .join("\n");
 }
 
+function normalizeOwnerReportRange(range) {
+  const allowedRanges = new Set([
+    "today",
+    "yesterday",
+    "last7",
+    "last30",
+    "thisMonth",
+    "thisYear",
+  ]);
+  return allowedRanges.has(range) ? range : "today";
+}
+
+function getOwnerRangeLabel(range = "today") {
+  return (
+    {
+      today: "Today",
+      yesterday: "Yesterday",
+      last7: "Last 7 Days",
+      last30: "Last 30 Days",
+      thisMonth: "This Month",
+      thisYear: "This Year",
+    }[range] || "Today"
+  );
+}
+
+function ownerReportToCsv(report = {}, range = "today") {
+  const rows = [
+    ["Goldie's Owner Report", getOwnerRangeLabel(range)],
+    ["Start", report.startAt || ""],
+    ["End", report.endAt || ""],
+    [],
+    ["Metric", "Value"],
+    ["Actual drink revenue", report.totalRevenue || "$0.00"],
+    ["Taxes collected", report.totalTax || "$0.00"],
+    ["Total collected", report.totalCollected || "$0.00"],
+    ["Drink orders", Number(report.orderCount || 0)],
+    ["Drink units", Number(report.totalUnits || 0)],
+    ["Average drink order value", report.averageDrinkOrderValue || "$0.00"],
+    ["Orders with 2+ drinks", Number(report.multiDrinkOrderCount || 0)],
+    ["2+ drink order rate", `${Number(report.multiDrinkOrderRate || 0)}%`],
+    [],
+    ["Category", "Revenue", "Tax", "Total collected", "Units"],
+    ...(report.totalsByCategory || []).map((item) => [
+      item.category,
+      item.revenue,
+      item.tax,
+      item.total,
+      item.units,
+    ]),
+    [],
+    ["Hour", "Orders", "Drink units", "Revenue"],
+    ...(report.hourlyOrders || []).map((item) => [
+      item.label,
+      item.orderCount,
+      item.units,
+      item.revenue,
+    ]),
+  ];
+
+  return rows.map((row) => row.map(escapeCsv).join(",")).join("\n");
+}
+
+async function buildOwnerReportWorkbook(report = {}, range = "today") {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = "Goldie's KDS";
+  workbook.created = new Date();
+  workbook.modified = new Date();
+  workbook.subject = `Owner report for ${getOwnerRangeLabel(range)}`;
+  workbook.title = `Goldie's Owner Report - ${getOwnerRangeLabel(range)}`;
+
+  const summary = workbook.addWorksheet("Report Summary");
+  summary.columns = [
+    { header: "Metric", key: "metric", width: 30 },
+    { header: "Value", key: "value", width: 32 },
+  ];
+  [
+    ["Range", getOwnerRangeLabel(range)],
+    ["Actual drink revenue", report.totalRevenue || "$0.00"],
+    ["Taxes collected", report.totalTax || "$0.00"],
+    ["Total collected", report.totalCollected || "$0.00"],
+    ["Drink orders", Number(report.orderCount || 0)],
+    ["Drink units", Number(report.totalUnits || 0)],
+    ["Average drink order value", report.averageDrinkOrderValue || "$0.00"],
+    ["Orders with 2+ drinks", Number(report.multiDrinkOrderCount || 0)],
+    ["2+ drink order rate", `${Number(report.multiDrinkOrderRate || 0)}%`],
+  ].forEach(([metric, value]) => summary.addRow({ metric, value }));
+
+  const categories = workbook.addWorksheet("Category Mix");
+  categories.columns = [
+    { header: "Category", key: "category", width: 18 },
+    { header: "Revenue", key: "revenue", width: 16 },
+    { header: "Tax", key: "tax", width: 14 },
+    { header: "Total Collected", key: "total", width: 18 },
+    { header: "Units", key: "units", width: 12 },
+  ];
+  (report.totalsByCategory || []).forEach((item) => {
+    categories.addRow({
+      category: item.category,
+      revenue: Number(item.revenueCents || 0) / 100,
+      tax: Number(item.taxCents || 0) / 100,
+      total: Number(item.totalCents || 0) / 100,
+      units: Number(item.units || 0),
+    });
+  });
+  ["revenue", "tax", "total"].forEach((key) => {
+    categories.getColumn(key).numFmt = "$#,##0.00";
+  });
+
+  const hourly = workbook.addWorksheet("Hourly Volume");
+  hourly.columns = [
+    { header: "Hour", key: "label", width: 12 },
+    { header: "Orders", key: "orderCount", width: 12 },
+    { header: "Drink Units", key: "units", width: 14 },
+    { header: "Revenue", key: "revenue", width: 16 },
+  ];
+  (report.hourlyOrders || []).forEach((item) => {
+    hourly.addRow({
+      label: item.label,
+      orderCount: Number(item.orderCount || 0),
+      units: Number(item.units || 0),
+      revenue: Number(item.revenueCents || 0) / 100,
+    });
+  });
+  hourly.getColumn("revenue").numFmt = "$#,##0.00";
+
+  [summary, categories, hourly].forEach((sheet) => {
+    sheet.getRow(1).eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF0F4036" },
+      };
+      cell.alignment = { vertical: "middle", wrapText: true };
+    });
+    sheet.views = [{ state: "frozen", ySplit: 1 }];
+  });
+
+  return workbook.xlsx.writeBuffer();
+}
+
+function writeOwnerDrinkReportPdf(res, report = {}, range = "today") {
+  const doc = new PDFDocument({ size: "LETTER", margin: 42 });
+  const ownerLogoPath = path.join(
+    __dirname,
+    "my-menu-app",
+    "public",
+    "goldies-logo-owner.png"
+  );
+  const activeHours = (report.hourlyOrders || []).filter(
+    (item) => Number(item.orderCount || 0) > 0
+  );
+  const peakHour = activeHours
+    .slice()
+    .sort((a, b) => Number(b.orderCount || 0) - Number(a.orderCount || 0))[0];
+  const maxHourlyOrders = Math.max(
+    1,
+    ...activeHours.map((item) => Number(item.orderCount || 0))
+  );
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="goldies-owner-report-${range}.pdf"`
+  );
+
+  doc.pipe(res);
+  doc.roundedRect(42, 36, 528, 112, 14).fillAndStroke("#FFFDF8", "#E9D8B7");
+  if (fs.existsSync(ownerLogoPath)) {
+    doc.image(ownerLogoPath, 58, 54, { width: 150, height: 66, fit: [150, 66] });
+  }
+  doc
+    .fillColor("#0F4036")
+    .fontSize(22)
+    .font("Helvetica-Bold")
+    .text("Owner Report", 230, 58, { width: 300 });
+  doc
+    .fillColor("#6A614F")
+    .fontSize(10)
+    .font("Helvetica-Bold")
+    .text("COFFEE SHOP PERFORMANCE SNAPSHOT", 230, 85, {
+      width: 300,
+      characterSpacing: 0.8,
+    });
+  doc
+    .fillColor("#111111")
+    .fontSize(11)
+    .font("Helvetica")
+    .text(`Range: ${getOwnerRangeLabel(range)}`, 230, 108, { width: 150 })
+    .text(`Generated: ${new Date().toLocaleDateString("en-US")}`, 360, 108, {
+      width: 170,
+    });
+
+  const metricTop = 172;
+  const metrics = [
+    ["Drink revenue", report.totalRevenue || "$0.00"],
+    ["Drink orders", String(report.orderCount || 0)],
+    ["Drink units", String(report.totalUnits || 0)],
+    ["2+ drink orders", `${Number(report.multiDrinkOrderRate || 0)}%`],
+  ];
+  metrics.forEach(([label, value], index) => {
+    const x = 42 + index * 135;
+    doc
+      .roundedRect(x, metricTop, 124, 62, 8)
+      .fillAndStroke("#FFFDF8", "#E9D8B7");
+    doc
+      .fillColor("#6A614F")
+      .fontSize(8)
+      .font("Helvetica-Bold")
+      .text(label.toUpperCase(), x + 10, metricTop + 10, { width: 104 });
+    doc
+      .fillColor("#0F4036")
+      .fontSize(17)
+      .font("Helvetica-Bold")
+      .text(value, x + 10, metricTop + 29, { width: 104 });
+  });
+
+  doc
+    .fillColor("#111111")
+    .fontSize(10)
+    .font("Helvetica")
+    .text(
+      `${Number(report.multiDrinkOrderCount || 0)} of ${Number(report.orderCount || 0)} individual drink orders contained 2 or more drinks.`,
+      42,
+      252,
+      { width: 528 }
+    );
+
+  doc
+    .fillColor("#0F4036")
+    .fontSize(14)
+    .font("Helvetica-Bold")
+    .text("Hourly Volume", 42, 286);
+  doc
+    .fillColor("#6A614F")
+    .fontSize(9)
+    .font("Helvetica")
+    .text(
+      peakHour
+        ? `Peak hour: ${peakHour.label} with ${peakHour.orderCount} orders.`
+        : "No drink order volume yet for this range.",
+      42,
+      306
+    );
+
+  const chartTop = 332;
+  (report.hourlyOrders || []).forEach((item, index) => {
+    const x = 42 + index * 22;
+    const barHeight = Math.round((Number(item.orderCount || 0) / maxHourlyOrders) * 82);
+    doc.rect(x, chartTop + 88 - barHeight, 12, barHeight).fill("#CA862B");
+    if (index % 3 === 0) {
+      doc
+        .fillColor("#6A614F")
+        .fontSize(6)
+        .text(String(item.hour), x - 1, chartTop + 94, { width: 18, align: "center" });
+    }
+  });
+
+  doc
+    .fillColor("#0F4036")
+    .fontSize(14)
+    .font("Helvetica-Bold")
+    .text("Category Mix", 42, 458);
+  let y = 484;
+  (report.totalsByCategory || []).forEach((item) => {
+    doc
+      .roundedRect(42, y, 528, 34, 8)
+      .fillAndStroke("#FFFDF8", "#E9D8B7");
+    doc
+      .fillColor("#0F4036")
+      .fontSize(10)
+      .font("Helvetica-Bold")
+      .text(item.category, 54, y + 10, { width: 120 });
+    doc
+      .fillColor("#111111")
+      .font("Helvetica")
+      .text(`${item.revenue} revenue`, 190, y + 10, { width: 120 })
+      .text(`${item.units} units`, 330, y + 10, { width: 90 })
+      .text(`${item.total} collected`, 430, y + 10, { width: 120 });
+    y += 42;
+  });
+
+  doc
+    .fillColor("#6A614F")
+    .fontSize(8)
+    .font("Helvetica")
+    .text(
+      "Drink counts include Coffee, Not Coffee, and Smoothies only. Retail items and bagged coffee are excluded.",
+      42,
+      724,
+      { width: 528, align: "center" }
+    );
+
+  doc.end();
+}
+
+async function fetchOwnerSnapshotsForMonth(month, ascending = true) {
+  if (!supabase) {
+    const error = new Error("Supabase is not configured.");
+    error.statusCode = 503;
+    throw error;
+  }
+
+  const range = getMonthRange(month);
+  if (!range) {
+    const error = new Error("Month must be YYYY-MM.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const { data, error } = await supabase
+    .from("kds_owner_snapshots")
+    .select("*")
+    .gte("snapshot_date", getLocalDateKey(range.start))
+    .lt("snapshot_date", getLocalDateKey(range.end))
+    .order("snapshot_date", { ascending })
+    .order("range_key", { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
+function addOwnerSnapshotSheet(workbook, snapshots, month) {
+  const sheet = workbook.addWorksheet("Monthly Snapshots", {
+    views: [{ state: "frozen", ySplit: 1 }],
+  });
+
+  sheet.columns = [
+    { header: "Date", key: "snapshot_date", width: 14 },
+    { header: "Range", key: "range_label", width: 16 },
+    { header: "Orders", key: "order_count", width: 10 },
+    { header: "Orders With 2+ Drinks", key: "multi_drink_order_count", width: 22 },
+    { header: "2+ Drink Order Rate", key: "multi_drink_order_rate", width: 20 },
+    { header: "Drink Units", key: "drink_units", width: 12 },
+    { header: "Drink Revenue", key: "total_revenue", width: 16 },
+    { header: "Average Order Value", key: "average_order_value", width: 20 },
+    { header: "Top Category", key: "top_category", width: 18 },
+    { header: "Peak Hour", key: "peak_hour_label", width: 16 },
+    { header: "Slow Hour", key: "slow_hour_label", width: 16 },
+    { header: "Money Signal", key: "money_signal", width: 48 },
+    { header: "Owner Action", key: "owner_action", width: 48 },
+    { header: "Summary", key: "summary", width: 56 },
+  ];
+
+  snapshots.forEach((snapshot) => {
+    sheet.addRow({
+      snapshot_date: snapshot.snapshot_date,
+      range_label: snapshot.range_label || snapshot.range_key,
+      order_count: Number(snapshot.order_count || 0),
+      multi_drink_order_count: Number(snapshot.multi_drink_order_count || 0),
+      multi_drink_order_rate: `${Number(snapshot.multi_drink_order_rate || 0)}%`,
+      drink_units: Number(snapshot.drink_units || 0),
+      total_revenue: (Number(snapshot.total_revenue_cents || 0) || 0) / 100,
+      average_order_value:
+        (Number(snapshot.average_order_value_cents || 0) || 0) / 100,
+      top_category: snapshot.top_category || "",
+      peak_hour_label: snapshot.peak_hour_label || "",
+      slow_hour_label: snapshot.slow_hour_label || "",
+      money_signal: snapshot.money_signal || "",
+      owner_action: snapshot.owner_action || "",
+      summary: snapshot.summary || "",
+    });
+  });
+
+  sheet.getRow(1).eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FF0F4036" },
+    };
+    cell.alignment = { vertical: "middle", wrapText: true };
+  });
+
+  sheet.eachRow((row, rowNumber) => {
+    row.height = rowNumber === 1 ? 24 : 42;
+    row.eachCell((cell) => {
+      cell.alignment = { vertical: "top", wrapText: true };
+      cell.border = {
+        bottom: { style: "thin", color: { argb: "FFE9D8B7" } },
+      };
+    });
+  });
+
+  sheet.getColumn("total_revenue").numFmt = "$#,##0.00";
+  sheet.getColumn("average_order_value").numFmt = "$#,##0.00";
+
+  const summary = workbook.addWorksheet("Month Summary");
+  const totalOrders = snapshots.reduce(
+    (sum, snapshot) => sum + Number(snapshot.order_count || 0),
+    0
+  );
+  const totalMultiDrinkOrders = snapshots.reduce(
+    (sum, snapshot) => sum + Number(snapshot.multi_drink_order_count || 0),
+    0
+  );
+  const totalRevenueCents = snapshots.reduce(
+    (sum, snapshot) => sum + Number(snapshot.total_revenue_cents || 0),
+    0
+  );
+  const multiDrinkRate = totalOrders
+    ? Math.round((totalMultiDrinkOrders / totalOrders) * 100)
+    : 0;
+
+  summary.columns = [
+    { header: "Metric", key: "metric", width: 28 },
+    { header: "Value", key: "value", width: 30 },
+  ];
+  [
+    ["Month", month],
+    ["Saved snapshots", snapshots.length],
+    ["Drink orders", totalOrders],
+    ["Orders with 2+ drinks", totalMultiDrinkOrders],
+    ["2+ drink order rate", `${multiDrinkRate}%`],
+    ["Drink revenue", formatCurrency(totalRevenueCents)],
+  ].forEach(([metric, value]) => summary.addRow({ metric, value }));
+  summary.getRow(1).eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFCA862B" },
+    };
+  });
+}
+
+async function buildOwnerSnapshotsWorkbook(snapshots, month) {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = "Goldie's KDS";
+  workbook.created = new Date();
+  workbook.modified = new Date();
+  workbook.subject = `Owner snapshots for ${month}`;
+  workbook.title = `Goldie's Owner Report ${month}`;
+  addOwnerSnapshotSheet(workbook, snapshots, month);
+  return workbook.xlsx.writeBuffer();
+}
+
+function writeOwnerReportPdf(res, snapshots, month) {
+  const doc = new PDFDocument({ size: "LETTER", margin: 42 });
+  const ownerLogoPath = path.join(
+    __dirname,
+    "my-menu-app",
+    "public",
+    "goldies-logo-owner.png"
+  );
+  const totalOrders = snapshots.reduce(
+    (sum, snapshot) => sum + Number(snapshot.order_count || 0),
+    0
+  );
+  const totalMultiDrinkOrders = snapshots.reduce(
+    (sum, snapshot) => sum + Number(snapshot.multi_drink_order_count || 0),
+    0
+  );
+  const totalRevenueCents = snapshots.reduce(
+    (sum, snapshot) => sum + Number(snapshot.total_revenue_cents || 0),
+    0
+  );
+  const multiDrinkRate = totalOrders
+    ? Math.round((totalMultiDrinkOrders / totalOrders) * 100)
+    : 0;
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="goldies-owner-report-${month}.pdf"`
+  );
+
+  doc.pipe(res);
+  doc.roundedRect(42, 36, 528, 112, 14).fillAndStroke("#FFFDF8", "#E9D8B7");
+
+  if (fs.existsSync(ownerLogoPath)) {
+    doc.image(ownerLogoPath, 58, 54, { width: 150, height: 66, fit: [150, 66] });
+  }
+
+  doc
+    .fillColor("#0F4036")
+    .fontSize(22)
+    .font("Helvetica-Bold")
+    .text("Owner Report", 230, 58, { width: 300 });
+  doc
+    .fillColor("#6A614F")
+    .fontSize(10)
+    .font("Helvetica-Bold")
+    .text("COFFEE SHOP PERFORMANCE SNAPSHOT", 230, 85, {
+      width: 300,
+      characterSpacing: 0.8,
+    });
+  doc
+    .fillColor("#111111")
+    .fontSize(11)
+    .font("Helvetica")
+    .text(`Month: ${month}`, 230, 108, { width: 150 })
+    .text(`Saved snapshots: ${snapshots.length}`, 360, 108, { width: 160 });
+
+  doc.y = 172;
+  const metricTop = doc.y;
+  const metricWidth = 125;
+  [
+    ["Drink revenue", formatCurrency(totalRevenueCents)],
+    ["Drink orders", String(totalOrders)],
+    ["2+ drink orders", `${multiDrinkRate}%`],
+    ["Count", `${totalMultiDrinkOrders} of ${totalOrders}`],
+  ].forEach(([label, value], index) => {
+    const x = 42 + index * (metricWidth + 10);
+    doc
+      .roundedRect(x, metricTop, metricWidth, 62, 8)
+      .fillAndStroke("#FFFDF8", "#E9D8B7");
+    doc
+      .fillColor("#6A614F")
+      .fontSize(8)
+      .font("Helvetica-Bold")
+      .text(label.toUpperCase(), x + 10, metricTop + 10, {
+        width: metricWidth - 20,
+      });
+    doc
+      .fillColor("#0F4036")
+      .fontSize(17)
+      .font("Helvetica-Bold")
+      .text(value, x + 10, metricTop + 28, { width: metricWidth - 20 });
+  });
+
+  doc.y = metricTop + 84;
+  doc
+    .fillColor("#0F4036")
+    .fontSize(14)
+    .font("Helvetica-Bold")
+    .text("Saved Reads");
+  doc.moveDown(0.4);
+
+  if (!snapshots.length) {
+    doc
+      .fillColor("#6A614F")
+      .fontSize(10)
+      .font("Helvetica")
+      .text("No owner snapshots were saved for this month.");
+  }
+
+  snapshots.forEach((snapshot) => {
+    if (doc.y > 650) doc.addPage();
+    doc
+      .fillColor("#0F4036")
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text(`${snapshot.snapshot_date} - ${snapshot.range_label || snapshot.range_key}`);
+    doc
+      .fillColor("#111111")
+      .fontSize(9)
+      .font("Helvetica")
+      .text(
+        `${formatCurrency(snapshot.total_revenue_cents)} drink revenue, ${Number(snapshot.order_count || 0)} orders, ${Number(snapshot.multi_drink_order_rate || 0)}% contained 2 or more drinks.`
+      );
+    if (snapshot.peak_hour_label || snapshot.top_category) {
+      doc
+        .fillColor("#6A614F")
+        .text(
+          `Peak: ${snapshot.peak_hour_label || "-"}   Top category: ${snapshot.top_category || "-"}`
+        );
+    }
+    if (snapshot.owner_action) {
+      doc
+        .moveDown(0.2)
+        .fillColor("#111111")
+        .font("Helvetica-Bold")
+        .text("Owner action", { continued: false });
+      doc.font("Helvetica").text(snapshot.owner_action, { width: 510 });
+    }
+    doc.moveDown(0.8);
+  });
+
+  doc.end();
+}
+
 app.get("/api/health", (req, res) => {
   res.json({
     ok: true,
@@ -2529,15 +3105,7 @@ app.post("/api/owner/logout", (req, res) => {
 
 app.get("/api/owner/reports/drink-revenue", requireOwnerAuth, async (req, res) => {
   try {
-    const allowedRanges = new Set([
-      "today",
-      "yesterday",
-      "last7",
-      "last30",
-      "thisMonth",
-      "thisYear",
-    ]);
-    const range = allowedRanges.has(req.query.range) ? req.query.range : "today";
+    const range = normalizeOwnerReportRange(req.query.range);
     const report = await getOwnerDrinkRevenueReport(range);
 
     res.json({
@@ -2547,6 +3115,55 @@ app.get("/api/owner/reports/drink-revenue", requireOwnerAuth, async (req, res) =
   } catch (error) {
     console.error("Error fetching owner drink revenue report:", error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/owner/reports/drink-revenue.csv", requireOwnerAuth, async (req, res) => {
+  try {
+    const range = normalizeOwnerReportRange(req.query.range);
+    const report = await getOwnerDrinkRevenueReport(range);
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="goldies-owner-report-${range}.csv"`
+    );
+    res.send(ownerReportToCsv(report, range));
+  } catch (error) {
+    console.error("Error downloading owner report CSV:", error);
+    res.status(500).send(error.message);
+  }
+});
+
+app.get("/api/owner/reports/drink-revenue.xlsx", requireOwnerAuth, async (req, res) => {
+  try {
+    const range = normalizeOwnerReportRange(req.query.range);
+    const report = await getOwnerDrinkRevenueReport(range);
+    const workbookBuffer = await buildOwnerReportWorkbook(report, range);
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="goldies-owner-report-${range}.xlsx"`
+    );
+    res.send(Buffer.from(workbookBuffer));
+  } catch (error) {
+    console.error("Error downloading owner report workbook:", error);
+    res.status(500).send(error.message);
+  }
+});
+
+app.get("/api/owner/reports/drink-revenue.pdf", requireOwnerAuth, async (req, res) => {
+  try {
+    const range = normalizeOwnerReportRange(req.query.range);
+    const report = await getOwnerDrinkRevenueReport(range);
+    writeOwnerDrinkReportPdf(res, report, range);
+  } catch (error) {
+    console.error("Error downloading owner report PDF:", error);
+    res.status(500).send(error.message);
   }
 });
 
@@ -2584,23 +3201,8 @@ app.post("/api/owner/snapshots", requireOwnerAuth, async (req, res) => {
 
 app.get("/api/owner/snapshots", requireOwnerAuth, async (req, res) => {
   try {
-    if (!supabase) {
-      return res.status(503).json({ error: "Supabase is not configured." });
-    }
-
     const month = normalizeName(req.query.month || getLocalDateKey().slice(0, 7));
-    const range = getMonthRange(month);
-    if (!range) return res.status(400).json({ error: "Month must be YYYY-MM." });
-
-    const { data, error } = await supabase
-      .from("kds_owner_snapshots")
-      .select("*")
-      .gte("snapshot_date", getLocalDateKey(range.start))
-      .lt("snapshot_date", getLocalDateKey(range.end))
-      .order("snapshot_date", { ascending: false })
-      .order("range_key", { ascending: true });
-
-    if (error) throw error;
+    const data = await fetchOwnerSnapshotsForMonth(month, false);
 
     res.json({ month, snapshots: data || [] });
   } catch (error) {
@@ -2619,23 +3221,8 @@ app.get("/api/owner/snapshots", requireOwnerAuth, async (req, res) => {
 
 app.get("/api/owner/snapshots.csv", requireOwnerAuth, async (req, res) => {
   try {
-    if (!supabase) {
-      return res.status(503).send("Supabase is not configured.");
-    }
-
     const month = normalizeName(req.query.month || getLocalDateKey().slice(0, 7));
-    const range = getMonthRange(month);
-    if (!range) return res.status(400).send("Month must be YYYY-MM.");
-
-    const { data, error } = await supabase
-      .from("kds_owner_snapshots")
-      .select("*")
-      .gte("snapshot_date", getLocalDateKey(range.start))
-      .lt("snapshot_date", getLocalDateKey(range.end))
-      .order("snapshot_date", { ascending: true })
-      .order("range_key", { ascending: true });
-
-    if (error) throw error;
+    const data = await fetchOwnerSnapshotsForMonth(month, true);
 
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader(
@@ -2652,6 +3239,50 @@ app.get("/api/owner/snapshots.csv", requireOwnerAuth, async (req, res) => {
 
     console.error("Error downloading owner snapshots:", error);
     res.status(500).send(error.message);
+  }
+});
+
+app.get("/api/owner/snapshots.xlsx", requireOwnerAuth, async (req, res) => {
+  try {
+    const month = normalizeName(req.query.month || getLocalDateKey().slice(0, 7));
+    const data = await fetchOwnerSnapshotsForMonth(month, true);
+    const workbookBuffer = await buildOwnerSnapshotsWorkbook(data, month);
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="goldies-owner-snapshots-${month}.xlsx"`
+    );
+    res.send(Buffer.from(workbookBuffer));
+  } catch (error) {
+    if (snapshotsTableMissing(error)) {
+      return res.status(503).send(
+        "Owner snapshot table is not installed in Supabase yet."
+      );
+    }
+
+    console.error("Error downloading owner workbook:", error);
+    res.status(error.statusCode || 500).send(error.message);
+  }
+});
+
+app.get("/api/owner/snapshots.pdf", requireOwnerAuth, async (req, res) => {
+  try {
+    const month = normalizeName(req.query.month || getLocalDateKey().slice(0, 7));
+    const data = await fetchOwnerSnapshotsForMonth(month, true);
+    writeOwnerReportPdf(res, data, month);
+  } catch (error) {
+    if (snapshotsTableMissing(error)) {
+      return res.status(503).send(
+        "Owner snapshot table is not installed in Supabase yet."
+      );
+    }
+
+    console.error("Error downloading owner PDF:", error);
+    res.status(error.statusCode || 500).send(error.message);
   }
 });
 
