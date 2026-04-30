@@ -2347,7 +2347,7 @@ function LoginScreen({
 
       </main>
 
-      <div className="absolute bottom-4 left-0 right-0 z-30 flex justify-center px-4 pointer-events-auto">
+      <div className="fixed bottom-3 left-0 right-0 z-40 flex justify-center px-4 pb-[env(safe-area-inset-bottom)] pointer-events-auto sm:absolute sm:bottom-4 sm:z-30">
         <BrandFooter onPitchClick={() => setShowPitch(true)} />
       </div>
     </div>
@@ -3409,7 +3409,7 @@ export default function GoldiesKDS() {
           trainingTickets={displayedTickets}
         />
 
-        <div className="relative z-30 flex justify-center pb-2 pointer-events-auto">
+        <div className="fixed bottom-3 left-0 right-0 z-40 flex justify-center px-4 pb-[env(safe-area-inset-bottom)] pointer-events-auto sm:relative sm:bottom-auto sm:left-auto sm:right-auto sm:z-30 sm:px-0 sm:pb-2">
           <BrandFooter onPitchClick={() => setShowPitch(true)} />
         </div>
       </main>
