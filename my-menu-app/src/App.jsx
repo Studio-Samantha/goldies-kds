@@ -9,7 +9,7 @@ const LOGO_DARK_URL = "/goldies-logo-white.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.6.0";
+const APP_VERSION = "v1.6.1";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -21,8 +21,17 @@ const SETTINGS_HELP_TEXT =
 const DINING_OPTIONS = ["For here", "To go", "Pickup", "Delivery", "Drive thru"];
 const RELEASE_NOTES = [
   {
-    version: "v1.6.0",
+    version: "v1.6.1",
     date: "Current build",
+    summary: "Customized owner snapshots by report range.",
+    items: [
+      "Owner Reports now changes the snapshot question and guidance for Today, Yesterday, 7 Days, 30 Days, This Month, and This Year.",
+      "Each report range now gets a more specific owner read instead of one generic analysis style.",
+    ],
+  },
+  {
+    version: "v1.6.0",
+    date: "Previous build",
     summary: "Added owner daily snapshot analysis.",
     items: [
       "Owner Reports now includes a Daily Owner Snapshot that explains what happened in plain English.",
@@ -1752,10 +1761,10 @@ function OwnerSnapshotCard({ report, range }) {
       <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
         <div>
           <div className="text-xs font-black uppercase tracking-[0.18em] text-[#EEE0C5]">
-            Daily Owner Snapshot
+            {snapshot.eyebrow}
           </div>
           <h2 className="mt-1 text-2xl font-black">
-            What should I pay attention to?
+            {snapshot.question}
           </h2>
         </div>
         <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#FFFDF8]">
@@ -2578,7 +2587,71 @@ function getOwnerRangeLabel(rangeKey) {
   );
 }
 
+const OWNER_SNAPSHOT_COPY = {
+  today: {
+    eyebrow: "Today Snapshot",
+    question: "What needs attention during service?",
+    empty:
+      "No drink revenue is showing for today yet. If the shop is open, watch Square syncing and make sure live drink orders are appearing in the KDS.",
+    quiet:
+      "Today is still quiet, so this is a good time to watch order flow, keep tickets clean, and use the next rush as the real read.",
+    action:
+      "During the rest of service, watch whether the rush creates bigger tickets or mainly single-drink orders.",
+  },
+  yesterday: {
+    eyebrow: "Yesterday Snapshot",
+    question: "What did yesterday teach us?",
+    empty:
+      "No drink revenue is showing for yesterday. If the shop had drink sales, this is worth checking against Square before using the report for decisions.",
+    quiet:
+      "Yesterday was quiet. Treat it as a baseline day and compare it against the next stronger service window.",
+    action:
+      "Use yesterday as a review point: what sold, what stayed quiet, and whether staffing felt matched to drink volume.",
+  },
+  last7: {
+    eyebrow: "7-Day Snapshot",
+    question: "What pattern is showing up this week?",
+    empty:
+      "No drink revenue is showing for the last 7 days. Check Square syncing before reading this as a true weekly pattern.",
+    quiet:
+      "This week is reading light so far. The next step is to watch which category still shows traction even when traffic is lower.",
+    action:
+      "Use the 7-day view to catch short-term shifts before they become a staffing, prep, or menu problem.",
+  },
+  last30: {
+    eyebrow: "30-Day Snapshot",
+    question: "What is the monthly pattern telling us?",
+    empty:
+      "No drink revenue is showing for the last 30 days. Check the data connection before using this as a monthly read.",
+    quiet:
+      "The 30-day range is reading light. Look for category concentration and repeat demand before making bigger menu decisions.",
+    action:
+      "Use the 30-day view for stronger decisions about prep, promos, menu focus, and which drink lane deserves attention.",
+  },
+  thisMonth: {
+    eyebrow: "Month-to-Date Snapshot",
+    question: "How is this month shaping up?",
+    empty:
+      "No drink revenue is showing for this month yet. If the month has started with sales, confirm the report connection before reading the trend.",
+    quiet:
+      "This month is still building. Watch whether the current pace is coming from steady daily volume or a few stronger days.",
+    action:
+      "Use this month-to-date read to decide whether to push a category, adjust prep, or watch average order value.",
+  },
+  thisYear: {
+    eyebrow: "Year-to-Date Snapshot",
+    question: "What is the bigger business signal?",
+    empty:
+      "No drink revenue is showing for this year yet. Confirm the report connection before using this as a year-to-date read.",
+    quiet:
+      "The year-to-date view is still modest. Focus on the drink categories that repeatedly show demand over time.",
+    action:
+      "Use the year-to-date view for higher-level decisions: menu direction, staffing patterns, and what the shop is becoming known for.",
+  },
+};
+
 function buildOwnerSnapshotAnalysis(report, rangeKey) {
+  const copy = OWNER_SNAPSHOT_COPY[rangeKey] || OWNER_SNAPSHOT_COPY.today;
   const orderCount = Number(report?.orderCount || 0);
   const drinkUnits = Number(report?.totalUnits || 0);
   const revenueCents = Number(report?.totalRevenueCents || 0);
@@ -2588,16 +2661,16 @@ function buildOwnerSnapshotAnalysis(report, rangeKey) {
   const topCategory = activeCategories
     .slice()
     .sort((a, b) => Number(b.units || 0) - Number(a.units || 0))[0];
-  const rangeLabel = getOwnerRangeLabel(rangeKey).toLowerCase();
-  const isDailyRange = rangeKey === "today" || rangeKey === "yesterday";
 
   if (!orderCount && !drinkUnits) {
     return {
+      eyebrow: copy.eyebrow,
+      question: copy.question,
       tone: "Quiet service window",
-      summary: `No drink revenue is showing for ${rangeLabel} yet. If this is during service, keep an eye on Square syncing and make sure completed drink orders are flowing into the KDS.`,
+      summary: copy.empty,
       watch: [
         "Confirm live Square orders are appearing correctly.",
-        "Use this as the baseline before the next rush starts.",
+        copy.action,
       ],
     };
   }
@@ -2623,16 +2696,18 @@ function buildOwnerSnapshotAnalysis(report, rangeKey) {
     drinkUnits > orderCount
       ? "Customers are adding multiple drinks to some tickets, which is good for ticket value."
       : "Most drink tickets are currently single-drink orders.";
+  const quietRead =
+    orderCount < 8 ? `${copy.quiet} ` : "";
 
   return {
-    tone: isDailyRange ? "Daily read" : "Range read",
-    summary: `${getOwnerRangeLabel(rangeKey)} looks ${volumeRead}: ${orderCount} drink orders, ${drinkUnits} drink units, and ${report?.totalRevenue || "$0.00"} in drink revenue before tax. The average collected per drink order is ${report?.averageDrinkOrderValue || "$0.00"}, which points to ${averageRead}.`,
+    eyebrow: copy.eyebrow,
+    question: copy.question,
+    tone: `${getOwnerRangeLabel(rangeKey)} read`,
+    summary: `${quietRead}${getOwnerRangeLabel(rangeKey)} looks ${volumeRead}: ${orderCount} drink orders, ${drinkUnits} drink units, and ${report?.totalRevenue || "$0.00"} in drink revenue before tax. The average collected per drink order is ${report?.averageDrinkOrderValue || "$0.00"}, which points to ${averageRead}.`,
     watch: [
       categoryRead,
       unitRead,
-      isDailyRange
-        ? "For tomorrow, watch whether the rush creates bigger tickets or mainly single-drink orders."
-        : "Use this range to spot which drink category deserves menu, staffing, or prep attention next.",
+      copy.action,
     ],
   };
 }
