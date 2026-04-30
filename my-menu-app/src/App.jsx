@@ -9,7 +9,7 @@ const LOGO_DARK_URL = "/goldies-logo-white.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.5.1";
+const APP_VERSION = "v1.5.2";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -20,8 +20,18 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.5.1",
+    version: "v1.5.2",
     date: "Current build",
+    summary: "Added tax breakdowns to Owner Reports.",
+    items: [
+      "Owner Reports now separate actual drink revenue from taxes collected.",
+      "Category cards show revenue, tax, total collected, and units sold.",
+      "Owner Login now has a Show/Hide password toggle.",
+    ],
+  },
+  {
+    version: "v1.5.1",
+    date: "Previous build",
     summary: "Tightened Owner Login security.",
     items: [
       "Owner reports now require the owner password every time they are opened.",
@@ -2378,6 +2388,7 @@ function OwnerLoginDialog({ open, onClose, onLogin, themeMode }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   if (!open) return null;
 
@@ -2445,12 +2456,21 @@ function OwnerLoginDialog({ open, onClose, onLogin, themeMode }) {
 
         <label className="block text-left">
           <span className="text-sm font-black text-[#0F4036]">Password</span>
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            className="mt-2 w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 text-lg font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15"
-          />
+          <div className="mt-2 relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              className="w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 pr-24 text-lg font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((current) => !current)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl border border-[#CA862B]/18 bg-[#FFFDF8] px-3 py-1.5 text-xs font-black uppercase tracking-[0.14em] text-[#0F4036] transition hover:bg-[#EEE0C5]/45 shadow-sm"
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </div>
         </label>
 
         {error && (
@@ -2583,21 +2603,26 @@ function OwnerReportsView({ ownerName, onClose, themeMode }) {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
                 <StatCard
-                  label="Drink Revenue"
+                  label="Actual Drink Revenue"
                   value={report?.totalRevenue || "$0.00"}
+                  detail="Before tax"
+                />
+                <StatCard
+                  label="Taxes Collected"
+                  value={report?.totalTax || "$0.00"}
+                  detail="Drink items only"
+                />
+                <StatCard
+                  label="Total Collected"
+                  value={report?.totalCollected || "$0.00"}
                   detail={`${report?.orderCount || 0} drink orders`}
                 />
                 <StatCard
                   label="Drink Units"
                   value={report?.totalUnits || 0}
                   detail="Coffee, not coffee, smoothies"
-                />
-                <StatCard
-                  label="Avg Drink Order"
-                  value={report?.averageDrinkOrderValue || "$0.00"}
-                  detail="Revenue per drink order"
                 />
               </div>
 
@@ -2614,7 +2639,24 @@ function OwnerReportsView({ ownerName, onClose, themeMode }) {
                       {item.revenue}
                     </div>
                     <div className="mt-1 text-sm font-semibold text-[#6A614F]">
-                      {item.units} units sold
+                      Before tax
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                      <div className="rounded-xl border border-[#CA862B]/12 bg-[#FFFDF8] px-3 py-2">
+                        <div className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
+                          Tax
+                        </div>
+                        <div className="font-black text-[#111111]">{item.tax}</div>
+                      </div>
+                      <div className="rounded-xl border border-[#CA862B]/12 bg-[#FFFDF8] px-3 py-2">
+                        <div className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
+                          Total
+                        </div>
+                        <div className="font-black text-[#111111]">{item.total}</div>
+                      </div>
+                    </div>
+                    <div className="mt-3 text-sm font-semibold text-[#6A614F]">
+                      {item.units} drink units sold
                     </div>
                   </div>
                 ))}

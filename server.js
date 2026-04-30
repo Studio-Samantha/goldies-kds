@@ -397,6 +397,15 @@ function getLineItemAmountCents(lineItem = {}) {
   return Math.round(unit * qty);
 }
 
+function getLineItemTaxCents(lineItem = {}) {
+  return (
+    getMoneyAmountCents(lineItem.totalTaxMoney) ||
+    getMoneyAmountCents(lineItem.total_tax_money) ||
+    getMoneyAmountCents(lineItem.taxMoney) ||
+    getMoneyAmountCents(lineItem.tax_money)
+  );
+}
+
 function formatCurrency(cents) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -1925,9 +1934,9 @@ function buildDrinkReport(reportTickets, start, end = new Date()) {
 
 function buildOwnerDrinkRevenueReport(orders = [], start, end) {
   const categories = {
-    Coffee: { category: "Coffee", revenueCents: 0, units: 0 },
-    "Not Coffee": { category: "Not Coffee", revenueCents: 0, units: 0 },
-    Smoothies: { category: "Smoothies", revenueCents: 0, units: 0 },
+    Coffee: { category: "Coffee", revenueCents: 0, taxCents: 0, totalCents: 0, units: 0 },
+    "Not Coffee": { category: "Not Coffee", revenueCents: 0, taxCents: 0, totalCents: 0, units: 0 },
+    Smoothies: { category: "Smoothies", revenueCents: 0, taxCents: 0, totalCents: 0, units: 0 },
   };
   const orderIds = new Set();
 
@@ -1942,10 +1951,14 @@ function buildOwnerDrinkRevenueReport(orders = [], start, end) {
       if (!category) continue;
 
       const qty = Number.parseFloat(lineItem.quantity || "1") || 1;
-      const amountCents = getLineItemAmountCents(lineItem);
+      const totalCents = getLineItemAmountCents(lineItem);
+      const taxCents = getLineItemTaxCents(lineItem);
+      const revenueCents = Math.max(totalCents - taxCents, 0);
 
       categories[category].units += qty;
-      categories[category].revenueCents += amountCents;
+      categories[category].revenueCents += revenueCents;
+      categories[category].taxCents += taxCents;
+      categories[category].totalCents += totalCents;
       orderHasDrink = true;
     }
 
@@ -1955,9 +1968,19 @@ function buildOwnerDrinkRevenueReport(orders = [], start, end) {
   const totalsByCategory = Object.values(categories).map((item) => ({
     ...item,
     revenue: formatCurrency(item.revenueCents),
+    tax: formatCurrency(item.taxCents),
+    total: formatCurrency(item.totalCents),
   }));
   const totalRevenueCents = totalsByCategory.reduce(
     (sum, item) => sum + item.revenueCents,
+    0
+  );
+  const totalTaxCents = totalsByCategory.reduce(
+    (sum, item) => sum + item.taxCents,
+    0
+  );
+  const totalCollectedCents = totalsByCategory.reduce(
+    (sum, item) => sum + item.totalCents,
     0
   );
   const totalUnits = totalsByCategory.reduce((sum, item) => sum + item.units, 0);
@@ -1969,11 +1992,15 @@ function buildOwnerDrinkRevenueReport(orders = [], start, end) {
     totalUnits,
     totalRevenueCents,
     totalRevenue: formatCurrency(totalRevenueCents),
+    totalTaxCents,
+    totalTax: formatCurrency(totalTaxCents),
+    totalCollectedCents,
+    totalCollected: formatCurrency(totalCollectedCents),
     averageDrinkOrderValueCents: orderIds.size
-      ? Math.round(totalRevenueCents / orderIds.size)
+      ? Math.round(totalCollectedCents / orderIds.size)
       : 0,
     averageDrinkOrderValue: formatCurrency(
-      orderIds.size ? Math.round(totalRevenueCents / orderIds.size) : 0
+      orderIds.size ? Math.round(totalCollectedCents / orderIds.size) : 0
     ),
     totalsByCategory,
   };
