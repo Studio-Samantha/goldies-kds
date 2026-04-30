@@ -6,9 +6,19 @@ const API_BASE_URL = import.meta.env.DEV
 const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
-const APP_VERSION = "v1.0.3";
+const APP_VERSION = "v1.0.4";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
+const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const RELEASE_NOTES = [
+  {
+    version: "v1.0.4",
+    date: "Current build",
+    summary: "You can now hide the What's New popup until the next update.",
+    items: [
+      "A Don't show again button was added to the release notes popup.",
+      "The popup stays out of the way once staff dismiss it.",
+    ],
+  },
   {
     version: "v1.0.3",
     date: "Current build",
@@ -66,7 +76,7 @@ function buildSupportMailto() {
   return `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
 }
 
-function ReleaseNotesDialog({ open, onClose }) {
+function ReleaseNotesDialog({ open, onClose, onHideForNow }) {
   if (!open) return null;
 
   return (
@@ -80,13 +90,23 @@ function ReleaseNotesDialog({ open, onClose }) {
             <h2 className="text-2xl font-black text-[#0F4036]">What&apos;s changed</h2>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-          >
-            Close
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onHideForNow}
+              className="rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+            >
+              Don&apos;t show again
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+            >
+              Close
+            </button>
+          </div>
         </div>
 
         <div className="max-h-[70vh] overflow-y-auto px-5 py-4 space-y-4">
@@ -1231,7 +1251,14 @@ function OrdersByDayLookup({ defaultDate, collapsed, onToggle }) {
   );
 }
 
-function LoginScreen({ onLogin, themeMode, onThemeToggle, themeStyle, onVersionClick }) {
+function LoginScreen({
+  onLogin,
+  themeMode,
+  onThemeToggle,
+  themeStyle,
+  onVersionClick,
+  releaseNotesHidden,
+}) {
   const [employeeName, setEmployeeName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -1328,13 +1355,14 @@ function LoginScreen({ onLogin, themeMode, onThemeToggle, themeStyle, onVersionC
           Enter your name and password to continue.
         </p>
 
-        <button
-          type="button"
-          onClick={onVersionClick}
-          className="mt-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#0F4036] underline decoration-[#CA862B]/70 decoration-2 underline-offset-4"
-        >
-          {APP_VERSION} · what&apos;s new?
-        </button>
+          <button
+            type="button"
+            onClick={onVersionClick}
+          className="mt-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#0F4036] underline decoration-[#CA862B]/70 decoration-2 underline-offset-4 disabled:cursor-not-allowed disabled:opacity-45"
+          disabled={releaseNotesHidden}
+          >
+            {APP_VERSION} · what&apos;s new?
+          </button>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4 w-full">
           <label className="block text-left">
@@ -1537,6 +1565,15 @@ export default function GoldiesKDS() {
   const [showOrdersByDay, setShowOrdersByDay] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showReleaseNotes, setShowReleaseNotes] = useState(false);
+  const [hiddenReleaseNotesVersion, setHiddenReleaseNotesVersion] = useState(() => {
+    if (typeof window === "undefined") return "";
+
+    try {
+      return window.localStorage.getItem(RELEASE_NOTES_HIDE_KEY) || "";
+    } catch {
+      return "";
+    }
+  });
   const [passwordError, setPasswordError] = useState("");
   const [passwordNotice, setPasswordNotice] = useState("");
   const [passwordSaving, setPasswordSaving] = useState(false);
@@ -1556,6 +1593,23 @@ export default function GoldiesKDS() {
       // ignore storage failures
     }
   }, [themeMode]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    try {
+      if (hiddenReleaseNotesVersion) {
+        window.localStorage.setItem(
+          RELEASE_NOTES_HIDE_KEY,
+          hiddenReleaseNotesVersion
+        );
+      } else {
+        window.localStorage.removeItem(RELEASE_NOTES_HIDE_KEY);
+      }
+    } catch {
+      // ignore storage failures
+    }
+  }, [hiddenReleaseNotesVersion]);
 
   useEffect(() => {
     if (!passwordNotice) return undefined;
@@ -1932,6 +1986,7 @@ export default function GoldiesKDS() {
         }
         themeStyle={themeStyle}
         onVersionClick={() => setShowReleaseNotes(true)}
+        releaseNotesHidden={hiddenReleaseNotesVersion === APP_VERSION}
       />
     );
   } else {
@@ -2023,7 +2078,8 @@ export default function GoldiesKDS() {
               <button
                 type="button"
                 onClick={() => setShowReleaseNotes(true)}
-                className="underline decoration-[#CA862B]/70 decoration-2 underline-offset-4"
+                className="underline decoration-[#CA862B]/70 decoration-2 underline-offset-4 disabled:cursor-not-allowed disabled:opacity-45"
+                disabled={hiddenReleaseNotesVersion === APP_VERSION}
               >
                 {APP_VERSION} · what&apos;s new?
               </button>
@@ -2202,8 +2258,12 @@ export default function GoldiesKDS() {
     <>
       {content}
       <ReleaseNotesDialog
-        open={showReleaseNotes}
+        open={showReleaseNotes && hiddenReleaseNotesVersion !== APP_VERSION}
         onClose={() => setShowReleaseNotes(false)}
+        onHideForNow={() => {
+          setHiddenReleaseNotesVersion(APP_VERSION);
+          setShowReleaseNotes(false);
+        }}
       />
     </>
   );
