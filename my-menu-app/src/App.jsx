@@ -14,7 +14,7 @@ const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
-const SOFT_OPENING_DATE = "2026-04-30";
+const SOFT_OPENING_DATE = "2026-04-29";
 const WEB_SERVICES_REMINDER_DATE = "2026-05-02";
 const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
@@ -760,28 +760,28 @@ function PitchPage({ open, onBack }) {
               Studio Samantha
             </h1>
             <p className="mt-3 max-w-2xl text-lg leading-8 text-[#2D261C]">
-              Custom Square® tools for coffee shops and small businesses that
-              need a polished display, simple staff workflows, and a
-              better-looking daily operation.
+              Custom Square® tools for coffee shops, smoothie shops, and drink
+              counters that need a polished display, simple staff workflows,
+              and useful owner reporting.
             </p>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {[
                 {
                   title: "Live board",
-                  text: "New, Making, Ready, Completed, and Done all stay visible at a glance.",
+                  text: "New, Making, Ready, Completed, and Done stay visible during the rush.",
                 },
                 {
-                  title: "Useful counts",
-                  text: "Today&apos;s counts, drink stats, and completed totals are easy to compare.",
+                  title: "Drink counts",
+                  text: "Coffee, not coffee, smoothies, completed totals, and daily counts stay easy to compare.",
                 },
                 {
                   title: "Staff tools",
                   text: "Password controls, training mode, and support links stay built in.",
                 },
                 {
-                  title: "Square® sync",
-                  text: "Orders and status updates stay connected to Square® and Supabase®.",
+                  title: "Owner insights",
+                  text: "Revenue, category mix, average ticket value, and hourly volume help owners spot rushes.",
                 },
                 {
                   title: "Brand ready",
@@ -870,9 +870,9 @@ function PitchPage({ open, onBack }) {
                 What it can do
               </div>
               <ul className="mt-3 space-y-2 text-sm leading-6 text-[#2D261C]">
-                <li>Live Square® orders in a simple kitchen board</li>
+                <li>Live Square® orders in a simple drink board</li>
                 <li>Customer names and employee tracking when available</li>
-                <li>Reports, history, and daily order lookup</li>
+                <li>Drink revenue, hourly volume, history, and daily order lookup</li>
                 <li>Training mode for practice without live data</li>
                 <li>Support link, password controls, and release notes</li>
               </ul>
@@ -884,7 +884,7 @@ function PitchPage({ open, onBack }) {
               </div>
               <p className="mt-3 text-sm leading-6 text-white/90">
                 Email me about setup, customization, or a copy for another
-                Square® shop.
+                coffee or drink shop.
               </p>
               <div className="mt-4 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white/95">
                 samantha@studiosamantha.com
