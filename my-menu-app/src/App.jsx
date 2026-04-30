@@ -1403,6 +1403,7 @@ export default function GoldiesKDS() {
     themeMode === "dark"
       ? { filter: "invert(1) hue-rotate(180deg)" }
       : undefined;
+  const hasOpenTickets = activeTickets.length > 0;
 
   useEffect(() => {
     try {
@@ -1963,7 +1964,11 @@ export default function GoldiesKDS() {
           {STATUS_COLUMNS.map((column) => (
             <section
               key={column.key}
-              className={`rounded-2xl bg-[#FFFDF8] border border-[#CA862B]/18 border-t-4 ${column.accent} p-3 shadow-sm xl:h-[calc(100vh-300px)] xl:min-h-[380px] flex flex-col`}
+              className={`rounded-2xl bg-[#FFFDF8] border border-[#CA862B]/18 border-t-4 ${column.accent} p-3 shadow-sm flex flex-col ${
+                hasOpenTickets
+                  ? "xl:h-[calc(100vh-300px)] xl:min-h-[380px]"
+                  : "xl:h-[220px] xl:min-h-[220px]"
+              }`}
             >
               <div className="flex items-center justify-between px-1 py-1.5 mb-2 shrink-0">
                 <h2 className="text-lg xl:text-xl font-black text-[#111111]">
