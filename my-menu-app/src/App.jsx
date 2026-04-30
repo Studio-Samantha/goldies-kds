@@ -9,7 +9,7 @@ const LOGO_DARK_URL = "/goldies-logo-white.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.5.2";
+const APP_VERSION = "v1.5.3";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -20,8 +20,18 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.5.2",
+    version: "v1.5.3",
     date: "Current build",
+    summary: "Added footer policy and ownership details.",
+    items: [
+      "The footer now links to privacy, data-use, and ownership information.",
+      "The policy explains Goldie's internal dashboard data use and case-study permission rules.",
+      "The footer now includes proprietary code and trademark notices.",
+    ],
+  },
+  {
+    version: "v1.5.2",
+    date: "Previous build",
     summary: "Added tax breakdowns to Owner Reports.",
     items: [
       "Owner Reports now separate actual drink revenue from taxes collected.",
@@ -1701,7 +1711,7 @@ function WatermarkLayer({ trainingMode = false, darkMode = false }) {
 function BrandFooter({ className = "" }) {
   return (
     <div
-      className={`relative z-30 inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-full border border-white/70 bg-[rgba(255,253,248,0.84)] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5A4F3E] shadow-[0_8px_18px_rgba(15,64,54,0.06)] backdrop-blur-md ${className}`}
+      className={`relative z-30 inline-flex max-w-3xl flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-full border border-white/70 bg-[rgba(255,253,248,0.86)] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#5A4F3E] shadow-[0_8px_18px_rgba(15,64,54,0.06)] backdrop-blur-md ${className}`}
     >
       <span>Studio Samantha © 2026</span>
       <span className="text-[#CA862B]/70">•</span>
@@ -1712,9 +1722,26 @@ function BrandFooter({ className = "" }) {
         Learn more
       </a>
       <span className="text-[#CA862B]/70">•</span>
-      <span className="normal-case tracking-normal">
-        Square and Supabase trademarks belong to their owners.
-      </span>
+      <a
+        href="/policy.html#data-use"
+        className="cursor-pointer normal-case tracking-normal text-[#0F4036] transition hover:text-[#CA862B] focus:outline-none focus-visible:text-[#CA862B]"
+      >
+        Data use
+      </a>
+      <span className="text-[#CA862B]/70">•</span>
+      <a
+        href="/policy.html#ownership"
+        className="cursor-pointer normal-case tracking-normal text-[#0F4036] transition hover:text-[#CA862B] focus:outline-none focus-visible:text-[#CA862B]"
+      >
+        Ownership
+      </a>
+      <span className="text-[#CA862B]/70">•</span>
+      <a
+        href="/policy.html#trademarks"
+        className="cursor-pointer normal-case tracking-normal text-[#0F4036] transition hover:text-[#CA862B] focus:outline-none focus-visible:text-[#CA862B]"
+      >
+        Trademarks
+      </a>
     </div>
   );
 }

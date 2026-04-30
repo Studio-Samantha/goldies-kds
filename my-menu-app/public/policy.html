@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy & Ownership | Goldie's KDS</title>
+    <style>
+      :root {
+        --cream: #fffdf8;
+        --sand: #eee0c5;
+        --green: #0f4036;
+        --gold: #ca862b;
+        --text: #2d261c;
+        --muted: #6a614f;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; min-height: 100%; }
+      body {
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top, rgba(255,253,248,0.98), rgba(238,224,197,1) 58%, rgba(230,210,173,1) 100%);
+      }
+      .wrap {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 20px 16px 36px;
+      }
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      .pill, .button, .card {
+        border: 1px solid rgba(202,134,43,.14);
+        background: rgba(255,253,248,.92);
+        box-shadow: 0 24px 70px rgba(15,64,54,.1);
+        backdrop-filter: blur(14px);
+      }
+      .pill, .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 10px 14px;
+        color: var(--green);
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 900;
+      }
+      .pill {
+        letter-spacing: .18em;
+        text-transform: uppercase;
+        color: #5a4f3e;
+      }
+      .card {
+        border-radius: 24px;
+        padding: clamp(22px, 4vw, 36px);
+      }
+      h1 {
+        margin: 0;
+        color: var(--green);
+        font-size: clamp(34px, 6vw, 58px);
+        line-height: .98;
+        letter-spacing: -0.035em;
+      }
+      .lead {
+        margin: 14px 0 0;
+        max-width: 760px;
+        font-size: 18px;
+        line-height: 1.65;
+      }
+      section {
+        margin-top: 24px;
+      }
+      h2 {
+        margin: 0;
+        color: var(--green);
+        font-size: 16px;
+        font-weight: 900;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+      }
+      p, li {
+        font-size: 15px;
+        line-height: 1.75;
+      }
+      p {
+        margin: 10px 0 0;
+      }
+      ul {
+        margin: 10px 0 0;
+        padding-left: 20px;
+      }
+      .note {
+        border-left: 4px solid var(--gold);
+        border-radius: 16px;
+        background: rgba(238,224,197,.42);
+        padding: 14px 16px;
+        font-weight: 700;
+      }
+      .footer {
+        margin-top: 18px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.7;
+        text-align: center;
+      }
+      @media (max-width: 560px) {
+        .topbar {
+          align-items: stretch;
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <div class="topbar">
+        <a class="pill" href="https://www.studiosamantha.com" target="_blank" rel="noreferrer">
+          Studio Samantha
+        </a>
+        <a class="button" href="/">Back to app</a>
+      </div>
+
+      <article class="card">
+        <h1>Privacy & Ownership</h1>
+        <p class="lead">
+          Goldie's KDS is a custom kitchen display and reporting tool built by
+          Studio Samantha for Goldie's Coffee & Goods.
+        </p>
+
+        <section id="data-use">
+          <h2>Data Use</h2>
+          <p class="note">
+            Since this app tracks order flow, drink counts, timing, and owner-only
+            revenue reports, I want to make sure you’re comfortable with how the
+            data is used. The data is for Goldie’s internal dashboard unless you
+            give me permission otherwise. If we later use Goldie’s as a case
+            study, I’ll only use approved screenshots, anonymized stats, or quotes
+            that you review first.
+          </p>
+          <p>
+            The app uses operational data from connected services to show order
+            status, daily counts, drink statistics, timing, and owner-only drink
+            revenue reports. Financial reporting is intended for authorized
+            Goldie's owners only.
+          </p>
+        </section>
+
+        <section id="access">
+          <h2>Access & Security</h2>
+          <ul>
+            <li>The main KDS requires a staff password before order data is shown.</li>
+            <li>Owner revenue reports require a separate owner password.</li>
+            <li>Owner report access is intended for Blake, Claire, and any person they approve.</li>
+            <li>Support access or troubleshooting should be limited to what is needed to keep the app working.</li>
+          </ul>
+        </section>
+
+        <section id="ownership">
+          <h2>Proprietary Code</h2>
+          <p>
+            The application code, custom implementation, design system, reporting
+            logic, deployment setup, and related technical materials are
+            proprietary property of Studio Samantha unless a separate written
+            agreement says otherwise. Goldie's business data, shop information,
+            and approved brand materials remain Goldie's property.
+          </p>
+        </section>
+
+        <section id="trademarks">
+          <h2>Third-Party Services</h2>
+          <p>
+            This app can connect to third-party platforms including Square®,
+            Supabase®, Render, and Vercel. Those services may have their own
+            terms, privacy policies, logs, and security controls.
+          </p>
+          <p>
+            Square® is a registered trademark of Block, Inc. Supabase® is a
+            registered trademark of Supabase, Inc. This product is independent
+            and is not affiliated with, sponsored by, or endorsed by those
+            companies.
+          </p>
+        </section>
+
+        <section>
+          <h2>Contact</h2>
+          <p>
+            Questions, corrections, data-use approvals, or support requests can
+            be sent to samantha@studiosamantha.com.
+          </p>
+        </section>
+      </article>
+
+      <div class="footer">
+        Studio Samantha © 2026. Goldie's KDS custom implementation and code are proprietary.
+      </div>
+    </main>
+  </body>
+</html>
