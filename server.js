@@ -279,10 +279,24 @@ function matchesAnyPattern(value, patterns = []) {
   return patterns.some((pattern) => pattern.test(text));
 }
 
+function isNonDrinkItem(itemName = "") {
+  const lower = normalizeDrinkText(itemName);
+
+  return matchesAnyPattern(lower, [
+    /\bsanctuary\b/,
+    /\bbamboo\b/,
+    /\bsoap\b/,
+    /\bshower steamer\b/,
+    /\bbestseller\b/,
+  ]);
+}
+
 function getDrinkCategory(itemName = "") {
   const name = normalizeName(itemName);
   const lower = normalizeDrinkText(name);
   const compact = lower.replace(/\s+/g, "");
+
+  if (isNonDrinkItem(name)) return null;
 
   if (COFFEE_DRINKS.has(name)) return "Coffee";
   if (NOT_COFFEE_DRINKS.has(name)) return "Not Coffee";
@@ -331,6 +345,21 @@ function getDrinkCategory(itemName = "") {
   if (compact.includes("greens")) return "Smoothies";
 
   return null;
+}
+
+function getItemDrinkCategory(item = {}) {
+  if (isNonDrinkItem(item.name)) return null;
+
+  const savedCategory = normalizeName(item.category);
+  if (
+    savedCategory === "Coffee" ||
+    savedCategory === "Not Coffee" ||
+    savedCategory === "Smoothies"
+  ) {
+    return savedCategory;
+  }
+
+  return getDrinkCategory(item.name);
 }
 
 function sanitizeStatus(status) {
@@ -1427,7 +1456,7 @@ function ticketFromDb(order, items = []) {
       qty: item.quantity || 1,
       modifiers: Array.isArray(item.modifiers) ? item.modifiers : [],
       note: item.note || "",
-      category: item.category || getDrinkCategory(item.name),
+      category: getItemDrinkCategory(item),
     })),
   };
 }
@@ -1495,7 +1524,7 @@ async function upsertTicket(ticket, rawOrder = null) {
         quantity: Number(item.qty || 1),
         modifiers: item.modifiers || [],
         note: item.note || "",
-        category: item.category || getDrinkCategory(item.name),
+        category: getItemDrinkCategory(item),
       }))
     );
 
@@ -1945,7 +1974,7 @@ async function getDrinkReport(range = "today") {
       .map((item) => ({
         name: item.name,
         qty: item.quantity,
-        category: item.category || getDrinkCategory(item.name),
+        category: getItemDrinkCategory(item),
       })),
   }));
 
@@ -1953,7 +1982,7 @@ async function getDrinkReport(range = "today") {
 }
 
 function ticketHasDrinkItem(ticket) {
-  return (ticket.items || []).some((item) => item.category || getDrinkCategory(item.name));
+  return (ticket.items || []).some((item) => getItemDrinkCategory(item));
 }
 
 function getMakingDurationFromEvents(events, start, end) {
@@ -2027,7 +2056,7 @@ async function getDrinkMakingTimeReport(range = "today") {
 
   const drinkOrderIds = new Set();
   for (const item of items || []) {
-    const category = item.category || getDrinkCategory(item.name);
+    const category = getItemDrinkCategory(item);
     if (category) drinkOrderIds.add(item.order_id);
   }
 
@@ -2066,7 +2095,7 @@ function buildDrinkReport(reportTickets, start, end = new Date()) {
     if (ticket.createdAt && ticket.createdAt > end.getTime()) continue;
 
     for (const item of ticket.items || []) {
-      const category = item.category || getDrinkCategory(item.name);
+      const category = getItemDrinkCategory(item);
       if (!category) continue;
 
       const qty = Number(item.qty || 1);
@@ -2080,7 +2109,7 @@ function buildDrinkReport(reportTickets, start, end = new Date()) {
     startAt: start.toISOString(),
     endAt: end.toISOString(),
     orderCount: reportTickets.filter((ticket) =>
-      (ticket.items || []).some((item) => getDrinkCategory(item.name))
+      (ticket.items || []).some((item) => getItemDrinkCategory(item))
     ).length,
     totalsByName: Array.from(totalsByName.entries())
       .map(([name, qty]) => ({ name, qty, category: getDrinkCategory(name) }))

@@ -1137,10 +1137,24 @@ function normalizeDrinkText(name = "") {
     .toLowerCase();
 }
 
+function isNonDrinkItem(itemName = "") {
+  const lower = normalizeDrinkText(itemName);
+
+  return matchesAnyPattern(lower, [
+    /\bsanctuary\b/i,
+    /\bbamboo\b/i,
+    /\bsoap\b/i,
+    /\bshower steamer\b/i,
+    /\bbestseller\b/i,
+  ]);
+}
+
 function getBeverageCategory(itemName = "") {
   const name = String(itemName || "").trim();
   const lower = normalizeDrinkText(name);
   const compact = lower.replace(/\s+/g, "");
+
+  if (isNonDrinkItem(name)) return null;
 
   if (
     [
@@ -2761,12 +2775,49 @@ function buildOwnerSnapshotAnalysis(report, rangeKey) {
           : copy.quiet;
   const quietRead =
     orderCount < 8 ? `${copy.quiet} ` : "";
+  const startAt = report?.startAt ? new Date(report.startAt).getTime() : 0;
+  const endAt = report?.endAt ? new Date(report.endAt).getTime() : 0;
+  const rangeDays =
+    startAt && endAt
+      ? Math.max(1, Math.round((endAt - startAt) / 86400000))
+      : 1;
+  const dailyRevenue = formatCurrency(Math.round(revenueCents / rangeDays));
+  const dailyOrders = (orderCount / rangeDays).toFixed(orderCount < rangeDays ? 1 : 0);
+  const rangeLabel = getOwnerRangeLabel(rangeKey);
+  const moneySignalByRange = {
+    today: `Live service read: ${revenueRead} ${averageOrderRead} Watch the rest of today for whether average ticket value climbs during rush periods.`,
+    yesterday: `Closed-day read: yesterday finished at ${report?.totalRevenue || "$0.00"} before tax. ${averageOrderRead} Use it as a clean comparison against today, not as a live staffing signal.`,
+    last7: `Short-term trend: this week is averaging ${dailyOrders} drink orders and ${dailyRevenue} in drink revenue per day. ${revenueRead} Compare this to staffing and prep for the current week.`,
+    last30: `Monthly trend: the last 30 days average ${dailyOrders} drink orders and ${dailyRevenue} in drink revenue per day. ${averageOrderRead} This is the better range for menu and promo decisions.`,
+    thisMonth: `Month-to-date pace: this month is averaging ${dailyOrders} drink orders and ${dailyRevenue} in drink revenue per day. ${revenueRead} Watch whether the pace is improving or fading before month end.`,
+    thisYear: `Long-term signal: year-to-date drink revenue is ${report?.totalRevenue || "$0.00"} before tax across ${drinkUnits} units. ${averageOrderRead} Use this for bigger menu, staffing, and category direction.`,
+  };
+  const ownerActionByRange = {
+    today:
+      averageCents < 600
+        ? "For the rest of today, coach add-ons or premium drink suggestions and see whether the average ticket improves before close."
+        : "For the rest of today, protect speed and prep on the strongest category so higher-value tickets do not slow the bar.",
+    yesterday:
+      "Use yesterday as a review: compare the strongest category, average ticket value, and staffing notes before changing today's plan.",
+    last7:
+      topCategoryShare >= 55
+        ? `This week, make sure ${topCategory.category} prep and stock match demand before the next rush.`
+        : "This week, watch whether demand stays spread across categories or starts concentrating in one lane.",
+    last30:
+      averageCents < 600
+        ? "For the 30-day view, test a simple add-on or featured drink strategy before changing the broader menu."
+        : "For the 30-day view, use the stronger average ticket to decide which drink lane deserves more menu focus.",
+    thisMonth:
+      "For this month, compare the current daily pace to the goal and adjust prep, specials, or category focus before the month closes.",
+    thisYear:
+      "For the year-to-date view, use the repeated category leader and ticket value pattern for bigger staffing, menu, and purchasing decisions.",
+  };
 
   return {
     eyebrow: copy.eyebrow,
     question: copy.question,
-    tone: `${getOwnerRangeLabel(rangeKey)} read`,
-    summary: `${quietRead}${getOwnerRangeLabel(rangeKey)} looks ${volumeRead}: ${orderCount} drink orders, ${drinkUnits} drink units, and ${report?.totalRevenue || "$0.00"} in drink revenue before tax. The average collected per drink order is ${report?.averageDrinkOrderValue || "$0.00"}, which points to ${averageRead}.`,
+    tone: `${rangeLabel} read`,
+    summary: `${quietRead}${rangeLabel} looks ${volumeRead}: ${orderCount} drink orders, ${drinkUnits} drink units, and ${report?.totalRevenue || "$0.00"} in drink revenue before tax. The average collected per drink order is ${report?.averageDrinkOrderValue || "$0.00"}, which points to ${averageRead}.`,
     watch: [
       {
         title: "Demand mix",
@@ -2778,11 +2829,11 @@ function buildOwnerSnapshotAnalysis(report, rangeKey) {
       },
       {
         title: "Money signal",
-        body: `${revenueRead} ${averageOrderRead}`,
+        body: moneySignalByRange[rangeKey] || `${revenueRead} ${averageOrderRead}`,
       },
       {
         title: "Owner action",
-        body: `${volumeAction} ${copy.action}`,
+        body: `${ownerActionByRange[rangeKey] || copy.action} ${volumeAction}`,
       },
     ],
   };
