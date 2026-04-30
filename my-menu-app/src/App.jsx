@@ -9,7 +9,7 @@ const LOGO_DARK_URL = "/goldies-logo-white.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.5.0";
+const APP_VERSION = "v1.5.1";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -20,8 +20,17 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.5.0",
+    version: "v1.5.1",
     date: "Current build",
+    summary: "Tightened Owner Login security.",
+    items: [
+      "Owner reports now require the owner password every time they are opened.",
+      "Leaving owner reports clears the owner session.",
+    ],
+  },
+  {
+    version: "v1.5.0",
+    date: "Previous build",
     summary: "Added Owner Login for private drink revenue reports.",
     items: [
       "Owner Login opens a separate financial dashboard.",
@@ -2529,7 +2538,7 @@ function OwnerReportsView({ ownerName, onClose, themeMode }) {
             </span>
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleLogout}
               className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
             >
               Back
@@ -3152,24 +3161,15 @@ export default function GoldiesKDS() {
 
     async function checkSessions() {
       try {
-        const [staffResponse, ownerResponse] = await Promise.all([
-          fetch(apiUrl("/api/session"), {
-            credentials: "include",
-          }),
-          fetch(apiUrl("/api/owner/session"), {
-            credentials: "include",
-          }),
-        ]);
+        const staffResponse = await fetch(apiUrl("/api/session"), {
+          credentials: "include",
+        });
         const session = await staffResponse.json();
-        const ownerSession = await ownerResponse.json().catch(() => ({}));
 
         if (!mounted) return;
 
         setAuthStatus(session.authenticated ? "authenticated" : "login");
         setSignedInEmployee(session.employeeName || "");
-        if (ownerSession.authenticated) {
-          setSignedInOwner(ownerSession.ownerName || "Owner");
-        }
         if (!session.configured) {
           setLastError("KDS login is not configured on the backend.");
         }
@@ -3619,11 +3619,9 @@ export default function GoldiesKDS() {
           }}
           onOwnerLogin={() => {
             setShowSettingsMenu(false);
-            if (signedInOwner) {
-              setShowOwnerReports(true);
-            } else {
-              setShowOwnerLogin(true);
-            }
+            setSignedInOwner("");
+            setShowOwnerReports(false);
+            setShowOwnerLogin(true);
           }}
           suggestFixHref={buildSupportMailto()}
           onVersionClickMenu={() => {
@@ -3743,11 +3741,9 @@ export default function GoldiesKDS() {
                   }
                   onOwnerLogin={() => {
                     setShowSettingsMenu(false);
-                    if (signedInOwner) {
-                      setShowOwnerReports(true);
-                    } else {
-                      setShowOwnerLogin(true);
-                    }
+                    setSignedInOwner("");
+                    setShowOwnerReports(false);
+                    setShowOwnerLogin(true);
                   }}
                   showPasswordAction={true}
                   onChangePassword={() => {
@@ -4048,7 +4044,10 @@ export default function GoldiesKDS() {
         <OwnerReportsView
           ownerName={signedInOwner || "Owner"}
           themeMode={themeMode}
-          onClose={() => setShowOwnerReports(false)}
+          onClose={() => {
+            setSignedInOwner("");
+            setShowOwnerReports(false);
+          }}
         />
       )}
       <WebServicesReminderDialog
