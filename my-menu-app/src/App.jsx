@@ -6,9 +6,18 @@ const API_BASE_URL = import.meta.env.DEV
 const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
-const APP_VERSION = "v1.0.1";
+const APP_VERSION = "v1.0.2";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const RELEASE_NOTES = [
+  {
+    version: "v1.0.2",
+    date: "Current build",
+    summary: "Login help now points staff to customer service after repeated wrong passwords.",
+    items: [
+      "After a few wrong password attempts, the login screen points staff to Suggest Fix.",
+      "This makes it easier for the shop to get help without texting or calling.",
+    ],
+  },
   {
     version: "v1.0.1",
     date: "Current build",
@@ -1218,9 +1227,29 @@ function LoginScreen({ onLogin, themeMode, onThemeToggle, themeStyle, onVersionC
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockoutUntil, setLockoutUntil] = useState(0);
+  const lockoutActive = lockoutUntil > Date.now();
+
+  useEffect(() => {
+    if (!lockoutUntil) return undefined;
+
+    const timeout = setTimeout(() => {
+      setLockoutUntil(0);
+      setFailedAttempts(0);
+      setError("");
+    }, Math.max(lockoutUntil - Date.now(), 0));
+
+    return () => clearTimeout(timeout);
+  }, [lockoutUntil]);
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (lockoutActive) {
+      setError("Too many failed attempts. Use Suggest Fix to contact Samantha.");
+      return;
+    }
+
     setSubmitting(true);
     setError("");
 
@@ -1239,9 +1268,19 @@ function LoginScreen({ onLogin, themeMode, onThemeToggle, themeStyle, onVersionC
 
       setPassword("");
       setEmployeeName("");
+      setFailedAttempts(0);
+      setLockoutUntil(0);
       onLogin(data.employeeName || employeeName.trim());
     } catch (loginError) {
-      setError(loginError.message || "Login failed");
+      const nextAttempts = failedAttempts + 1;
+      setFailedAttempts(nextAttempts);
+
+      if (nextAttempts >= 3) {
+        setLockoutUntil(Date.now() + 30000);
+        setError("Too many failed attempts. Use Suggest Fix to contact Samantha.");
+      } else {
+        setError(loginError.message || "Login failed");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -1321,9 +1360,15 @@ function LoginScreen({ onLogin, themeMode, onThemeToggle, themeStyle, onVersionC
             </div>
           )}
 
+          {lockoutActive && (
+            <div className="rounded-2xl bg-[#EEE0C5]/60 border border-[#CA862B]/20 px-4 py-3 text-sm font-semibold text-[#6A614F]">
+              Too many failed attempts. Use Suggest Fix to contact Samantha.
+            </div>
+          )}
+
           <button
             type="submit"
-            disabled={submitting || !password || !employeeName.trim()}
+            disabled={submitting || lockoutActive || !password || !employeeName.trim()}
             className="w-full rounded-2xl bg-[#0F4036] text-white px-4 py-3 font-black transition hover:bg-[#0b352d] disabled:cursor-not-allowed disabled:bg-neutral-300"
           >
             {submitting ? "Signing in..." : "Sign in"}
