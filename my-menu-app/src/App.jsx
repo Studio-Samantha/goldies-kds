@@ -7,7 +7,7 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.1.10";
+const APP_VERSION = "v1.1.11";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-30";
@@ -15,13 +15,12 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.1.10",
+    version: "v1.1.11",
     date: "Current build",
-    summary: "The app background now has a subtle Goldie's logo watermark.",
+    summary: "The login Settings help button now opens the explanation popup.",
     items: [
-      "A faint repeating logo pattern was added behind the app.",
-      "The Settings help button now sits next to the label where it is easier to find.",
-      "It gives the app a more branded look without getting in the way.",
+      "The question-mark button next to Settings now opens the help popup on login.",
+      "The help popup explains what Settings contains.",
     ],
   },
   {
@@ -1940,6 +1939,7 @@ function LoginScreen({
   settingsOpen,
   onToggleSettings,
   onCloseSettings,
+  onSettingsHelp,
   onChangePassword,
   suggestFixHref,
   onVersionClickMenu,
@@ -2026,12 +2026,7 @@ function LoginScreen({
 
           <button
             type="button"
-            onClick={() =>
-              setModeHelp({
-                title: "Settings",
-                body: SETTINGS_HELP_TEXT,
-              })
-            }
+            onClick={onSettingsHelp}
             aria-label="Explain Settings"
             title="Settings includes the main utility actions for the app."
             className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#CA862B]/20 bg-white text-xs font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
@@ -2796,6 +2791,12 @@ export default function GoldiesKDS() {
           settingsOpen={showSettingsMenu}
           onToggleSettings={() => setShowSettingsMenu((current) => !current)}
           onCloseSettings={() => setShowSettingsMenu(false)}
+          onSettingsHelp={() =>
+            setModeHelp({
+              title: "Settings",
+              body: SETTINGS_HELP_TEXT,
+            })
+          }
           onChangePassword={() => {
             setShowSettingsMenu(false);
             setPasswordError("");
