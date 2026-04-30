@@ -2078,6 +2078,22 @@ function HourlyVolumeChart({ report, range }) {
   );
 }
 
+function getDailyAdviceIndex(seed, length) {
+  if (!length) return 0;
+
+  const text = String(seed || getTodayDateKey());
+  const total = Array.from(text).reduce(
+    (sum, char, index) => sum + char.charCodeAt(0) * (index + 1),
+    0
+  );
+
+  return total % length;
+}
+
+function pickDailyAdvice(seed, options) {
+  return options[getDailyAdviceIndex(seed, options.length)];
+}
+
 function CoffeeShopAdvice({ report, range }) {
   const hourlyStats = getHourlyVolumeStats(report?.hourlyOrders || []);
   const categories = report?.totalsByCategory || [];
@@ -2087,23 +2103,49 @@ function CoffeeShopAdvice({ report, range }) {
   const averageCents = Number(report?.averageDrinkOrderValueCents || 0);
   const orderCount = Number(report?.orderCount || 0);
   const rangeLabel = getOwnerRangeLabel(range);
+  const adviceSeed = `${getTodayDateKey()}:${range}:${orderCount}:${topCategory?.category || "none"}`;
   const peakText = hourlyStats.peak
     ? `${formatHourRange(hourlyStats.peak.hour)} is the strongest hour with ${hourlyStats.peak.orderCount} drink orders.`
     : "No hourly drink pattern is visible yet.";
   const slowText = hourlyStats.slowest && hourlyStats.active.length > 1
     ? `${formatHourRange(hourlyStats.slowest.hour)} is the lowest active hour.`
     : "There is not enough spread yet to call a true slow hour.";
+  const peakPrep = pickDailyAdvice(`${adviceSeed}:peak`, [
+    "Set up milk, cups, lids, syrups, and smoothie prep before that window so the bar is not restocking mid-rush.",
+    "Put your strongest bar coverage just ahead of that window and keep the handoff area clear.",
+    "Use the 20 minutes before that window for backups, ice, milks, and a quick station reset.",
+  ]);
+  const prepMove = pickDailyAdvice(`${adviceSeed}:prep`, [
+    "Prep around that lane first, then use the slower window to reset backups.",
+    "Make that lane the first stock check before service gets busy.",
+    "Keep that lane visible on the menu or register prompts while demand is warm.",
+  ]);
+  const healthyTicketMove = pickDailyAdvice(`${adviceSeed}:ticket-healthy`, [
+    "A featured modifier or pastry prompt could lift it without slowing service.",
+    "Try one simple register prompt and watch whether ticket value moves without hurting speed.",
+    "Keep the add-on prompt short so the line keeps moving.",
+  ]);
+  const modestTicketMove = pickDailyAdvice(`${adviceSeed}:ticket-modest`, [
+    "Try simple add-on prompts during slower moments.",
+    "Use the quieter window for a featured syrup, size upgrade, or pastry pairing prompt.",
+    "Watch whether a small special improves ticket value without making drinks slower.",
+  ]);
+  const slowWindowMove = pickDailyAdvice(`${adviceSeed}:slow`, [
+    "Use that window for restock, batching, social posts, or a small offer if it repeats across days.",
+    "Use that quieter stretch for backups, cleaning, prep notes, or a quick staff reset.",
+    "If that slow hour repeats, it may be a good place for a light promo or prep-heavy task.",
+  ]);
   const advice = [
     {
       title: "Staffing and bar flow",
       body: hourlyStats.peak
-        ? `${peakText} Put the strongest bar coverage, stocked milk, cups, lids, and smoothie prep before that window.`
+        ? `${peakText} ${peakPrep}`
         : "Once orders come in, this panel will call out where the busiest service window lands.",
     },
     {
       title: "Prep focus",
       body: topCategory?.units
-        ? `${topCategory.category} is leading ${rangeLabel.toLowerCase()} with ${topCategory.units} units. Prep around that lane first, then use the slower window to reset backups.`
+        ? `${topCategory.category} is leading ${rangeLabel.toLowerCase()} with ${topCategory.units} units. ${prepMove}`
         : "No category has enough volume yet. Keep prep balanced until one lane starts leading.",
     },
     {
@@ -2111,13 +2153,13 @@ function CoffeeShopAdvice({ report, range }) {
       body: averageCents >= 900
         ? `Average drink order value is strong at ${report?.averageDrinkOrderValue || "$0.00"}. Protect speed and consistency before pushing more add-ons.`
         : averageCents >= 600
-          ? `Average drink order value is healthy at ${report?.averageDrinkOrderValue || "$0.00"}. A featured modifier or pastry prompt could lift it without slowing service.`
-          : `Average drink order value is modest at ${report?.averageDrinkOrderValue || "$0.00"}. Try simple add-on prompts during slower moments.`,
+          ? `Average drink order value is healthy at ${report?.averageDrinkOrderValue || "$0.00"}. ${healthyTicketMove}`
+          : `Average drink order value is modest at ${report?.averageDrinkOrderValue || "$0.00"}. ${modestTicketMove}`,
     },
     {
       title: "Slow-window move",
       body: orderCount
-        ? `${slowText} Use that window for restock, batching, social posts, or a small offer if it repeats across days.`
+        ? `${slowText} ${slowWindowMove}`
         : "No drink orders are showing for this range yet. Check the report again once Square has synced today's service.",
     },
   ];
@@ -2131,6 +2173,9 @@ function CoffeeShopAdvice({ report, range }) {
         <h2 className="mt-1 text-xl font-black text-[#0F4036]">
           Expert Read for {rangeLabel}
         </h2>
+        <p className="mt-1 text-sm font-semibold text-[#6A614F]">
+          Rotates daily, based on today&apos;s date and this report&apos;s numbers.
+        </p>
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
