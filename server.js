@@ -77,6 +77,20 @@ function hasAlertEmailConfig() {
   );
 }
 
+function getAlertEmailConfigDiagnostics() {
+  return {
+    smtpHostSet: Boolean(ALERT_SMTP_HOST),
+    smtpPort: ALERT_SMTP_PORT,
+    smtpSecure: ALERT_SMTP_SECURE,
+    smtpUserSet: Boolean(ALERT_SMTP_USER),
+    smtpPassSet: Boolean(ALERT_SMTP_PASS),
+    emailToSet: Boolean(ALERT_EMAIL_TO),
+    emailFromSet: Boolean(ALERT_EMAIL_FROM),
+    fromResolvedToUser: Boolean(ALERT_SMTP_USER && ALERT_EMAIL_FROM === ALERT_SMTP_USER),
+    fromResolvedToTo: Boolean(ALERT_EMAIL_TO && ALERT_EMAIL_FROM === ALERT_EMAIL_TO),
+  };
+}
+
 function getAlertMailer() {
   if (!hasAlertEmailConfig()) return null;
   if (alertMailer) return alertMailer;
@@ -1694,6 +1708,7 @@ app.get("/api/health", (req, res) => {
         : null,
       lastError: squareApiAlertState.lastError || null,
       alertsConfigured: hasAlertEmailConfig(),
+      alertConfig: getAlertEmailConfigDiagnostics(),
     },
     time: new Date().toISOString(),
   });
