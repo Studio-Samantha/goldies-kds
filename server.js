@@ -1272,7 +1272,9 @@ async function normalizeSquareOrder(order, payment = null) {
 function ticketFromDb(order, items = []) {
   const rawDiningOption = getDiningOption(order.raw_order || {});
   const storedDiningOption =
-    order.dining_option && order.dining_option !== "Order"
+    order.dining_option &&
+    order.dining_option !== "Order" &&
+    order.dining_option !== "Unspecified"
       ? order.dining_option
       : "";
 
@@ -1321,7 +1323,7 @@ async function upsertTicket(ticket, rawOrder = null) {
       created_at: createdAt,
       source: ticket.source || "Square Register",
       status,
-      dining_option: ticket.diningOption || null,
+      dining_option: ticket.diningOption || "Unspecified",
       square_state: rawOrder?.state || null,
       raw_order: rawOrder
         ? toJsonSafe({
