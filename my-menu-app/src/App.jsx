@@ -9,7 +9,7 @@ const LOGO_DARK_URL = "/goldies-logo-white.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.3.6";
+const APP_VERSION = "v1.3.7";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -20,8 +20,16 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.3.6",
+    version: "v1.3.7",
     date: "Current build",
+    summary: "Updated pitch page trademark wording.",
+    items: [
+      "Supabase now uses the same registered trademark treatment as Square on the pitch page.",
+    ],
+  },
+  {
+    version: "v1.3.6",
+    date: "Previous build",
     summary: "Separated training dark mode from live dark mode.",
     items: [
       "Training dark mode now uses a warm Goldie/oat/espresso palette instead of live green.",
@@ -603,7 +611,7 @@ function PitchPage({ open, onBack }) {
               Studio Samantha
             </h1>
             <p className="mt-3 max-w-2xl text-lg leading-8 text-[#2D261C]">
-              Custom Square tools for coffee shops and small businesses that
+              Custom Square® tools for coffee shops and small businesses that
               need a polished display, simple staff workflows, and a
               better-looking daily operation.
             </p>
@@ -624,7 +632,7 @@ function PitchPage({ open, onBack }) {
                 },
                 {
                   title: "Square sync",
-                  text: "Orders and status updates stay connected to Square and Supabase.",
+                  text: "Orders and status updates stay connected to Square® and Supabase®.",
                 },
                 {
                   title: "Brand ready",
@@ -713,7 +721,7 @@ function PitchPage({ open, onBack }) {
                 What it can do
               </div>
               <ul className="mt-3 space-y-2 text-sm leading-6 text-[#2D261C]">
-                <li>Live Square orders in a simple kitchen board</li>
+                <li>Live Square® orders in a simple kitchen board</li>
                 <li>Customer names and employee tracking when available</li>
                 <li>Reports, history, and daily order lookup</li>
                 <li>Training mode for practice without live data</li>
@@ -727,7 +735,7 @@ function PitchPage({ open, onBack }) {
               </div>
               <p className="mt-3 text-sm leading-6 text-white/90">
                 Email me about setup, customization, or a copy for another
-                Square shop.
+                Square® shop.
               </p>
               <div className="mt-4 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white/95">
                 samantha@studiosamantha.com
