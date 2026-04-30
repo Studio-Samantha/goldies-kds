@@ -7,7 +7,7 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.1.19";
+const APP_VERSION = "v1.1.20";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -18,12 +18,12 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.1.19",
+    version: "v1.1.20",
     date: "Current build",
-    summary: "A one-day dashboard reminder now invites shops to ask about websites.",
+    summary: "The footer Learn more link now opens the product page cleanly.",
     items: [
-      "A dashboard reminder will appear on the planned day with a short website offer.",
-      "The footer Learn more page still stays clean and easy to open.",
+      "The footer link was lifted above the card so it clicks reliably.",
+      "The product page still stays clean and easy to open.",
     ],
   },
   {
@@ -1526,14 +1526,14 @@ function WatermarkLayer({ trainingMode = false }) {
 function BrandFooter({ className = "", onPitchClick }) {
   return (
     <div
-      className={`inline-flex items-center rounded-full border border-white/70 bg-[rgba(255,253,248,0.84)] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5A4F3E] shadow-[0_8px_18px_rgba(15,64,54,0.06)] backdrop-blur-md ${className}`}
+      className={`relative z-30 inline-flex items-center rounded-full border border-white/70 bg-[rgba(255,253,248,0.84)] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5A4F3E] shadow-[0_8px_18px_rgba(15,64,54,0.06)] backdrop-blur-md ${className}`}
     >
       <span>Studio Samantha © 2026</span>
       <span className="mx-2 text-[#CA862B]/70">•</span>
       <button
         type="button"
         onClick={onPitchClick}
-        className="normal-case tracking-normal text-[#0F4036] transition hover:text-[#CA862B]"
+        className="cursor-pointer normal-case tracking-normal text-[#0F4036] transition hover:text-[#CA862B]"
       >
         Learn more
       </button>
@@ -2345,7 +2345,7 @@ function LoginScreen({
 
       </main>
 
-      <div className="absolute bottom-4 left-0 right-0 flex justify-center px-4">
+      <div className="absolute bottom-4 left-0 right-0 z-30 flex justify-center px-4 pointer-events-auto">
         <BrandFooter onPitchClick={() => setShowPitch(true)} />
       </div>
     </div>
@@ -3407,7 +3407,7 @@ export default function GoldiesKDS() {
           trainingTickets={displayedTickets}
         />
 
-        <div className="flex justify-center pb-2">
+        <div className="relative z-30 flex justify-center pb-2 pointer-events-auto">
           <BrandFooter onPitchClick={() => setShowPitch(true)} />
         </div>
       </main>
