@@ -5214,6 +5214,15 @@ export default function GoldiesKDS() {
             </div>
 
             <div className="flex flex-wrap gap-2 justify-start xl:justify-end">
+              {isDemoRoute && (
+                <a
+                  href="/learn-more.html"
+                  className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
+                >
+                  Back to Learn More
+                </a>
+              )}
+
             <div className="relative" onClick={(event) => event.stopPropagation()}>
                 {isDemoRoute && (
                   <div className="absolute right-0 top-full z-20 mt-2 w-72 rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 text-sm font-bold leading-5 text-[#0F4036] shadow-[0_18px_45px_rgba(15,64,54,0.16)]">
