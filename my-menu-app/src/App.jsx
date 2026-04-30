@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 
 const API_BASE_URL = import.meta.env.DEV
   ? import.meta.env.VITE_API_BASE_URL || ""
@@ -7,7 +8,7 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.2.6";
+const APP_VERSION = "v1.2.7";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -19,12 +20,12 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.2.6",
+    version: "v1.2.7",
     date: "Current build",
-    summary: "The app now clears old cached files so updates load cleanly.",
+    summary: "Training mode now uses a much more obvious practice-only color scheme.",
     items: [
-      "Old cached files are cleared when a new version activates.",
-      "This helps prevent blank screens after app updates.",
+      "Training mode now reads clearly different from the live board.",
+      "Light and dark training views each have their own practice palette.",
     ],
   },
   {
@@ -1567,12 +1568,12 @@ function WatermarkLayer({ trainingMode = false }) {
         backgroundRepeat: "repeat",
         backgroundSize: "240px auto",
         backgroundPosition: "center top",
-        opacity: trainingMode ? 0.08 : 0.06,
+        opacity: trainingMode ? 0.11 : 0.06,
         transform: "rotate(-8deg) scale(1.08)",
         transformOrigin: "center",
         mixBlendMode: "multiply",
         filter: trainingMode
-          ? "hue-rotate(185deg) saturate(1.25) contrast(1.05)"
+          ? "hue-rotate(230deg) saturate(1.6) contrast(1.08)"
           : "grayscale(1) contrast(1.05)",
       }}
     />
@@ -1680,65 +1681,75 @@ function SettingsPopover({
   showPasswordAction = true,
 }) {
   if (!open) return null;
+  if (typeof document === "undefined") return null;
 
-  return (
-    <div className="fixed left-1/2 top-1/2 z-50 w-[min(20rem,calc(100vw-1.5rem))] max-h-[calc(100vh-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_18px_50px_rgba(0,0,0,0.16)] sm:right-4 sm:left-auto sm:top-24 sm:translate-x-0 sm:translate-y-0 sm:w-[20rem] sm:max-h-[calc(100vh-6rem)]">
-      <div className="flex items-center justify-between border-b border-[#CA862B]/16 px-4 py-3">
-        <div>
-          <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
-            Settings
+  return createPortal(
+    <>
+      <button
+        type="button"
+        aria-label="Close settings"
+        className="fixed inset-0 z-[190] cursor-default bg-[rgba(15,64,54,0.08)] backdrop-blur-[1px]"
+        onClick={onClose}
+      />
+      <div className="fixed left-1/2 top-1/2 z-[200] w-[min(24rem,calc(100vw-1.25rem))] max-h-[calc(100vh-1.5rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_22px_60px_rgba(0,0,0,0.22)]">
+        <div className="flex items-center justify-between border-b border-[#CA862B]/16 px-4 py-3">
+          <div>
+            <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
+              Settings
+            </div>
+            <div className="text-sm font-black text-[#111111]">App tools</div>
           </div>
-          <div className="text-sm font-black text-[#111111]">App tools</div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-[#CA862B]/18 bg-white px-2.5 py-1.5 text-xs font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+            >
+              Close
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="space-y-2 p-3">
+          <ModeToggle
+            active={themeMode === "dark"}
+            label={themeMode === "dark" ? "Light mode" : "Dark mode"}
+            onToggle={onThemeToggle}
+            hint="Switch between the light and dark dashboard themes."
+          />
+
+          {showPasswordAction && (
+            <button
+              type="button"
+              onClick={onChangePassword}
+              className="w-full rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-left text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+            >
+              Change Password
+            </button>
+          )}
+
+          <a
+            href={suggestFixHref}
+            className="block w-full rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+          >
+            Suggest Fix
+          </a>
+
           <button
             type="button"
-            onClick={onClose}
-            className="rounded-lg border border-[#CA862B]/18 bg-white px-2.5 py-1.5 text-xs font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+            onClick={onVersionClick}
+            className="w-full rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-left"
           >
-            Close
+            <div className="text-[11px] font-black uppercase tracking-[0.18em] text-[#6A614F]">
+              What&apos;s new?
+            </div>
+            <div className="text-sm font-black text-[#0F4036]">{APP_VERSION}</div>
           </button>
         </div>
       </div>
-
-      <div className="p-3 space-y-2">
-        <ModeToggle
-          active={themeMode === "dark"}
-          label={themeMode === "dark" ? "Light mode" : "Dark mode"}
-          onToggle={onThemeToggle}
-          hint="Switch between the light and dark dashboard themes."
-        />
-
-        {showPasswordAction && (
-          <button
-            type="button"
-            onClick={onChangePassword}
-            className="w-full rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45 text-left"
-          >
-            Change Password
-          </button>
-        )}
-
-        <a
-          href={suggestFixHref}
-          className="block w-full rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-        >
-          Suggest Fix
-        </a>
-
-        <button
-          type="button"
-          onClick={onVersionClick}
-          className="w-full rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-left"
-        >
-          <div className="text-[11px] font-black uppercase tracking-[0.18em] text-[#6A614F]">
-            What&apos;s new?
-          </div>
-          <div className="text-sm font-black text-[#0F4036]">{APP_VERSION}</div>
-        </button>
-      </div>
-    </div>
+    </>,
+    document.body
   );
 }
 
@@ -2667,17 +2678,17 @@ export default function GoldiesKDS() {
   const trainingThemeStyle = isTrainingMode
     ? themeMode === "dark"
       ? {
-          backgroundColor: "#020617",
+          backgroundColor: "#120b1f",
           backgroundImage:
-            "radial-gradient(circle at top, rgba(59,130,246,0.28), rgba(15,23,42,0.98) 52%, rgba(2,6,23,1) 100%)",
-          color: "#dbeafe",
+            "radial-gradient(circle at top, rgba(139,92,246,0.38), rgba(30,41,59,0.98) 48%, rgba(11,15,31,1) 100%)",
+          color: "#e9d5ff",
           colorScheme: "dark",
         }
       : {
-          backgroundColor: "#eff6ff",
+          backgroundColor: "#ecfeff",
           backgroundImage:
-            "radial-gradient(circle at top, rgba(147,197,253,0.38), rgba(219,234,254,0.94) 48%, rgba(191,219,254,1) 100%)",
-          color: "#1d4ed8",
+            "radial-gradient(circle at top, rgba(34,211,238,0.34), rgba(224,242,254,0.96) 46%, rgba(186,230,253,1) 100%)",
+          color: "#0369a1",
         }
     : undefined;
   const themeStyle =
