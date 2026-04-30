@@ -7,7 +7,7 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.1.23";
+const APP_VERSION = "v1.1.24";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -18,12 +18,12 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.1.23",
+    version: "v1.1.24",
     date: "Current build",
-    summary: "The login footer link was moved into the sign-in card so it clicks more reliably.",
+    summary: "The pitch page now has a clearer website link and a stronger sample dashboard.",
     items: [
-      "The Learn more link is now inside the login card on phones.",
-      "This makes the link easier to tap and keeps it off the dashboard.",
+      "The Studio Samantha bubble now links to the website.",
+      "The example dashboard shows a fuller live board instead of a minimal mockup.",
     ],
   },
   {
@@ -509,9 +509,15 @@ function PitchPage({ open, onBack }) {
 
       <div className="relative z-10 mx-auto flex min-h-full w-full max-w-6xl flex-col px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
         <div className="flex items-center justify-between gap-3">
-          <div className="rounded-full border border-[#CA862B]/14 bg-[rgba(255,253,248,0.88)] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-[#5A4F3E] shadow-sm backdrop-blur-md">
+          <a
+            href="https://www.studiosamantha.com"
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-full border border-[#CA862B]/14 bg-[rgba(255,253,248,0.88)] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-[#5A4F3E] shadow-sm backdrop-blur-md transition hover:bg-white/90 hover:text-[#0F4036]"
+            aria-label="Visit Studio Samantha website"
+          >
             Studio Samantha
-          </div>
+          </a>
 
           <button
             type="button"
@@ -537,11 +543,11 @@ function PitchPage({ open, onBack }) {
               {[
                 {
                   title: "Live board",
-                  text: "Active tickets flow into New, Making, Ready, Completed, and Done.",
+                  text: "New, Making, Ready, Completed, and Done all stay visible at a glance.",
                 },
                 {
                   title: "Useful counts",
-                  text: "Today&apos;s counts, drink stats, and completed totals stay easy to read.",
+                  text: "Today&apos;s counts, drink stats, and completed totals are easy to compare.",
                 },
                 {
                   title: "Staff tools",
@@ -579,20 +585,57 @@ function PitchPage({ open, onBack }) {
                 Example dashboard
               </div>
               <div className="mt-4 space-y-3">
-                {[
-                  ["New", "4 tickets"],
-                  ["Making", "2 tickets"],
-                  ["Ready", "1 ticket"],
-                  ["Completed", "3 tickets"],
-                ].map(([label, value]) => (
-                  <div
-                    key={label}
-                    className="flex items-center justify-between rounded-2xl border border-[#CA862B]/14 bg-white px-4 py-3 shadow-sm"
-                  >
-                    <div className="font-black text-[#111111]">{label}</div>
-                    <div className="text-sm font-black text-[#0F4036]">{value}</div>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    ["New", "12"],
+                    ["Making", "5"],
+                    ["Ready", "3"],
+                    ["Completed", "8"],
+                  ].map(([label, value]) => (
+                    <div
+                      key={label}
+                      className="rounded-2xl border border-[#CA862B]/14 bg-white px-4 py-3 shadow-sm"
+                    >
+                      <div className="text-[11px] font-black uppercase tracking-[0.18em] text-[#6A614F]">
+                        {label}
+                      </div>
+                      <div className="mt-1 text-2xl font-black text-[#0F4036]">
+                        {value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="rounded-2xl border border-[#CA862B]/14 bg-white px-4 py-4 shadow-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
+                        New ticket
+                      </div>
+                      <div className="mt-1 text-lg font-black text-[#111111]">
+                        #R90W
+                      </div>
+                    </div>
+                    <div className="rounded-full bg-[#EEE0C5]/55 px-3 py-1 text-xs font-black uppercase tracking-[0.16em] text-[#0F4036]">
+                      8:12 AM
+                    </div>
                   </div>
-                ))}
+
+                  <div className="mt-3 text-sm font-semibold text-[#4E4637]">
+                    Sammy
+                  </div>
+                  <div className="mt-2 space-y-2 text-sm leading-6 text-[#2D261C]">
+                    <div className="rounded-xl bg-[#EEE0C5]/35 px-3 py-2">
+                      1 Americano
+                    </div>
+                    <div className="rounded-xl bg-[#EEE0C5]/35 px-3 py-2">
+                      1 Iced Latte
+                    </div>
+                    <div className="rounded-xl bg-[#EEE0C5]/35 px-3 py-2">
+                      1 Blueberry Muffin
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -614,8 +657,8 @@ function PitchPage({ open, onBack }) {
                 Ready to talk?
               </div>
               <p className="mt-3 text-sm leading-6 text-white/90">
-                Use Suggest Fix to reach Samantha Carey about setup,
-                customization, or a copy for another Square shop.
+                Email me about setup, customization, or a copy for another
+                Square shop.
               </p>
               <div className="mt-4 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white/95">
                 samantha@studiosamantha.com
