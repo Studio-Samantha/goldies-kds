@@ -520,9 +520,25 @@
         font-size: clamp(30px, 4vw, 40px);
         font-weight: 950;
       }
+      .customer-login-helper {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .customer-login-field {
+        margin-top: 14px;
+        text-align: left;
+      }
+      .customer-login-field span {
+        display: block;
+        color: var(--green);
+        font-size: 13px;
+        font-weight: 950;
+      }
       .customer-login-line {
         height: 46px;
-        margin-top: 14px;
+        margin-top: 8px;
         border: 1px solid rgba(202, 134, 43, 0.2);
         border-radius: 16px;
         background: rgba(255, 255, 255, 0.95);
@@ -902,6 +918,72 @@
         color: var(--muted);
         line-height: 1.65;
       }
+      .founder {
+        position: relative;
+        overflow: hidden;
+        background:
+          linear-gradient(135deg, rgba(255, 253, 248, 0.96), rgba(246, 239, 225, 0.84)),
+          var(--paper);
+      }
+      .founder-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 0.76fr) minmax(260px, 0.46fr);
+        gap: 22px;
+        align-items: center;
+      }
+      .founder-card {
+        position: relative;
+        overflow: hidden;
+        padding: 28px;
+      }
+      .founder-card h2 {
+        max-width: 900px;
+      }
+      .founder-card p {
+        max-width: 860px;
+      }
+      .founder-art {
+        position: relative;
+        min-height: 360px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background:
+          radial-gradient(circle at 30% 20%, rgba(202, 134, 43, 0.18), transparent 34%),
+          #fff;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+      .founder-art img {
+        position: absolute;
+        right: -38px;
+        bottom: -76px;
+        width: min(360px, 88%);
+        opacity: 0.72;
+        transform: rotate(-8deg);
+      }
+      .founder-points {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 22px;
+      }
+      .founder-point {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.82);
+        padding: 14px;
+      }
+      .founder-point strong {
+        display: block;
+        color: var(--green);
+      }
+      .founder-point span {
+        display: block;
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
       .cta-band {
         padding: 56px clamp(16px, 4vw, 48px);
         background: #12100c;
@@ -975,15 +1057,55 @@
         opacity: 0;
       }
       footer {
-        padding: 28px clamp(16px, 4vw, 48px);
+        padding: 34px clamp(16px, 4vw, 48px);
+        background: #fffdf8;
+        border-top: 1px solid var(--line);
         color: var(--muted);
         font-size: 13px;
         line-height: 1.6;
       }
       footer .section-inner {
-        display: flex;
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns: minmax(0, 0.9fr) minmax(280px, 1.1fr);
         gap: 20px;
+        align-items: start;
+      }
+      .footer-brand {
+        position: relative;
+        padding-left: 42px;
+      }
+      .footer-brand::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 2px;
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        background:
+          linear-gradient(135deg, rgba(202, 134, 43, 0.22), rgba(15, 64, 54, 0.14)),
+          url("/studio-samantha-leaf.png") center / 150% auto no-repeat,
+          #fff;
+        border: 1px solid var(--line);
+      }
+      .footer-links {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+      .footer-links a {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: #fff;
+        color: var(--green);
+        padding: 7px 10px;
+        text-decoration: none;
+        font-weight: 850;
+      }
+      .footer-fine {
+        margin-top: 12px;
+        text-align: right;
       }
 
       @media (max-width: 900px) {
@@ -1029,7 +1151,7 @@
         .proof-inner {
           transform: translateY(-18px);
         }
-        .features, .showcase-grid, .price-grid, .onboarding-grid, .customer-grid, .comparison-grid, .comparison-savings, .proof-inner, .faq-grid, .support-card-inner {
+        .features, .showcase-grid, .price-grid, .onboarding-grid, .customer-grid, .comparison-grid, .comparison-savings, .proof-inner, .faq-grid, .support-card-inner, .founder-grid, .founder-points {
           grid-template-columns: 1fr;
         }
         .lane-grid {
@@ -1064,13 +1186,30 @@
         .screen-body {
           padding: 10px;
         }
+        .founder-card {
+          padding: 20px;
+        }
+        .founder-art {
+          min-height: 230px;
+        }
+        .founder-art img {
+          width: 260px;
+          right: -40px;
+          bottom: -88px;
+        }
         .cta-inner {
           align-items: flex-start;
           grid-template-columns: 1fr;
         }
         footer .section-inner {
           align-items: flex-start;
-          flex-direction: column;
+          grid-template-columns: 1fr;
+        }
+        .footer-links {
+          justify-content: flex-start;
+        }
+        .footer-fine {
+          text-align: left;
         }
         .lead-form {
           width: 100%;
@@ -1251,8 +1390,15 @@
                     <img class="customer-login-logo" src="/goldies-logo.png" alt="Goldie's Coffee Shop logo" />
                     <div class="customer-login-pill">Goldie&apos;s KDS</div>
                     <h3 class="customer-login-title">Kitchen Display</h3>
-                    <div class="customer-login-line"></div>
-                    <div class="customer-login-line"></div>
+                    <p class="customer-login-helper">Enter your name and password to continue.</p>
+                    <div class="customer-login-field">
+                      <span>Name</span>
+                      <div class="customer-login-line"></div>
+                    </div>
+                    <div class="customer-login-field">
+                      <span>Password</span>
+                      <div class="customer-login-line"></div>
+                    </div>
                     <div class="customer-login-button">Sign in</div>
                     <div class="customer-footer-pill">Studio Samantha 2026</div>
                   </div>
@@ -1504,11 +1650,44 @@
       </div>
     </section>
 
+    <section class="section founder">
+      <div class="section-inner">
+        <div class="founder-grid">
+          <div class="card founder-card">
+            <p class="eyebrow">Artist-built. Analyst-minded.</p>
+            <h2>Beautiful, affordable tools for small businesses that should not have to become software companies.</h2>
+            <p class="section-copy">
+              DrinkFlow was built by an artist and former USAF analyst who believes small-business tools should be
+              beautiful, affordable, sustainable, and easy to maintain. It started as a grand opening gift for business
+              neighbors and quickly grew into a focused KDS for drink shops, food trucks, and small counters.
+            </p>
+            <div class="founder-points">
+              <div class="founder-point">
+                <strong>Creative</strong>
+                <span>Branding, color, and future themes can reflect each shop&apos;s personality.</span>
+              </div>
+              <div class="founder-point">
+                <strong>Analytical</strong>
+                <span>Owner reports turn the day&apos;s orders into clean numbers and useful signals.</span>
+              </div>
+              <div class="founder-point">
+                <strong>Sustainable</strong>
+                <span>Built for upkeep, support, and practical growth instead of throwaway software.</span>
+              </div>
+            </div>
+          </div>
+          <div class="founder-art" aria-hidden="true">
+            <img src="/studio-samantha-leaf.png" alt="" />
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="cta-band">
       <div class="cta-inner">
         <div>
           <h2>Give the counter a calmer screen.</h2>
-          <p>Custom-domain, Square&reg;-connected KDS builds for coffee shops, smoothie shops, and drink counters.</p>
+          <p>Custom-domain, Square&reg;-connected KDS builds for coffee shops, smoothie shops, food trucks, and drink counters.</p>
         </div>
         <form class="lead-form" id="lead-form">
           <label for="lead-email">Stay updated as DrinkFlow adds more features</label>
@@ -1524,14 +1703,26 @@
 
     <footer>
       <div class="section-inner">
-        <div>
+        <div class="footer-brand">
           <strong>Studio Samantha</strong><br />
-          Custom web tools for small businesses.
+          Artist-built tools for small businesses.
         </div>
         <div>
-          Square&reg; and Supabase&reg; are trademarks of their respective owners.
-          This product is independent and not affiliated with or endorsed by Square&reg; or Supabase&reg;.
-          <a href="/policy.html">Policy details</a>
+          <div class="footer-links" aria-label="Footer links">
+            <a href="/learn-more.html">DrinkFlow</a>
+            <a href="/?demo=training">Open demo</a>
+            <a href="/policy.html">Policy</a>
+            <a href="/policy.html#data-use">Data use</a>
+            <a href="/policy.html#ownership">Ownership</a>
+            <a href="/policy.html#support">Support</a>
+            <a href="mailto:samantha@studiosamantha.com?subject=DrinkFlow%20KDS%20setup">Contact</a>
+          </div>
+          <div class="footer-fine">
+            Built by an artist and former USAF analyst. Practical, affordable, supported after launch.
+            <br />
+            Square&reg; and Supabase&reg; are trademarks of their respective owners.
+            This product is independent and not affiliated with or endorsed by Square&reg; or Supabase&reg;.
+          </div>
         </div>
       </div>
     </footer>
