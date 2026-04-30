@@ -424,63 +424,137 @@ function HelpDialog({ open, title, body, onClose }) {
   );
 }
 
-function PitchDialog({ open, onClose }) {
+function PitchPage({ open, onBack }) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)] overflow-hidden">
-        <div className="border-b border-[#CA862B]/18 px-5 py-4 bg-[#EEE0C5]/35">
-          <div className="text-sm font-black uppercase tracking-[0.18em] text-[#6A614F]">
+    <div className="fixed inset-0 z-50 overflow-auto bg-[radial-gradient(circle_at_top,_rgba(255,253,248,0.98),_rgba(238,224,197,1)_55%,_rgba(230,210,173,1)_100%)] text-[#111111]">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,0.3), rgba(255,255,255,0) 28%, rgba(15,64,54,0.03) 100%)",
+        }}
+      />
+      <WatermarkLayer trainingMode={false} />
+
+      <div className="relative z-10 mx-auto flex min-h-full w-full max-w-6xl flex-col px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+        <div className="flex items-center justify-between gap-3">
+          <div className="rounded-full border border-[#CA862B]/14 bg-[rgba(255,253,248,0.88)] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-[#5A4F3E] shadow-sm backdrop-blur-md">
             Studio Samantha
           </div>
-          <h2 className="text-2xl font-black text-[#0F4036] mt-1">
-            Goldie&apos;s KDS for Square shops
-          </h2>
+
+          <button
+            type="button"
+            onClick={onBack}
+            className="rounded-xl border border-[#CA862B]/14 bg-[rgba(255,253,248,0.88)] px-4 py-2 text-sm font-black text-[#0F4036] shadow-sm transition hover:bg-white/90"
+          >
+            Back to app
+          </button>
         </div>
 
-        <div className="px-5 py-5 space-y-5 text-[#2D261C]">
-          <p className="text-base leading-7 max-w-xl">
-            A clean, brandable kitchen display system for coffee shops and
-            small restaurants running Square. Built for fast order flow, staff
-            handoff, and a dashboard that stays readable on laptops, tablets,
-            and phones.
-          </p>
-
-          <div className="grid gap-3 md:grid-cols-3">
-            {[
-              "Live Square order sync",
-              "Custom branding and themes",
-              "Simple reports and ticket history",
-            ].map((item) => (
-              <div
-                key={item}
-                className="rounded-2xl border border-[#CA862B]/14 bg-white px-4 py-4 shadow-sm"
-              >
-                <div className="text-sm font-black text-[#0F4036]">{item}</div>
-              </div>
-            ))}
-          </div>
-
-          <div className="rounded-2xl border border-[#CA862B]/14 bg-[#FFFDF8] px-4 py-4 shadow-sm">
-            <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
-              Next step
+        <div className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <section className="rounded-[1.75rem] border border-white/70 bg-[rgba(255,253,248,0.92)] p-6 shadow-[0_28px_80px_rgba(15,64,54,0.14)] backdrop-blur-xl">
+            <div className="flex items-center gap-4">
+              <BrandMark size="lg" />
             </div>
-            <p className="mt-2 text-sm leading-6 text-[#2D261C]">
-              If you want to see how this looks in a live shop, use the Suggest
-              Fix button or email Samantha for a setup conversation.
-            </p>
-          </div>
 
-          <div className="flex justify-end pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-xl bg-[#0F4036] text-white px-4 py-2.5 font-black transition hover:bg-[#0b352d]"
-            >
-              Close
-            </button>
-          </div>
+            <h1 className="mt-6 text-4xl font-black tracking-tight text-[#0F4036]">
+              Goldie&apos;s KDS
+            </h1>
+            <p className="mt-3 max-w-2xl text-lg leading-8 text-[#2D261C]">
+              A clean kitchen display system for Square shops that keeps orders
+              moving, staff informed, and the board readable on laptops,
+              tablets, and phones.
+            </p>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {[
+                {
+                  title: "Live board",
+                  text: "Active tickets flow into New, Making, Ready, Completed, and Done.",
+                },
+                {
+                  title: "Useful counts",
+                  text: "Today&apos;s counts, drink stats, and completed totals stay easy to read.",
+                },
+                {
+                  title: "Staff tools",
+                  text: "Password controls, training mode, and support links stay built in.",
+                },
+                {
+                  title: "Square sync",
+                  text: "Orders and status updates stay connected to Square and Supabase.",
+                },
+                {
+                  title: "Brand ready",
+                  text: "Colors, logo, and footer branding can match each shop.",
+                },
+                {
+                  title: "Mobile friendly",
+                  text: "The dashboard and login stay usable on phones and tablets too.",
+                },
+              ].map((item) => (
+                <div
+                  key={item.title}
+                  className="rounded-2xl border border-[#CA862B]/14 bg-white px-4 py-4 shadow-sm"
+                >
+                  <div className="text-sm font-black text-[#0F4036]">{item.title}</div>
+                  <div className="mt-2 text-sm leading-6 text-[#4E4637]">
+                    {item.text}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <aside className="space-y-4">
+            <div className="rounded-[1.75rem] border border-white/70 bg-[rgba(255,253,248,0.92)] p-5 shadow-[0_28px_80px_rgba(15,64,54,0.12)] backdrop-blur-xl">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
+                Example dashboard
+              </div>
+              <div className="mt-4 space-y-3">
+                {[
+                  ["New", "4 tickets"],
+                  ["Making", "2 tickets"],
+                  ["Ready", "1 ticket"],
+                  ["Completed", "3 tickets"],
+                ].map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="flex items-center justify-between rounded-2xl border border-[#CA862B]/14 bg-white px-4 py-3 shadow-sm"
+                  >
+                    <div className="font-black text-[#111111]">{label}</div>
+                    <div className="text-sm font-black text-[#0F4036]">{value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[1.75rem] border border-white/70 bg-[rgba(255,253,248,0.92)] p-5 shadow-[0_28px_80px_rgba(15,64,54,0.12)] backdrop-blur-xl">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
+                What it can do
+              </div>
+              <ul className="mt-3 space-y-2 text-sm leading-6 text-[#2D261C]">
+                <li>Live Square orders in a simple kitchen board</li>
+                <li>Customer names and employee tracking when available</li>
+                <li>Reports, history, and daily order lookup</li>
+                <li>Training mode for practice without live data</li>
+                <li>Support link, password controls, and release notes</li>
+              </ul>
+            </div>
+
+            <div className="rounded-[1.75rem] border border-white/70 bg-[#0F4036] p-5 text-white shadow-[0_28px_80px_rgba(15,64,54,0.2)]">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-white/70">
+                Ready to talk?
+              </div>
+              <p className="mt-3 text-sm leading-6 text-white/90">
+                Use Suggest Fix to reach Samantha about setup, customization, or
+                a copy for another Square shop.
+              </p>
+            </div>
+          </aside>
         </div>
       </div>
     </div>
@@ -3268,7 +3342,11 @@ export default function GoldiesKDS() {
 
   return (
     <>
-      {content}
+      {showPitch ? (
+        <PitchPage open={showPitch} onBack={() => setShowPitch(false)} />
+      ) : (
+        content
+      )}
       <ReleaseNotesDialog
         open={showReleaseNotes}
         onClose={() => setShowReleaseNotes(false)}
@@ -3277,7 +3355,6 @@ export default function GoldiesKDS() {
           setShowReleaseNotes(false);
         }}
       />
-      <PitchDialog open={showPitch} onClose={() => setShowPitch(false)} />
       <HelpDialog
         open={Boolean(modeHelp)}
         title={modeHelp?.title || ""}
