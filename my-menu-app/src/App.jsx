@@ -1329,9 +1329,9 @@ function WatermarkLayer({ trainingMode = false }) {
   );
 }
 
-function BrandFooter() {
+function BrandFooter({ className = "" }) {
   return (
-    <div className="mt-6 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6A614F]">
+    <div className={`text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6A614F] ${className}`}>
       Studio Samantha © 2026
     </div>
   );
@@ -2139,9 +2139,13 @@ function LoginScreen({
           </button>
         </form>
 
-        <BrandFooter />
-
       </main>
+
+      <div className="absolute bottom-4 left-0 right-0 flex justify-center px-4">
+        <div className="rounded-full border border-white/70 bg-[rgba(255,253,248,0.84)] px-3 py-1.5 shadow-sm backdrop-blur-md">
+          <BrandFooter />
+        </div>
+      </div>
     </div>
   );
 }
