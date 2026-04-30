@@ -423,56 +423,6 @@
         aspect-ratio: 16 / 9;
         object-fit: cover;
       }
-      .phone-overlay {
-        position: absolute;
-        right: clamp(18px, 5vw, 72px);
-        bottom: 86px;
-        width: min(190px, 24vw);
-        min-width: 128px;
-        border: 8px solid #111;
-        border-radius: 24px;
-        background: #111;
-        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.38);
-      }
-      .phone-screen {
-        overflow: hidden;
-        border-radius: 16px;
-        background: #fffdf8;
-        color: var(--ink);
-      }
-      .phone-top {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 10px;
-        background: var(--green);
-        color: #fff;
-        font-size: 10px;
-        font-weight: 950;
-      }
-      .phone-ticket-list {
-        display: grid;
-        gap: 7px;
-        padding: 10px;
-      }
-      .phone-ticket {
-        border: 1px solid rgba(15, 64, 54, 0.12);
-        border-radius: 8px;
-        background: #fff;
-        padding: 9px;
-      }
-      .phone-ticket strong {
-        display: block;
-        color: var(--green);
-        font-size: 13px;
-      }
-      .phone-ticket span {
-        display: block;
-        margin-top: 4px;
-        color: var(--muted);
-        font-size: 10px;
-        line-height: 1.35;
-      }
       .photo-caption {
         display: flex;
         flex-wrap: wrap;
@@ -499,33 +449,33 @@
         overflow: hidden;
         border: 1px solid rgba(15, 64, 54, 0.14);
         border-radius: 8px;
-        background:
-          linear-gradient(135deg, rgba(15, 64, 54, 0.92), rgba(15, 64, 54, 0.74)),
-          radial-gradient(circle at 80% 20%, rgba(202, 134, 43, 0.28), transparent 38%),
-          #0f4036;
+        background: #e6d2ad;
         box-shadow: var(--shadow);
       }
       .customer-example {
         min-height: 380px;
-        padding: clamp(18px, 4vw, 38px);
+        padding: clamp(16px, 4vw, 32px);
         display: grid;
         align-content: center;
-        color: #fff;
+        background:
+          radial-gradient(circle at top, rgba(255, 253, 248, 0.96), rgba(238, 224, 197, 1) 50%, rgba(230, 210, 173, 1) 100%);
       }
       .customer-browser {
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        position: relative;
+        border: 1px solid rgba(255, 255, 255, 0.7);
         border-radius: 8px;
         overflow: hidden;
-        background: rgba(255, 253, 248, 0.95);
+        background: #eee0c5;
         color: var(--ink);
-        box-shadow: 0 28px 80px rgba(0, 0, 0, 0.26);
+        box-shadow: 0 28px 80px rgba(15, 64, 54, 0.18);
       }
       .customer-browser-bar {
         display: flex;
         align-items: center;
         gap: 7px;
         padding: 12px;
-        background: #efe3cc;
+        background: rgba(255, 253, 248, 0.82);
+        border-bottom: 1px solid rgba(202, 134, 43, 0.16);
       }
       .customer-dot {
         width: 9px;
@@ -537,67 +487,122 @@
         position: relative;
         display: grid;
         place-items: center;
-        min-height: 270px;
+        min-height: 420px;
         padding: 26px;
         overflow: hidden;
         background:
-          linear-gradient(135deg, rgba(255, 253, 248, 0.92), rgba(246, 239, 225, 0.88)),
-          #fffdf8;
+          linear-gradient(180deg, rgba(255,255,255,0.34), rgba(255,255,255,0) 28%, rgba(15,64,54,0.03) 100%),
+          radial-gradient(circle at top, rgba(255, 253, 248, 0.96), rgba(238, 224, 197, 1) 50%, rgba(230, 210, 173, 1) 100%);
       }
       .customer-watermark {
         position: absolute;
-        inset: auto -20px 6px auto;
-        color: rgba(15, 64, 54, 0.08);
-        font-size: clamp(80px, 14vw, 150px);
+        inset: -36px;
+        background-image: url("/goldies-logo.png");
+        background-repeat: repeat;
+        background-size: 165px auto;
+        background-position: center top;
+        opacity: 0.055;
+        transform: rotate(-8deg) scale(1.08);
+        transform-origin: center;
+        mix-blend-mode: multiply;
+        filter: grayscale(1) contrast(1.05);
+      }
+      .customer-settings {
+        position: absolute;
+        top: 18px;
+        right: 18px;
+        display: flex;
+        gap: 7px;
+        z-index: 2;
+      }
+      .customer-settings span {
+        display: inline-grid;
+        place-items: center;
+        min-height: 32px;
+        border: 1px solid rgba(202, 134, 43, 0.22);
+        border-radius: 12px;
+        background: #fff;
+        color: var(--green);
+        padding: 0 12px;
+        font-size: 12px;
         font-weight: 950;
-        line-height: 0.8;
+      }
+      .customer-settings span:last-child {
+        width: 32px;
+        padding: 0;
+        border-radius: 999px;
       }
       .customer-login-card {
         position: relative;
-        width: min(320px, 100%);
-        border: 1px solid rgba(15, 64, 54, 0.12);
-        border-radius: 8px;
-        background: #fff;
-        padding: 24px;
-        box-shadow: 0 18px 40px rgba(15, 64, 54, 0.14);
+        z-index: 1;
+        width: min(390px, 100%);
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        border-radius: 28px;
+        background: rgba(255, 253, 248, 0.94);
+        padding: 26px;
+        text-align: center;
+        box-shadow: 0 28px 80px rgba(15, 64, 54, 0.14);
+        backdrop-filter: blur(18px);
       }
-      .customer-login-mark {
-        display: grid;
-        place-items: center;
-        width: 58px;
-        height: 58px;
-        margin: 0 auto 12px;
-        border-radius: 8px;
-        background: var(--green);
-        color: #fff;
+      .customer-login-logo {
+        display: block;
+        width: min(220px, 72%);
+        margin: 0 auto 18px;
+      }
+      .customer-login-pill {
+        display: inline-flex;
+        border: 1px solid rgba(202, 134, 43, 0.18);
+        border-radius: 999px;
+        background: rgba(238, 224, 197, 0.55);
+        color: #6a614f;
+        padding: 6px 13px;
+        font-size: 11px;
         font-weight: 950;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
       }
       .customer-login-title {
-        margin: 0;
+        margin: 12px 0 0;
         text-align: center;
         color: var(--green);
-        font-size: 22px;
+        font-size: clamp(30px, 4vw, 40px);
         font-weight: 950;
       }
       .customer-login-line {
-        height: 42px;
+        height: 46px;
         margin-top: 14px;
-        border-radius: 8px;
-        background: #f4ead8;
+        border: 1px solid rgba(202, 134, 43, 0.2);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 10px 30px rgba(15, 64, 54, 0.06);
       }
       .customer-login-button {
         display: grid;
         place-items: center;
-        height: 42px;
-        margin-top: 10px;
-        border-radius: 8px;
-        background: var(--gold);
+        height: 48px;
+        margin-top: 14px;
+        border-radius: 16px;
+        background: var(--green);
         color: #fff;
         font-weight: 950;
+        box-shadow: 0 18px 40px rgba(15, 64, 54, 0.18);
+      }
+      .customer-footer-pill {
+        display: inline-flex;
+        margin-top: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.7);
+        border-radius: 999px;
+        background: rgba(255, 253, 248, 0.86);
+        color: #5a4f3e;
+        padding: 7px 14px;
+        font-size: 10px;
+        font-weight: 850;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
       }
       .customer-example-caption {
         margin: 14px 0 0;
-        color: rgba(255, 255, 255, 0.78);
+        color: var(--muted);
         font-size: 13px;
         line-height: 1.5;
       }
@@ -982,13 +987,6 @@
         .nav-links a:not(.button) { display: none; }
         .hero { min-height: 88vh; }
         .hero-visual { display: none; }
-        .phone-overlay {
-          right: 12px;
-          bottom: 96px;
-          width: 136px;
-          border-width: 6px;
-          border-radius: 20px;
-        }
         .features, .showcase-grid, .price-grid, .onboarding-grid, .customer-grid, .comparison-grid, .comparison-savings, .proof-inner, .faq-grid {
           grid-template-columns: 1fr;
         }
@@ -1177,30 +1175,8 @@
         </p>
         <div class="photo-frame">
           <img src="/drinkflow-ipad-kds.png" alt="DrinkFlow KDS running on an iPad at a coffee shop counter" />
-          <div class="phone-overlay" aria-label="Phone-sized DrinkFlow KDS view">
-            <div class="phone-screen">
-              <div class="phone-top">
-                <span>DF</span>
-                <span>Ready</span>
-              </div>
-              <div class="phone-ticket-list">
-                <div class="phone-ticket">
-                  <strong>#A18</strong>
-                  <span>2 Iced Lattes<br />1 Matcha</span>
-                </div>
-                <div class="phone-ticket">
-                  <strong>#B42</strong>
-                  <span>1 Cold Brew<br />1 Smoothie</span>
-                </div>
-                <div class="phone-ticket">
-                  <strong>9 AM</strong>
-                  <span>Peak drink volume</span>
-                </div>
-              </div>
-            </div>
-          </div>
           <div class="photo-caption">
-            <span><strong>Demo visual:</strong> live drink columns, ready tickets, daily numbers, hourly volume, and a phone-sized view.</span>
+            <span><strong>Demo visual:</strong> live drink columns, ready tickets, daily numbers, and hourly volume in one counter-friendly view.</span>
             <span>Shop-specific branding and feature choices happen during setup.</span>
           </div>
         </div>
@@ -1218,12 +1194,12 @@
               owner access, support links, and the exact tools the team needs on day one.
             </p>
             <p class="section-copy">
-              This example is AI-styled for marketing, but the real build uses the same idea:
-              a login screen that feels like the shop, not a generic restaurant app.
+              Goldie&apos;s login uses their logo, warm shop colors, a repeated watermark background,
+              and a clean staff entry screen that feels like it belongs behind their counter.
             </p>
           </div>
           <div class="customer-shot">
-            <div class="customer-example" role="img" aria-label="AI-styled example of a branded Goldie's login screen">
+            <div class="customer-example" role="img" aria-label="Branded Goldie's KDS login screen example">
               <div class="customer-browser">
                 <div class="customer-browser-bar">
                   <span class="customer-dot"></span>
@@ -1231,18 +1207,24 @@
                   <span class="customer-dot"></span>
                 </div>
                 <div class="customer-login">
-                  <div class="customer-watermark">G</div>
+                  <div class="customer-watermark"></div>
+                  <div class="customer-settings">
+                    <span>Settings</span>
+                    <span>?</span>
+                  </div>
                   <div class="customer-login-card">
-                    <div class="customer-login-mark">G</div>
-                    <h3 class="customer-login-title">Goldie&apos;s KDS</h3>
+                    <img class="customer-login-logo" src="/goldies-logo.png" alt="Goldie's Coffee Shop logo" />
+                    <div class="customer-login-pill">Goldie&apos;s KDS</div>
+                    <h3 class="customer-login-title">Kitchen Display</h3>
                     <div class="customer-login-line"></div>
                     <div class="customer-login-line"></div>
-                    <div class="customer-login-button">Open KDS</div>
+                    <div class="customer-login-button">Sign in</div>
+                    <div class="customer-footer-pill">Studio Samantha 2026</div>
                   </div>
                 </div>
               </div>
               <p class="customer-example-caption">
-                AI-styled customer example: branded login, watermark feel, custom domain, and shop-specific setup.
+                Branded login, watermark background, custom colors, owner access, and shop-specific setup.
               </p>
             </div>
           </div>
