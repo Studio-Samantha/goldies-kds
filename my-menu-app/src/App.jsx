@@ -6,6 +6,7 @@ const API_BASE_URL = import.meta.env.DEV
   : "";
 const LOGO_URL = "/goldies-logo.png";
 const LOGO_DARK_URL = "/goldies-logo-white.png";
+const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
@@ -2240,6 +2241,8 @@ function OwnerSnapshotHistory({
   error,
   tableMissing,
 }) {
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+
   return (
     <section className="rounded-2xl border border-[#CA862B]/16 bg-white p-4 shadow-sm">
       <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
@@ -2277,12 +2280,42 @@ function OwnerSnapshotHistory({
           >
             {saving ? "Saving..." : "Save Snapshot"}
           </button>
-          <a
-            href={apiUrl(`/api/owner/snapshots.csv?month=${month}`)}
-            className={`rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-center text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45 ${tableMissing ? "pointer-events-none opacity-50" : ""}`}
-          >
-            Download CSV
-          </a>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setExportMenuOpen((current) => !current)}
+              disabled={tableMissing}
+              className="w-full rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Export
+            </button>
+
+            {exportMenuOpen && !tableMissing && (
+              <div className="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-2xl border border-[#CA862B]/18 bg-white shadow-[0_18px_45px_rgba(15,64,54,0.16)]">
+                <a
+                  href={apiUrl(`/api/owner/snapshots.csv?month=${month}`)}
+                  className="block px-4 py-3 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                  onClick={() => setExportMenuOpen(false)}
+                >
+                  CSV for Excel
+                </a>
+                <button
+                  type="button"
+                  disabled
+                  className="block w-full px-4 py-3 text-left text-sm font-black text-[#6A614F] opacity-60"
+                >
+                  Excel workbook soon
+                </button>
+                <button
+                  type="button"
+                  disabled
+                  className="block w-full px-4 py-3 text-left text-sm font-black text-[#6A614F] opacity-60"
+                >
+                  PDF report soon
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -3674,17 +3707,30 @@ function OwnerReportsView({ ownerName, onClose, themeMode }) {
   return (
     <div className={`fixed inset-0 z-50 overflow-auto bg-[radial-gradient(circle_at_top,_rgba(255,253,248,0.98),_rgba(238,224,197,1)_55%,_rgba(230,210,173,1)_100%)] p-4 text-[#111111] ${themeMode === "dark" ? "goldies-dark" : ""}`}>
       <div className="mx-auto max-w-6xl space-y-4">
-        <header className="flex flex-col gap-3 rounded-3xl border border-white/70 bg-[rgba(255,253,248,0.92)] p-4 shadow-sm md:flex-row md:items-center md:justify-between">
-          <div>
-            <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
-              Owner Reports
+        <header className="flex flex-col gap-4 rounded-3xl border border-white/70 bg-[rgba(255,253,248,0.94)] p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+          <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex h-16 w-32 shrink-0 items-center justify-center rounded-2xl border border-[#CA862B]/14 bg-white/80 px-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:h-[72px] sm:w-40">
+              <img
+                src={OWNER_LOGO_URL}
+                alt="Goldie's Coffee & Goods"
+                className="max-h-full max-w-full object-contain"
+                loading="eager"
+                onError={(event) => {
+                  event.currentTarget.style.display = "none";
+                }}
+              />
             </div>
-            <h1 className="mt-1 text-3xl font-black text-[#0F4036]">
-              Drink Revenue
-            </h1>
-            <p className="mt-1 text-sm text-[#6A614F]">
-              Coffee, Not Coffee, and Smoothies only
-            </p>
+            <div className="min-w-0">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
+                Owner Reports
+              </div>
+              <h1 className="mt-1 text-3xl font-black text-[#0F4036]">
+                Drink Revenue
+              </h1>
+              <p className="mt-1 text-sm text-[#6A614F]">
+                Coffee, Not Coffee, and Smoothies only
+              </p>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full border border-[#CA862B]/18 bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-[#0F4036]">
