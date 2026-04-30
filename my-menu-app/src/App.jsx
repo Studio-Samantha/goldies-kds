@@ -18,6 +18,15 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
+    version: "v1.1.21",
+    date: "Current build",
+    summary: "A temporary preview link was added for the full pitch page.",
+    items: [
+      "The live Learn more page stays simple.",
+      "A preview route lets you inspect the fancier pitch layout before it is used anywhere else.",
+    ],
+  },
+  {
     version: "v1.1.20",
     date: "Current build",
     summary: "The footer Learn more link now opens the product page cleanly.",
@@ -572,6 +581,143 @@ function PitchPage({ open, onBack }) {
               custom version for another Square shop.
             </p>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PitchPreviewPage({ open, onBack }) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-auto bg-[radial-gradient(circle_at_top,_rgba(255,253,248,0.98),_rgba(238,224,197,1)_55%,_rgba(230,210,173,1)_100%)] text-[#111111]">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,0.32), rgba(255,255,255,0) 28%, rgba(15,64,54,0.03) 100%)",
+        }}
+      />
+      <WatermarkLayer trainingMode={false} />
+
+      <div className="relative z-10 mx-auto flex min-h-full w-full max-w-6xl flex-col px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+        <div className="flex items-center justify-between gap-3">
+          <div className="rounded-full border border-[#CA862B]/14 bg-[rgba(255,253,248,0.88)] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-[#5A4F3E] shadow-sm backdrop-blur-md">
+            Preview only
+          </div>
+
+          <button
+            type="button"
+            onClick={onBack}
+            className="rounded-xl border border-[#CA862B]/14 bg-[rgba(255,253,248,0.88)] px-4 py-2 text-sm font-black text-[#0F4036] shadow-sm transition hover:bg-white/90"
+          >
+            Back to app
+          </button>
+        </div>
+
+        <div className="mt-8 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+          <section className="rounded-[1.75rem] border border-white/70 bg-[rgba(255,253,248,0.92)] p-6 shadow-[0_28px_80px_rgba(15,64,54,0.14)] backdrop-blur-xl">
+            <div className="flex items-center gap-4">
+              <BrandMark size="lg" />
+            </div>
+
+            <h1 className="mt-6 text-4xl font-black tracking-tight text-[#0F4036]">
+              Goldie&apos;s KDS
+            </h1>
+            <p className="mt-3 max-w-2xl text-lg leading-8 text-[#2D261C]">
+              A polished kitchen display system for Square shops that keeps
+              orders moving, staff informed, and the board readable on laptops,
+              tablets, and phones.
+            </p>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {[
+                {
+                  title: "Live board",
+                  text: "Active tickets flow into New, Making, Ready, Completed, and Done.",
+                },
+                {
+                  title: "Useful counts",
+                  text: "Today&apos;s counts, drink stats, and completed totals stay easy to read.",
+                },
+                {
+                  title: "Staff tools",
+                  text: "Password controls, training mode, and support links stay built in.",
+                },
+                {
+                  title: "Square sync",
+                  text: "Orders and status updates stay connected to Square and Supabase.",
+                },
+                {
+                  title: "Brand ready",
+                  text: "Colors, logo, and footer branding can match each shop.",
+                },
+                {
+                  title: "Mobile friendly",
+                  text: "The dashboard and login stay usable on phones and tablets too.",
+                },
+              ].map((item) => (
+                <div
+                  key={item.title}
+                  className="rounded-2xl border border-[#CA862B]/14 bg-white px-4 py-4 shadow-sm"
+                >
+                  <div className="text-sm font-black text-[#0F4036]">{item.title}</div>
+                  <div className="mt-2 text-sm leading-6 text-[#4E4637]">
+                    {item.text}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <aside className="space-y-4">
+            <div className="rounded-[1.75rem] border border-white/70 bg-[rgba(255,253,248,0.92)] p-5 shadow-[0_28px_80px_rgba(15,64,54,0.12)] backdrop-blur-xl">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
+                Example dashboard
+              </div>
+              <div className="mt-4 space-y-3">
+                {[
+                  ["New", "4 tickets"],
+                  ["Making", "2 tickets"],
+                  ["Ready", "1 ticket"],
+                  ["Completed", "3 tickets"],
+                ].map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="flex items-center justify-between rounded-2xl border border-[#CA862B]/14 bg-white px-4 py-3 shadow-sm"
+                  >
+                    <div className="font-black text-[#111111]">{label}</div>
+                    <div className="text-sm font-black text-[#0F4036]">{value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[1.75rem] border border-white/70 bg-[rgba(255,253,248,0.92)] p-5 shadow-[0_28px_80px_rgba(15,64,54,0.12)] backdrop-blur-xl">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
+                What it can do
+              </div>
+              <ul className="mt-3 space-y-2 text-sm leading-6 text-[#2D261C]">
+                <li>Live Square orders in a simple kitchen board</li>
+                <li>Customer names and employee tracking when available</li>
+                <li>Reports, history, and daily order lookup</li>
+                <li>Training mode for practice without live data</li>
+                <li>Support link, password controls, and release notes</li>
+              </ul>
+            </div>
+
+            <div className="rounded-[1.75rem] border border-white/70 bg-[#0F4036] p-5 text-white shadow-[0_28px_80px_rgba(15,64,54,0.2)]">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-white/70">
+                Ready to talk?
+              </div>
+              <p className="mt-3 text-sm leading-6 text-white/90">
+                Use Suggest Fix to reach Samantha about setup, customization, or
+                a copy for another Square shop.
+              </p>
+            </div>
+          </aside>
         </div>
       </div>
     </div>
@@ -2496,6 +2642,10 @@ export default function GoldiesKDS() {
     authStatus === "authenticated" &&
     isWebServicesReminderDay &&
     !hideWebServicesReminder;
+  const isPitchPreviewRoute =
+    typeof window !== "undefined" &&
+    (window.location.hash === "#pitch-preview" ||
+      window.location.search.includes("pitch-preview"));
   const trainingThemeStyle = isTrainingMode
     ? themeMode === "dark"
       ? {
@@ -3389,7 +3539,20 @@ export default function GoldiesKDS() {
 
   return (
     <>
-      {showPitch ? (
+      {isPitchPreviewRoute ? (
+        <PitchPreviewPage
+          open={isPitchPreviewRoute}
+          onBack={() => {
+            if (typeof window !== "undefined") {
+              window.history.replaceState(
+                null,
+                "",
+                window.location.pathname + window.location.search
+              );
+            }
+          }}
+        />
+      ) : showPitch ? (
         <PitchPage open={showPitch} onBack={() => setShowPitch(false)} />
       ) : (
         content
