@@ -7,20 +7,23 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.1.17";
+const APP_VERSION = "v1.1.19";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
+const WEB_SERVICES_REMINDER_HIDE_KEY =
+  "goldies-kds-hidden-web-services-reminder";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-30";
+const WEB_SERVICES_REMINDER_DATE = "2026-05-02";
 const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.1.17",
+    version: "v1.1.19",
     date: "Current build",
-    summary: "The footer now includes a clean link to learn more about the KDS.",
+    summary: "A one-day dashboard reminder now invites shops to ask about websites.",
     items: [
-      "The footer still stays muted and clean.",
-      "A small Learn more link now opens a short product pitch popup.",
+      "A dashboard reminder will appear on the planned day with a short website offer.",
+      "The footer Learn more page still stays clean and easy to open.",
     ],
   },
   {
@@ -316,6 +319,60 @@ function SoftOpeningDialog({ open, onClose }) {
           </p>
 
           <div className="flex justify-end pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl bg-[#0F4036] text-white px-4 py-2.5 font-black transition hover:bg-[#0b352d]"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WebServicesReminderDialog({ open, onClose }) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] flex items-center justify-center p-4">
+      <style>{`
+        @keyframes soft-pop {
+          0% { transform: translateY(10px) scale(0.98); opacity: 0; }
+          100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+      `}</style>
+
+      <div className="absolute inset-0" onClick={onClose} />
+
+      <div className="relative w-full max-w-lg rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)] overflow-hidden animate-[soft-pop_220ms_ease-out]">
+        <div className="border-b border-[#CA862B]/18 px-5 py-4 bg-[#EEE0C5]/35">
+          <div className="text-sm font-black uppercase tracking-[0.18em] text-[#6A614F]">
+            Studio Samantha
+          </div>
+          <h2 className="text-2xl font-black text-[#0F4036] mt-1">
+            A quick note for Goldie&apos;s
+          </h2>
+        </div>
+
+        <div className="px-5 py-5 space-y-5 text-[#2D261C]">
+          <p className="text-base leading-7">
+            Keep me in mind if you guys ever decide you need a website - Sammy.
+          </p>
+
+          <div className="rounded-2xl border border-[#CA862B]/14 bg-white px-4 py-4 shadow-sm">
+            <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
+              Website services
+            </div>
+            <p className="mt-2 text-sm leading-6 text-[#2D261C]">
+              Custom websites, branded ordering pages, launch pages, and small
+              updates for Square shops that want a polished online presence.
+            </p>
+          </div>
+
+          <div className="flex justify-end pt-1">
             <button
               type="button"
               onClick={onClose}
@@ -2446,6 +2503,15 @@ export default function GoldiesKDS() {
   const [settingsHelp, setSettingsHelp] = useState(null);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [hideSoftOpeningNote, setHideSoftOpeningNote] = useState(false);
+  const [hideWebServicesReminder, setHideWebServicesReminder] = useState(() => {
+    if (typeof window === "undefined") return false;
+
+    try {
+      return window.localStorage.getItem(WEB_SERVICES_REMINDER_HIDE_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
   const [hiddenReleaseNotesVersion, setHiddenReleaseNotesVersion] = useState(() => {
     if (typeof window === "undefined") return "";
 
@@ -2465,6 +2531,11 @@ export default function GoldiesKDS() {
   const isSoftOpeningDay = getTodayDateKey() === SOFT_OPENING_DATE;
   const showSoftOpeningNote =
     authStatus === "login" && isSoftOpeningDay && !hideSoftOpeningNote;
+  const isWebServicesReminderDay = getTodayDateKey() === WEB_SERVICES_REMINDER_DATE;
+  const showWebServicesReminder =
+    authStatus === "authenticated" &&
+    isWebServicesReminderDay &&
+    !hideWebServicesReminder;
   const trainingThemeStyle = isTrainingMode
     ? themeMode === "dark"
       ? {
@@ -2535,6 +2606,20 @@ export default function GoldiesKDS() {
       // ignore storage failures
     }
   }, [hiddenReleaseNotesVersion]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    try {
+      if (hideWebServicesReminder) {
+        window.localStorage.setItem(WEB_SERVICES_REMINDER_HIDE_KEY, "true");
+      } else {
+        window.localStorage.removeItem(WEB_SERVICES_REMINDER_HIDE_KEY);
+      }
+    } catch {
+      // ignore storage failures
+    }
+  }, [hideWebServicesReminder]);
 
   useEffect(() => {
     if (!passwordNotice) return undefined;
@@ -2932,6 +3017,8 @@ export default function GoldiesKDS() {
     setPasswordNotice("");
     setAuthStatus("login");
     setSignedInEmployee("");
+    setHideWebServicesReminder(false);
+    setShowPitch(false);
   }
 
   let content;
@@ -3366,6 +3453,10 @@ export default function GoldiesKDS() {
         title={settingsHelp?.title || ""}
         body={settingsHelp?.body || ""}
         onClose={() => setSettingsHelp(null)}
+      />
+      <WebServicesReminderDialog
+        open={showWebServicesReminder}
+        onClose={() => setHideWebServicesReminder(true)}
       />
     </>
   );
