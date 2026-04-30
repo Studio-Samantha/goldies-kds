@@ -108,10 +108,21 @@ function getAlertMailer() {
   return alertMailer;
 }
 
-async function sendSquareOfflineEmail(reason, details = "") {
+async function sendAlertEmail(subject, text) {
   const mailer = getAlertMailer();
   if (!mailer) return false;
 
+  await mailer.sendMail({
+    from: ALERT_EMAIL_FROM,
+    to: ALERT_EMAIL_TO,
+    subject,
+    text,
+  });
+
+  return true;
+}
+
+async function sendSquareOfflineEmail(reason, details = "") {
   const subject = `Goldie's KDS: Square API offline${reason ? ` (${reason})` : ""}`;
   const text = [
     "Square API health check failed for Goldie's KDS.",
@@ -126,14 +137,7 @@ async function sendSquareOfflineEmail(reason, details = "") {
     .filter(Boolean)
     .join("\n");
 
-  await mailer.sendMail({
-    from: ALERT_EMAIL_FROM,
-    to: ALERT_EMAIL_TO,
-    subject,
-    text,
-  });
-
-  return true;
+  return sendAlertEmail(subject, text);
 }
 
 console.log("Initializing Square client...");
@@ -1713,6 +1717,40 @@ app.get("/api/health", (req, res) => {
     time: new Date().toISOString(),
   });
 });
+
+async function handleSquareAlertTest(req, res) {
+  try {
+    if (!hasAlertEmailConfig()) {
+      return res.status(503).json({
+        ok: false,
+        error: "Alert email is not configured in the backend.",
+      });
+    }
+
+    await sendAlertEmail(
+      "Goldie's KDS: test alert",
+      [
+        "This is a test email from Goldie's KDS.",
+        "",
+        `Time: ${new Date().toLocaleString()}`,
+        "",
+        "If you received this, the alert email setup is working.",
+      ].join("\n")
+    );
+
+    res.json({
+      ok: true,
+      sent: true,
+      message: "Test alert email sent",
+    });
+  } catch (error) {
+    console.error("Error sending test alert email:", error);
+    res.status(500).json({ ok: false, error: error.message });
+  }
+}
+
+app.get("/api/square-alert-test", requireKdsAuth, handleSquareAlertTest);
+app.post("/api/square-alert-test", requireKdsAuth, handleSquareAlertTest);
 
 app.get("/api/session", (req, res) => {
   const cookies = parseCookies(req.headers.cookie || "");
