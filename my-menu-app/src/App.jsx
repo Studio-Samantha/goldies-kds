@@ -7,7 +7,7 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.2.4";
+const APP_VERSION = "v1.2.5";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -19,12 +19,12 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.2.4",
+    version: "v1.2.5",
     date: "Current build",
-    summary: "Training mode now has clearly different light and dark practice colors.",
+    summary: "The app now clears old cached files so updates load cleanly.",
     items: [
-      "Training light mode uses a brighter blue practice look.",
-      "Training dark mode uses a deeper navy practice look.",
+      "Old cached files are cleared when a new version activates.",
+      "This helps prevent blank screens after app updates.",
     ],
   },
   {
