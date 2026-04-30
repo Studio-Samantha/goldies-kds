@@ -1114,6 +1114,13 @@ function formatCompletedTime(completedAt) {
   });
 }
 
+function formatCurrencyCents(cents = 0) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(Number(cents || 0) / 100);
+}
+
 function getLocalDateInputValue(date = new Date()) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -2781,7 +2788,7 @@ function buildOwnerSnapshotAnalysis(report, rangeKey) {
     startAt && endAt
       ? Math.max(1, Math.round((endAt - startAt) / 86400000))
       : 1;
-  const dailyRevenue = formatCurrency(Math.round(revenueCents / rangeDays));
+  const dailyRevenue = formatCurrencyCents(Math.round(revenueCents / rangeDays));
   const dailyOrders = (orderCount / rangeDays).toFixed(orderCount < rangeDays ? 1 : 0);
   const rangeLabel = getOwnerRangeLabel(rangeKey);
   const moneySignalByRange = {
