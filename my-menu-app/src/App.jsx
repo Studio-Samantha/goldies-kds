@@ -7,7 +7,7 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.1.24";
+const APP_VERSION = "v1.1.25";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -18,12 +18,12 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.1.24",
+    version: "v1.1.25",
     date: "Current build",
-    summary: "The pitch page now has a clearer website link and a stronger sample dashboard.",
+    summary: "The login Learn more link now uses a direct page link so it is more reliable.",
     items: [
-      "The Studio Samantha bubble now links to the website.",
-      "The example dashboard shows a fuller live board instead of a minimal mockup.",
+      "The Learn more control now uses a real hash link.",
+      "This makes the pitch page easier to open on phones.",
     ],
   },
   {
@@ -1583,13 +1583,13 @@ function BrandFooter({ className = "", onPitchClick }) {
     >
       <span>Studio Samantha © 2026</span>
       <span className="mx-2 text-[#CA862B]/70">•</span>
-      <button
-        type="button"
+      <a
+        href="#learn-more"
         onClick={onPitchClick}
-        className="cursor-pointer normal-case tracking-normal text-[#0F4036] transition hover:text-[#CA862B]"
+        className="cursor-pointer normal-case tracking-normal text-[#0F4036] transition hover:text-[#CA862B] focus:outline-none focus-visible:text-[#CA862B]"
       >
         Learn more
-      </button>
+      </a>
     </div>
   );
 }
