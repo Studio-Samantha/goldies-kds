@@ -8,7 +8,7 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.3.0";
+const APP_VERSION = "v1.3.1";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -19,8 +19,17 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.3.0",
+    version: "v1.3.1",
     date: "Current build",
+    summary: "Stabilized Orders By Day while live polling is running.",
+    items: [
+      "Orders By Day no longer re-runs the lookup on every live board poll.",
+      "The lookup panel stays under user control while the KDS keeps refreshing.",
+    ],
+  },
+  {
+    version: "v1.3.0",
+    date: "Previous build",
     summary: "Soft opening fixes for login, counts, and order lookup.",
     items: [
       "The login screen no longer opens to a blank white page.",
@@ -2022,9 +2031,18 @@ function OrdersByDayLookup({
   }
 
   useEffect(() => {
-    runLookup(defaultDate);
+    if (collapsed) return;
+
+    runLookup(searchedDate || date || defaultDate);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trainingMode, trainingTickets]);
+  }, [collapsed, trainingMode]);
+
+  useEffect(() => {
+    if (collapsed || !trainingMode) return;
+
+    const lookupDate = searchedDate || date || defaultDate;
+    setResults(getTrainingLookupResults(trainingTickets, lookupDate));
+  }, [collapsed, date, defaultDate, searchedDate, trainingMode, trainingTickets]);
 
   return (
     <section
@@ -3521,7 +3539,7 @@ export default function GoldiesKDS() {
           collapsed={!showOrdersByDay}
           onToggle={() => setShowOrdersByDay((current) => !current)}
           trainingMode={isTrainingMode}
-          trainingTickets={displayedTickets}
+          trainingTickets={isTrainingMode ? displayedTickets : []}
         />
       </main>
       </div>
