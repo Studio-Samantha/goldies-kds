@@ -28,6 +28,7 @@ const RELEASE_NOTES = [
     items: [
       "Owner Reports can save monthly snapshots to Supabase for long-term history.",
       "The owner portal now includes hourly drink volume, daily rotating coffee-shop guidance, and CSV download support.",
+      "Owner Reports now shows how many drink orders included 2 or more drinks.",
       "Retail items like bagged coffee, soap, shower steamers, and packaged goods stay out of drink counts.",
       "The Learn More page now pitches the app specifically for coffee shops, smoothie shops, cafes, and drink counters.",
     ],
@@ -2123,6 +2124,8 @@ function buildCoffeeShopAdvice(report, range) {
     .sort((a, b) => Number(b.units || 0) - Number(a.units || 0))[0];
   const averageCents = Number(report?.averageDrinkOrderValueCents || 0);
   const orderCount = Number(report?.orderCount || 0);
+  const multiDrinkCount = Number(report?.multiDrinkOrderCount || 0);
+  const multiDrinkRate = Number(report?.multiDrinkOrderRate || 0);
   const rangeLabel = getOwnerRangeLabel(range);
   const adviceSeed = `${getTodayDateKey()}:${range}:${orderCount}:${topCategory?.category || "none"}`;
   const peakText = hourlyStats.peak
@@ -2172,10 +2175,10 @@ function buildCoffeeShopAdvice(report, range) {
     {
       title: "Ticket value",
       body: averageCents >= 900
-        ? `Average drink order value is strong at ${report?.averageDrinkOrderValue || "$0.00"}. Protect speed and consistency before pushing more add-ons.`
+        ? `Average drink order value is strong at ${report?.averageDrinkOrderValue || "$0.00"}. ${multiDrinkCount} of ${orderCount} drink orders had 2+ drinks. Protect speed and consistency before pushing more add-ons.`
         : averageCents >= 600
-          ? `Average drink order value is healthy at ${report?.averageDrinkOrderValue || "$0.00"}. ${healthyTicketMove}`
-          : `Average drink order value is modest at ${report?.averageDrinkOrderValue || "$0.00"}. ${modestTicketMove}`,
+          ? `Average drink order value is healthy at ${report?.averageDrinkOrderValue || "$0.00"}. ${multiDrinkRate}% of drink orders had 2+ drinks. ${healthyTicketMove}`
+          : `Average drink order value is modest at ${report?.averageDrinkOrderValue || "$0.00"}. ${multiDrinkCount} of ${orderCount} drink orders had 2+ drinks. ${modestTicketMove}`,
     },
     {
       title: "Slow-window move",
@@ -2307,6 +2310,7 @@ function OwnerSnapshotHistory({
               <th className="px-3 py-2 font-black">Range</th>
               <th className="px-3 py-2 font-black">Revenue</th>
               <th className="px-3 py-2 font-black">Orders</th>
+              <th className="px-3 py-2 font-black">2+ Drinks</th>
               <th className="px-3 py-2 font-black">Peak</th>
               <th className="px-3 py-2 font-black">Top</th>
               <th className="px-3 py-2 font-black">Owner Action</th>
@@ -2315,7 +2319,7 @@ function OwnerSnapshotHistory({
           <tbody className="divide-y divide-[#CA862B]/10 bg-[#FFFDF8]">
             {loading ? (
               <tr>
-                <td colSpan="7" className="px-3 py-6 text-center font-bold text-[#6A614F]">
+                <td colSpan="8" className="px-3 py-6 text-center font-bold text-[#6A614F]">
                   Loading saved snapshots
                 </td>
               </tr>
@@ -2335,6 +2339,10 @@ function OwnerSnapshotHistory({
                     {snapshot.order_count}
                   </td>
                   <td className="px-3 py-3 font-bold text-[#111111]">
+                    {snapshot.multi_drink_order_count || 0}
+                    <span className="text-[#6A614F]"> / {snapshot.multi_drink_order_rate || 0}%</span>
+                  </td>
+                  <td className="px-3 py-3 font-bold text-[#111111]">
                     {snapshot.peak_hour_label || "-"}
                   </td>
                   <td className="px-3 py-3 font-bold text-[#111111]">
@@ -2347,7 +2355,7 @@ function OwnerSnapshotHistory({
               ))
             ) : (
               <tr>
-                <td colSpan="7" className="px-3 py-6 text-center font-bold text-[#6A614F]">
+                <td colSpan="8" className="px-3 py-6 text-center font-bold text-[#6A614F]">
                   No saved snapshots for this month yet.
                 </td>
               </tr>
@@ -3745,7 +3753,7 @@ function OwnerReportsView({ ownerName, onClose, themeMode }) {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
                 <StatCard
                   label="Actual Drink Revenue"
                   value={report?.totalRevenue || "$0.00"}
@@ -3765,6 +3773,11 @@ function OwnerReportsView({ ownerName, onClose, themeMode }) {
                   label="Drink Units"
                   value={report?.totalUnits || 0}
                   detail="Coffee, not coffee, smoothies"
+                />
+                <StatCard
+                  label="2+ Drink Orders"
+                  value={`${report?.multiDrinkOrderCount || 0} / ${report?.orderCount || 0}`}
+                  detail={`${report?.multiDrinkOrderRate || 0}% of drink orders`}
                 />
               </div>
 

@@ -2177,6 +2177,7 @@ function buildOwnerDrinkRevenueReport(orders = [], start, end) {
     revenue: "$0.00",
   }));
   const orderIds = new Set();
+  let multiDrinkOrderCount = 0;
 
   for (const order of orders || []) {
     const rawOrder = order.raw_order || {};
@@ -2206,6 +2207,7 @@ function buildOwnerDrinkRevenueReport(orders = [], start, end) {
 
     if (orderHasDrink) {
       orderIds.add(order.square_order_id);
+      if (orderUnits >= 2) multiDrinkOrderCount += 1;
 
       const createdAt = new Date(order.created_at);
       if (!Number.isNaN(createdAt.getTime())) {
@@ -2240,11 +2242,16 @@ function buildOwnerDrinkRevenueReport(orders = [], start, end) {
     0
   );
   const totalUnits = totalsByCategory.reduce((sum, item) => sum + item.units, 0);
+  const multiDrinkOrderRate = orderIds.size
+    ? Math.round((multiDrinkOrderCount / orderIds.size) * 100)
+    : 0;
 
   return {
     startAt: start.toISOString(),
     endAt: end.toISOString(),
     orderCount: orderIds.size,
+    multiDrinkOrderCount,
+    multiDrinkOrderRate,
     totalUnits,
     totalRevenueCents,
     totalRevenue: formatCurrency(totalRevenueCents),
@@ -2316,6 +2323,8 @@ function normalizeSnapshotPayload(body = {}, ownerName = "Owner") {
     start_at: report.startAt || null,
     end_at: report.endAt || null,
     order_count: Number(report.orderCount || 0),
+    multi_drink_order_count: Number(report.multiDrinkOrderCount || 0),
+    multi_drink_order_rate: Number(report.multiDrinkOrderRate || 0),
     drink_units: Number(report.totalUnits || 0),
     total_revenue_cents: Number(report.totalRevenueCents || 0),
     average_order_value_cents: Number(report.averageDrinkOrderValueCents || 0),
@@ -2340,6 +2349,8 @@ function ownerSnapshotToCsv(snapshots = []) {
     "range_key",
     "range_label",
     "order_count",
+    "multi_drink_order_count",
+    "multi_drink_order_rate",
     "drink_units",
     "total_revenue",
     "average_order_value",
@@ -2357,6 +2368,8 @@ function ownerSnapshotToCsv(snapshots = []) {
     snapshot.range_key,
     snapshot.range_label,
     snapshot.order_count,
+    snapshot.multi_drink_order_count,
+    `${snapshot.multi_drink_order_rate || 0}%`,
     snapshot.drink_units,
     formatCurrency(snapshot.total_revenue_cents),
     formatCurrency(snapshot.average_order_value_cents),

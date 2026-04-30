@@ -88,6 +88,8 @@ create table if not exists public.kds_owner_snapshots (
   start_at timestamptz,
   end_at timestamptz,
   order_count integer not null default 0,
+  multi_drink_order_count integer not null default 0,
+  multi_drink_order_rate numeric not null default 0,
   drink_units numeric not null default 0,
   total_revenue_cents integer not null default 0,
   average_order_value_cents integer not null default 0,
@@ -112,3 +114,9 @@ create index if not exists kds_owner_snapshots_snapshot_date_idx
 
 create index if not exists kds_owner_snapshots_range_key_idx
   on public.kds_owner_snapshots(range_key);
+
+alter table public.kds_owner_snapshots
+  add column if not exists multi_drink_order_count integer not null default 0;
+
+alter table public.kds_owner_snapshots
+  add column if not exists multi_drink_order_rate numeric not null default 0;
