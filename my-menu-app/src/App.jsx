@@ -4871,11 +4871,13 @@ export default function GoldiesKDS() {
 
   const grouped = useMemo(() => {
     return STATUS_COLUMNS.reduce((acc, col) => {
-      acc[col.key] = activeTickets.filter((ticket) => {
-        if (ticket.status !== col.key) return false;
-
-        return true;
-      });
+      acc[col.key] = activeTickets
+        .filter((ticket) => ticket.status === col.key)
+        .sort((a, b) => {
+          const createdDelta = Number(a.createdAt || 0) - Number(b.createdAt || 0);
+          if (createdDelta) return createdDelta;
+          return String(a.orderNumber || "").localeCompare(String(b.orderNumber || ""));
+        });
 
       return acc;
     }, {});
