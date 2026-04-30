@@ -9,7 +9,7 @@ const LOGO_DARK_URL = "/goldies-logo-white.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.6.1";
+const APP_VERSION = "v1.6.2";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -21,8 +21,17 @@ const SETTINGS_HELP_TEXT =
 const DINING_OPTIONS = ["For here", "To go", "Pickup", "Delivery", "Drive thru"];
 const RELEASE_NOTES = [
   {
-    version: "v1.6.1",
+    version: "v1.6.2",
     date: "Current build",
+    summary: "Made owner snapshots more fluid as stats grow.",
+    items: [
+      "Owner snapshot cards now adapt more deeply to volume, ticket value, units per order, and category concentration.",
+      "The insight cards change as more orders come in so owners get a more useful business read over time.",
+    ],
+  },
+  {
+    version: "v1.6.1",
+    date: "Previous build",
     summary: "Customized owner snapshots by report range.",
     items: [
       "Owner Reports now changes the snapshot question and guidance for Today, Yesterday, 7 Days, 30 Days, This Month, and This Year.",
@@ -1781,13 +1790,22 @@ function OwnerSnapshotCard({ report, range }) {
         </p>
       </div>
 
-      <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-3">
+      <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
         {snapshot.watch.map((item) => (
           <div
-            key={item}
+            key={item.title || item}
             className="rounded-2xl border border-white/12 bg-[#FFFDF8] px-4 py-3 text-sm font-bold leading-relaxed text-[#0F4036]"
           >
-            {item}
+            {typeof item === "string" ? (
+              item
+            ) : (
+              <>
+                <div className="text-[11px] font-black uppercase tracking-[0.14em] text-[#8B5A1D]">
+                  {item.title}
+                </div>
+                <div className="mt-1">{item.body}</div>
+              </>
+            )}
           </div>
         ))}
       </div>
@@ -2657,7 +2675,13 @@ function buildOwnerSnapshotAnalysis(report, rangeKey) {
   const revenueCents = Number(report?.totalRevenueCents || 0);
   const averageCents = Number(report?.averageDrinkOrderValueCents || 0);
   const categories = report?.totalsByCategory || [];
-  const activeCategories = categories.filter((item) => Number(item.units || 0) > 0);
+  const activeCategories = categories
+    .filter((item) => Number(item.units || 0) > 0)
+    .map((item) => ({
+      ...item,
+      units: Number(item.units || 0),
+      revenueCents: Number(item.revenueCents || 0),
+    }));
   const topCategory = activeCategories
     .slice()
     .sort((a, b) => Number(b.units || 0) - Number(a.units || 0))[0];
@@ -2669,8 +2693,14 @@ function buildOwnerSnapshotAnalysis(report, rangeKey) {
       tone: "Quiet service window",
       summary: copy.empty,
       watch: [
-        "Confirm live Square orders are appearing correctly.",
-        copy.action,
+        {
+          title: "Connection check",
+          body: "Confirm live Square orders are appearing correctly.",
+        },
+        {
+          title: "Owner action",
+          body: copy.action,
+        },
       ],
     };
   }
@@ -2690,12 +2720,45 @@ function buildOwnerSnapshotAnalysis(report, rangeKey) {
         ? "healthy average drink order value"
         : "modest average drink order value";
   const categoryRead = topCategory
-    ? `${topCategory.category} led the mix with ${topCategory.units} units`
+    ? `${topCategory.category} led the mix with ${topCategory.units} units.`
     : "No single drink category stood out yet";
+  const topCategoryShare = topCategory && drinkUnits
+    ? Math.round((Number(topCategory.units || 0) / drinkUnits) * 100)
+    : 0;
+  const unitsPerOrder = orderCount ? drinkUnits / orderCount : 0;
+  const unitsPerOrderLabel = unitsPerOrder.toFixed(1);
+  const categoryFocusRead =
+    topCategory && topCategoryShare >= 65
+      ? `${topCategory.category} is carrying ${topCategoryShare}% of drink units, so demand is concentrated in one lane.`
+      : topCategory && topCategoryShare >= 45
+        ? `${topCategory.category} is the leading lane at ${topCategoryShare}% of drink units, but the mix is still somewhat balanced.`
+        : "The category mix is spread out enough that no single lane is dominating the report.";
   const unitRead =
-    drinkUnits > orderCount
-      ? "Customers are adding multiple drinks to some tickets, which is good for ticket value."
-      : "Most drink tickets are currently single-drink orders.";
+    unitsPerOrder >= 1.8
+      ? `Tickets are averaging ${unitsPerOrderLabel} drinks each, which points to group orders or stronger add-on behavior.`
+      : unitsPerOrder >= 1.25
+        ? `Tickets are averaging ${unitsPerOrderLabel} drinks each, so some customers are ordering more than one drink.`
+        : "Most drink tickets are currently single-drink orders.";
+  const revenueRead =
+    revenueCents >= 50000
+      ? "Drink revenue is building into a meaningful management signal for this range."
+      : revenueCents >= 15000
+        ? "Drink revenue is active enough to watch category mix and average ticket value."
+        : "Drink revenue is still early in this range, so treat this read as directional.";
+  const averageOrderRead =
+    averageCents >= 900
+      ? "Average order value is strong. Watch whether that comes from premium drinks, multiple drinks, or both."
+      : averageCents >= 600
+        ? "Average order value is healthy. The next lever is increasing multi-drink tickets or add-ons."
+        : "Average order value is modest. This may be a place to watch add-ons, specials, or upsell-friendly drinks.";
+  const volumeAction =
+    orderCount >= 40
+      ? "Volume is high enough to review staffing, prep flow, and whether the rush stayed smooth."
+      : orderCount >= 20
+        ? "Volume is steady enough to compare against staffing and the pace at the bar."
+        : orderCount >= 8
+          ? "Volume is active but still small enough to inspect individual order patterns."
+          : copy.quiet;
   const quietRead =
     orderCount < 8 ? `${copy.quiet} ` : "";
 
@@ -2705,9 +2768,22 @@ function buildOwnerSnapshotAnalysis(report, rangeKey) {
     tone: `${getOwnerRangeLabel(rangeKey)} read`,
     summary: `${quietRead}${getOwnerRangeLabel(rangeKey)} looks ${volumeRead}: ${orderCount} drink orders, ${drinkUnits} drink units, and ${report?.totalRevenue || "$0.00"} in drink revenue before tax. The average collected per drink order is ${report?.averageDrinkOrderValue || "$0.00"}, which points to ${averageRead}.`,
     watch: [
-      categoryRead,
-      unitRead,
-      copy.action,
+      {
+        title: "Demand mix",
+        body: `${categoryRead} ${categoryFocusRead}`,
+      },
+      {
+        title: "Ticket behavior",
+        body: unitRead,
+      },
+      {
+        title: "Money signal",
+        body: `${revenueRead} ${averageOrderRead}`,
+      },
+      {
+        title: "Owner action",
+        body: `${volumeAction} ${copy.action}`,
+      },
     ],
   };
 }
