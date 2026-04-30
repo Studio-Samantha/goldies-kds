@@ -7,7 +7,7 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.1.21";
+const APP_VERSION = "v1.1.22";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -18,12 +18,12 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.1.21",
+    version: "v1.1.22",
     date: "Current build",
-    summary: "The Studio Samantha pitch page is now the real Learn more page.",
+    summary: "The pitch page was cleaned up and the dashboard footer link was removed.",
     items: [
-      "The Learn more link now opens the polished Studio Samantha pitch page.",
-      "The page is no longer treated as a temporary preview.",
+      "The pitch page no longer shows the Goldie's logo.",
+      "The Learn more link stays on the login screen only.",
     ],
   },
   {
@@ -524,10 +524,6 @@ function PitchPage({ open, onBack }) {
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
           <section className="rounded-[1.75rem] border border-white/70 bg-[rgba(255,253,248,0.92)] p-6 shadow-[0_28px_80px_rgba(15,64,54,0.14)] backdrop-blur-xl">
-            <div className="flex items-center gap-4">
-              <BrandMark size="lg" />
-            </div>
-
             <h1 className="mt-6 text-4xl font-black tracking-tight text-[#0F4036]">
               Studio Samantha
             </h1>
@@ -3463,10 +3459,6 @@ export default function GoldiesKDS() {
           trainingMode={isTrainingMode}
           trainingTickets={displayedTickets}
         />
-
-        <div className="fixed bottom-3 left-0 right-0 z-40 flex justify-center px-4 pb-[env(safe-area-inset-bottom)] pointer-events-auto sm:relative sm:bottom-auto sm:left-auto sm:right-auto sm:z-30 sm:px-0 sm:pb-2">
-          <BrandFooter onPitchClick={openPitchPage} />
-        </div>
       </main>
       </div>
 
