@@ -9,7 +9,7 @@ const LOGO_DARK_URL = "/goldies-logo-white.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.5.3";
+const APP_VERSION = "v1.5.4";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -20,8 +20,18 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.5.3",
+    version: "v1.5.4",
     date: "Current build",
+    summary: "Added owner password changes inside Owner Reports.",
+    items: [
+      "Owner Reports now has a Change Owner Password button.",
+      "Changed owner passwords are stored securely as salted hashes.",
+      "The generic owner password can be reset later if Blake or Claire forget it.",
+    ],
+  },
+  {
+    version: "v1.5.3",
+    date: "Previous build",
     summary: "Added footer policy and ownership details.",
     items: [
       "The footer now links to privacy, data-use, and ownership information.",
@@ -2523,6 +2533,10 @@ function OwnerReportsView({ ownerName, onClose, themeMode }) {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showOwnerPasswordModal, setShowOwnerPasswordModal] = useState(false);
+  const [ownerPasswordError, setOwnerPasswordError] = useState("");
+  const [ownerPasswordNotice, setOwnerPasswordNotice] = useState("");
+  const [ownerPasswordSaving, setOwnerPasswordSaving] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -2564,6 +2578,51 @@ function OwnerReportsView({ ownerName, onClose, themeMode }) {
     onClose();
   }
 
+  async function handleOwnerPasswordChange({
+    currentPassword,
+    newPassword,
+    confirmPassword,
+    clear,
+  }) {
+    setOwnerPasswordSaving(true);
+    setOwnerPasswordError("");
+
+    try {
+      const response = await fetch(apiUrl("/api/owner/password"), {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+          confirmPassword,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (response.status === 401) {
+        throw new Error(data.error || "Owner login required");
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || `Owner password update failed: ${response.status}`
+        );
+      }
+
+      clear();
+      setShowOwnerPasswordModal(false);
+      setOwnerPasswordNotice(
+        data.message || "Owner password updated. Use the new password next time."
+      );
+    } catch (passwordError) {
+      setOwnerPasswordError(passwordError.message || "Owner password update failed");
+    } finally {
+      setOwnerPasswordSaving(false);
+    }
+  }
+
   return (
     <div className={`fixed inset-0 z-50 overflow-auto bg-[radial-gradient(circle_at_top,_rgba(255,253,248,0.98),_rgba(238,224,197,1)_55%,_rgba(230,210,173,1)_100%)] p-4 text-[#111111] ${themeMode === "dark" ? "goldies-dark" : ""}`}>
       <div className="mx-auto max-w-6xl space-y-4">
@@ -2585,6 +2644,16 @@ function OwnerReportsView({ ownerName, onClose, themeMode }) {
             </span>
             <button
               type="button"
+              onClick={() => {
+                setOwnerPasswordError("");
+                setShowOwnerPasswordModal(true);
+              }}
+              className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+            >
+              Change Owner Password
+            </button>
+            <button
+              type="button"
               onClick={handleLogout}
               className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
             >
@@ -2599,6 +2668,12 @@ function OwnerReportsView({ ownerName, onClose, themeMode }) {
             </button>
           </div>
         </header>
+
+        {ownerPasswordNotice && (
+          <div className="rounded-2xl border border-[#0F4036]/12 bg-[#0F4036]/8 px-4 py-3 text-sm font-bold text-[#0F4036]">
+            {ownerPasswordNotice}
+          </div>
+        )}
 
         <section className="rounded-3xl border border-white/70 bg-[rgba(255,253,248,0.92)] p-4 shadow-sm">
           <div className="mb-4 flex flex-wrap gap-2">
@@ -2692,6 +2767,20 @@ function OwnerReportsView({ ownerName, onClose, themeMode }) {
           )}
         </section>
       </div>
+
+      <PasswordSettingsDialog
+        open={showOwnerPasswordModal}
+        title="Change Owner Password"
+        description="Requires the current owner password."
+        submitLabel="Save Owner Password"
+        onClose={() => {
+          setShowOwnerPasswordModal(false);
+          setOwnerPasswordError("");
+        }}
+        onSubmit={handleOwnerPasswordChange}
+        saving={ownerPasswordSaving}
+        error={ownerPasswordError}
+      />
     </div>
   );
 }
@@ -2913,6 +3002,9 @@ function PasswordSettingsDialog({
   onSubmit,
   saving,
   error,
+  title = "Change Password",
+  description = "Requires the current password.",
+  submitLabel = "Save Password",
 }) {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -2947,9 +3039,9 @@ function PasswordSettingsDialog({
       <div className="w-full max-w-lg rounded-3xl bg-[#FFFDF8] border border-[#CA862B]/22 shadow-2xl p-5 md:p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-black text-[#0F4036]">Change Password</h2>
+            <h2 className="text-2xl font-black text-[#0F4036]">{title}</h2>
             <p className="text-sm text-[#6A614F] mt-1">
-              Requires the current password.
+              {description}
             </p>
           </div>
 
@@ -3028,7 +3120,7 @@ function PasswordSettingsDialog({
               disabled={saving}
               className="rounded-2xl bg-[#0F4036] text-white px-4 py-3 font-black transition hover:bg-[#0b352d] disabled:cursor-not-allowed disabled:bg-neutral-300"
             >
-              {saving ? "Saving..." : "Save Password"}
+              {saving ? "Saving..." : submitLabel}
             </button>
           </div>
         </form>

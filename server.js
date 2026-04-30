@@ -43,6 +43,7 @@ const SESSION_COOKIE_NAME = "goldies_kds_session";
 const OWNER_SESSION_COOKIE_NAME = "goldies_owner_session";
 const SESSION_MAX_AGE_MS = 1000 * 60 * 60 * 12;
 const KDS_PASSWORD_SETTING_KEY = "kds_password";
+const OWNER_PASSWORD_SETTING_KEY = "owner_password";
 
 if (!SQUARE_ACCESS_TOKEN) {
   console.error("ERROR: SQUARE_ACCESS_TOKEN environment variable is required");
@@ -193,6 +194,12 @@ let kdsPasswordState = {
   passwordHash: null,
   passwordSalt: null,
   plaintextPassword: null,
+};
+let ownerPasswordState = {
+  source: "env",
+  passwordHash: null,
+  passwordSalt: null,
+  plaintextPassword: String(OWNER_PASSWORD),
 };
 let tickets = [
   {
@@ -640,6 +647,93 @@ async function persistKdsPassword(password) {
   };
 }
 
+async function loadOwnerPasswordState() {
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("kds_settings")
+        .select("setting_key, password_hash, password_salt, updated_at")
+        .eq("setting_key", OWNER_PASSWORD_SETTING_KEY)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data?.password_hash && data?.password_salt) {
+        ownerPasswordState = {
+          source: "supabase",
+          passwordHash: data.password_hash,
+          passwordSalt: data.password_salt,
+          plaintextPassword: null,
+        };
+
+        return ownerPasswordState;
+      }
+    } catch (error) {
+      console.warn(
+        `WARNING: Unable to load stored owner password from Supabase: ${error.message}. Falling back to environment owner password.`
+      );
+    }
+  }
+
+  ownerPasswordState = {
+    source: "env",
+    passwordHash: null,
+    passwordSalt: null,
+    plaintextPassword: String(OWNER_PASSWORD),
+  };
+
+  return ownerPasswordState;
+}
+
+async function persistOwnerPassword(password) {
+  const normalizedPassword = normalizePasswordInput(password);
+  if (!normalizedPassword) {
+    const error = new Error("New owner password cannot be empty");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const { salt, hash } = hashPassword(normalizedPassword);
+
+  if (supabase) {
+    const { error } = await supabase.from("kds_settings").upsert(
+      {
+        setting_key: OWNER_PASSWORD_SETTING_KEY,
+        password_hash: hash,
+        password_salt: salt,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "setting_key" }
+    );
+
+    if (error) throw error;
+
+    ownerPasswordState = {
+      source: "supabase",
+      passwordHash: hash,
+      passwordSalt: salt,
+      plaintextPassword: null,
+    };
+
+    return {
+      source: "supabase",
+      passwordLength: normalizedPassword.length,
+    };
+  }
+
+  ownerPasswordState = {
+    source: "memory",
+    passwordHash: hash,
+    passwordSalt: salt,
+    plaintextPassword: null,
+  };
+
+  return {
+    source: "memory",
+    passwordLength: normalizedPassword.length,
+  };
+}
+
 function isPasswordMatch(password) {
   const normalizedPassword = normalizePasswordInput(password);
   if (!normalizedPassword || !isKdsLoginConfigured()) return false;
@@ -667,10 +761,18 @@ function isPasswordMatch(password) {
 
 function isOwnerPasswordMatch(password) {
   const normalizedPassword = normalizePasswordInput(password);
-  if (!normalizedPassword || !OWNER_PASSWORD) return false;
+  if (!normalizedPassword) return false;
+
+  if (ownerPasswordState.source === "supabase" || ownerPasswordState.source === "memory") {
+    return verifyPassword(
+      normalizedPassword,
+      ownerPasswordState.passwordSalt,
+      ownerPasswordState.passwordHash
+    );
+  }
 
   const provided = Buffer.from(normalizedPassword);
-  const expected = Buffer.from(String(OWNER_PASSWORD));
+  const expected = Buffer.from(String(ownerPasswordState.plaintextPassword || ""));
 
   return (
     provided.length === expected.length &&
@@ -2182,6 +2284,51 @@ app.get("/api/owner/reports/drink-revenue", requireOwnerAuth, async (req, res) =
   }
 });
 
+app.patch("/api/owner/password", requireOwnerAuth, async (req, res) => {
+  try {
+    const currentPassword = normalizePasswordInput(req.body?.currentPassword);
+    const newPassword = normalizePasswordInput(req.body?.newPassword);
+    const confirmPassword = normalizePasswordInput(req.body?.confirmPassword);
+
+    if (!currentPassword) {
+      return res.status(400).json({ error: "Current owner password is required" });
+    }
+
+    if (!newPassword) {
+      return res.status(400).json({ error: "New owner password is required" });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        error: "New owner password must be at least 8 characters long",
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        error: "New owner password and confirmation do not match",
+      });
+    }
+
+    if (!isOwnerPasswordMatch(currentPassword)) {
+      return res.status(401).json({ error: "Current owner password is incorrect" });
+    }
+
+    const result = await persistOwnerPassword(newPassword);
+
+    res.json({
+      ok: true,
+      message:
+        result.source === "supabase"
+          ? "Owner password updated."
+          : "Owner password updated in memory only because Supabase is not configured.",
+    });
+  } catch (error) {
+    console.error("Error updating owner password:", error);
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+});
+
 app.patch("/api/password", requireKdsAuth, async (req, res) => {
   try {
     const currentPassword = normalizePasswordInput(req.body?.currentPassword);
@@ -2556,12 +2703,14 @@ app.get("/api/reports/drink-making-time", requireKdsAuth, async (req, res) => {
 
 async function bootstrap() {
   await loadKdsPasswordState();
+  await loadOwnerPasswordState();
 
   console.log(`Goldie's KDS backend running on port ${PORT}`);
   console.log(`Environment: ${SQUARE_ENVIRONMENT}`);
   console.log(`Location ID: ${SQUARE_LOCATION_ID}`);
   console.log(`Storage: ${supabase ? "Supabase" : "Memory fallback"}`);
   console.log(`KDS login source: ${kdsPasswordState.source}`);
+  console.log(`Owner login source: ${ownerPasswordState.source}`);
 
   if (!isKdsLoginConfigured()) {
     console.warn(
