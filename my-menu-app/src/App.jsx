@@ -7,11 +7,20 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.1.4";
+const APP_VERSION = "v1.1.5";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-30";
 const RELEASE_NOTES = [
+  {
+    version: "v1.1.5",
+    date: "Current build",
+    summary: "The Settings popup now stays centered on narrow browser windows.",
+    items: [
+      "The Settings menu no longer drifts off the left edge when the browser is minimized.",
+      "This makes the menu easier to use on narrow screens.",
+    ],
+  },
   {
     version: "v1.1.4",
     date: "Current build",
@@ -1305,7 +1314,7 @@ function SettingsPopover({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-x-4 top-16 z-50 mx-auto w-[min(20rem,calc(100vw-2rem))] max-h-[calc(100vh-5rem)] overflow-y-auto rounded-2xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_18px_50px_rgba(0,0,0,0.16)] sm:absolute sm:right-0 sm:top-full sm:mt-2 sm:inset-x-auto sm:max-h-none">
+    <div className="fixed left-1/2 top-16 z-50 w-[min(20rem,calc(100vw-1.5rem))] max-h-[calc(100vh-5rem)] -translate-x-1/2 overflow-y-auto rounded-2xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_18px_50px_rgba(0,0,0,0.16)] sm:absolute sm:right-0 sm:top-full sm:mt-2 sm:left-auto sm:w-[20rem] sm:translate-x-0 sm:max-h-none">
       <div className="flex items-center justify-between border-b border-[#CA862B]/16 px-4 py-3">
         <div>
           <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
