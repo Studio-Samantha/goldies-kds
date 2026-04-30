@@ -631,7 +631,7 @@ function PitchPage({ open, onBack }) {
                   text: "Password controls, training mode, and support links stay built in.",
                 },
                 {
-                  title: "Square sync",
+                  title: "Square® sync",
                   text: "Orders and status updates stay connected to Square® and Supabase®.",
                 },
                 {
