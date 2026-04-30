@@ -8,7 +8,7 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.2.7";
+const APP_VERSION = "v1.3.0";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -19,8 +19,20 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.2.7",
+    version: "v1.3.0",
     date: "Current build",
+    summary: "Soft opening fixes for login, counts, and order lookup.",
+    items: [
+      "The login screen no longer opens to a blank white page.",
+      "The install app notice was removed from the login screen.",
+      "Today's Count and Drink Stats now reset by the Goldie's Central-time day.",
+      "Completed Today now clears after midnight when no new orders have been placed.",
+      "Orders By Day lookup no longer flickers closed when searching.",
+    ],
+  },
+  {
+    version: "v1.2.7",
+    date: "Previous build",
     summary: "Training mode now uses a much more obvious practice-only color scheme.",
     items: [
       "Training mode now reads clearly different from the live board.",
