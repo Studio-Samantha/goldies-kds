@@ -9,7 +9,7 @@ const LOGO_DARK_URL = "/goldies-logo-white.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.5.4";
+const APP_VERSION = "v1.5.5";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -20,8 +20,17 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.5.4",
+    version: "v1.5.5",
     date: "Current build",
+    summary: "Added owner password reset email support.",
+    items: [
+      "Owner Login now includes an email link for password reset requests.",
+      "The owner password change dialog also links directly to Samantha for reset help.",
+    ],
+  },
+  {
+    version: "v1.5.4",
+    date: "Previous build",
     summary: "Added owner password changes inside Owner Reports.",
     items: [
       "Owner Reports now has a Change Owner Password button.",
@@ -352,6 +361,26 @@ function buildSupportMailto() {
       "What happened:",
       "",
       "Device/browser:",
+      "",
+      "Thanks,",
+      "",
+    ].join("\n")
+  );
+
+  return `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
+}
+
+function buildOwnerPasswordResetMailto(ownerName = "Owner") {
+  const subject = encodeURIComponent("Goldie's KDS owner password reset");
+  const body = encodeURIComponent(
+    [
+      "Hi Samantha,",
+      "",
+      "Please reset the Goldie's KDS Owner Login password.",
+      "",
+      `Requested by: ${ownerName || "Owner"}`,
+      "",
+      "I am sending this from an approved Blake or Claire email address.",
       "",
       "Thanks,",
       "",
@@ -2523,6 +2552,13 @@ function OwnerLoginDialog({ open, onClose, onLogin, themeMode }) {
         >
           {submitting ? "Signing in..." : "Open Owner Reports"}
         </button>
+
+        <a
+          href={buildOwnerPasswordResetMailto(ownerName)}
+          className="block w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 text-center text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+        >
+          Email Samantha for password reset
+        </a>
       </form>
     </div>
   );
@@ -2773,6 +2809,8 @@ function OwnerReportsView({ ownerName, onClose, themeMode }) {
         title="Change Owner Password"
         description="Requires the current owner password."
         submitLabel="Save Owner Password"
+        supportHref={buildOwnerPasswordResetMailto(ownerName)}
+        supportLabel="Forgot it? Email Samantha for reset"
         onClose={() => {
           setShowOwnerPasswordModal(false);
           setOwnerPasswordError("");
@@ -3005,6 +3043,8 @@ function PasswordSettingsDialog({
   title = "Change Password",
   description = "Requires the current password.",
   submitLabel = "Save Password",
+  supportHref = "",
+  supportLabel = "",
 }) {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -3099,6 +3139,15 @@ function PasswordSettingsDialog({
           <div className="text-sm text-[#6A614F]">
             Passwords must be at least 8 characters.
           </div>
+
+          {supportHref && (
+            <a
+              href={supportHref}
+              className="block rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 text-center text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+            >
+              {supportLabel || "Email Samantha for password help"}
+            </a>
+          )}
 
           {error && (
             <div className="rounded-2xl bg-red-50 border border-red-100 text-red-900 px-4 py-3 font-medium">
