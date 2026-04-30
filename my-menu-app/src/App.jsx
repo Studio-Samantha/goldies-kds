@@ -32,7 +32,7 @@ function buildSupportMailto() {
     [
       "Hi Samantha,",
       "",
-      "I need a fix or update for the Goldie's KDS.",
+      "I need customer service help with the Goldie's KDS.",
       "",
       "What I was doing:",
       "",
@@ -1264,7 +1264,7 @@ function LoginScreen({ onLogin, themeMode, onThemeToggle, themeStyle, onVersionC
         href={buildSupportMailto()}
         className="absolute right-4 top-16 rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
       >
-        Suggest Fix
+        Customer Service
       </a>
 
       <button
@@ -1962,7 +1962,7 @@ export default function GoldiesKDS() {
                 href={buildSupportMailto()}
                 className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
               >
-                Suggest Fix
+                Customer Service
               </a>
             </div>
 
