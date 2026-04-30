@@ -9,7 +9,7 @@ const LOGO_DARK_URL = "/goldies-logo-white.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.3.5";
+const APP_VERSION = "v1.3.6";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -20,8 +20,17 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.3.5",
+    version: "v1.3.6",
     date: "Current build",
+    summary: "Separated training dark mode from live dark mode.",
+    items: [
+      "Training dark mode now uses a warm Goldie/oat/espresso palette instead of live green.",
+      "Training remains clearly dark and high-contrast without looking like production mode.",
+    ],
+  },
+  {
+    version: "v1.3.5",
+    date: "Previous build",
     summary: "Matched the dark theme logo to Goldie's white brand mark.",
     items: [
       "Dark mode now uses Goldie's white logo from the brand assets.",
@@ -2717,10 +2726,10 @@ export default function GoldiesKDS() {
   const trainingThemeStyle = isTrainingMode
     ? themeMode === "dark"
       ? {
-          backgroundColor: "#120b1f",
+          backgroundColor: "#2A1B10",
           backgroundImage:
-            "radial-gradient(circle at top, rgba(139,92,246,0.38), rgba(30,41,59,0.98) 48%, rgba(11,15,31,1) 100%)",
-          color: "#e9d5ff",
+            "radial-gradient(circle at top, rgba(238,224,197,0.18), rgba(202,134,43,0.32) 32%, rgba(75,48,25,0.98) 62%, rgba(31,22,15,1) 100%)",
+          color: "#FFF7EA",
           colorScheme: "dark",
         }
       : {
@@ -3227,7 +3236,9 @@ export default function GoldiesKDS() {
     content = (
       <div
         className={`relative min-h-screen bg-[#EEE0C5] text-[#111111] flex items-center justify-center px-4 overflow-hidden ${
-          themeMode === "dark" ? "goldies-dark" : ""
+          themeMode === "dark"
+            ? `goldies-dark ${isTrainingMode ? "goldies-training-dark" : ""}`
+            : ""
         }`}
         style={themeStyle}
       >
@@ -3281,7 +3292,9 @@ export default function GoldiesKDS() {
     content = (
       <div
         className={`relative min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,253,248,0.96),_rgba(238,224,197,1)_50%,_rgba(230,210,173,1)_100%)] text-[#111111] overflow-hidden ${
-          themeMode === "dark" ? "goldies-dark" : ""
+          themeMode === "dark"
+            ? `goldies-dark ${isTrainingMode ? "goldies-training-dark" : ""}`
+            : ""
         }`}
         style={{ ...themeStyle, ...trainingThemeStyle }}
         onClick={() => setShowSettingsMenu(false)}

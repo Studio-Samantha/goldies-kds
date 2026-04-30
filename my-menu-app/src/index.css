@@ -83,3 +83,63 @@
 .goldies-dark td [class*="bg-white"] {
   background-color: rgba(6, 35, 31, 0.96) !important;
 }
+
+.goldies-training-dark[class*="bg-[#FFFDF8]"],
+.goldies-training-dark[class*="bg-[rgba(255,253,248"],
+.goldies-training-dark[class*="bg-white"],
+.goldies-training-dark[class*="bg-[#EEE0C5]"],
+.goldies-training-dark [class*="bg-[#FFFDF8]"],
+.goldies-training-dark [class*="bg-[rgba(255,253,248"],
+.goldies-training-dark [class*="bg-white"],
+.goldies-training-dark [class*="bg-[#EEE0C5]"] {
+  background-color: rgba(43, 29, 18, 0.95) !important;
+}
+
+.goldies-training-dark[class*="bg-white/"],
+.goldies-training-dark[class*="bg-[#FFFDF8]/"],
+.goldies-training-dark[class*="bg-[#EEE0C5]/"],
+.goldies-training-dark [class*="bg-white/"],
+.goldies-training-dark [class*="bg-[#FFFDF8]/"],
+.goldies-training-dark [class*="bg-[#EEE0C5]/"] {
+  background-color: rgba(62, 40, 23, 0.84) !important;
+}
+
+.goldies-training-dark[class*="border-white"],
+.goldies-training-dark[class*="border-[#CA862B]"],
+.goldies-training-dark[class*="border-[#0F4036]"],
+.goldies-training-dark [class*="border-white"],
+.goldies-training-dark [class*="border-[#CA862B]"],
+.goldies-training-dark [class*="border-[#0F4036]"] {
+  border-color: rgba(238, 224, 197, 0.38) !important;
+}
+
+.goldies-training-dark[class*="text-[#0F4036]"],
+.goldies-training-dark [class*="text-[#0F4036]"] {
+  color: #f7c978 !important;
+}
+
+.goldies-training-dark[class*="text-[#6A614F]"],
+.goldies-training-dark[class*="text-[#4E4637]"],
+.goldies-training-dark[class*="text-[#5A4F3E]"],
+.goldies-training-dark [class*="text-[#6A614F]"],
+.goldies-training-dark [class*="text-[#4E4637]"],
+.goldies-training-dark [class*="text-[#5A4F3E]"] {
+  color: rgba(255, 247, 234, 0.74) !important;
+}
+
+.goldies-training-dark input,
+.goldies-training-dark select,
+.goldies-training-dark textarea {
+  background-color: rgba(31, 22, 15, 0.98) !important;
+  border-color: rgba(238, 224, 197, 0.36) !important;
+  color: #fff7ea !important;
+}
+
+.goldies-training-dark thead {
+  background-color: rgba(238, 224, 197, 0.16) !important;
+}
+
+.goldies-training-dark tr[class*="bg-[#FFFDF8]"],
+.goldies-training-dark td [class*="bg-white"] {
+  background-color: rgba(35, 24, 16, 0.98) !important;
+}
