@@ -9,9 +9,9 @@
       content="DrinkFlow KDS is a lightweight Square&reg;-connected kitchen display and owner reporting tool built for coffee shops, smoothie shops, and drink counters."
     />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://goldieskds.com/learn-more.html" />
+    <link rel="canonical" href="https://goldieskds.com/drinkflow-kds" />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://goldieskds.com/learn-more.html" />
+    <meta property="og:url" content="https://goldieskds.com/drinkflow-kds" />
     <meta property="og:title" content="DrinkFlow KDS for Coffee & Drink Shops" />
     <meta
       property="og:description"
@@ -34,7 +34,7 @@
         "operatingSystem": "Web",
         "description": "A lightweight Square\u00ae-connected kitchen display and owner reporting tool built for coffee shops, smoothie shops, and drink counters.",
         "image": "https://goldieskds.com/drinkflow-ipad-kds.png",
-        "url": "https://goldieskds.com/learn-more.html",
+        "url": "https://goldieskds.com/drinkflow-kds",
         "offers": [
           {
             "@type": "Offer",
@@ -1066,18 +1066,48 @@
         border: 1px solid var(--line);
         border-radius: 8px;
         background:
-          radial-gradient(circle at 30% 20%, rgba(202, 134, 43, 0.18), transparent 34%),
-          #fff;
+          linear-gradient(135deg, rgba(15, 64, 54, 0.96), rgba(18, 16, 12, 0.94));
+        color: #fff;
         box-shadow: var(--shadow);
         overflow: hidden;
+        padding: 26px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
       }
-      .founder-art img {
+      .founder-art::after {
+        content: "";
         position: absolute;
-        right: -38px;
-        bottom: -76px;
-        width: min(360px, 88%);
-        opacity: 0.72;
-        transform: rotate(-8deg);
+        right: 18px;
+        top: 18px;
+        width: 150px;
+        height: 150px;
+        background: url("/studio-samantha-leaf.png") center / contain no-repeat;
+        opacity: 0.16;
+      }
+      .founder-art-kicker {
+        position: relative;
+        z-index: 1;
+        color: rgba(255, 255, 255, 0.68);
+        font-size: 12px;
+        font-weight: 950;
+        text-transform: uppercase;
+      }
+      .founder-art-quote {
+        position: relative;
+        z-index: 1;
+        margin: 32px 0;
+        font-size: clamp(30px, 4vw, 48px);
+        font-weight: 950;
+        line-height: 1.02;
+      }
+      .founder-art-note {
+        position: relative;
+        z-index: 1;
+        border-top: 1px solid rgba(255, 255, 255, 0.16);
+        padding-top: 16px;
+        color: rgba(255, 255, 255, 0.72);
+        line-height: 1.55;
       }
       .founder-points {
         display: grid;
@@ -1317,10 +1347,8 @@
         .founder-art {
           min-height: 230px;
         }
-        .founder-art img {
-          width: 260px;
-          right: -40px;
-          bottom: -88px;
+        .founder-art-quote {
+          font-size: 30px;
         }
         .cta-inner {
           align-items: flex-start;
@@ -1414,7 +1442,7 @@
     </section>
 
     <section class="case-proof" aria-label="Current customer case study">
-      <a class="case-proof-inner" href="/case-study-goldies.html">
+      <a class="case-proof-inner" href="/case-study/goldies">
         <div>
           <strong>Built first for Goldie&apos;s Coffee &amp; Goods.</strong>
           <span>Goldie&apos;s is the founding customer, approved case study, and first real shop using DrinkFlow during opening week.</span>
@@ -1850,8 +1878,12 @@
               </div>
             </div>
           </div>
-          <div class="founder-art" aria-hidden="true">
-            <img src="/studio-samantha-leaf.png" alt="" />
+          <div class="founder-art">
+            <div class="founder-art-kicker">One-person studio</div>
+            <div class="founder-art-quote">Custom software should feel personal, not fragile.</div>
+            <div class="founder-art-note">
+              Setup, support, fixes, reports, themes, and practical improvements come from the same person who built the tool.
+            </div>
           </div>
         </div>
       </div>
@@ -1883,8 +1915,8 @@
         </div>
         <div>
           <div class="footer-links" aria-label="Footer links">
-            <a href="/learn-more.html">DrinkFlow</a>
-            <a href="/case-study-goldies.html">Case study</a>
+            <a href="/drinkflow-kds">DrinkFlow</a>
+            <a href="/case-study/goldies">Case study</a>
             <a href="/?demo=training">Open demo</a>
             <a href="/policy.html">Policy</a>
             <a href="/policy.html#data-use">Data use</a>

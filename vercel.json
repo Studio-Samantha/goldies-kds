@@ -4,6 +4,18 @@
   "framework": "vite",
   "rewrites": [
     {
+      "source": "/drinkflow-kds",
+      "destination": "/learn-more.html"
+    },
+    {
+      "source": "/drinkflow",
+      "destination": "/learn-more.html"
+    },
+    {
+      "source": "/case-study/goldies",
+      "destination": "/case-study-goldies.html"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://goldies-kds-backend.onrender.com/api/:path*"
     }
