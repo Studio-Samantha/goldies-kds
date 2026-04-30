@@ -1267,14 +1267,6 @@ function LoginScreen({ onLogin, themeMode, onThemeToggle, themeStyle, onVersionC
         Suggest Fix
       </a>
 
-      <button
-        type="button"
-        onClick={onVersionClick}
-        className="absolute right-4 top-28 text-[11px] font-black uppercase tracking-[0.18em] text-[#0F4036] underline decoration-[#CA862B]/70 decoration-2 underline-offset-4"
-      >
-        {APP_VERSION} · what&apos;s new?
-      </button>
-
       <main className="w-full max-w-md rounded-3xl bg-[#FFFDF8] border border-[#CA862B]/22 shadow-[0_20px_60px_rgba(15,64,54,0.08)] p-6 flex flex-col items-center text-center">
         <div className="flex items-center justify-center gap-4 mb-5">
           <BrandMark size="lg" />
@@ -1287,6 +1279,14 @@ function LoginScreen({ onLogin, themeMode, onThemeToggle, themeStyle, onVersionC
         <p className="text-[#6A614F] mt-2">
           Enter your name and password to continue.
         </p>
+
+        <button
+          type="button"
+          onClick={onVersionClick}
+          className="mt-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#0F4036] underline decoration-[#CA862B]/70 decoration-2 underline-offset-4"
+        >
+          {APP_VERSION} · what&apos;s new?
+        </button>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4 w-full">
           <label className="block text-left">
