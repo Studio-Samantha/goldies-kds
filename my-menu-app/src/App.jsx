@@ -9,7 +9,7 @@ const LOGO_DARK_URL = "/goldies-logo-white.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.5.9";
+const APP_VERSION = "v1.6.0";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -21,8 +21,17 @@ const SETTINGS_HELP_TEXT =
 const DINING_OPTIONS = ["For here", "To go", "Pickup", "Delivery", "Drive thru"];
 const RELEASE_NOTES = [
   {
-    version: "v1.5.9",
+    version: "v1.6.0",
     date: "Current build",
+    summary: "Added owner daily snapshot analysis.",
+    items: [
+      "Owner Reports now includes a Daily Owner Snapshot that explains what happened in plain English.",
+      "The snapshot changes with the selected report range and highlights volume, revenue, average order value, and category mix.",
+    ],
+  },
+  {
+    version: "v1.5.9",
+    date: "Previous build",
     summary: "Added a ticket service dropdown.",
     items: [
       "Ticket cards now let staff set For here, To go, Pickup, Delivery, or Drive thru directly.",
@@ -1735,6 +1744,48 @@ function StatCard({ label, value, detail }) {
   );
 }
 
+function OwnerSnapshotCard({ report, range }) {
+  const snapshot = buildOwnerSnapshotAnalysis(report, range);
+
+  return (
+    <section className="rounded-3xl border border-[#0F4036]/12 bg-[#0F4036] p-4 text-white shadow-sm">
+      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+        <div>
+          <div className="text-xs font-black uppercase tracking-[0.18em] text-[#EEE0C5]">
+            Daily Owner Snapshot
+          </div>
+          <h2 className="mt-1 text-2xl font-black">
+            What should I pay attention to?
+          </h2>
+        </div>
+        <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#FFFDF8]">
+          {getOwnerRangeLabel(range)}
+        </span>
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-white/12 bg-white/10 p-4">
+        <div className="text-sm font-black uppercase tracking-[0.14em] text-[#EEE0C5]">
+          {snapshot.tone}
+        </div>
+        <p className="mt-2 text-base font-semibold leading-relaxed text-[#FFFDF8]">
+          {snapshot.summary}
+        </p>
+      </div>
+
+      <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-3">
+        {snapshot.watch.map((item) => (
+          <div
+            key={item}
+            className="rounded-2xl border border-white/12 bg-[#FFFDF8] px-4 py-3 text-sm font-bold leading-relaxed text-[#0F4036]"
+          >
+            {item}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function DailyDrinkCount({ drinkCounts, orderCount }) {
   const totalDrinks = drinkCounts.reduce((sum, drink) => sum + drink.qty, 0);
 
@@ -2520,6 +2571,72 @@ const OWNER_REPORT_RANGES = [
   { key: "thisYear", label: "This Year" },
 ];
 
+function getOwnerRangeLabel(rangeKey) {
+  return (
+    OWNER_REPORT_RANGES.find((option) => option.key === rangeKey)?.label ||
+    "Selected Range"
+  );
+}
+
+function buildOwnerSnapshotAnalysis(report, rangeKey) {
+  const orderCount = Number(report?.orderCount || 0);
+  const drinkUnits = Number(report?.totalUnits || 0);
+  const revenueCents = Number(report?.totalRevenueCents || 0);
+  const averageCents = Number(report?.averageDrinkOrderValueCents || 0);
+  const categories = report?.totalsByCategory || [];
+  const activeCategories = categories.filter((item) => Number(item.units || 0) > 0);
+  const topCategory = activeCategories
+    .slice()
+    .sort((a, b) => Number(b.units || 0) - Number(a.units || 0))[0];
+  const rangeLabel = getOwnerRangeLabel(rangeKey).toLowerCase();
+  const isDailyRange = rangeKey === "today" || rangeKey === "yesterday";
+
+  if (!orderCount && !drinkUnits) {
+    return {
+      tone: "Quiet service window",
+      summary: `No drink revenue is showing for ${rangeLabel} yet. If this is during service, keep an eye on Square syncing and make sure completed drink orders are flowing into the KDS.`,
+      watch: [
+        "Confirm live Square orders are appearing correctly.",
+        "Use this as the baseline before the next rush starts.",
+      ],
+    };
+  }
+
+  const volumeRead =
+    orderCount >= 40
+      ? "high-volume"
+      : orderCount >= 20
+        ? "steady"
+        : orderCount >= 8
+          ? "light but active"
+          : "quiet";
+  const averageRead =
+    averageCents >= 900
+      ? "strong average drink order value"
+      : averageCents >= 600
+        ? "healthy average drink order value"
+        : "modest average drink order value";
+  const categoryRead = topCategory
+    ? `${topCategory.category} led the mix with ${topCategory.units} units`
+    : "No single drink category stood out yet";
+  const unitRead =
+    drinkUnits > orderCount
+      ? "Customers are adding multiple drinks to some tickets, which is good for ticket value."
+      : "Most drink tickets are currently single-drink orders.";
+
+  return {
+    tone: isDailyRange ? "Daily read" : "Range read",
+    summary: `${getOwnerRangeLabel(rangeKey)} looks ${volumeRead}: ${orderCount} drink orders, ${drinkUnits} drink units, and ${report?.totalRevenue || "$0.00"} in drink revenue before tax. The average collected per drink order is ${report?.averageDrinkOrderValue || "$0.00"}, which points to ${averageRead}.`,
+    watch: [
+      categoryRead,
+      unitRead,
+      isDailyRange
+        ? "For tomorrow, watch whether the rush creates bigger tickets or mainly single-drink orders."
+        : "Use this range to spot which drink category deserves menu, staffing, or prep attention next.",
+    ],
+  };
+}
+
 function OwnerLoginDialog({ open, onClose, onLogin, themeMode }) {
   const [ownerName, setOwnerName] = useState("Owner");
   const [password, setPassword] = useState("");
@@ -2833,6 +2950,10 @@ function OwnerReportsView({ ownerName, onClose, themeMode }) {
                   value={report?.totalUnits || 0}
                   detail="Coffee, not coffee, smoothies"
                 />
+              </div>
+
+              <div className="mt-4">
+                <OwnerSnapshotCard report={report} range={range} />
               </div>
 
               <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
