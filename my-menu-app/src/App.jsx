@@ -13,6 +13,7 @@ const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
 const APP_VERSION = "v1.7.0";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
+const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v1";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
@@ -696,6 +697,58 @@ function WebServicesReminderDialog({ open, onClose }) {
               className="rounded-xl bg-[#0F4036] text-white px-4 py-2.5 font-black transition hover:bg-[#0b352d]"
             >
               Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OwnerReportsNoticeDialog({ open, onClose, onOpenOwnerLogin }) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] flex items-center justify-center p-4">
+      <div className="absolute inset-0" onClick={onClose} />
+
+      <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)]">
+        <div className="border-b border-[#CA862B]/18 bg-[#EEE0C5]/35 px-5 py-4">
+          <div className="text-sm font-black uppercase tracking-[0.18em] text-[#6A614F]">
+            Owner Portal Update
+          </div>
+          <h2 className="mt-1 text-2xl font-black text-[#0F4036]">
+            Downloadable reports are live
+          </h2>
+        </div>
+
+        <div className="space-y-4 px-5 py-5 text-[#2D261C]">
+          <p className="text-base leading-7">
+            Owner Reports can now download the selected view as CSV, Excel, or a branded PDF.
+          </p>
+          <div className="rounded-2xl border border-[#CA862B]/18 bg-white px-4 py-3">
+            <div className="text-sm font-black text-[#0F4036]">
+              Find it in Settings
+            </div>
+            <p className="mt-1 text-sm font-semibold leading-6 text-[#6A614F]">
+              Open Settings, choose Owner Login, then use Download Report in the owner portal.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2.5 font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+            >
+              Got it
+            </button>
+            <button
+              type="button"
+              onClick={onOpenOwnerLogin}
+              className="rounded-xl bg-[#0F4036] px-4 py-2.5 font-black text-white transition hover:bg-[#0b352d]"
+            >
+              Open Owner Login
             </button>
           </div>
         </div>
@@ -2397,7 +2450,27 @@ function DailyDrinkCount({ drinkCounts, orderCount }) {
   );
 }
 
-function BrandMark({ size = "md", darkMode = false }) {
+function DemoBrandMark({ size = "md" }) {
+  const dimensions = size === "lg" ? "h-28 w-56" : "h-16 w-36";
+
+  return (
+    <div
+      className={`${dimensions} flex items-center justify-center rounded-2xl border border-[#0F4036]/15 bg-white/80 shadow-sm`}
+      aria-label="DrinkFlow Demo"
+    >
+      <div className="text-center leading-none">
+        <div className="text-3xl font-black text-[#0F4036]">DF</div>
+        <div className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#CA862B]">
+          Demo Cafe
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BrandMark({ size = "md", darkMode = false, demoMode = false }) {
+  if (demoMode) return <DemoBrandMark size={size} />;
+
   const dimensions = size === "lg" ? "h-28 w-56" : "h-16 w-36";
 
   return (
@@ -2412,7 +2485,22 @@ function BrandMark({ size = "md", darkMode = false }) {
   );
 }
 
-function WatermarkLayer({ trainingMode = false, darkMode = false }) {
+function WatermarkLayer({ trainingMode = false, darkMode = false, demoMode = false }) {
+  if (demoMode) {
+    return (
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 18px 18px, rgba(15,64,54,0.1) 0 2px, transparent 3px)",
+          backgroundSize: "86px 86px",
+          opacity: 0.5,
+        }}
+      />
+    );
+  }
+
   return (
     <div
       aria-hidden="true"
@@ -4328,6 +4416,15 @@ export default function GoldiesKDS() {
       return false;
     }
   });
+  const [hideOwnerReportsNotice, setHideOwnerReportsNotice] = useState(() => {
+    if (typeof window === "undefined") return false;
+
+    try {
+      return window.localStorage.getItem(OWNER_REPORTS_NOTICE_HIDE_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
   const [hiddenReleaseNotesVersion, setHiddenReleaseNotesVersion] = useState(() => {
     if (typeof window === "undefined") return "";
 
@@ -4358,6 +4455,11 @@ export default function GoldiesKDS() {
     authStatus === "authenticated" &&
     isWebServicesReminderDay &&
     !hideWebServicesReminder;
+  const showOwnerReportsNotice =
+    authStatus === "login" &&
+    !hideOwnerReportsNotice &&
+    !showCelebrationNote &&
+    !isDemoRoute;
   const isPitchRoute =
     pitchHash === "#learn-more" ||
     pitchHash === "#pitch-preview" ||
@@ -4471,6 +4573,20 @@ export default function GoldiesKDS() {
       // ignore storage failures
     }
   }, [hideWebServicesReminder]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    try {
+      if (hideOwnerReportsNotice) {
+        window.localStorage.setItem(OWNER_REPORTS_NOTICE_HIDE_KEY, "true");
+      } else {
+        window.localStorage.removeItem(OWNER_REPORTS_NOTICE_HIDE_KEY);
+      }
+    } catch {
+      // ignore storage failures
+    }
+  }, [hideOwnerReportsNotice]);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -4962,7 +5078,11 @@ export default function GoldiesKDS() {
         }`}
         style={themeStyle}
       >
-        <WatermarkLayer trainingMode={isTrainingMode} darkMode={themeMode === "dark"} />
+        <WatermarkLayer
+          trainingMode={isTrainingMode}
+          darkMode={themeMode === "dark"}
+          demoMode={isDemoRoute}
+        />
         <div className="rounded-3xl bg-[#FFFDF8] border border-[#CA862B]/22 shadow-sm p-6 text-xl font-black text-[#0F4036]">
           Loading Kitchen Display
         </div>
@@ -5013,6 +5133,16 @@ export default function GoldiesKDS() {
           celebration={scheduledCelebration}
           onClose={() => setHiddenCelebrationKey(scheduledCelebrationKey)}
         />
+        <OwnerReportsNoticeDialog
+          open={showOwnerReportsNotice}
+          onClose={() => setHideOwnerReportsNotice(true)}
+          onOpenOwnerLogin={() => {
+            setHideOwnerReportsNotice(true);
+            setSignedInOwner("");
+            setShowOwnerReports(false);
+            setShowOwnerLogin(true);
+          }}
+        />
       </>
     );
   } else {
@@ -5034,12 +5164,16 @@ export default function GoldiesKDS() {
               "linear-gradient(180deg, rgba(255,255,255,0.34), rgba(255,255,255,0) 26%, rgba(15,64,54,0.035) 100%)",
           }}
         />
-        <WatermarkLayer trainingMode={isTrainingMode} darkMode={themeMode === "dark"} />
+        <WatermarkLayer
+          trainingMode={isTrainingMode}
+          darkMode={themeMode === "dark"}
+          demoMode={isDemoRoute}
+        />
       <div className="relative z-10">
       <header className="border-b border-white/70 bg-[rgba(255,253,248,0.9)] backdrop-blur-xl px-4 md:px-6 py-4 shadow-[0_12px_30px_rgba(15,64,54,0.06)]">
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
           <div className="flex items-center gap-4">
-            <BrandMark darkMode={themeMode === "dark"} />
+            <BrandMark darkMode={themeMode === "dark"} demoMode={isDemoRoute} />
 
             <div>
               <h1 className="text-3xl md:text-4xl font-black tracking-tight text-[#0F4036]">
@@ -5047,7 +5181,7 @@ export default function GoldiesKDS() {
               </h1>
 
               <p className="text-[#6A614F] mt-1 text-sm md:text-base">
-                Live Square orders
+                {isDemoRoute ? "Fake demo orders" : "Live Square orders"}
               </p>
             </div>
           </div>
@@ -5154,6 +5288,15 @@ export default function GoldiesKDS() {
                   }}
                 />
               </div>
+
+              <a
+                href="https://squareup.com/dashboard"
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
+              >
+                Square Dashboard
+              </a>
 
               <button
                 type="button"

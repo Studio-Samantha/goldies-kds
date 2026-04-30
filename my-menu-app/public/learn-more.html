@@ -478,6 +478,13 @@
         font-size: 13px;
         line-height: 1.5;
       }
+      .onboarding {
+        background: #fff;
+      }
+      .onboarding-grid {
+        margin-top: 28px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
       .pricing {
         background: var(--green);
         color: #fff;
@@ -556,7 +563,7 @@
         .nav-links a:not(.button) { display: none; }
         .hero { min-height: 88vh; }
         .hero-visual { display: none; }
-        .features, .showcase-grid, .price-grid {
+        .features, .showcase-grid, .price-grid, .onboarding-grid {
           grid-template-columns: 1fr;
         }
         .lane-grid {
@@ -656,7 +663,7 @@
           <article class="card feature">
             <div class="icon">04</div>
             <h3>Shop-branded</h3>
-            <p>Colors, logos, labels, password tools, and training mode can be tailored for each shop.</p>
+            <p>Custom domain, colors, logos, labels, password tools, and training mode can be tailored for each shop.</p>
           </article>
         </div>
       </div>
@@ -664,11 +671,11 @@
 
     <section class="section photo-section">
       <div class="section-inner">
-        <p class="eyebrow">Designed for the counter</p>
-        <h2>A product that looks at home where the rush actually happens.</h2>
+        <p class="eyebrow">Built for the bar</p>
+        <h2>Keep the drink rush moving without turning the counter into chaos.</h2>
         <p class="section-copy">
-          DrinkFlow can run on the screen a shop already understands: an iPad at the bar,
-          a small display near handoff, or a larger screen for the whole team.
+          DrinkFlow gives baristas a clean screen for active tickets, handoff timing,
+          and owner-level numbers on an iPad, a simple phone screen, or a display at handoff.
         </p>
         <div class="photo-frame">
           <img src="/drinkflow-ipad-kds.png" alt="DrinkFlow KDS running on an iPad at a coffee shop counter" />
@@ -753,13 +760,42 @@
       </div>
     </section>
 
+    <section class="section onboarding">
+      <div class="section-inner">
+        <p class="eyebrow">Setup starts with the shop</p>
+        <h2>Tell me about your team, your counter, and where orders slow down.</h2>
+        <p class="section-copy">
+          Onboarding is not just connecting Square. It is where the KDS gets shaped around
+          the people using it: owners, baristas, new hires, peak-hour coverage, and the screens
+          already available in the shop.
+        </p>
+        <div class="grid onboarding-grid">
+          <article class="card feature">
+            <div class="icon">A</div>
+            <h3>Team setup</h3>
+            <p>We talk through who takes orders, who makes drinks, who calls names, and what each person needs to see.</p>
+          </article>
+          <article class="card feature">
+            <div class="icon">B</div>
+            <h3>Current workflow</h3>
+            <p>The board can be simplified for small teams or expanded for shops with separate bar, handoff, and owner roles.</p>
+          </article>
+          <article class="card feature">
+            <div class="icon">C</div>
+            <h3>Feature fit</h3>
+            <p>Add what helps, remove what gets in the way, and keep the screen focused on how the shop actually runs.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
     <section class="section pricing" id="pricing">
       <div class="section-inner">
         <p class="eyebrow">Simple launch pricing</p>
         <h2>Priced for independent shops that need one focused tool.</h2>
         <p class="section-copy">
           This works best as a low-friction subscription with a setup fee for Square connection,
-          branding, testing, debugging, and tailoring the feature set to the way each shop works.
+          custom domain setup, branding, testing, debugging, and tailoring the feature set to the way each shop works.
         </p>
         <div class="grid price-grid">
           <article class="price-card featured">
@@ -775,7 +811,7 @@
           <article class="price-card">
             <h3>Setup</h3>
             <div class="price">$50 <small>one time</small></div>
-            <p>Covers onboarding, shop branding, Square connection, debugging, launch checks, and adding or removing features based on what the shop actually needs.</p>
+            <p>Covers onboarding, custom domain setup, shop branding, Square connection, debugging, launch checks, and adding or removing features based on what the shop actually needs.</p>
           </article>
         </div>
       </div>
@@ -785,7 +821,7 @@
       <div class="cta-inner">
         <div>
           <h2>Give the counter a calmer screen.</h2>
-          <p>Custom Square-connected KDS builds for coffee shops, smoothie shops, and drink counters.</p>
+          <p>Custom-domain, Square-connected KDS builds for coffee shops, smoothie shops, and drink counters.</p>
         </div>
         <a class="button primary" href="mailto:samantha@studiosamantha.com?subject=DrinkFlow%20KDS%20setup">Start a conversation</a>
       </div>
