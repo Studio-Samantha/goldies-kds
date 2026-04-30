@@ -1,3 +1,85 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.goldies-dark {
+  color: #fff7ea;
+}
+
+.goldies-dark[class*="bg-[#FFFDF8]"],
+.goldies-dark[class*="bg-[rgba(255,253,248"],
+.goldies-dark[class*="bg-white"],
+.goldies-dark[class*="bg-[#EEE0C5]"],
+.goldies-dark [class*="bg-[#FFFDF8]"],
+.goldies-dark [class*="bg-[rgba(255,253,248"],
+.goldies-dark [class*="bg-white"],
+.goldies-dark [class*="bg-[#EEE0C5]"] {
+  background-color: rgba(8, 38, 34, 0.94) !important;
+}
+
+.goldies-dark[class*="bg-white/"],
+.goldies-dark[class*="bg-[#FFFDF8]/"],
+.goldies-dark[class*="bg-[#EEE0C5]/"],
+.goldies-dark [class*="bg-white/"],
+.goldies-dark [class*="bg-[#FFFDF8]/"],
+.goldies-dark [class*="bg-[#EEE0C5]/"] {
+  background-color: rgba(10, 49, 43, 0.78) !important;
+}
+
+.goldies-dark[class*="border-white"],
+.goldies-dark[class*="border-[#CA862B]"],
+.goldies-dark[class*="border-[#0F4036]"],
+.goldies-dark [class*="border-white"],
+.goldies-dark [class*="border-[#CA862B]"],
+.goldies-dark [class*="border-[#0F4036]"] {
+  border-color: rgba(202, 134, 43, 0.34) !important;
+}
+
+.goldies-dark[class*="text-[#111111]"],
+.goldies-dark[class*="text-[#2D261C]"],
+.goldies-dark[class*="text-[#0F4036]"],
+.goldies-dark [class*="text-[#111111]"],
+.goldies-dark [class*="text-[#2D261C]"],
+.goldies-dark [class*="text-[#0F4036]"] {
+  color: #fff7ea !important;
+}
+
+.goldies-dark[class*="text-[#6A614F]"],
+.goldies-dark[class*="text-[#4E4637]"],
+.goldies-dark[class*="text-[#5A4F3E]"],
+.goldies-dark [class*="text-[#6A614F]"],
+.goldies-dark [class*="text-[#4E4637]"],
+.goldies-dark [class*="text-[#5A4F3E]"] {
+  color: rgba(255, 247, 234, 0.72) !important;
+}
+
+.goldies-dark[class*="text-[#8B5A1D]"],
+.goldies-dark [class*="text-[#8B5A1D]"] {
+  color: #f4c57d !important;
+}
+
+.goldies-dark input,
+.goldies-dark select,
+.goldies-dark textarea {
+  background-color: rgba(4, 28, 25, 0.96) !important;
+  border-color: rgba(202, 134, 43, 0.38) !important;
+  color: #fff7ea !important;
+}
+
+.goldies-dark input::placeholder,
+.goldies-dark textarea::placeholder {
+  color: rgba(255, 247, 234, 0.52) !important;
+}
+
+.goldies-dark table {
+  color: #fff7ea;
+}
+
+.goldies-dark thead {
+  background-color: rgba(202, 134, 43, 0.18) !important;
+}
+
+.goldies-dark tr[class*="bg-[#FFFDF8]"],
+.goldies-dark td [class*="bg-white"] {
+  background-color: rgba(6, 35, 31, 0.96) !important;
+}

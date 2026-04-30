@@ -8,7 +8,7 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.3.3";
+const APP_VERSION = "v1.3.4";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -19,8 +19,17 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.3.3",
+    version: "v1.3.4",
     date: "Current build",
+    summary: "Made dark mode a true high-contrast theme.",
+    items: [
+      "Live dark mode now uses dark panels with light text.",
+      "Training dark mode now also uses dark panels while keeping its practice palette.",
+    ],
+  },
+  {
+    version: "v1.3.3",
+    date: "Previous build",
     summary: "Polished the KDS visual controls.",
     items: [
       "Dark mode now uses Goldie's jewel green and gold instead of slate blue.",
@@ -1690,7 +1699,7 @@ function SettingsPopover({
   if (typeof document === "undefined") return null;
 
   return createPortal(
-    <>
+    <div className={themeMode === "dark" ? "goldies-dark" : ""}>
       <button
         type="button"
         aria-label="Close settings"
@@ -1765,7 +1774,7 @@ function SettingsPopover({
           </button>
         </div>
       </div>
-    </>,
+    </div>,
     document.body
   );
 }
@@ -2368,7 +2377,9 @@ function LoginScreen({
 
   return (
     <div
-      className="relative min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,253,248,0.96),_rgba(238,224,197,1)_50%,_rgba(230,210,173,1)_100%)] text-[#111111] flex items-start justify-center px-4 pt-20 sm:items-center sm:pt-0 overflow-hidden"
+      className={`relative min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,253,248,0.96),_rgba(238,224,197,1)_50%,_rgba(230,210,173,1)_100%)] text-[#111111] flex items-start justify-center px-4 pt-20 sm:items-center sm:pt-0 overflow-hidden ${
+        themeMode === "dark" ? "goldies-dark" : ""
+      }`}
       style={themeStyle}
     >
       <div
@@ -3203,7 +3214,9 @@ export default function GoldiesKDS() {
   if (authStatus === "checking") {
     content = (
       <div
-        className="relative min-h-screen bg-[#EEE0C5] text-[#111111] flex items-center justify-center px-4 overflow-hidden"
+        className={`relative min-h-screen bg-[#EEE0C5] text-[#111111] flex items-center justify-center px-4 overflow-hidden ${
+          themeMode === "dark" ? "goldies-dark" : ""
+        }`}
         style={themeStyle}
       >
         <WatermarkLayer trainingMode={isTrainingMode} />
@@ -3255,7 +3268,9 @@ export default function GoldiesKDS() {
   } else {
     content = (
       <div
-        className="relative min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,253,248,0.96),_rgba(238,224,197,1)_50%,_rgba(230,210,173,1)_100%)] text-[#111111] overflow-hidden"
+        className={`relative min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,253,248,0.96),_rgba(238,224,197,1)_50%,_rgba(230,210,173,1)_100%)] text-[#111111] overflow-hidden ${
+          themeMode === "dark" ? "goldies-dark" : ""
+        }`}
         style={{ ...themeStyle, ...trainingThemeStyle }}
         onClick={() => setShowSettingsMenu(false)}
       >
