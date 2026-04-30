@@ -5,10 +5,11 @@ const API_BASE_URL = import.meta.env.DEV
   ? import.meta.env.VITE_API_BASE_URL || ""
   : "";
 const LOGO_URL = "/goldies-logo.png";
+const LOGO_DARK_URL = "/goldies-logo-white.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.3.4";
+const APP_VERSION = "v1.3.5";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -19,8 +20,17 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.3.4",
+    version: "v1.3.5",
     date: "Current build",
+    summary: "Matched the dark theme logo to Goldie's white brand mark.",
+    items: [
+      "Dark mode now uses Goldie's white logo from the brand assets.",
+      "Dark-mode watermark branding now uses the white logo for better contrast.",
+    ],
+  },
+  {
+    version: "v1.3.4",
+    date: "Previous build",
     summary: "Made dark mode a true high-contrast theme.",
     items: [
       "Live dark mode now uses dark panels with light text.",
@@ -555,7 +565,7 @@ function PitchPage({ open, onBack }) {
             "linear-gradient(180deg, rgba(255,255,255,0.32), rgba(255,255,255,0) 28%, rgba(15,64,54,0.03) 100%)",
         }}
       />
-      <WatermarkLayer trainingMode={false} />
+      <WatermarkLayer trainingMode={false} darkMode={false} />
 
       <div className="relative z-10 mx-auto flex min-h-full w-full max-w-6xl flex-col px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
         <div className="flex items-center justify-between gap-3">
@@ -1595,12 +1605,12 @@ function DailyDrinkCount({ drinkCounts, orderCount }) {
   );
 }
 
-function BrandMark({ size = "md" }) {
+function BrandMark({ size = "md", darkMode = false }) {
   const dimensions = size === "lg" ? "h-28 w-56" : "h-16 w-36";
 
   return (
     <img
-      src={LOGO_URL}
+      src={darkMode ? LOGO_DARK_URL : LOGO_URL}
       alt="Goldie's Coffee Shop"
       className={`${dimensions} object-contain`}
       onError={(event) => {
@@ -1610,23 +1620,25 @@ function BrandMark({ size = "md" }) {
   );
 }
 
-function WatermarkLayer({ trainingMode = false }) {
+function WatermarkLayer({ trainingMode = false, darkMode = false }) {
   return (
     <div
       aria-hidden="true"
       className="absolute inset-0 pointer-events-none"
       style={{
-        backgroundImage: `url(${LOGO_URL})`,
+        backgroundImage: `url(${darkMode ? LOGO_DARK_URL : LOGO_URL})`,
         backgroundRepeat: "repeat",
         backgroundSize: "240px auto",
         backgroundPosition: "center top",
-        opacity: trainingMode ? 0.11 : 0.06,
+        opacity: darkMode ? 0.08 : trainingMode ? 0.11 : 0.06,
         transform: "rotate(-8deg) scale(1.08)",
         transformOrigin: "center",
-        mixBlendMode: "multiply",
-        filter: trainingMode
-          ? "hue-rotate(230deg) saturate(1.6) contrast(1.08)"
-          : "grayscale(1) contrast(1.05)",
+        mixBlendMode: darkMode ? "screen" : "multiply",
+        filter: darkMode
+          ? "none"
+          : trainingMode
+            ? "hue-rotate(230deg) saturate(1.6) contrast(1.08)"
+            : "grayscale(1) contrast(1.05)",
       }}
     />
   );
@@ -2390,7 +2402,7 @@ function LoginScreen({
             "linear-gradient(180deg, rgba(255,255,255,0.34), rgba(255,255,255,0) 28%, rgba(15,64,54,0.03) 100%)",
         }}
       />
-      <WatermarkLayer trainingMode={false} />
+      <WatermarkLayer trainingMode={false} darkMode={themeMode === "dark"} />
       <div className="absolute right-4 top-6 sm:top-4">
         <div className="flex items-center gap-1.5">
           <button
@@ -2427,7 +2439,7 @@ function LoginScreen({
 
       <main className="relative z-10 w-full max-w-md rounded-[1.75rem] bg-[rgba(255,253,248,0.94)] border border-white/70 shadow-[0_28px_80px_rgba(15,64,54,0.14)] backdrop-blur-xl p-7 flex flex-col items-center text-center">
         <div className="flex items-center justify-center gap-4 mb-6">
-          <BrandMark size="lg" />
+          <BrandMark size="lg" darkMode={themeMode === "dark"} />
         </div>
 
         <div className="mb-3 inline-flex rounded-full border border-[#CA862B]/18 bg-[#EEE0C5]/55 px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6A614F]">
@@ -3219,7 +3231,7 @@ export default function GoldiesKDS() {
         }`}
         style={themeStyle}
       >
-        <WatermarkLayer trainingMode={isTrainingMode} />
+        <WatermarkLayer trainingMode={isTrainingMode} darkMode={themeMode === "dark"} />
         <div className="rounded-3xl bg-[#FFFDF8] border border-[#CA862B]/22 shadow-sm p-6 text-xl font-black text-[#0F4036]">
           Loading Kitchen Display
         </div>
@@ -3282,12 +3294,12 @@ export default function GoldiesKDS() {
               "linear-gradient(180deg, rgba(255,255,255,0.34), rgba(255,255,255,0) 26%, rgba(15,64,54,0.035) 100%)",
           }}
         />
-        <WatermarkLayer trainingMode={isTrainingMode} />
+        <WatermarkLayer trainingMode={isTrainingMode} darkMode={themeMode === "dark"} />
       <div className="relative z-10">
       <header className="border-b border-white/70 bg-[rgba(255,253,248,0.9)] backdrop-blur-xl px-4 md:px-6 py-4 shadow-[0_12px_30px_rgba(15,64,54,0.06)]">
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
           <div className="flex items-center gap-4">
-            <BrandMark />
+            <BrandMark darkMode={themeMode === "dark"} />
 
             <div>
               <h1 className="text-3xl md:text-4xl font-black tracking-tight text-[#0F4036]">
