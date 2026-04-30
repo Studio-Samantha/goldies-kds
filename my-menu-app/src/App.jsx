@@ -1337,7 +1337,6 @@ function SettingsPopover({
   suggestFixHref,
   onVersionClick,
   showPasswordAction = true,
-  onInfoClick,
 }) {
   if (!open) return null;
 
@@ -1352,18 +1351,6 @@ function SettingsPopover({
         </div>
 
         <div className="flex items-center gap-2">
-          {onInfoClick && (
-            <button
-              type="button"
-              onClick={onInfoClick}
-              aria-label="Explain Settings"
-              title="Settings includes the main utility actions for the app."
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#CA862B]/20 bg-white text-xs font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-            >
-              ?
-            </button>
-          )}
-
           <button
             type="button"
             onClick={onClose}
@@ -1925,7 +1912,6 @@ function LoginScreen({
   onChangePassword,
   suggestFixHref,
   onVersionClickMenu,
-  onInfoClickMenu,
 }) {
   const [employeeName, setEmployeeName] = useState("");
   const [password, setPassword] = useState("");
@@ -1997,13 +1983,30 @@ function LoginScreen({
       style={{ ...themeStyle, ...trainingStyle }}
     >
       <div className="absolute right-4 top-4">
-        <button
-          type="button"
-          onClick={onToggleSettings}
-          className="rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-        >
-          Settings
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={onToggleSettings}
+            className="rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+          >
+            Settings
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              setModeHelp({
+                title: "Settings",
+                body: "Settings holds the app tools you may need: theme, password change, support, and release notes.",
+              })
+            }
+            aria-label="Explain Settings"
+            title="Settings includes the main utility actions for the app."
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#CA862B]/20 bg-white text-xs font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+          >
+            ?
+          </button>
+        </div>
 
         <div onClick={(event) => event.stopPropagation()}>
           <SettingsPopover
@@ -2014,7 +2017,6 @@ function LoginScreen({
             showPasswordAction={false}
             suggestFixHref={suggestFixHref}
             onVersionClick={onVersionClickMenu}
-            onInfoClick={onInfoClickMenu}
           />
         </div>
       </div>
@@ -2772,12 +2774,6 @@ export default function GoldiesKDS() {
             setShowSettingsMenu(false);
             setShowReleaseNotes(true);
           }}
-          onInfoClickMenu={() =>
-            setModeHelp({
-              title: "Settings",
-              body: "Settings holds the app tools you may need: theme, password change, support, and release notes.",
-            })
-          }
         />
         <SoftOpeningDialog
           open={showSoftOpeningNote}
