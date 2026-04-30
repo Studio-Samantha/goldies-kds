@@ -1403,7 +1403,6 @@ export default function GoldiesKDS() {
     themeMode === "dark"
       ? { filter: "invert(1) hue-rotate(180deg)" }
       : undefined;
-  const hasOpenTickets = activeTickets.length > 0;
 
   useEffect(() => {
     try {
@@ -1625,6 +1624,7 @@ export default function GoldiesKDS() {
   }, [authStatus, showStats]);
 
   const activeTickets = tickets.filter((ticket) => ticket.status !== "done");
+  const hasOpenTickets = activeTickets.length > 0;
 
   const grouped = useMemo(() => {
     return STATUS_COLUMNS.reduce((acc, col) => {
