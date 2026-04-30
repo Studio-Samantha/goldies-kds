@@ -12,7 +12,6 @@ const APP_VERSION = "v1.2.7";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
-const INSTALL_PROMPT_HIDE_KEY = "goldies-kds-hidden-install-prompt";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-30";
 const WEB_SERVICES_REMINDER_DATE = "2026-05-02";
@@ -1597,49 +1596,6 @@ function BrandFooter({ className = "" }) {
   );
 }
 
-function InstallPromptCard({ open, isIos, onInstall, onDismiss }) {
-  if (!open) return null;
-
-  return (
-    <div className="mt-5 rounded-2xl border border-[#CA862B]/18 bg-[#EEE0C5]/50 px-4 py-4 text-left shadow-[0_12px_28px_rgba(15,64,54,0.08)]">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="text-[11px] font-black uppercase tracking-[0.18em] text-[#6A614F]">
-            Install app
-          </div>
-          <div className="mt-1 text-sm font-black text-[#0F4036]">
-            Add Goldie&apos;s KDS to your home screen
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={onDismiss}
-          className="rounded-lg border border-[#CA862B]/18 bg-white px-2.5 py-1 text-xs font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-        >
-          Not now
-        </button>
-      </div>
-
-      <p className="mt-2 text-sm leading-6 text-[#2D261C]">
-        {isIos
-          ? "On iPhone or iPad, tap Share and then choose Add to Home Screen."
-          : "Install it once and it opens like a home screen app on this device."}
-      </p>
-
-      <div className="mt-3">
-        <button
-          type="button"
-          onClick={onInstall}
-          className="rounded-xl bg-[#0F4036] px-4 py-2.5 text-sm font-black text-white transition hover:bg-[#0b352d]"
-        >
-          {isIos ? "Show steps" : "Add to Home Screen"}
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function ModeToggle({ active, label, onToggle, hint, onInfoClick }) {
   return (
     <div className="inline-flex items-center gap-1.5">
@@ -2257,11 +2213,6 @@ function LoginScreen({
   themeMode,
   onThemeToggle,
   themeStyle,
-  trainingStyle,
-  showInstallPrompt,
-  isIosInstall,
-  onInstall,
-  onDismissInstallPrompt,
   settingsOpen,
   onToggleSettings,
   onCloseSettings,
@@ -2337,7 +2288,7 @@ function LoginScreen({
   return (
     <div
       className="relative min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,253,248,0.96),_rgba(238,224,197,1)_50%,_rgba(230,210,173,1)_100%)] text-[#111111] flex items-start justify-center px-4 pt-20 sm:items-center sm:pt-0 overflow-hidden"
-      style={{ ...themeStyle, ...trainingStyle }}
+      style={themeStyle}
     >
       <div
         aria-hidden="true"
@@ -2455,13 +2406,6 @@ function LoginScreen({
             {submitting ? "Signing in..." : "Sign in"}
           </button>
         </form>
-
-        <InstallPromptCard
-          open={showInstallPrompt}
-          isIos={isIosInstall}
-          onInstall={onInstall}
-          onDismiss={onDismissInstallPrompt}
-        />
 
         <div className="mt-8 flex justify-center pb-1 pointer-events-auto">
           <BrandFooter className="max-w-full px-4 py-2 text-[11px] sm:text-[10px]" />
@@ -2617,20 +2561,6 @@ export default function GoldiesKDS() {
   const [showOrdersByDay, setShowOrdersByDay] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showReleaseNotes, setShowReleaseNotes] = useState(false);
-  const [installHelp, setInstallHelp] = useState(null);
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
-  const [installPromptEvent, setInstallPromptEvent] = useState(null);
-  const [isIosInstall, setIsIosInstall] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
-  const [hideInstallPrompt, setHideInstallPrompt] = useState(() => {
-    if (typeof window === "undefined") return false;
-
-    try {
-      return window.localStorage.getItem(INSTALL_PROMPT_HIDE_KEY) === "true";
-    } catch {
-      return false;
-    }
-  });
   const [showPitch, setShowPitch] = useState(false);
   const [pitchHash, setPitchHash] = useState(() => {
     if (typeof window === "undefined") return "";
@@ -2773,74 +2703,6 @@ export default function GoldiesKDS() {
       // ignore storage failures
     }
   }, [hideWebServicesReminder]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    try {
-      if (hideInstallPrompt) {
-        window.localStorage.setItem(INSTALL_PROMPT_HIDE_KEY, "true");
-      } else {
-        window.localStorage.removeItem(INSTALL_PROMPT_HIDE_KEY);
-      }
-    } catch {
-      // ignore storage failures
-    }
-  }, [hideInstallPrompt]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const standaloneMatch =
-      window.matchMedia?.("(display-mode: standalone)")?.matches ||
-      window.navigator.standalone === true;
-    const iosMatch =
-      /iphone|ipad|ipod/i.test(window.navigator.userAgent) ||
-      (window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1);
-
-    setIsStandalone(Boolean(standaloneMatch));
-    setIsIosInstall(Boolean(iosMatch));
-
-    const handleBeforeInstallPrompt = (event) => {
-      event.preventDefault();
-      setInstallPromptEvent(event);
-      if (!hideInstallPrompt && !standaloneMatch) {
-        setShowInstallPrompt(true);
-      }
-    };
-
-    const handleAppInstalled = () => {
-      setShowInstallPrompt(false);
-      setInstallPromptEvent(null);
-      setHideInstallPrompt(true);
-    };
-
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-    window.addEventListener("appinstalled", handleAppInstalled);
-
-    if (!standaloneMatch && !hideInstallPrompt) {
-      setShowInstallPrompt(true);
-    }
-
-    return () => {
-      window.removeEventListener(
-        "beforeinstallprompt",
-        handleBeforeInstallPrompt
-      );
-      window.removeEventListener("appinstalled", handleAppInstalled);
-    };
-  }, [hideInstallPrompt]);
-
-  useEffect(() => {
-    if (isStandalone || hideInstallPrompt || authStatus !== "login") {
-      setShowInstallPrompt(false);
-      return;
-    }
-
-    if (installPromptEvent || isIosInstall) {
-      setShowInstallPrompt(true);
-    }
-  }, [authStatus, hideInstallPrompt, installPromptEvent, isIosInstall, isStandalone]);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -3090,29 +2952,6 @@ export default function GoldiesKDS() {
   const activeTickets = displayedTickets.filter((ticket) => ticket.status !== "done");
   const hasOpenTickets = activeTickets.length > 0;
 
-  const handleInstallAction = async () => {
-    if (installPromptEvent) {
-      installPromptEvent.prompt();
-      await installPromptEvent.userChoice.catch(() => null);
-      setInstallPromptEvent(null);
-      setShowInstallPrompt(false);
-      setHideInstallPrompt(true);
-      return;
-    }
-
-    setInstallHelp({
-      title: "Add to Home Screen",
-      body: isIosInstall
-        ? "On iPhone or iPad, tap the Share button in Safari and choose Add to Home Screen."
-        : "This browser does not support the install prompt right now. Try using the browser menu to add the app to the home screen.",
-    });
-  };
-
-  const dismissInstallPrompt = () => {
-    setShowInstallPrompt(false);
-    setHideInstallPrompt(true);
-  };
-
   const grouped = useMemo(() => {
     return STATUS_COLUMNS.reduce((acc, col) => {
       acc[col.key] = activeTickets.filter((ticket) => {
@@ -3304,11 +3143,6 @@ export default function GoldiesKDS() {
             setThemeMode((current) => (current === "dark" ? "light" : "dark"))
           }
           themeStyle={themeStyle}
-          trainingStyle={trainingThemeStyle}
-          showInstallPrompt={showInstallPrompt}
-          isIosInstall={isIosInstall}
-          onInstall={handleInstallAction}
-          onDismissInstallPrompt={dismissInstallPrompt}
           settingsOpen={showSettingsMenu}
           onToggleSettings={() => setShowSettingsMenu((current) => !current)}
           onCloseSettings={() => setShowSettingsMenu(false)}
@@ -3705,12 +3539,6 @@ export default function GoldiesKDS() {
         title={settingsHelp?.title || ""}
         body={settingsHelp?.body || ""}
         onClose={() => setSettingsHelp(null)}
-      />
-      <HelpDialog
-        open={Boolean(installHelp)}
-        title={installHelp?.title || ""}
-        body={installHelp?.body || ""}
-        onClose={() => setInstallHelp(null)}
       />
       <WebServicesReminderDialog
         open={showWebServicesReminder}

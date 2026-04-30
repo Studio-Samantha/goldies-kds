@@ -1,4 +1,5 @@
 require("dotenv").config();
+process.env.TZ = process.env.KDS_TIME_ZONE || process.env.TZ || "America/Chicago";
 const express = require("express");
 const cors = require("cors");
 const crypto = require("crypto");
@@ -1152,7 +1153,11 @@ function ticketFromDb(order, items = []) {
     customerName: order.customer_name || "",
     employeeName: order.employee_name || order.raw_order?.employeeName || "",
     createdAt: new Date(order.created_at).getTime(),
-    completedAt: order.updated_at ? new Date(order.updated_at).getTime() : null,
+    completedAt: order.completed_at
+      ? new Date(order.completed_at).getTime()
+      : order.updated_at
+        ? new Date(order.updated_at).getTime()
+        : null,
     source: order.source || "Square Register",
     status: sanitizeStatus(order.status),
     diningOption: order.dining_option || "Order",
@@ -1290,6 +1295,7 @@ async function getActiveTickets() {
 
 async function setTicketStatus(id, status) {
   const sanitizedStatus = sanitizeStatus(status);
+  const statusUpdatedAt = new Date().toISOString();
 
   if (!supabase) {
     updateLocalTicketStatus(id, sanitizedStatus);
@@ -1298,8 +1304,14 @@ async function setTicketStatus(id, status) {
 
   const updates = {
     status: sanitizedStatus,
-    updated_at: new Date().toISOString(),
+    updated_at: statusUpdatedAt,
   };
+
+  if (sanitizedStatus === "completed" || sanitizedStatus === "done") {
+    updates.completed_at = statusUpdatedAt;
+  } else {
+    updates.completed_at = null;
+  }
 
   const { data, error } = await supabase
     .from("kds_orders")
@@ -1363,19 +1375,41 @@ async function getCompletedTicketsToday() {
       .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
   }
 
-  const { data: orders, error } = await supabase
-    .from("kds_orders")
-    .select("square_order_id, order_number, customer_name, created_at, updated_at, source, status, dining_option, raw_order")
-    .in("status", ["completed", "done"])
-    .gte("updated_at", start.toISOString())
-    .lte("updated_at", end.toISOString())
-    .order("updated_at", { ascending: false });
+  const selectColumns =
+    "square_order_id, order_number, customer_name, created_at, completed_at, updated_at, source, status, dining_option, raw_order";
+  const [completedResult, legacyResult] = await Promise.all([
+    supabase
+      .from("kds_orders")
+      .select(selectColumns)
+      .in("status", ["completed", "done"])
+      .gte("completed_at", start.toISOString())
+      .lte("completed_at", end.toISOString()),
+    supabase
+      .from("kds_orders")
+      .select(selectColumns)
+      .in("status", ["completed", "done"])
+      .is("completed_at", null)
+      .gte("updated_at", start.toISOString())
+      .lte("updated_at", end.toISOString()),
+  ]);
 
-  if (error) {
-    throw error;
+  if (completedResult.error) throw completedResult.error;
+  if (legacyResult.error) throw legacyResult.error;
+
+  const orderMap = new Map();
+  for (const order of [...(completedResult.data || []), ...(legacyResult.data || [])]) {
+    orderMap.set(order.square_order_id, order);
   }
 
+  const orders = Array.from(orderMap.values()).sort((a, b) => {
+    const aTime = new Date(a.completed_at || a.updated_at || a.created_at).getTime();
+    const bTime = new Date(b.completed_at || b.updated_at || b.created_at).getTime();
+    return bTime - aTime;
+  });
+
   const orderIds = (orders || []).map((order) => order.square_order_id);
+  if (!orderIds.length) return [];
+
   const { data: items, error: itemsError } = await supabase
     .from("kds_order_items")
     .select("*")
