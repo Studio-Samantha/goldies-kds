@@ -2347,7 +2347,7 @@ function LoginScreen({
 
       </main>
 
-      <div className="fixed bottom-3 left-0 right-0 z-40 flex justify-center px-4 pb-[env(safe-area-inset-bottom)] pointer-events-auto sm:absolute sm:bottom-4 sm:z-30">
+      <div className="mt-6 flex justify-center px-4 pointer-events-auto sm:absolute sm:bottom-4 sm:left-0 sm:right-0 sm:z-30 sm:mt-0 sm:pb-[env(safe-area-inset-bottom)]">
         <BrandFooter onPitchClick={() => setShowPitch(true)} />
       </div>
     </div>
