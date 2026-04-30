@@ -7,11 +7,20 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.1.3";
+const APP_VERSION = "v1.1.4";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-30";
 const RELEASE_NOTES = [
+  {
+    version: "v1.1.4",
+    date: "Current build",
+    summary: "The training demo name was corrected to Claire.",
+    items: [
+      "The practice environment now shows Claire instead of Clair.",
+      "This only affects the fake training data.",
+    ],
+  },
   {
     version: "v1.1.3",
     date: "Current build",
@@ -899,7 +908,7 @@ function createTrainingTickets() {
       id: "demo-1003",
       orderNumber: "T1003",
       customerName: "Sammy",
-      employeeName: "Clair",
+      employeeName: "Claire",
       createdAt: getTrainingTimestamp(0, 8, 15),
       completedAt: null,
       source: "Square Register",
@@ -945,7 +954,7 @@ function createTrainingTickets() {
       id: "demo-0998",
       orderNumber: "T0998",
       customerName: "Ashley",
-      employeeName: "Clair",
+      employeeName: "Claire",
       createdAt: getTrainingTimestamp(-1, 9, 4),
       completedAt: getTrainingTimestamp(-1, 9, 19),
       source: "Square Handheld",
