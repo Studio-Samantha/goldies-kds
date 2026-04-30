@@ -989,9 +989,21 @@ function getSavedThemeMode() {
 
 function getSavedTrainingMode() {
   if (typeof window === "undefined") return false;
+  if (isDemoTrainingRoute()) return true;
 
   try {
     return window.localStorage.getItem(TRAINING_MODE_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function isDemoTrainingRoute() {
+  if (typeof window === "undefined") return false;
+
+  try {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("demo") === "training" || window.location.hash === "#demo";
   } catch {
     return false;
   }
@@ -1096,6 +1108,119 @@ function buildDrinkReportFromTickets(tickets, rangeKey) {
       .map(([name, qty]) => ({ name, qty }))
       .sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name)),
     totalsByCategory: categories,
+  };
+}
+
+function buildDemoOwnerReport(tickets, rangeKey) {
+  const { start, end } = getRangeBounds(rangeKey);
+  const categories = {
+    Coffee: { category: "Coffee", revenueCents: 0, taxCents: 0, totalCents: 0, units: 0 },
+    "Not Coffee": { category: "Not Coffee", revenueCents: 0, taxCents: 0, totalCents: 0, units: 0 },
+    Smoothies: { category: "Smoothies", revenueCents: 0, taxCents: 0, totalCents: 0, units: 0 },
+  };
+  const hourly = Array.from({ length: 24 }, (_value, hour) => ({
+    hour,
+    label: new Date(2024, 0, 1, hour).toLocaleTimeString("en-US", {
+      hour: "numeric",
+      hour12: true,
+    }),
+    orderCount: 0,
+    units: 0,
+    revenueCents: 0,
+    revenue: "$0.00",
+  }));
+  const unitPrices = {
+    Coffee: 575,
+    "Not Coffee": 625,
+    Smoothies: 700,
+  };
+  let orderCount = 0;
+  let multiDrinkOrderCount = 0;
+
+  tickets
+    .filter((ticket) => ticket.createdAt >= start && ticket.createdAt < end)
+    .forEach((ticket) => {
+      const drinkItems = (ticket.items || []).filter((item) =>
+        isDrinkItem(item.name)
+      );
+      if (!drinkItems.length) return;
+
+      orderCount += 1;
+      let orderUnits = 0;
+      let orderRevenueCents = 0;
+
+      drinkItems.forEach((item) => {
+        const category = getBeverageCategory(item.name);
+        if (!category || !categories[category]) return;
+
+        const qty = Number(item.qty || 1);
+        const revenueCents = qty * (unitPrices[category] || 600);
+        const taxCents = Math.round(revenueCents * 0.0825);
+
+        categories[category].units += qty;
+        categories[category].revenueCents += revenueCents;
+        categories[category].taxCents += taxCents;
+        categories[category].totalCents += revenueCents + taxCents;
+        orderUnits += qty;
+        orderRevenueCents += revenueCents;
+      });
+
+      if (orderUnits >= 2) multiDrinkOrderCount += 1;
+
+      const hour = new Date(ticket.createdAt).getHours();
+      hourly[hour].orderCount += 1;
+      hourly[hour].units += orderUnits;
+      hourly[hour].revenueCents += orderRevenueCents;
+    });
+
+  const hourlyOrders = hourly.map((bucket) => ({
+    ...bucket,
+    revenue: formatCurrencyCents(bucket.revenueCents),
+  }));
+  const totalsByCategory = Object.values(categories).map((item) => ({
+    ...item,
+    revenue: formatCurrencyCents(item.revenueCents),
+    tax: formatCurrencyCents(item.taxCents),
+    total: formatCurrencyCents(item.totalCents),
+  }));
+  const totalRevenueCents = totalsByCategory.reduce(
+    (sum, item) => sum + item.revenueCents,
+    0
+  );
+  const totalTaxCents = totalsByCategory.reduce(
+    (sum, item) => sum + item.taxCents,
+    0
+  );
+  const totalCollectedCents = totalsByCategory.reduce(
+    (sum, item) => sum + item.totalCents,
+    0
+  );
+  const totalUnits = totalsByCategory.reduce((sum, item) => sum + item.units, 0);
+  const multiDrinkOrderRate = orderCount
+    ? Math.round((multiDrinkOrderCount / orderCount) * 100)
+    : 0;
+
+  return {
+    startAt: new Date(start).toISOString(),
+    endAt: new Date(end).toISOString(),
+    orderCount,
+    multiDrinkOrderCount,
+    multiDrinkOrderRate,
+    totalUnits,
+    totalRevenueCents,
+    totalRevenue: formatCurrencyCents(totalRevenueCents),
+    totalTaxCents,
+    totalTax: formatCurrencyCents(totalTaxCents),
+    totalCollectedCents,
+    totalCollected: formatCurrencyCents(totalCollectedCents),
+    averageDrinkOrderValueCents: orderCount
+      ? Math.round(totalCollectedCents / orderCount)
+      : 0,
+    averageDrinkOrderValue: formatCurrencyCents(
+      orderCount ? Math.round(totalCollectedCents / orderCount) : 0
+    ),
+    totalsByCategory,
+    hourlyOrders,
   };
 }
 
@@ -2391,6 +2516,7 @@ function SettingsPopover({
   suggestFixHref,
   onVersionClick,
   showPasswordAction = true,
+  ownerActionLabel = "Owner Login",
 }) {
   if (!open) return null;
   if (typeof document === "undefined") return null;
@@ -2458,7 +2584,7 @@ function SettingsPopover({
               onClick={onOwnerLogin}
               className="w-full rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-left text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
             >
-              Owner Login
+              {ownerActionLabel}
             </button>
           )}
 
@@ -3356,7 +3482,13 @@ function OwnerLoginDialog({ open, onClose, onLogin, themeMode }) {
   );
 }
 
-function OwnerReportsView({ ownerName, onClose, themeMode }) {
+function OwnerReportsView({
+  ownerName,
+  onClose,
+  themeMode,
+  demoMode = false,
+  demoTickets = [],
+}) {
   const [range, setRange] = useState("today");
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -3378,6 +3510,13 @@ function OwnerReportsView({ ownerName, onClose, themeMode }) {
     let mounted = true;
 
     async function fetchReport() {
+      if (demoMode) {
+        setReport(buildDemoOwnerReport(demoTickets, range));
+        setError("");
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         setError("");
@@ -3404,7 +3543,7 @@ function OwnerReportsView({ ownerName, onClose, themeMode }) {
     return () => {
       mounted = false;
     };
-  }, [range]);
+  }, [range, demoMode, demoTickets]);
 
   async function fetchSnapshots(month = snapshotMonth) {
     try {
@@ -3430,8 +3569,9 @@ function OwnerReportsView({ ownerName, onClose, themeMode }) {
   }
 
   useEffect(() => {
+    if (demoMode) return;
     fetchSnapshots(snapshotMonth);
-  }, [snapshotMonth]);
+  }, [snapshotMonth, demoMode]);
 
   async function handleSaveSnapshot() {
     if (!report) return;
@@ -3566,16 +3706,18 @@ function OwnerReportsView({ ownerName, onClose, themeMode }) {
             <span className="rounded-full border border-[#CA862B]/18 bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-[#0F4036]">
               {ownerName || "Owner"}
             </span>
-            <button
-              type="button"
-              onClick={() => {
-                setOwnerPasswordError("");
-                setShowOwnerPasswordModal(true);
-              }}
-              className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-            >
-              Change Owner Password
-            </button>
+            {!demoMode && (
+              <button
+                type="button"
+                onClick={() => {
+                  setOwnerPasswordError("");
+                  setShowOwnerPasswordModal(true);
+                }}
+                className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+              >
+                Change Owner Password
+              </button>
+            )}
             <button
               type="button"
               onClick={handleLogout}
@@ -3633,27 +3775,35 @@ function OwnerReportsView({ ownerName, onClose, themeMode }) {
 
               {reportExportMenuOpen && !loading && !error && (
                 <div className="absolute right-0 z-20 mt-2 w-60 overflow-hidden rounded-2xl border border-[#CA862B]/18 bg-white shadow-[0_18px_45px_rgba(15,64,54,0.16)]">
-                  <a
-                    href={apiUrl(`/api/owner/reports/drink-revenue.csv?range=${range}`)}
-                    className="block px-4 py-3 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-                    onClick={() => setReportExportMenuOpen(false)}
-                  >
-                    CSV
-                  </a>
-                  <a
-                    href={apiUrl(`/api/owner/reports/drink-revenue.xlsx?range=${range}`)}
-                    className="block px-4 py-3 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-                    onClick={() => setReportExportMenuOpen(false)}
-                  >
-                    Excel workbook
-                  </a>
-                  <a
-                    href={apiUrl(`/api/owner/reports/drink-revenue.pdf?range=${range}`)}
-                    className="block px-4 py-3 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-                    onClick={() => setReportExportMenuOpen(false)}
-                  >
-                    PDF report
-                  </a>
+                  {demoMode ? (
+                    <div className="px-4 py-3 text-sm font-bold leading-5 text-[#6A614F]">
+                      CSV, Excel, and PDF downloads are enabled in a live shop setup.
+                    </div>
+                  ) : (
+                    <>
+                      <a
+                        href={apiUrl(`/api/owner/reports/drink-revenue.csv?range=${range}`)}
+                        className="block px-4 py-3 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                        onClick={() => setReportExportMenuOpen(false)}
+                      >
+                        CSV
+                      </a>
+                      <a
+                        href={apiUrl(`/api/owner/reports/drink-revenue.xlsx?range=${range}`)}
+                        className="block px-4 py-3 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                        onClick={() => setReportExportMenuOpen(false)}
+                      >
+                        Excel workbook
+                      </a>
+                      <a
+                        href={apiUrl(`/api/owner/reports/drink-revenue.pdf?range=${range}`)}
+                        className="block px-4 py-3 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                        onClick={() => setReportExportMenuOpen(false)}
+                      >
+                        PDF report
+                      </a>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -4123,10 +4273,15 @@ function PasswordSettingsDialog({
 }
 
 export default function GoldiesKDS() {
+  const isDemoRoute = isDemoTrainingRoute();
   const [themeMode, setThemeMode] = useState(getSavedThemeMode);
   const [isTrainingMode, setIsTrainingMode] = useState(getSavedTrainingMode);
-  const [authStatus, setAuthStatus] = useState("checking");
-  const [signedInEmployee, setSignedInEmployee] = useState("");
+  const [authStatus, setAuthStatus] = useState(() =>
+    isDemoTrainingRoute() ? "authenticated" : "checking"
+  );
+  const [signedInEmployee, setSignedInEmployee] = useState(() =>
+    isDemoTrainingRoute() ? "Demo" : ""
+  );
   const [tickets, setTickets] = useState([]);
   const [completedTickets, setCompletedTickets] = useState([]);
   const [drinkCounts, setDrinkCounts] = useState([]);
@@ -4339,6 +4494,13 @@ export default function GoldiesKDS() {
   }, [passwordNotice]);
 
   useEffect(() => {
+    if (isDemoRoute) {
+      setIsTrainingMode(true);
+      setAuthStatus("authenticated");
+      setSignedInEmployee("Demo");
+      return undefined;
+    }
+
     let mounted = true;
 
     async function checkSessions() {
@@ -4369,7 +4531,7 @@ export default function GoldiesKDS() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [isDemoRoute]);
 
   useEffect(() => {
     if (authStatus !== "authenticated" || isTrainingMode) return undefined;
@@ -4918,7 +5080,15 @@ export default function GoldiesKDS() {
             </div>
 
             <div className="flex flex-wrap gap-2 justify-start xl:justify-end">
-              <div className="relative" onClick={(event) => event.stopPropagation()}>
+            <div className="relative" onClick={(event) => event.stopPropagation()}>
+                {isDemoRoute && (
+                  <div className="absolute right-0 top-full z-20 mt-2 w-72 rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 text-sm font-bold leading-5 text-[#0F4036] shadow-[0_18px_45px_rgba(15,64,54,0.16)]">
+                    <div className="text-xs font-black uppercase tracking-[0.16em] text-[#CA862B]">
+                      Demo tip
+                    </div>
+                    Click Settings, then Owner Reports Demo.
+                  </div>
+                )}
                 <div className="flex items-center gap-1.5 rounded-2xl border border-[#CA862B]/14 bg-white/75 px-1.5 py-1 shadow-sm">
                   <button
                     type="button"
@@ -4959,10 +5129,17 @@ export default function GoldiesKDS() {
                   }
                   onOwnerLogin={() => {
                     setShowSettingsMenu(false);
-                    setSignedInOwner("");
-                    setShowOwnerReports(false);
-                    setShowOwnerLogin(true);
+                    if (isDemoRoute) {
+                      setSignedInOwner("Demo Owner");
+                      setShowOwnerLogin(false);
+                      setShowOwnerReports(true);
+                    } else {
+                      setSignedInOwner("");
+                      setShowOwnerReports(false);
+                      setShowOwnerLogin(true);
+                    }
                   }}
+                  ownerActionLabel={isDemoRoute ? "Owner Reports Demo" : "Owner Login"}
                   showPasswordAction={true}
                   onChangePassword={() => {
                     setShowSettingsMenu(false);
@@ -5031,11 +5208,16 @@ export default function GoldiesKDS() {
             <div className="mt-3 inline-flex rounded-2xl border border-[#CA862B]/18 bg-[#EEE0C5]/45 p-1">
               <button
                 type="button"
-                onClick={() => setIsTrainingMode(false)}
+                onClick={() => {
+                  if (!isDemoRoute) setIsTrainingMode(false);
+                }}
+                disabled={isDemoRoute}
                 className={`rounded-xl px-4 py-2 text-sm font-black transition ${
                   !isTrainingMode
                     ? "bg-[#0F4036] text-white"
-                    : "bg-transparent text-[#0F4036] hover:bg-white/70"
+                    : isDemoRoute
+                      ? "bg-transparent text-[#0F4036]/45"
+                      : "bg-transparent text-[#0F4036] hover:bg-white/70"
                 }`}
               >
                 Live
@@ -5263,6 +5445,8 @@ export default function GoldiesKDS() {
         <OwnerReportsView
           ownerName={signedInOwner || "Owner"}
           themeMode={themeMode}
+          demoMode={isDemoRoute}
+          demoTickets={trainingTickets}
           onClose={() => {
             setSignedInOwner("");
             setShowOwnerReports(false);

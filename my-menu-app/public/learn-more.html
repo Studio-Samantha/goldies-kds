@@ -300,6 +300,45 @@
       .showcase {
         background: var(--cream);
       }
+      .photo-section {
+        background: #10140f;
+        color: #fff;
+      }
+      .photo-section .eyebrow,
+      .photo-section h2 {
+        color: #fff;
+      }
+      .photo-section .section-copy {
+        color: rgba(255, 255, 255, 0.72);
+      }
+      .photo-frame {
+        margin-top: 30px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 32px 90px rgba(0, 0, 0, 0.3);
+      }
+      .photo-frame img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        object-fit: cover;
+      }
+      .photo-caption {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 16px 18px;
+        color: rgba(255, 255, 255, 0.76);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      .photo-caption strong {
+        color: #fff;
+      }
       .showcase-grid {
         margin-top: 30px;
         grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
@@ -322,10 +361,16 @@
         color: #fff;
       }
       .screen-logo {
-        max-width: 128px;
-        max-height: 40px;
-        object-fit: contain;
-        filter: brightness(0) invert(1);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.14);
+        color: #fff;
+        font-size: 14px;
+        font-weight: 950;
       }
       .screen-body {
         padding: 16px;
@@ -540,7 +585,7 @@
         <a href="#features">Features</a>
         <a href="#reports">Reports</a>
         <a href="#pricing">Pricing</a>
-        <a class="button" href="/">Open demo</a>
+        <a class="button" href="/?demo=training">Open demo</a>
       </div>
     </nav>
 
@@ -617,6 +662,24 @@
       </div>
     </section>
 
+    <section class="section photo-section">
+      <div class="section-inner">
+        <p class="eyebrow">Designed for the counter</p>
+        <h2>A product that looks at home where the rush actually happens.</h2>
+        <p class="section-copy">
+          DrinkFlow can run on the screen a shop already understands: an iPad at the bar,
+          a small display near handoff, or a larger screen for the whole team.
+        </p>
+        <div class="photo-frame">
+          <img src="/drinkflow-ipad-kds.png" alt="DrinkFlow KDS running on an iPad at a coffee shop counter" />
+          <div class="photo-caption">
+            <span><strong>Demo visual:</strong> live drink columns, ready tickets, daily numbers, and hourly volume in one counter-friendly view.</span>
+            <span>Shop-specific branding and feature choices happen during setup.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="section showcase" id="reports">
       <div class="section-inner">
         <p class="eyebrow">Live board and owner portal</p>
@@ -624,7 +687,7 @@
         <div class="grid showcase-grid">
           <div class="screen" aria-label="Example KDS board">
             <div class="screen-bar">
-              <img class="screen-logo" src="/goldies-logo-owner.png" alt="Sample coffee shop logo" />
+              <span class="screen-logo">DF</span>
               <strong>Thursday Rush</strong>
             </div>
             <div class="screen-body">
