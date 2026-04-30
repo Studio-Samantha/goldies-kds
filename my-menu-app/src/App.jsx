@@ -7,16 +7,16 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const APP_VERSION = "v1.0.4";
-const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
+const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const RELEASE_NOTES = [
   {
     version: "v1.0.4",
     date: "Current build",
-    summary: "You can now hide the What's New popup until the next update.",
+    summary: "You can now dismiss the What's New popup with a button.",
     items: [
       "A Don't show again button was added to the release notes popup.",
-      "The popup stays out of the way once staff dismiss it.",
+      "The popup can be closed without getting in the way of the dashboard.",
     ],
   },
   {
@@ -1257,7 +1257,6 @@ function LoginScreen({
   onThemeToggle,
   themeStyle,
   onVersionClick,
-  releaseNotesHidden,
 }) {
   const [employeeName, setEmployeeName] = useState("");
   const [password, setPassword] = useState("");
@@ -1355,14 +1354,13 @@ function LoginScreen({
           Enter your name and password to continue.
         </p>
 
-          <button
-            type="button"
-            onClick={onVersionClick}
-          className="mt-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#0F4036] underline decoration-[#CA862B]/70 decoration-2 underline-offset-4 disabled:cursor-not-allowed disabled:opacity-45"
-          disabled={releaseNotesHidden}
-          >
-            {APP_VERSION} · what&apos;s new?
-          </button>
+        <button
+          type="button"
+          onClick={onVersionClick}
+          className="mt-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#0F4036] underline decoration-[#CA862B]/70 decoration-2 underline-offset-4"
+        >
+          {APP_VERSION} · what&apos;s new?
+        </button>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4 w-full">
           <label className="block text-left">
@@ -1986,7 +1984,6 @@ export default function GoldiesKDS() {
         }
         themeStyle={themeStyle}
         onVersionClick={() => setShowReleaseNotes(true)}
-        releaseNotesHidden={hiddenReleaseNotesVersion === APP_VERSION}
       />
     );
   } else {
@@ -2078,8 +2075,7 @@ export default function GoldiesKDS() {
               <button
                 type="button"
                 onClick={() => setShowReleaseNotes(true)}
-                className="underline decoration-[#CA862B]/70 decoration-2 underline-offset-4 disabled:cursor-not-allowed disabled:opacity-45"
-                disabled={hiddenReleaseNotesVersion === APP_VERSION}
+                className="underline decoration-[#CA862B]/70 decoration-2 underline-offset-4"
               >
                 {APP_VERSION} · what&apos;s new?
               </button>
@@ -2258,7 +2254,7 @@ export default function GoldiesKDS() {
     <>
       {content}
       <ReleaseNotesDialog
-        open={showReleaseNotes && hiddenReleaseNotesVersion !== APP_VERSION}
+        open={showReleaseNotes}
         onClose={() => setShowReleaseNotes(false)}
         onHideForNow={() => {
           setHiddenReleaseNotesVersion(APP_VERSION);
