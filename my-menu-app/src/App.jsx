@@ -11,6 +11,7 @@ const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
 const APP_VERSION = "v1.6.2";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
+const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
@@ -457,7 +458,73 @@ function getTodayDateKey() {
   return getLocalDateInputValue();
 }
 
-function SoftOpeningDialog({ open, onClose }) {
+function getNthWeekdayDateKey(year, monthIndex, weekday, occurrence) {
+  const date = new Date(year, monthIndex, 1);
+  const offset = (weekday - date.getDay() + 7) % 7;
+  date.setDate(1 + offset + (occurrence - 1) * 7);
+  return getLocalDateInputValue(date);
+}
+
+function getScheduledCelebration(dateKey = getTodayDateKey()) {
+  const year = Number(dateKey.slice(0, 4));
+  const recurring = [
+    {
+      id: "national-coffee-day",
+      date: `${year}-09-29`,
+      eyebrow: "National Coffee Day",
+      title: "Big coffee energy today",
+      message:
+        "Happy National Coffee Day, Goldie's. May the espresso pull smooth, the line move fast, and the regulars feel extra loved.",
+      note:
+        "Owner tip: this is a great day to watch hourly rushes and see which drink lane deserves a seasonal push.",
+    },
+    {
+      id: "mothers-day",
+      date: getNthWeekdayDateKey(year, 4, 0, 2),
+      eyebrow: "Mother's Day",
+      title: "A little extra love for Claire",
+      message:
+        "Happy Mother's Day, Claire. Hope today brings sweet customers, smooth service, and a moment to feel celebrated too.",
+      note:
+        "If the shop is open, watch gift drink orders and slower afternoon windows for a good reset moment.",
+    },
+    {
+      id: "fathers-day",
+      date: getNthWeekdayDateKey(year, 5, 0, 3),
+      eyebrow: "Father's Day",
+      title: "A little extra love for Blake",
+      message:
+        "Happy Father's Day, Blake. Hope the day is steady, kind, and full of good coffee.",
+      note:
+        "If service picks up, the hourly chart can help spot whether the Father's Day rush lands early or late.",
+    },
+    {
+      id: "new-year",
+      date: `${year}-01-01`,
+      eyebrow: "New Year",
+      title: "Fresh year, fresh tickets",
+      message:
+        "Happy New Year, Goldie's. Here's to steady mornings, loyal regulars, and a shop rhythm that keeps getting stronger.",
+      note:
+        "Owner tip: use this year-to-date view as the baseline for bigger menu and staffing decisions.",
+    },
+  ];
+  const oneTime = [
+    {
+      id: "soft-opening",
+      date: SOFT_OPENING_DATE,
+      eyebrow: "Soft Opening",
+      title: "Congratulations, Goldie's",
+      message:
+        "Wishing you all the luck on your soft opening from Samantha and Zahra.",
+      note: "We'll be by for coffee tomorrow morning to show support.",
+    },
+  ];
+
+  return [...oneTime, ...recurring].find((item) => item.date === dateKey) || null;
+}
+
+function CelebrationDialog({ open, onClose, celebration }) {
   const confetti = useMemo(
     () =>
       Array.from({ length: 18 }, (_, index) => {
@@ -479,7 +546,7 @@ function SoftOpeningDialog({ open, onClose }) {
     []
   );
 
-  if (!open) return null;
+  if (!open || !celebration) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] flex items-center justify-center p-4">
@@ -524,10 +591,10 @@ function SoftOpeningDialog({ open, onClose }) {
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-sm font-black uppercase tracking-[0.18em] text-[#6A614F]">
-                Soft Opening
+                {celebration.eyebrow}
               </div>
               <h2 className="text-2xl font-black text-[#0F4036] mt-1">
-                Congratulations, Goldie&apos;s
+                {celebration.title}
               </h2>
             </div>
 
@@ -545,12 +612,12 @@ function SoftOpeningDialog({ open, onClose }) {
               Today&apos;s message
             </div>
             <p className="mt-2 text-base leading-7">
-              Wishing you all the luck on your soft opening from Samantha and Zahra.
+              {celebration.message}
             </p>
           </div>
 
           <p className="text-base leading-7">
-            We&apos;ll be by for coffee tomorrow morning to show support.
+            {celebration.note}
           </p>
 
           <div className="flex justify-end pt-2">
@@ -3868,7 +3935,15 @@ export default function GoldiesKDS() {
   const [modeHelp, setModeHelp] = useState(null);
   const [settingsHelp, setSettingsHelp] = useState(null);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
-  const [hideSoftOpeningNote, setHideSoftOpeningNote] = useState(false);
+  const [hiddenCelebrationKey, setHiddenCelebrationKey] = useState(() => {
+    if (typeof window === "undefined") return "";
+
+    try {
+      return window.localStorage.getItem(CELEBRATION_HIDE_KEY) || "";
+    } catch {
+      return "";
+    }
+  });
   const [hideWebServicesReminder, setHideWebServicesReminder] = useState(() => {
     if (typeof window === "undefined") return false;
 
@@ -3894,9 +3969,15 @@ export default function GoldiesKDS() {
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
   const [lastError, setLastError] = useState("");
   const [defaultLookupDate] = useState(() => getLocalDateInputValue());
-  const isSoftOpeningDay = getTodayDateKey() === SOFT_OPENING_DATE;
-  const showSoftOpeningNote =
-    authStatus === "login" && isSoftOpeningDay && !hideSoftOpeningNote;
+  const todayDateKey = getTodayDateKey();
+  const scheduledCelebration = getScheduledCelebration(todayDateKey);
+  const scheduledCelebrationKey = scheduledCelebration
+    ? `${todayDateKey}:${scheduledCelebration.id}`
+    : "";
+  const showCelebrationNote =
+    authStatus === "login" &&
+    scheduledCelebration &&
+    hiddenCelebrationKey !== scheduledCelebrationKey;
   const isWebServicesReminderDay = getTodayDateKey() === WEB_SERVICES_REMINDER_DATE;
   const showWebServicesReminder =
     authStatus === "authenticated" &&
@@ -3987,6 +4068,20 @@ export default function GoldiesKDS() {
       // ignore storage failures
     }
   }, [hiddenReleaseNotesVersion]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    try {
+      if (hiddenCelebrationKey) {
+        window.localStorage.setItem(CELEBRATION_HIDE_KEY, hiddenCelebrationKey);
+      } else {
+        window.localStorage.removeItem(CELEBRATION_HIDE_KEY);
+      }
+    } catch {
+      // ignore storage failures
+    }
+  }, [hiddenCelebrationKey]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -4531,9 +4626,10 @@ export default function GoldiesKDS() {
             setShowReleaseNotes(true);
           }}
         />
-        <SoftOpeningDialog
-          open={showSoftOpeningNote}
-          onClose={() => setHideSoftOpeningNote(true)}
+        <CelebrationDialog
+          open={showCelebrationNote}
+          celebration={scheduledCelebration}
+          onClose={() => setHiddenCelebrationKey(scheduledCelebrationKey)}
         />
       </>
     );
