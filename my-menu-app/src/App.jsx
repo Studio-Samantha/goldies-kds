@@ -2010,9 +2010,17 @@ function LoginScreen({
 
   return (
     <div
-      className="relative min-h-screen bg-[#EEE0C5] text-[#111111] flex items-center justify-center px-4 overflow-hidden"
+      className="relative min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,253,248,0.96),_rgba(238,224,197,1)_50%,_rgba(230,210,173,1)_100%)] text-[#111111] flex items-center justify-center px-4 overflow-hidden"
       style={{ ...themeStyle, ...trainingStyle }}
     >
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,0.34), rgba(255,255,255,0) 28%, rgba(15,64,54,0.03) 100%)",
+        }}
+      />
       <WatermarkLayer trainingMode={false} />
       <div className="absolute right-4 top-4">
         <div className="flex items-center gap-1.5">
@@ -2048,20 +2056,24 @@ function LoginScreen({
         </div>
       </div>
 
-      <main className="relative z-10 w-full max-w-md rounded-3xl bg-[#FFFDF8] border border-[#CA862B]/22 shadow-[0_20px_60px_rgba(15,64,54,0.08)] p-6 flex flex-col items-center text-center">
-        <div className="flex items-center justify-center gap-4 mb-5">
+      <main className="relative z-10 w-full max-w-md rounded-[1.75rem] bg-[rgba(255,253,248,0.94)] border border-white/70 shadow-[0_28px_80px_rgba(15,64,54,0.14)] backdrop-blur-xl p-7 flex flex-col items-center text-center">
+        <div className="flex items-center justify-center gap-4 mb-6">
           <BrandMark size="lg" />
+        </div>
+
+        <div className="mb-3 inline-flex rounded-full border border-[#CA862B]/18 bg-[#EEE0C5]/55 px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-[#6A614F]">
+          Goldie&apos;s KDS
         </div>
 
         <h1 className="text-4xl font-black tracking-tight text-[#0F4036]">
           Kitchen Display
         </h1>
 
-        <p className="text-[#6A614F] mt-2">
+        <p className="text-[#6A614F] mt-2 max-w-[24rem]">
           Enter your name and password to continue.
         </p>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4 w-full">
+        <form onSubmit={handleSubmit} className="mt-7 space-y-4 w-full">
           <label className="block text-left">
             <span className="text-sm font-black text-[#0F4036]">Name</span>
             <input
@@ -2070,7 +2082,7 @@ function LoginScreen({
               onChange={(event) => setEmployeeName(event.target.value)}
               autoComplete="name"
               autoFocus
-              className="mt-2 w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 text-lg font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15"
+              className="mt-2 w-full rounded-2xl border border-[#CA862B]/20 bg-white/95 px-4 py-3 text-lg font-bold outline-none shadow-[0_10px_30px_rgba(15,64,54,0.06)] focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/12"
             />
             <div className="mt-1 text-xs font-semibold text-[#6A614F]">
               Enter your name.
@@ -2085,12 +2097,12 @@ function LoginScreen({
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 autoComplete="current-password"
-                className="w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 pr-24 text-lg font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15"
+                className="w-full rounded-2xl border border-[#CA862B]/20 bg-white/95 px-4 py-3 pr-24 text-lg font-bold outline-none shadow-[0_10px_30px_rgba(15,64,54,0.06)] focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/12"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((current) => !current)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl border border-[#CA862B]/18 bg-[#FFFDF8] px-3 py-1.5 text-xs font-black uppercase tracking-[0.14em] text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl border border-[#CA862B]/18 bg-[#FFFDF8] px-3 py-1.5 text-xs font-black uppercase tracking-[0.14em] text-[#0F4036] transition hover:bg-[#EEE0C5]/45 shadow-sm"
               >
                 {showPassword ? "Hide" : "Show"}
               </button>
@@ -2112,7 +2124,7 @@ function LoginScreen({
           <button
             type="submit"
             disabled={submitting || lockoutActive || !password || !employeeName.trim()}
-            className="w-full rounded-2xl bg-[#0F4036] text-white px-4 py-3 font-black transition hover:bg-[#0b352d] disabled:cursor-not-allowed disabled:bg-neutral-300"
+            className="w-full rounded-2xl bg-[#0F4036] text-white px-4 py-3 font-black transition hover:bg-[#0b352d] disabled:cursor-not-allowed disabled:bg-neutral-300 shadow-[0_18px_40px_rgba(15,64,54,0.18)]"
           >
             {submitting ? "Signing in..." : "Sign in"}
           </button>
@@ -2818,13 +2830,21 @@ export default function GoldiesKDS() {
   } else {
     content = (
       <div
-        className="relative min-h-screen bg-[#EEE0C5] text-[#111111] overflow-hidden"
+        className="relative min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,253,248,0.96),_rgba(238,224,197,1)_50%,_rgba(230,210,173,1)_100%)] text-[#111111] overflow-hidden"
         style={{ ...themeStyle, ...trainingThemeStyle }}
         onClick={() => setShowSettingsMenu(false)}
       >
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(255,255,255,0.34), rgba(255,255,255,0) 26%, rgba(15,64,54,0.035) 100%)",
+          }}
+        />
         <WatermarkLayer trainingMode={isTrainingMode} />
       <div className="relative z-10">
-      <header className="border-b border-[#CA862B]/22 bg-[#FFFDF8]/95 backdrop-blur px-4 md:px-6 py-4">
+      <header className="border-b border-white/70 bg-[rgba(255,253,248,0.9)] backdrop-blur-xl px-4 md:px-6 py-4 shadow-[0_12px_30px_rgba(15,64,54,0.06)]">
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
           <div className="flex items-center gap-4">
             <BrandMark />
@@ -2842,7 +2862,7 @@ export default function GoldiesKDS() {
 
           <div className="flex flex-col items-start xl:items-end gap-3">
             <div className="grid grid-cols-2 gap-2 w-full xl:w-auto">
-              <div className="rounded-xl bg-[#EEE0C5]/50 border border-[#CA862B]/16 px-3 py-2">
+              <div className="rounded-2xl bg-white/80 border border-[#CA862B]/14 px-3 py-2 shadow-sm">
                 <div className="text-xs uppercase tracking-wide text-[#6A614F] font-bold">
                   Time
                 </div>
@@ -2853,7 +2873,7 @@ export default function GoldiesKDS() {
                   })}
                 </div>
               </div>
-              <div className="rounded-xl bg-[#EEE0C5]/50 border border-[#CA862B]/16 px-3 py-2">
+              <div className="rounded-2xl bg-white/80 border border-[#CA862B]/14 px-3 py-2 shadow-sm">
                 <div className="text-xs uppercase tracking-wide text-[#6A614F] font-bold">
                   Date
                 </div>
@@ -2869,11 +2889,11 @@ export default function GoldiesKDS() {
 
             <div className="flex flex-wrap gap-2 justify-start xl:justify-end">
               <div className="relative" onClick={(event) => event.stopPropagation()}>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 rounded-2xl border border-[#CA862B]/14 bg-white/75 px-1.5 py-1 shadow-sm">
                   <button
                     type="button"
                     onClick={() => setShowSettingsMenu((current) => !current)}
-                    className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                    className="rounded-xl border border-transparent bg-transparent px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
                   >
                     Settings
                   </button>
@@ -2888,7 +2908,7 @@ export default function GoldiesKDS() {
                     }
                     aria-label="Explain Settings"
                     title="Settings includes the main utility actions for the app."
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#CA862B]/20 bg-white text-xs font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#CA862B]/18 bg-white text-xs font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
                   >
                     ?
                   </button>
@@ -2921,14 +2941,14 @@ export default function GoldiesKDS() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
               >
                 Sign out
               </button>
             </div>
 
             {signedInEmployee && (
-              <div className="rounded-full border border-[#CA862B]/22 bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-[#0F4036]">
+              <div className="rounded-full border border-[#CA862B]/18 bg-white/80 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-[#0F4036] shadow-sm">
                 {signedInEmployee}
               </div>
             )}
@@ -2938,7 +2958,7 @@ export default function GoldiesKDS() {
 
       <main className="p-3 md:p-4 space-y-4 max-w-[1900px] mx-auto">
         <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-          <div className="rounded-xl bg-[#FFFDF8] border border-[#CA862B]/18 p-3 shadow-sm">
+          <div className="rounded-2xl bg-[rgba(255,253,248,0.88)] border border-white/70 p-3 shadow-[0_16px_40px_rgba(15,64,54,0.08)] backdrop-blur-sm">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-xs uppercase tracking-wide text-[#6A614F] font-bold">
@@ -3030,7 +3050,7 @@ export default function GoldiesKDS() {
         )}
 
         <section className="space-y-2">
-          <div className="flex items-center justify-between gap-3 rounded-2xl bg-[#FFFDF8]/85 border border-[#CA862B]/18 px-4 py-3">
+          <div className="flex items-center justify-between gap-3 rounded-2xl bg-[rgba(255,253,248,0.9)] border border-white/70 px-4 py-3 shadow-sm backdrop-blur-sm">
             <div>
               <h2 className="text-lg md:text-2xl font-black text-[#0F4036]">Today&apos;s Count</h2>
               <p className="text-sm text-[#6A614F]">
@@ -3058,7 +3078,7 @@ export default function GoldiesKDS() {
           <button
             type="button"
             onClick={() => setShowStats((current) => !current)}
-            className="rounded-xl bg-[#0F4036] text-white px-4 py-3 font-black transition hover:bg-[#0b352d]"
+            className="rounded-xl bg-[#0F4036] text-white px-4 py-3 font-black transition hover:bg-[#0b352d] shadow-[0_14px_30px_rgba(15,64,54,0.16)]"
           >
             {showStats ? "Hide Stats" : "View Stats"}
           </button>
@@ -3070,7 +3090,7 @@ export default function GoldiesKDS() {
           {STATUS_COLUMNS.map((column) => (
             <section
               key={column.key}
-              className={`rounded-2xl bg-[#FFFDF8] border border-[#CA862B]/18 border-t-4 ${column.accent} p-3 shadow-sm flex flex-col ${
+              className={`rounded-2xl bg-[rgba(255,253,248,0.9)] border border-white/70 border-t-4 ${column.accent} p-3 shadow-[0_16px_40px_rgba(15,64,54,0.08)] flex flex-col backdrop-blur-sm ${
                 hasOpenTickets
                   ? "xl:h-[calc(100vh-300px)] xl:min-h-[380px]"
                   : "xl:h-[220px] xl:min-h-[220px]"
@@ -3082,7 +3102,7 @@ export default function GoldiesKDS() {
                 </h2>
 
                 <span
-                  className={`rounded-full px-3 py-1 text-sm font-black ${column.badge}`}
+                  className={`rounded-full px-3 py-1 text-sm font-black shadow-sm ${column.badge}`}
                 >
                   {grouped[column.key]?.length || 0}
                 </span>
@@ -3109,7 +3129,7 @@ export default function GoldiesKDS() {
         </section>
 
         <section className="space-y-2">
-          <div className="flex items-center justify-between gap-3 rounded-2xl bg-[#FFFDF8]/85 border border-[#CA862B]/18 px-4 py-3">
+          <div className="flex items-center justify-between gap-3 rounded-2xl bg-[rgba(255,253,248,0.9)] border border-white/70 px-4 py-3 shadow-sm backdrop-blur-sm">
             <div>
               <h2 className="text-lg md:text-2xl font-black text-[#0F4036]">Completed Today</h2>
               <p className="text-sm text-[#6A614F]">
