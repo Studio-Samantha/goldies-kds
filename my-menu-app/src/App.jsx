@@ -7,11 +7,20 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.1.6";
+const APP_VERSION = "v1.1.7";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-30";
 const RELEASE_NOTES = [
+  {
+    version: "v1.1.7",
+    date: "Current build",
+    summary: "The login name field now has shorter wording.",
+    items: [
+      "The login hint now just says Enter your name.",
+      "The login screen reads a little cleaner.",
+    ],
+  },
   {
     version: "v1.1.6",
     date: "Current build",
@@ -2024,7 +2033,7 @@ function LoginScreen({
               className="mt-2 w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 text-lg font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15"
             />
             <div className="mt-1 text-xs font-semibold text-[#6A614F]">
-              Use your employee name or number.
+              Enter your name.
             </div>
           </label>
 
