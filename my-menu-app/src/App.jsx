@@ -7,7 +7,7 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.1.16";
+const APP_VERSION = "v1.1.17";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-30";
@@ -15,12 +15,12 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.1.16",
+    version: "v1.1.17",
     date: "Current build",
-    summary: "The Studio Samantha footer was simplified into one clean brand chip.",
+    summary: "The footer now includes a clean link to learn more about the KDS.",
     items: [
-      "The footer now uses a single soft brand chip on both the login screen and dashboard.",
-      "It stays muted so it does not compete with the KDS tool itself.",
+      "The footer still stays muted and clean.",
+      "A small Learn more link now opens a short product pitch popup.",
     ],
   },
   {
@@ -410,6 +410,69 @@ function HelpDialog({ open, title, body, onClose }) {
           <p className="text-base leading-7">{body}</p>
 
           <div className="flex justify-end pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl bg-[#0F4036] text-white px-4 py-2.5 font-black transition hover:bg-[#0b352d]"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PitchDialog({ open, onClose }) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] flex items-center justify-center p-4">
+      <div className="w-full max-w-2xl rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)] overflow-hidden">
+        <div className="border-b border-[#CA862B]/18 px-5 py-4 bg-[#EEE0C5]/35">
+          <div className="text-sm font-black uppercase tracking-[0.18em] text-[#6A614F]">
+            Studio Samantha
+          </div>
+          <h2 className="text-2xl font-black text-[#0F4036] mt-1">
+            Goldie&apos;s KDS for Square shops
+          </h2>
+        </div>
+
+        <div className="px-5 py-5 space-y-5 text-[#2D261C]">
+          <p className="text-base leading-7 max-w-xl">
+            A clean, brandable kitchen display system for coffee shops and
+            small restaurants running Square. Built for fast order flow, staff
+            handoff, and a dashboard that stays readable on laptops, tablets,
+            and phones.
+          </p>
+
+          <div className="grid gap-3 md:grid-cols-3">
+            {[
+              "Live Square order sync",
+              "Custom branding and themes",
+              "Simple reports and ticket history",
+            ].map((item) => (
+              <div
+                key={item}
+                className="rounded-2xl border border-[#CA862B]/14 bg-white px-4 py-4 shadow-sm"
+              >
+                <div className="text-sm font-black text-[#0F4036]">{item}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-2xl border border-[#CA862B]/14 bg-[#FFFDF8] px-4 py-4 shadow-sm">
+            <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
+              Next step
+            </div>
+            <p className="mt-2 text-sm leading-6 text-[#2D261C]">
+              If you want to see how this looks in a live shop, use the Suggest
+              Fix button or email Samantha for a setup conversation.
+            </p>
+          </div>
+
+          <div className="flex justify-end pt-1">
             <button
               type="button"
               onClick={onClose}
@@ -1329,12 +1392,20 @@ function WatermarkLayer({ trainingMode = false }) {
   );
 }
 
-function BrandFooter({ className = "" }) {
+function BrandFooter({ className = "", onPitchClick }) {
   return (
     <div
-      className={`inline-flex items-center rounded-full border border-[#CA862B]/12 bg-white/72 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5A4F3E] shadow-[0_8px_18px_rgba(15,64,54,0.06)] backdrop-blur-md ${className}`}
+      className={`inline-flex items-center rounded-full border border-white/70 bg-[rgba(255,253,248,0.84)] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5A4F3E] shadow-[0_8px_18px_rgba(15,64,54,0.06)] backdrop-blur-md ${className}`}
     >
-      Studio Samantha © 2026
+      <span>Studio Samantha © 2026</span>
+      <span className="mx-2 text-[#CA862B]/70">•</span>
+      <button
+        type="button"
+        onClick={onPitchClick}
+        className="normal-case tracking-normal text-[#0F4036] transition hover:text-[#CA862B]"
+      >
+        Learn more
+      </button>
     </div>
   );
 }
@@ -2144,7 +2215,7 @@ function LoginScreen({
       </main>
 
       <div className="absolute bottom-4 left-0 right-0 flex justify-center px-4">
-        <BrandFooter />
+        <BrandFooter onPitchClick={() => setShowPitch(true)} />
       </div>
     </div>
   );
@@ -2296,6 +2367,7 @@ export default function GoldiesKDS() {
   const [showOrdersByDay, setShowOrdersByDay] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showReleaseNotes, setShowReleaseNotes] = useState(false);
+  const [showPitch, setShowPitch] = useState(false);
   const [modeHelp, setModeHelp] = useState(null);
   const [settingsHelp, setSettingsHelp] = useState(null);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
@@ -3175,7 +3247,7 @@ export default function GoldiesKDS() {
         />
 
         <div className="flex justify-center pb-2">
-          <BrandFooter />
+          <BrandFooter onPitchClick={() => setShowPitch(true)} />
         </div>
       </main>
       </div>
@@ -3205,6 +3277,7 @@ export default function GoldiesKDS() {
           setShowReleaseNotes(false);
         }}
       />
+      <PitchDialog open={showPitch} onClose={() => setShowPitch(false)} />
       <HelpDialog
         open={Boolean(modeHelp)}
         title={modeHelp?.title || ""}
