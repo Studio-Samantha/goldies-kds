@@ -4,6 +4,63 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DrinkFlow KDS: Built for Coffee & Drink Shops | Studio Samantha</title>
+    <meta
+      name="description"
+      content="DrinkFlow KDS is a lightweight Square&reg;-connected kitchen display and owner reporting tool built for coffee shops, smoothie shops, and drink counters."
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://goldieskds.com/learn-more.html" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://goldieskds.com/learn-more.html" />
+    <meta property="og:title" content="DrinkFlow KDS for Coffee & Drink Shops" />
+    <meta
+      property="og:description"
+      content="A clean Square&reg;-connected KDS for drink counters, with live order columns, drink-only analytics, owner reports, and simple pricing."
+    />
+    <meta property="og:image" content="https://goldieskds.com/drinkflow-ipad-kds.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="DrinkFlow KDS for Coffee & Drink Shops" />
+    <meta
+      name="twitter:description"
+      content="Live drink orders, owner-ready reports, and clean analytics for coffee shops and drink counters using Square&reg;."
+    />
+    <meta name="twitter:image" content="https://goldieskds.com/drinkflow-ipad-kds.png" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "DrinkFlow KDS",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "description": "A lightweight Square\u00ae-connected kitchen display and owner reporting tool built for coffee shops, smoothie shops, and drink counters.",
+        "image": "https://goldieskds.com/drinkflow-ipad-kds.png",
+        "url": "https://goldieskds.com/learn-more.html",
+        "offers": [
+          {
+            "@type": "Offer",
+            "name": "Annual",
+            "price": "60",
+            "priceCurrency": "USD"
+          },
+          {
+            "@type": "Offer",
+            "name": "Monthly",
+            "price": "6.99",
+            "priceCurrency": "USD"
+          },
+          {
+            "@type": "Offer",
+            "name": "Setup",
+            "price": "50",
+            "priceCurrency": "USD"
+          }
+        ],
+        "creator": {
+          "@type": "Organization",
+          "name": "Studio Samantha"
+        }
+      }
+    </script>
     <style>
       :root {
         --paper: #fffdf8;
@@ -236,6 +293,39 @@
         font-weight: 850;
         text-transform: uppercase;
       }
+      .proof-strip {
+        position: relative;
+        z-index: 2;
+        margin: -28px clamp(16px, 4vw, 48px) 0;
+      }
+      .proof-inner {
+        max-width: 1180px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--line);
+        box-shadow: 0 18px 44px rgba(15, 64, 54, 0.12);
+      }
+      .proof-item {
+        background: #fff;
+        padding: 18px;
+      }
+      .proof-item strong {
+        display: block;
+        color: var(--green);
+        font-size: 15px;
+      }
+      .proof-item span {
+        display: block;
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.5;
+      }
 
       .section {
         padding: 64px clamp(16px, 4vw, 48px);
@@ -265,7 +355,7 @@
       }
       .features {
         margin-top: 28px;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
       }
       .card {
         border: 1px solid var(--line);
@@ -297,6 +387,13 @@
         font-size: 14px;
         line-height: 1.6;
       }
+      .difference {
+        background:
+          linear-gradient(180deg, rgba(246, 239, 225, 0.62), rgba(255, 253, 248, 1));
+      }
+      .difference .feature {
+        background: rgba(255, 255, 255, 0.88);
+      }
       .showcase {
         background: var(--cream);
       }
@@ -312,6 +409,7 @@
         color: rgba(255, 255, 255, 0.72);
       }
       .photo-frame {
+        position: relative;
         margin-top: 30px;
         overflow: hidden;
         border: 1px solid rgba(255, 255, 255, 0.16);
@@ -324,6 +422,56 @@
         width: 100%;
         aspect-ratio: 16 / 9;
         object-fit: cover;
+      }
+      .phone-overlay {
+        position: absolute;
+        right: clamp(18px, 5vw, 72px);
+        bottom: 86px;
+        width: min(190px, 24vw);
+        min-width: 128px;
+        border: 8px solid #111;
+        border-radius: 24px;
+        background: #111;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.38);
+      }
+      .phone-screen {
+        overflow: hidden;
+        border-radius: 16px;
+        background: #fffdf8;
+        color: var(--ink);
+      }
+      .phone-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px;
+        background: var(--green);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 950;
+      }
+      .phone-ticket-list {
+        display: grid;
+        gap: 7px;
+        padding: 10px;
+      }
+      .phone-ticket {
+        border: 1px solid rgba(15, 64, 54, 0.12);
+        border-radius: 8px;
+        background: #fff;
+        padding: 9px;
+      }
+      .phone-ticket strong {
+        display: block;
+        color: var(--green);
+        font-size: 13px;
+      }
+      .phone-ticket span {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 10px;
+        line-height: 1.35;
       }
       .photo-caption {
         display: flex;
@@ -351,15 +499,107 @@
         overflow: hidden;
         border: 1px solid rgba(15, 64, 54, 0.14);
         border-radius: 8px;
-        background: #fff;
+        background:
+          linear-gradient(135deg, rgba(15, 64, 54, 0.92), rgba(15, 64, 54, 0.74)),
+          radial-gradient(circle at 80% 20%, rgba(202, 134, 43, 0.28), transparent 38%),
+          #0f4036;
         box-shadow: var(--shadow);
       }
-      .customer-shot img {
-        display: block;
-        width: 100%;
-        aspect-ratio: 16 / 10;
-        object-fit: cover;
-        object-position: center top;
+      .customer-example {
+        min-height: 380px;
+        padding: clamp(18px, 4vw, 38px);
+        display: grid;
+        align-content: center;
+        color: #fff;
+      }
+      .customer-browser {
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        overflow: hidden;
+        background: rgba(255, 253, 248, 0.95);
+        color: var(--ink);
+        box-shadow: 0 28px 80px rgba(0, 0, 0, 0.26);
+      }
+      .customer-browser-bar {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 12px;
+        background: #efe3cc;
+      }
+      .customer-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        background: var(--gold);
+      }
+      .customer-login {
+        position: relative;
+        display: grid;
+        place-items: center;
+        min-height: 270px;
+        padding: 26px;
+        overflow: hidden;
+        background:
+          linear-gradient(135deg, rgba(255, 253, 248, 0.92), rgba(246, 239, 225, 0.88)),
+          #fffdf8;
+      }
+      .customer-watermark {
+        position: absolute;
+        inset: auto -20px 6px auto;
+        color: rgba(15, 64, 54, 0.08);
+        font-size: clamp(80px, 14vw, 150px);
+        font-weight: 950;
+        line-height: 0.8;
+      }
+      .customer-login-card {
+        position: relative;
+        width: min(320px, 100%);
+        border: 1px solid rgba(15, 64, 54, 0.12);
+        border-radius: 8px;
+        background: #fff;
+        padding: 24px;
+        box-shadow: 0 18px 40px rgba(15, 64, 54, 0.14);
+      }
+      .customer-login-mark {
+        display: grid;
+        place-items: center;
+        width: 58px;
+        height: 58px;
+        margin: 0 auto 12px;
+        border-radius: 8px;
+        background: var(--green);
+        color: #fff;
+        font-weight: 950;
+      }
+      .customer-login-title {
+        margin: 0;
+        text-align: center;
+        color: var(--green);
+        font-size: 22px;
+        font-weight: 950;
+      }
+      .customer-login-line {
+        height: 42px;
+        margin-top: 14px;
+        border-radius: 8px;
+        background: #f4ead8;
+      }
+      .customer-login-button {
+        display: grid;
+        place-items: center;
+        height: 42px;
+        margin-top: 10px;
+        border-radius: 8px;
+        background: var(--gold);
+        color: #fff;
+        font-weight: 950;
+      }
+      .customer-example-caption {
+        margin: 14px 0 0;
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 13px;
+        line-height: 1.5;
       }
       .customer-note {
         padding: 22px;
@@ -589,7 +829,7 @@
       }
       .price-grid {
         margin-top: 28px;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
       }
       .price-card {
         padding: 22px;
@@ -620,6 +860,40 @@
         opacity: 0.78;
         line-height: 1.6;
       }
+      .faq {
+        background: var(--paper);
+      }
+      .faq-grid {
+        margin-top: 28px;
+        display: grid;
+        grid-template-columns: minmax(260px, 0.42fr) minmax(0, 0.58fr);
+        gap: 18px;
+        align-items: start;
+      }
+      .faq-panel {
+        padding: 22px;
+      }
+      .faq-list {
+        display: grid;
+        gap: 10px;
+      }
+      .faq-list details {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        padding: 18px;
+        box-shadow: 0 10px 26px rgba(15, 64, 54, 0.06);
+      }
+      .faq-list summary {
+        cursor: pointer;
+        color: var(--green);
+        font-weight: 950;
+      }
+      .faq-list p {
+        margin: 10px 0 0;
+        color: var(--muted);
+        line-height: 1.65;
+      }
       .cta-band {
         padding: 56px clamp(16px, 4vw, 48px);
         background: #12100c;
@@ -628,9 +902,9 @@
       .cta-inner {
         max-width: 1180px;
         margin: 0 auto;
-        display: flex;
+        display: grid;
         align-items: center;
-        justify-content: space-between;
+        grid-template-columns: minmax(0, 1fr) minmax(340px, 0.8fr);
         gap: 20px;
       }
       .cta-inner h2 {
@@ -641,6 +915,56 @@
       .cta-inner p {
         margin: 10px 0 0;
         color: rgba(255, 255, 255, 0.72);
+      }
+      .lead-form {
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.08);
+        padding: 16px;
+      }
+      .lead-form label {
+        display: block;
+        margin-bottom: 8px;
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 13px;
+        font-weight: 850;
+      }
+      .lead-form-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+      }
+      .lead-form input {
+        width: 100%;
+        min-height: 44px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.96);
+        color: var(--ink);
+        padding: 0 12px;
+        font: inherit;
+      }
+      .lead-form .button {
+        min-height: 44px;
+        cursor: pointer;
+      }
+      .lead-form .button:disabled {
+        cursor: progress;
+        opacity: 0.7;
+      }
+      .lead-status {
+        min-height: 22px;
+        margin-top: 8px;
+        color: rgba(255, 255, 255, 0.76);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      .lead-form .hidden-field {
+        position: absolute;
+        left: -9999px;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
       }
       footer {
         padding: 28px clamp(16px, 4vw, 48px);
@@ -658,7 +982,14 @@
         .nav-links a:not(.button) { display: none; }
         .hero { min-height: 88vh; }
         .hero-visual { display: none; }
-        .features, .showcase-grid, .price-grid, .onboarding-grid, .customer-grid, .comparison-grid, .comparison-savings {
+        .phone-overlay {
+          right: 12px;
+          bottom: 96px;
+          width: 136px;
+          border-width: 6px;
+          border-radius: 20px;
+        }
+        .features, .showcase-grid, .price-grid, .onboarding-grid, .customer-grid, .comparison-grid, .comparison-savings, .proof-inner, .faq-grid {
           grid-template-columns: 1fr;
         }
         .lane-grid {
@@ -670,9 +1001,19 @@
         .hero-stats, .owner-metrics {
           grid-template-columns: 1fr;
         }
-        .cta-inner, footer .section-inner {
+        .cta-inner {
+          align-items: flex-start;
+          grid-template-columns: 1fr;
+        }
+        footer .section-inner {
           align-items: flex-start;
           flex-direction: column;
+        }
+        .lead-form {
+          width: 100%;
+        }
+        .lead-form-row {
+          grid-template-columns: 1fr;
         }
       }
     </style>
@@ -711,24 +1052,41 @@
       <div class="hero-inner">
         <div>
           <p class="eyebrow">Built for coffee bars, smoothie shops, and drink counters</p>
-          <h1>Drink orders move faster when the screen is made for drinks.</h1>
+          <h1>DrinkFlow KDS for coffee shops and drink counters.</h1>
           <p class="lead">
-            DrinkFlow KDS turns Square orders into a clean live board, daily drink counts,
-            rush-hour visibility, and owner-ready reports for small shops that do not need
-            a restaurant-sized software stack.
+            DrinkFlow KDS turns Square&reg; orders into a clean live board, daily drink counts,
+            rush-hour visibility, average drinks-per-order, and owner-ready reports for shops
+            that want the counter to feel calm even when the line is not.
           </p>
           <div class="hero-actions">
             <a class="button primary" href="mailto:samantha@studiosamantha.com?subject=DrinkFlow%20KDS%20setup">Ask about setup</a>
             <a class="button" href="#pricing">See pricing</a>
           </div>
           <div class="hero-stats" aria-label="Product highlights">
-            <div class="hero-stat"><strong>Live</strong><span>Square order board</span></div>
+            <div class="hero-stat"><strong>Live</strong><span>Square&reg; order board</span></div>
             <div class="hero-stat"><strong>PDF</strong><span>Owner reports</span></div>
             <div class="hero-stat"><strong>$60</strong><span>Launch annual price</span></div>
           </div>
         </div>
       </div>
     </header>
+
+    <section class="proof-strip" aria-label="Why drink shops choose DrinkFlow KDS">
+      <div class="proof-inner">
+        <div class="proof-item">
+          <strong>Made for the drink rush</strong>
+          <span>Readable tickets, simple status moves, and a layout that works at the counter.</span>
+        </div>
+        <div class="proof-item">
+          <strong>Retail stays out of drink numbers</strong>
+          <span>Bagged coffee, merch, gifts, and soaps do not muddy drink analytics.</span>
+        </div>
+        <div class="proof-item">
+          <strong>Owner reports are built in</strong>
+          <span>Download CSV, Excel, and branded PDF reports with charts and daily guidance.</span>
+        </div>
+      </div>
+    </section>
 
     <section class="section" id="features">
       <div class="section-inner">
@@ -769,6 +1127,46 @@
       </div>
     </section>
 
+    <section class="section difference">
+      <div class="section-inner">
+        <p class="eyebrow">Why it is different</p>
+        <h2>Square&reg; moves tickets. DrinkFlow helps drink-shop owners read the day.</h2>
+        <p class="section-copy">
+          Square&reg; KDS is built for broad restaurant workflows: prep stations, expediting,
+          ticket routing, timers, and Android kitchen screens. DrinkFlow sits beside Square&reg;
+          as a focused layer for small coffee and drink shops that want cleaner drink operations
+          and owner-ready numbers.
+        </p>
+        <div class="grid features">
+          <article class="card feature">
+            <div class="icon">A</div>
+            <h3>Average drink counter</h3>
+            <p>See how many drinks are in the average order, plus how often single orders contain 2 or more drinks.</p>
+          </article>
+          <article class="card feature">
+            <div class="icon">B</div>
+            <h3>Drink-only reporting</h3>
+            <p>Coffee, not coffee, and smoothies stay separate from retail items, bagged coffee, gifts, and merch.</p>
+          </article>
+          <article class="card feature">
+            <div class="icon">C</div>
+            <h3>Daily owner guidance</h3>
+            <p>The owner portal turns rush patterns, category mix, and sales into plain-language shop advice.</p>
+          </article>
+          <article class="card feature">
+            <div class="icon">D</div>
+            <h3>Branded monthly exports</h3>
+            <p>Download CSV, Excel, and polished PDF reports with charts, logo, and the period you selected.</p>
+          </article>
+          <article class="card feature">
+            <div class="icon">E</div>
+            <h3>Custom shop setup</h3>
+            <p>Custom domain, branded login, role choices, screen labels, training mode, and feature changes are part of setup.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
     <section class="section photo-section">
       <div class="section-inner">
         <p class="eyebrow">Built for the bar</p>
@@ -779,8 +1177,30 @@
         </p>
         <div class="photo-frame">
           <img src="/drinkflow-ipad-kds.png" alt="DrinkFlow KDS running on an iPad at a coffee shop counter" />
+          <div class="phone-overlay" aria-label="Phone-sized DrinkFlow KDS view">
+            <div class="phone-screen">
+              <div class="phone-top">
+                <span>DF</span>
+                <span>Ready</span>
+              </div>
+              <div class="phone-ticket-list">
+                <div class="phone-ticket">
+                  <strong>#A18</strong>
+                  <span>2 Iced Lattes<br />1 Matcha</span>
+                </div>
+                <div class="phone-ticket">
+                  <strong>#B42</strong>
+                  <span>1 Cold Brew<br />1 Smoothie</span>
+                </div>
+                <div class="phone-ticket">
+                  <strong>9 AM</strong>
+                  <span>Peak drink volume</span>
+                </div>
+              </div>
+            </div>
+          </div>
           <div class="photo-caption">
-            <span><strong>Demo visual:</strong> live drink columns, ready tickets, daily numbers, and hourly volume in one counter-friendly view.</span>
+            <span><strong>Demo visual:</strong> live drink columns, ready tickets, daily numbers, hourly volume, and a phone-sized view.</span>
             <span>Shop-specific branding and feature choices happen during setup.</span>
           </div>
         </div>
@@ -790,7 +1210,7 @@
     <section class="section customer-section">
       <div class="section-inner">
         <p class="eyebrow">Current customer example</p>
-        <h2>Goldie&apos;s runs on a branded login with a custom watermarked background.</h2>
+        <h2>Runs on a branded login with a custom watermarked background image and color scheme.</h2>
         <div class="grid customer-grid">
           <div class="customer-note">
             <p class="section-copy">
@@ -798,11 +1218,33 @@
               owner access, support links, and the exact tools the team needs on day one.
             </p>
             <p class="section-copy">
-              The same product can feel like it belongs to the shop using it, not like a generic restaurant app.
+              This example is AI-styled for marketing, but the real build uses the same idea:
+              a login screen that feels like the shop, not a generic restaurant app.
             </p>
           </div>
           <div class="customer-shot">
-            <img src="/goldies-login-screenshot.png" alt="Goldie's KDS branded login screen with a watermarked background" />
+            <div class="customer-example" role="img" aria-label="AI-styled example of a branded Goldie's login screen">
+              <div class="customer-browser">
+                <div class="customer-browser-bar">
+                  <span class="customer-dot"></span>
+                  <span class="customer-dot"></span>
+                  <span class="customer-dot"></span>
+                </div>
+                <div class="customer-login">
+                  <div class="customer-watermark">G</div>
+                  <div class="customer-login-card">
+                    <div class="customer-login-mark">G</div>
+                    <h3 class="customer-login-title">Goldie&apos;s KDS</h3>
+                    <div class="customer-login-line"></div>
+                    <div class="customer-login-line"></div>
+                    <div class="customer-login-button">Open KDS</div>
+                  </div>
+                </div>
+              </div>
+              <p class="customer-example-caption">
+                AI-styled customer example: branded login, watermark feel, custom domain, and shop-specific setup.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -845,7 +1287,9 @@
               <div class="metric"><span>Revenue</span><strong>$487</strong></div>
               <div class="metric"><span>Peak hour</span><strong>9 AM</strong></div>
               <div class="metric"><span>Top lane</span><strong>Coffee</strong></div>
+              <div class="metric"><span>Avg drinks</span><strong>1.8</strong></div>
               <div class="metric"><span>2+ drinks</span><strong>27%</strong></div>
+              <div class="metric"><span>Exports</span><strong>PDF</strong></div>
             </div>
             <div class="bars" aria-label="Example hourly order volume line graph">
               <svg class="volume-chart" viewBox="0 0 420 150" role="img" aria-label="Hourly orders plotted from 6 AM to 1 PM">
@@ -869,7 +1313,7 @@
               </div>
               <div class="advice">
                 <strong>Ticket behavior</strong>
-                <span>27% of individual drink orders contain 2 or more drinks. Keep add-on prompts light until speed is protected.</span>
+                <span>The average order contains 1.8 drinks, and 27% of individual drink orders contain 2 or more drinks.</span>
               </div>
             </div>
             <p class="mini-copy">
@@ -886,7 +1330,7 @@
         <p class="eyebrow">Setup starts with the shop</p>
         <h2>Tell me about your team, your counter, and where orders slow down.</h2>
         <p class="section-copy">
-          Onboarding is not just connecting Square. It is where the KDS gets shaped around
+          Onboarding is not just connecting Square&reg;. It is where the KDS gets shaped around
           the people using it: owners, baristas, new hires, peak-hour coverage, and the screens
           already available in the shop.
         </p>
@@ -915,16 +1359,16 @@
         <p class="eyebrow">KDS cost comparison</p>
         <h2>Built to replace the extra monthly KDS fee for drink-focused shops.</h2>
         <p class="section-copy">
-          Square publishes KDS pricing at $30/month per device on Plus or $20/month per device on Premium,
-          with a Square Plus or Premium subscription required. DrinkFlow is built for shops that already use
-          Square but want a lighter, drink-focused display and reporting layer without stacking another
+          Square&reg; publishes KDS pricing at $30/month per device on Plus or $20/month per device on Premium,
+          with a Square&reg; Plus or Premium subscription required. DrinkFlow is built for shops that already use
+          Square&reg; but want a lighter, drink-focused display and reporting layer without stacking another
           restaurant-sized monthly fee on top.
         </p>
         <div class="grid comparison-grid">
           <article class="card comparison-card">
-            <h3>Square KDS add-on</h3>
+            <h3>Square&reg; KDS add-on</h3>
             <div class="comparison-number">$240-$360</div>
-            <p>Per year, per KDS device, based on Square&apos;s published $20-$30/month device pricing.</p>
+            <p>Per year, per KDS device, based on Square&reg;&apos;s published $20-$30/month device pricing.</p>
           </article>
           <article class="card comparison-card highlight">
             <h3>DrinkFlow annual</h3>
@@ -934,21 +1378,21 @@
           <article class="card comparison-card">
             <h3>Estimated savings</h3>
             <div class="comparison-number">$180-$300</div>
-            <p>Ongoing annual savings for one KDS screen before considering required Square plan costs.</p>
+            <p>Ongoing annual savings for one KDS screen before considering required Square&reg; plan costs.</p>
           </article>
         </div>
         <div class="comparison-savings">
           <div class="savings-pill">
             <strong>$130-$250 saved in year one</strong>
-            <span>One screen, after the $50 DrinkFlow setup fee, compared with Square&apos;s KDS add-on price alone.</span>
+            <span>One screen, after the $50 DrinkFlow setup fee, compared with Square&reg;&apos;s KDS add-on price alone.</span>
           </div>
           <div class="savings-pill">
             <strong>$180-$300 saved every year after</strong>
-            <span>Ongoing software savings for a one-screen shop, before any Square Plus or Premium plan costs.</span>
+            <span>Ongoing software savings for a one-screen shop, before any Square&reg; Plus or Premium plan costs.</span>
           </div>
         </div>
         <p class="comparison-note">
-          Pricing is based on <a href="https://squareup.com/kds" target="_blank" rel="noreferrer">Square&apos;s published U.S. KDS pricing</a> and may change. DrinkFlow requires the shop to already use Square for orders or payments.
+          Pricing is based on <a href="https://squareup.com/kds" target="_blank" rel="noreferrer">Square&reg;&apos;s published U.S. KDS pricing</a> and may change. DrinkFlow requires the shop to already use Square&reg; for orders or payments.
         </p>
       </div>
     </section>
@@ -958,9 +1402,9 @@
         <p class="eyebrow">Simple launch pricing</p>
         <h2>Priced for independent shops that need one focused tool.</h2>
         <p class="section-copy">
-          This works best as a low-friction subscription with a setup fee for Square connection,
+          This works best as a low-friction subscription with a setup fee for Square&reg; connection,
           custom domain setup, branding, testing, debugging, and tailoring the feature set to the way each shop works.
-          DrinkFlow connects through the Square API, so the shop needs to already use Square for orders or payments.
+          DrinkFlow connects through the Square&reg; API, so the shop needs to already use Square&reg; for orders or payments.
         </p>
         <div class="grid price-grid">
           <article class="price-card featured">
@@ -976,7 +1420,7 @@
           <article class="price-card">
             <h3>Setup</h3>
             <div class="price">$50 <small>one time</small></div>
-            <p>Covers onboarding, custom domain setup, shop branding, Square connection, debugging, launch checks, and adding or removing features based on what the shop actually needs.</p>
+            <p>Covers onboarding, custom domain setup, shop branding, Square&reg; connection, debugging, launch checks, and adding or removing features based on what the shop actually needs.</p>
           </article>
           <article class="price-card">
             <h3>On-site setup</h3>
@@ -987,13 +1431,59 @@
       </div>
     </section>
 
+    <section class="section faq" id="faq">
+      <div class="section-inner">
+        <p class="eyebrow">Buyer questions</p>
+        <h2>Built for shops that want the screen, the numbers, and the setup handled.</h2>
+        <div class="faq-grid">
+          <aside class="card faq-panel">
+            <h3 class="mini-title">Best fit</h3>
+            <p class="mini-copy">
+              Coffee shops, smoothie bars, tea shops, bakeries with drink volume, and counters
+              already using Square&reg; for orders or payments.
+            </p>
+            <p class="mini-copy">
+              The goal is not to replace Square&reg;. It is to give drink shops a cleaner KDS,
+              cleaner drink analytics, and reports owners can actually use.
+            </p>
+          </aside>
+          <div class="faq-list">
+            <details open>
+              <summary>What does DrinkFlow have that Square&reg; KDS does not focus on?</summary>
+              <p>DrinkFlow focuses on drink-only analytics, average drinks per order, 2+ drink order rate, daily coffee-shop guidance, branded PDF reports, and custom shop setup.</p>
+            </details>
+            <details>
+              <summary>Does it replace Square&reg;?</summary>
+              <p>No. DrinkFlow connects through the Square&reg; API, so the shop should already use Square&reg; for orders or payments.</p>
+            </details>
+            <details>
+              <summary>Can it run on a phone?</summary>
+              <p>Yes. It can run on an iPad, simple phone screen, or handoff display, depending on the shop&apos;s counter setup.</p>
+            </details>
+            <details>
+              <summary>What happens to retail items?</summary>
+              <p>Retail items like merch, bagged coffee, gifts, and soaps can stay out of drink totals so owner reports focus on actual drink behavior.</p>
+            </details>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="cta-band">
       <div class="cta-inner">
         <div>
           <h2>Give the counter a calmer screen.</h2>
-          <p>Custom-domain, Square-connected KDS builds for coffee shops, smoothie shops, and drink counters.</p>
+          <p>Custom-domain, Square&reg;-connected KDS builds for coffee shops, smoothie shops, and drink counters.</p>
         </div>
-        <a class="button primary" href="mailto:samantha@studiosamantha.com?subject=DrinkFlow%20KDS%20setup">Start a conversation</a>
+        <form class="lead-form" id="lead-form">
+          <label for="lead-email">Stay updated as DrinkFlow adds more features</label>
+          <div class="lead-form-row">
+            <input id="lead-email" name="email" type="email" autocomplete="email" placeholder="email@yourshop.com" required />
+            <button class="button primary" type="submit">Get updates</button>
+          </div>
+          <input class="hidden-field" name="company" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" />
+          <p class="lead-status" id="lead-status" role="status" aria-live="polite"></p>
+        </form>
       </div>
     </section>
 
@@ -1005,10 +1495,57 @@
         </div>
         <div>
           Square&reg; and Supabase&reg; are trademarks of their respective owners.
-          This product is independent and not affiliated with or endorsed by Square or Supabase.
+          This product is independent and not affiliated with or endorsed by Square&reg; or Supabase&reg;.
           <a href="/policy.html">Policy details</a>
         </div>
       </div>
     </footer>
+    <script>
+      const leadForm = document.getElementById("lead-form");
+      const leadStatus = document.getElementById("lead-status");
+
+      if (leadForm && leadStatus) {
+        leadForm.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const formData = new FormData(leadForm);
+          const button = leadForm.querySelector("button");
+          const email = String(formData.get("email") || "").trim();
+
+          if (!email) {
+            leadStatus.textContent = "Enter your email address first.";
+            return;
+          }
+
+          button.disabled = true;
+          leadStatus.textContent = "Saving...";
+
+          try {
+            const response = await fetch("/api/drinkflow-leads", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                email,
+                company: String(formData.get("company") || ""),
+                source: "learn-more",
+                pagePath: window.location.pathname,
+                referrer: document.referrer,
+              }),
+            });
+            const result = await response.json().catch(() => ({}));
+
+            if (!response.ok || !result.ok) {
+              throw new Error(result.error || "Could not save that email right now.");
+            }
+
+            leadForm.reset();
+            leadStatus.textContent = result.message || "Thanks. You are on the update list.";
+          } catch (error) {
+            leadStatus.textContent = error.message || "Could not save that email right now.";
+          } finally {
+            button.disabled = false;
+          }
+        });
+      }
+    </script>
   </body>
 </html>

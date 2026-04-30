@@ -160,6 +160,21 @@ async function sendSquareOfflineEmail(reason, details = "") {
   return sendAlertEmail(subject, text);
 }
 
+function normalizeLeadEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function isValidLeadEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) && email.length <= 254;
+}
+
+function cleanLeadText(value, maxLength = 160) {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLength);
+}
+
 console.log("Initializing Square client...");
 console.log(`Environment: ${SQUARE_ENVIRONMENT}`);
 console.log(`Location ID: ${SQUARE_LOCATION_ID ? "Set" : "Missing"}`);
@@ -2983,6 +2998,64 @@ app.get("/api/health", (req, res) => {
     },
     time: new Date().toISOString(),
   });
+});
+
+app.post("/api/drinkflow-leads", async (req, res) => {
+  try {
+    const email = normalizeLeadEmail(req.body?.email);
+    const shopName = cleanLeadText(req.body?.shopName, 120);
+    const featureInterest = cleanLeadText(req.body?.featureInterest, 240);
+    const source = cleanLeadText(req.body?.source || "learn-more", 80);
+    const pagePath = cleanLeadText(req.body?.pagePath, 200);
+    const referrer = cleanLeadText(req.body?.referrer || req.get("referer") || "", 300);
+    const honeypot = cleanLeadText(req.body?.company, 80);
+
+    if (honeypot) {
+      return res.json({ ok: true, message: "Thanks. You are on the update list." });
+    }
+
+    if (!isValidLeadEmail(email)) {
+      return res.status(400).json({ ok: false, error: "Enter a valid email address." });
+    }
+
+    if (!supabase) {
+      return res.status(503).json({
+        ok: false,
+        error: "Email capture storage is not configured yet.",
+      });
+    }
+
+    const { error } = await supabase.from("drinkflow_leads").upsert(
+      {
+        email,
+        shop_name: shopName,
+        feature_interest: featureInterest,
+        source,
+        page_path: pagePath,
+        referrer,
+        user_agent: cleanLeadText(req.get("user-agent") || "", 500),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "email" }
+    );
+
+    if (error) {
+      console.error("Error saving DrinkFlow lead:", error);
+      const missingTable =
+        error.code === "42P01" || /drinkflow_leads|schema cache/i.test(error.message || "");
+      return res.status(missingTable ? 503 : 500).json({
+        ok: false,
+        error: missingTable
+          ? "Email capture table is not installed in Supabase yet. Run the latest supabase-schema.sql."
+          : "Could not save that email right now.",
+      });
+    }
+
+    res.json({ ok: true, message: "Thanks. You are on the update list." });
+  } catch (error) {
+    console.error("Error handling DrinkFlow lead:", error);
+    res.status(500).json({ ok: false, error: "Could not save that email right now." });
+  }
 });
 
 async function handleSquareAlertTest(req, res) {
