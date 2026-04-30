@@ -7,11 +7,20 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.1.1";
+const APP_VERSION = "v1.1.2";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-30";
 const RELEASE_NOTES = [
+  {
+    version: "v1.1.2",
+    date: "Current build",
+    summary: "The utility actions were grouped into Settings to keep the screen cleaner.",
+    items: [
+      "Theme, Suggest Fix, Change Password, and What's New now live inside Settings.",
+      "The dashboard header is cleaner and easier to scan.",
+    ],
+  },
   {
     version: "v1.1.1",
     date: "Current build",
@@ -1193,15 +1202,88 @@ function ModeToggle({ active, label, onToggle, hint, onInfoClick }) {
         {label}
       </button>
 
-      <button
-        type="button"
-        onClick={onInfoClick}
-        title={hint}
-        aria-label={hint}
-        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#CA862B]/20 bg-white text-xs font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-      >
-        ?
-      </button>
+      {onInfoClick && (
+        <button
+          type="button"
+          onClick={onInfoClick}
+          title={hint}
+          aria-label={hint}
+          className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#CA862B]/20 bg-white text-xs font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+        >
+          ?
+        </button>
+      )}
+    </div>
+  );
+}
+
+function SettingsPopover({
+  open,
+  onClose,
+  themeMode,
+  onThemeToggle,
+  onChangePassword,
+  suggestFixHref,
+  onVersionClick,
+  showPasswordAction = true,
+}) {
+  if (!open) return null;
+
+  return (
+    <div className="absolute right-0 top-full z-40 mt-2 w-[min(20rem,calc(100vw-2rem))] rounded-2xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_18px_50px_rgba(0,0,0,0.16)] overflow-hidden">
+      <div className="flex items-center justify-between border-b border-[#CA862B]/16 px-4 py-3">
+        <div>
+          <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
+            Settings
+          </div>
+          <div className="text-sm font-black text-[#111111]">App tools</div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-lg border border-[#CA862B]/18 bg-white px-2.5 py-1.5 text-xs font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+        >
+          Close
+        </button>
+      </div>
+
+      <div className="p-3 space-y-2">
+        <ModeToggle
+          active={themeMode === "dark"}
+          label={themeMode === "dark" ? "Light mode" : "Dark mode"}
+          onToggle={onThemeToggle}
+          hint="Switch between the light and dark dashboard themes."
+        />
+
+        {showPasswordAction && (
+          <button
+            type="button"
+            onClick={onChangePassword}
+            className="w-full rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45 text-left"
+          >
+            Change Password
+          </button>
+        )}
+
+        <a
+          href={suggestFixHref}
+          className="block w-full rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+        >
+          Suggest Fix
+        </a>
+
+        <button
+          type="button"
+          onClick={onVersionClick}
+          className="w-full rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-left"
+        >
+          <div className="text-[11px] font-black uppercase tracking-[0.18em] text-[#6A614F]">
+            What&apos;s new?
+          </div>
+          <div className="text-sm font-black text-[#0F4036]">{APP_VERSION}</div>
+        </button>
+      </div>
     </div>
   );
 }
@@ -1711,8 +1793,12 @@ function LoginScreen({
   onThemeToggle,
   themeStyle,
   trainingStyle,
-  onVersionClick,
-  onThemeHelp,
+  settingsOpen,
+  onToggleSettings,
+  onCloseSettings,
+  onChangePassword,
+  suggestFixHref,
+  onVersionClickMenu,
 }) {
   const [employeeName, setEmployeeName] = useState("");
   const [password, setPassword] = useState("");
@@ -1783,43 +1869,31 @@ function LoginScreen({
       className="relative min-h-screen bg-[#EEE0C5] text-[#111111] flex items-center justify-center px-4"
       style={{ ...themeStyle, ...trainingStyle }}
     >
-      <div className="absolute right-4 top-4 hidden sm:flex flex-col items-end gap-2">
-        <ModeToggle
-          active={themeMode === "dark"}
-          label={themeMode === "dark" ? "Light mode" : "Dark mode"}
-          onToggle={onThemeToggle}
-          hint="Switch between the light and dark dashboard themes."
-          onInfoClick={onThemeHelp}
-        />
-      </div>
+      <div className="absolute right-4 top-4">
+        <button
+          type="button"
+          onClick={onToggleSettings}
+          className="rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+        >
+          Settings
+        </button>
 
-      <a
-        href={buildSupportMailto()}
-        className="absolute right-4 top-24 hidden sm:inline-flex rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-      >
-        Suggest Fix
-      </a>
+        <div onClick={(event) => event.stopPropagation()}>
+          <SettingsPopover
+            open={settingsOpen}
+            onClose={onCloseSettings}
+            themeMode={themeMode}
+            onThemeToggle={onThemeToggle}
+            showPasswordAction={false}
+            suggestFixHref={suggestFixHref}
+            onVersionClick={onVersionClickMenu}
+          />
+        </div>
+      </div>
 
       <main className="w-full max-w-md rounded-3xl bg-[#FFFDF8] border border-[#CA862B]/22 shadow-[0_20px_60px_rgba(15,64,54,0.08)] p-6 flex flex-col items-center text-center">
         <div className="flex items-center justify-center gap-4 mb-5">
           <BrandMark size="lg" />
-        </div>
-
-        <div className="sm:hidden mb-4 flex flex-wrap items-center justify-center gap-2 w-full">
-          <ModeToggle
-            active={themeMode === "dark"}
-            label={themeMode === "dark" ? "Light mode" : "Dark mode"}
-            onToggle={onThemeToggle}
-            hint="Switch between the light and dark dashboard themes."
-            onInfoClick={onThemeHelp}
-          />
-
-          <a
-            href={buildSupportMailto()}
-            className="rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-          >
-            Suggest Fix
-          </a>
         </div>
 
         <h1 className="text-4xl font-black tracking-tight text-[#0F4036]">
@@ -1829,14 +1903,6 @@ function LoginScreen({
         <p className="text-[#6A614F] mt-2">
           Enter your name and password to continue.
         </p>
-
-        <button
-          type="button"
-          onClick={onVersionClick}
-          className="mt-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#0F4036] underline decoration-[#CA862B]/70 decoration-2 underline-offset-4"
-        >
-          {APP_VERSION} · what&apos;s new?
-        </button>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4 w-full">
           <label className="block text-left">
@@ -1895,9 +1961,6 @@ function LoginScreen({
           </button>
         </form>
 
-        <div className="mt-5 text-[11px] font-bold uppercase tracking-[0.18em] text-[#6A614F]">
-          {APP_VERSION}
-        </div>
       </main>
     </div>
   );
@@ -2050,6 +2113,7 @@ export default function GoldiesKDS() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showReleaseNotes, setShowReleaseNotes] = useState(false);
   const [modeHelp, setModeHelp] = useState(null);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [hideSoftOpeningNote, setHideSoftOpeningNote] = useState(false);
   const [hiddenReleaseNotesVersion, setHiddenReleaseNotesVersion] = useState(() => {
     if (typeof window === "undefined") return "";
@@ -2566,13 +2630,20 @@ export default function GoldiesKDS() {
           }
           themeStyle={themeStyle}
           trainingStyle={trainingThemeStyle}
-          onVersionClick={() => setShowReleaseNotes(true)}
-          onThemeHelp={() =>
-            setModeHelp({
-              title: "Theme mode",
-              body: "This changes the look of the login screen and dashboard between light and dark mode.",
-            })
-          }
+          settingsOpen={showSettingsMenu}
+          onToggleSettings={() => setShowSettingsMenu((current) => !current)}
+          onCloseSettings={() => setShowSettingsMenu(false)}
+          onChangePassword={() => {
+            setShowSettingsMenu(false);
+            setPasswordError("");
+            setPasswordNotice("");
+            setShowPasswordModal(true);
+          }}
+          suggestFixHref={buildSupportMailto()}
+          onVersionClickMenu={() => {
+            setShowSettingsMenu(false);
+            setShowReleaseNotes(true);
+          }}
         />
         <SoftOpeningDialog
           open={showSoftOpeningNote}
@@ -2585,6 +2656,7 @@ export default function GoldiesKDS() {
       <div
         className="min-h-screen bg-[#EEE0C5] text-[#111111]"
         style={{ ...themeStyle, ...trainingThemeStyle }}
+        onClick={() => setShowSettingsMenu(false)}
       >
       <header className="border-b border-[#CA862B]/22 bg-[#FFFDF8]/95 backdrop-blur px-4 md:px-6 py-4">
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
@@ -2630,32 +2702,38 @@ export default function GoldiesKDS() {
             </div>
 
             <div className="flex flex-wrap gap-2 justify-start xl:justify-end">
-              <ModeToggle
-                active={themeMode === "dark"}
-                label={themeMode === "dark" ? "Light mode" : "Dark mode"}
-                onToggle={() =>
-                  setThemeMode((current) => (current === "dark" ? "light" : "dark"))
-                }
-                hint="Switch between the light and dark dashboard themes."
-                onInfoClick={() =>
-                  setModeHelp({
-                    title: "Theme mode",
-                    body: "This changes the dashboard look between light mode and dark mode.",
-                  })
-                }
-              />
+              <div className="relative" onClick={(event) => event.stopPropagation()}>
+                <button
+                  type="button"
+                  onClick={() => setShowSettingsMenu((current) => !current)}
+                  className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                >
+                  Settings
+                </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setPasswordError("");
-                  setPasswordNotice("");
-                  setShowPasswordModal(true);
-                }}
-                className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-              >
-                Change Password
-              </button>
+                <SettingsPopover
+                  open={showSettingsMenu}
+                  onClose={() => setShowSettingsMenu(false)}
+                  themeMode={themeMode}
+                  onThemeToggle={() =>
+                    setThemeMode((current) =>
+                      current === "dark" ? "light" : "dark"
+                    )
+                  }
+                  showPasswordAction={true}
+                  onChangePassword={() => {
+                    setShowSettingsMenu(false);
+                    setPasswordError("");
+                    setPasswordNotice("");
+                    setShowPasswordModal(true);
+                  }}
+                  suggestFixHref={buildSupportMailto()}
+                  onVersionClick={() => {
+                    setShowSettingsMenu(false);
+                    setShowReleaseNotes(true);
+                  }}
+                />
+              </div>
 
               <button
                 type="button"
@@ -2663,23 +2741,6 @@ export default function GoldiesKDS() {
                 className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
               >
                 Sign out
-              </button>
-
-              <a
-                href={buildSupportMailto()}
-                className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-              >
-                Suggest Fix
-              </a>
-            </div>
-
-            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6A614F]">
-              <button
-                type="button"
-                onClick={() => setShowReleaseNotes(true)}
-                className="underline decoration-[#CA862B]/70 decoration-2 underline-offset-4"
-              >
-                {APP_VERSION} · what&apos;s new?
               </button>
             </div>
 
