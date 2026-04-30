@@ -510,6 +510,76 @@
         margin-top: 28px;
         grid-template-columns: repeat(3, minmax(0, 1fr));
       }
+      .comparison {
+        background: var(--cream);
+      }
+      .comparison-grid {
+        margin-top: 28px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      .comparison-card {
+        padding: 22px;
+      }
+      .comparison-card.highlight {
+        border-color: rgba(15, 64, 54, 0.26);
+        background: var(--green);
+        color: #fff;
+      }
+      .comparison-card h3 {
+        margin: 0;
+        color: inherit;
+        font-size: 18px;
+      }
+      .comparison-number {
+        margin-top: 12px;
+        color: var(--green);
+        font-size: 38px;
+        line-height: 1;
+        font-weight: 950;
+      }
+      .comparison-card.highlight .comparison-number {
+        color: #fff;
+      }
+      .comparison-card p {
+        margin: 10px 0 0;
+        color: inherit;
+        opacity: 0.78;
+        line-height: 1.6;
+      }
+      .comparison-savings {
+        margin-top: 20px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .savings-pill {
+        border-radius: 8px;
+        border: 1px solid rgba(15, 64, 54, 0.14);
+        background: #fff;
+        padding: 16px;
+      }
+      .savings-pill strong {
+        display: block;
+        color: var(--green);
+        font-size: 24px;
+        line-height: 1.1;
+      }
+      .savings-pill span {
+        display: block;
+        margin-top: 6px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+      .comparison-note {
+        margin-top: 16px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+      .comparison-note a {
+        color: var(--green);
+        font-weight: 800;
+      }
       .pricing {
         background: var(--green);
         color: #fff;
@@ -588,7 +658,7 @@
         .nav-links a:not(.button) { display: none; }
         .hero { min-height: 88vh; }
         .hero-visual { display: none; }
-        .features, .showcase-grid, .price-grid, .onboarding-grid, .customer-grid {
+        .features, .showcase-grid, .price-grid, .onboarding-grid, .customer-grid, .comparison-grid, .comparison-savings {
           grid-template-columns: 1fr;
         }
         .lane-grid {
@@ -837,6 +907,49 @@
             <p>Add what helps, remove what gets in the way, and keep the screen focused on how the shop actually runs.</p>
           </article>
         </div>
+      </div>
+    </section>
+
+    <section class="section comparison">
+      <div class="section-inner">
+        <p class="eyebrow">KDS cost comparison</p>
+        <h2>Built to replace the extra monthly KDS fee for drink-focused shops.</h2>
+        <p class="section-copy">
+          Square publishes KDS pricing at $30/month per device on Plus or $20/month per device on Premium,
+          with a Square Plus or Premium subscription required. DrinkFlow is built for shops that already use
+          Square but want a lighter, drink-focused display and reporting layer without stacking another
+          restaurant-sized monthly fee on top.
+        </p>
+        <div class="grid comparison-grid">
+          <article class="card comparison-card">
+            <h3>Square KDS add-on</h3>
+            <div class="comparison-number">$240-$360</div>
+            <p>Per year, per KDS device, based on Square&apos;s published $20-$30/month device pricing.</p>
+          </article>
+          <article class="card comparison-card highlight">
+            <h3>DrinkFlow annual</h3>
+            <div class="comparison-number">$60</div>
+            <p>Per year for a focused drink-shop KDS layer, plus the one-time $50 setup.</p>
+          </article>
+          <article class="card comparison-card">
+            <h3>Estimated savings</h3>
+            <div class="comparison-number">$180-$300</div>
+            <p>Ongoing annual savings for one KDS screen before considering required Square plan costs.</p>
+          </article>
+        </div>
+        <div class="comparison-savings">
+          <div class="savings-pill">
+            <strong>$130-$250 saved in year one</strong>
+            <span>One screen, after the $50 DrinkFlow setup fee, compared with Square&apos;s KDS add-on price alone.</span>
+          </div>
+          <div class="savings-pill">
+            <strong>$180-$300 saved every year after</strong>
+            <span>Ongoing software savings for a one-screen shop, before any Square Plus or Premium plan costs.</span>
+          </div>
+        </div>
+        <p class="comparison-note">
+          Pricing is based on <a href="https://squareup.com/kds" target="_blank" rel="noreferrer">Square&apos;s published U.S. KDS pricing</a> and may change. DrinkFlow requires the shop to already use Square for orders or payments.
+        </p>
       </div>
     </section>
 
