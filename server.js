@@ -328,6 +328,51 @@ function toJsonSafe(value) {
   );
 }
 
+function appendStatusEvent(rawOrder, status, at) {
+  const base =
+    rawOrder && typeof rawOrder === "object" && !Array.isArray(rawOrder)
+      ? rawOrder
+      : {};
+  const existingEvents = Array.isArray(base.kdsStatusEvents)
+    ? base.kdsStatusEvents
+    : [];
+
+  return toJsonSafe({
+    ...base,
+    kdsStatusEvents: [
+      ...existingEvents.slice(-49),
+      {
+        status,
+        at,
+      },
+    ],
+  });
+}
+
+function getStatusEvents(rawOrder) {
+  if (!rawOrder || typeof rawOrder !== "object") return [];
+  if (!Array.isArray(rawOrder.kdsStatusEvents)) return [];
+
+  return rawOrder.kdsStatusEvents
+    .map((event) => ({
+      status: sanitizeStatus(event.status),
+      at: new Date(event.at).getTime(),
+    }))
+    .filter((event) => Number.isFinite(event.at))
+    .sort((a, b) => a.at - b.at);
+}
+
+function formatDurationSeconds(seconds) {
+  if (!Number.isFinite(seconds) || seconds <= 0) return "Collecting";
+
+  const rounded = Math.round(seconds);
+  const mins = Math.floor(rounded / 60);
+  const secs = rounded % 60;
+
+  if (mins < 1) return `${secs}s`;
+  return `${mins}m ${String(secs).padStart(2, "0")}s`;
+}
+
 function parseCookies(cookieHeader = "") {
   return cookieHeader.split(";").reduce((cookies, cookie) => {
     const [rawName, ...rawValue] = cookie.trim().split("=");
@@ -1212,6 +1257,10 @@ async function upsertTicket(ticket, rawOrder = null) {
       raw_order: rawOrder
         ? toJsonSafe({
             ...rawOrder,
+            kdsStatusEvents:
+              existingOrder?.raw_order?.kdsStatusEvents ||
+              rawOrder.kdsStatusEvents ||
+              [],
             employeeName:
               ticket.employeeName ||
               existingOrder?.raw_order?.employeeName ||
@@ -1317,6 +1366,25 @@ async function setTicketStatus(id, status) {
     status: sanitizedStatus,
     updated_at: statusUpdatedAt,
   };
+
+  const { data: existingOrder, error: existingError } = await supabase
+    .from("kds_orders")
+    .select("square_order_id, raw_order")
+    .eq("square_order_id", id)
+    .maybeSingle();
+
+  if (existingError) throw existingError;
+  if (!existingOrder) {
+    const missingError = new Error(`Ticket ${id} was not found`);
+    missingError.statusCode = 404;
+    throw missingError;
+  }
+
+  updates.raw_order = appendStatusEvent(
+    existingOrder.raw_order,
+    sanitizedStatus,
+    statusUpdatedAt
+  );
 
   const { data, error } = await supabase
     .from("kds_orders")
@@ -1645,6 +1713,107 @@ async function getDrinkReport(range = "today") {
   }));
 
   return buildDrinkReport(reportTickets, start, end);
+}
+
+function ticketHasDrinkItem(ticket) {
+  return (ticket.items || []).some((item) => item.category || getDrinkCategory(item.name));
+}
+
+function getMakingDurationFromEvents(events, start, end) {
+  let startedAt = null;
+
+  for (const event of events) {
+    if (event.status === "making") {
+      startedAt = event.at;
+      continue;
+    }
+
+    if ((event.status === "completed" || event.status === "done") && startedAt) {
+      if (event.at < start.getTime() || event.at > end.getTime()) return null;
+      const durationMs = event.at - startedAt;
+      return durationMs > 0 ? durationMs : null;
+    }
+  }
+
+  return null;
+}
+
+async function getDrinkMakingTimeReport(range = "today") {
+  const start = getRangeStart(range);
+  const end = getRangeEnd(range);
+
+  if (!supabase) {
+    const durations = tickets
+      .filter((ticket) => ticketHasDrinkItem(ticket))
+      .map((ticket) =>
+        getMakingDurationFromEvents(
+          getStatusEvents(ticket.rawOrder || ticket.raw_order || {}),
+          start,
+          end
+        )
+      )
+      .filter((duration) => Number.isFinite(duration));
+    const averageSeconds = durations.length
+      ? Math.round(
+          durations.reduce((sum, duration) => sum + duration, 0) /
+            durations.length /
+            1000
+        )
+      : 0;
+
+    return {
+      averageSeconds,
+      label: formatDurationSeconds(averageSeconds),
+      sampleSize: durations.length,
+      range,
+    };
+  }
+
+  const { data: orders, error: orderError } = await supabase
+    .from("kds_orders")
+    .select("square_order_id, raw_order")
+    .gte("created_at", start.toISOString())
+    .lte("created_at", end.toISOString());
+
+  if (orderError) throw orderError;
+  if (!orders?.length) {
+    return { averageSeconds: 0, label: "Collecting", sampleSize: 0, range };
+  }
+
+  const orderIds = orders.map((order) => order.square_order_id);
+  const { data: items, error: itemsError } = await supabase
+    .from("kds_order_items")
+    .select("order_id, name, category")
+    .in("order_id", orderIds);
+
+  if (itemsError) throw itemsError;
+
+  const drinkOrderIds = new Set();
+  for (const item of items || []) {
+    const category = item.category || getDrinkCategory(item.name);
+    if (category) drinkOrderIds.add(item.order_id);
+  }
+
+  const durations = orders
+    .filter((order) => drinkOrderIds.has(order.square_order_id))
+    .map((order) =>
+      getMakingDurationFromEvents(getStatusEvents(order.raw_order), start, end)
+    )
+    .filter((duration) => Number.isFinite(duration));
+  const averageSeconds = durations.length
+    ? Math.round(
+        durations.reduce((sum, duration) => sum + duration, 0) /
+          durations.length /
+          1000
+      )
+    : 0;
+
+  return {
+    averageSeconds,
+    label: formatDurationSeconds(averageSeconds),
+    sampleSize: durations.length,
+    range,
+  };
 }
 
 function buildDrinkReport(reportTickets, start, end = new Date()) {
@@ -2142,6 +2311,19 @@ app.get("/api/reports/drinks", requireKdsAuth, async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching drink report:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/reports/drink-making-time", requireKdsAuth, async (req, res) => {
+  try {
+    const allowedRanges = new Set(["today"]);
+    const range = allowedRanges.has(req.query.range) ? req.query.range : "today";
+    const report = await getDrinkMakingTimeReport(range);
+
+    res.json(report);
+  } catch (error) {
+    console.error("Error fetching drink making time report:", error);
     res.status(500).json({ error: error.message });
   }
 });

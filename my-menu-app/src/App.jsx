@@ -9,7 +9,7 @@ const LOGO_DARK_URL = "/goldies-logo-white.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.3.7";
+const APP_VERSION = "v1.4.0";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -20,8 +20,17 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.3.7",
+    version: "v1.4.0",
     date: "Current build",
+    summary: "Added average drink making time.",
+    items: [
+      "The top dashboard now shows Avg Drink Time for completed drink tickets.",
+      "The backend records KDS status taps to measure making-to-completed time.",
+    ],
+  },
+  {
+    version: "v1.3.7",
+    date: "Previous build",
     summary: "Updated pitch page trademark wording.",
     items: [
       "Supabase now uses the same registered trademark treatment as Square on the pitch page.",
@@ -2675,6 +2684,10 @@ export default function GoldiesKDS() {
   const [completedTickets, setCompletedTickets] = useState([]);
   const [drinkCounts, setDrinkCounts] = useState([]);
   const [drinkOrderCount, setDrinkOrderCount] = useState(0);
+  const [drinkMakingTime, setDrinkMakingTime] = useState({
+    label: "Collecting",
+    sampleSize: 0,
+  });
   const [drinkReports, setDrinkReports] = useState({});
   const [showStats, setShowStats] = useState(false);
   const [showTodayCount, setShowTodayCount] = useState(false);
@@ -2887,16 +2900,23 @@ export default function GoldiesKDS() {
 
     async function fetchBoardAndTodayCounts() {
       try {
-        const [ticketsResponse, drinkResponse] = await Promise.all([
+        const [ticketsResponse, drinkResponse, makingTimeResponse] = await Promise.all([
           fetch(apiUrl("/api/tickets"), {
             credentials: "include",
           }),
           fetch(apiUrl("/api/reports/drinks?range=today"), {
             credentials: "include",
           }),
+          fetch(apiUrl("/api/reports/drink-making-time?range=today"), {
+            credentials: "include",
+          }),
         ]);
 
-        if (ticketsResponse.status === 401 || drinkResponse.status === 401) {
+        if (
+          ticketsResponse.status === 401 ||
+          drinkResponse.status === 401 ||
+          makingTimeResponse.status === 401
+        ) {
           setAuthStatus("login");
           return;
         }
@@ -2909,8 +2929,15 @@ export default function GoldiesKDS() {
           throw new Error(`Failed to fetch drink report: ${drinkResponse.status}`);
         }
 
+        if (!makingTimeResponse.ok) {
+          throw new Error(
+            `Failed to fetch drink making time: ${makingTimeResponse.status}`
+          );
+        }
+
         const liveTickets = await ticketsResponse.json();
         const todayReport = await drinkResponse.json();
+        const makingTimeReport = await makingTimeResponse.json();
 
         if (!mounted) return;
 
@@ -2922,6 +2949,10 @@ export default function GoldiesKDS() {
           }))
         );
         setDrinkOrderCount(todayReport.orderCount || 0);
+        setDrinkMakingTime({
+          label: makingTimeReport.label || "Collecting",
+          sampleSize: makingTimeReport.sampleSize || 0,
+        });
         setLastPoll(new Date());
         setConnectionStatus("Connected");
         setLastError("");
@@ -3065,6 +3096,12 @@ export default function GoldiesKDS() {
   const displayedDrinkOrderCount = isTrainingMode
     ? countBeverageOrdersForDay(displayedTickets, getTodayDateKey())
     : drinkOrderCount;
+  const displayedDrinkMakingTime = isTrainingMode
+    ? {
+        label: "3m 12s",
+        sampleSize: 4,
+      }
+    : drinkMakingTime;
   const displayedDrinkReports = isTrainingMode
     ? buildTrainingReports(displayedTickets)
     : drinkReports;
@@ -3434,7 +3471,7 @@ export default function GoldiesKDS() {
       </header>
 
       <main className="p-3 md:p-4 space-y-4 max-w-[1900px] mx-auto">
-        <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+        <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
           <div className="rounded-2xl bg-[rgba(255,253,248,0.88)] border border-white/70 p-3 shadow-[0_16px_40px_rgba(15,64,54,0.08)] backdrop-blur-sm">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -3511,6 +3548,16 @@ export default function GoldiesKDS() {
             label="Open tickets"
             value={activeTickets.length}
             detail="All active columns"
+          />
+
+          <StatCard
+            label="Avg Drink Time"
+            value={displayedDrinkMakingTime.label}
+            detail={
+              displayedDrinkMakingTime.sampleSize
+                ? `${displayedDrinkMakingTime.sampleSize} completed today`
+                : "Starts after first completed drink"
+            }
           />
         </section>
 
