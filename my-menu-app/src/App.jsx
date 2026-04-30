@@ -6,11 +6,20 @@ const API_BASE_URL = import.meta.env.DEV
 const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
-const APP_VERSION = "v1.0.7";
+const APP_VERSION = "v1.0.8";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-30";
 const RELEASE_NOTES = [
+  {
+    version: "v1.0.8",
+    date: "Current build",
+    summary: "The helper text under the count panels was cleaned up.",
+    items: [
+      "The extra note under Today's Count was removed.",
+      "The extra note under Completed Today was removed.",
+    ],
+  },
   {
     version: "v1.0.7",
     date: "Current build",
@@ -2244,7 +2253,7 @@ export default function GoldiesKDS() {
             <div>
               <h2 className="text-lg md:text-2xl font-black text-[#0F4036]">Today&apos;s Count</h2>
               <p className="text-sm text-[#6A614F]">
-                Drink totals, collapsed when not needed
+                Drink totals
               </p>
             </div>
             <button
@@ -2320,7 +2329,7 @@ export default function GoldiesKDS() {
             <div>
               <h2 className="text-lg md:text-2xl font-black text-[#0F4036]">Completed Today</h2>
               <p className="text-sm text-[#6A614F]">
-                Finished tickets, collapsed by default
+                Finished tickets
               </p>
             </div>
             <button
