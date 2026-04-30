@@ -149,13 +149,13 @@
 
       .hero {
         position: relative;
-        min-height: 94vh;
+        min-height: 100svh;
         display: grid;
-        align-items: end;
+        align-items: center;
         overflow: hidden;
-        padding: 92px clamp(16px, 4vw, 48px) 46px;
+        padding: 96px clamp(16px, 4vw, 48px) 54px;
         background:
-          linear-gradient(90deg, rgba(15, 64, 54, 0.96), rgba(15, 64, 54, 0.82) 48%, rgba(15, 64, 54, 0.46)),
+          linear-gradient(110deg, rgba(15, 64, 54, 0.98), rgba(15, 64, 54, 0.86) 48%, rgba(47, 111, 143, 0.52)),
           #0f4036;
       }
       .hero::after {
@@ -173,54 +173,8 @@
         margin: 0 auto;
         display: grid;
         gap: 28px;
-        grid-template-columns: minmax(0, 1fr);
-      }
-      .hero-visual {
-        position: absolute;
-        inset: 86px clamp(16px, 5vw, 70px) 88px auto;
-        width: min(620px, 52vw);
-        display: grid;
-        gap: 14px;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        opacity: 0.5;
-        transform: rotate(-2deg);
-      }
-      .hero-lane {
-        min-height: 420px;
-        border: 1px solid rgba(255, 255, 255, 0.18);
-        border-radius: 8px;
-        background: rgba(255, 253, 248, 0.1);
-        box-shadow: 0 26px 80px rgba(0, 0, 0, 0.18);
-        backdrop-filter: blur(18px);
-        overflow: hidden;
-      }
-      .hero-lane-title {
-        padding: 12px;
-        color: rgba(255, 255, 255, 0.82);
-        font-size: 11px;
-        font-weight: 950;
-        text-transform: uppercase;
-        letter-spacing: 0.14em;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.14);
-      }
-      .hero-ticket {
-        margin: 12px;
-        min-height: 86px;
-        border-radius: 8px;
-        background: rgba(255, 253, 248, 0.86);
-        padding: 12px;
-      }
-      .hero-ticket strong {
-        display: block;
-        color: var(--green);
-        font-size: 16px;
-      }
-      .hero-ticket span {
-        display: block;
-        margin-top: 8px;
-        color: var(--muted);
-        font-size: 12px;
-        line-height: 1.45;
+        grid-template-columns: minmax(0, 0.92fr) minmax(360px, 1.08fr);
+        align-items: center;
       }
       .eyebrow {
         margin: 0;
@@ -233,7 +187,7 @@
       h1 {
         max-width: 760px;
         margin: 10px 0 0;
-        font-size: clamp(44px, 8vw, 92px);
+        font-size: clamp(46px, 6.8vw, 84px);
         line-height: 0.98;
         letter-spacing: 0;
         color: #fff;
@@ -292,6 +246,44 @@
         font-size: 12px;
         font-weight: 850;
         text-transform: uppercase;
+      }
+      .hero-product {
+        position: relative;
+        z-index: 1;
+      }
+      .hero-product-frame {
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 34px 100px rgba(0, 0, 0, 0.34);
+      }
+      .hero-product-frame img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        object-fit: cover;
+      }
+      .hero-product-caption {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .hero-product-caption span {
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.84);
+        padding: 7px 11px;
+        font-size: 12px;
+        font-weight: 850;
+      }
+      .screen-note {
+        margin-top: 14px;
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 13px;
+        line-height: 1.5;
       }
       .proof-strip {
         position: relative;
@@ -396,46 +388,6 @@
       }
       .showcase {
         background: var(--cream);
-      }
-      .photo-section {
-        background: #10140f;
-        color: #fff;
-      }
-      .photo-section .eyebrow,
-      .photo-section h2 {
-        color: #fff;
-      }
-      .photo-section .section-copy {
-        color: rgba(255, 255, 255, 0.72);
-      }
-      .photo-frame {
-        position: relative;
-        margin-top: 30px;
-        overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.16);
-        border-radius: 8px;
-        background: rgba(255, 255, 255, 0.08);
-        box-shadow: 0 32px 90px rgba(0, 0, 0, 0.3);
-      }
-      .photo-frame img {
-        display: block;
-        width: 100%;
-        aspect-ratio: 16 / 9;
-        object-fit: cover;
-      }
-      .photo-caption {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 16px 18px;
-        color: rgba(255, 255, 255, 0.76);
-        font-size: 14px;
-        line-height: 1.6;
-      }
-      .photo-caption strong {
-        color: #fff;
       }
       .customer-section {
         background: var(--paper);
@@ -985,8 +937,47 @@
 
       @media (max-width: 900px) {
         .nav-links a:not(.button) { display: none; }
-        .hero { min-height: 88vh; }
-        .hero-visual { display: none; }
+        .hero {
+          min-height: auto;
+          padding: 82px 16px 38px;
+        }
+        .hero-inner {
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+        .hero-product {
+          order: -1;
+        }
+        .hero-product-frame img {
+          aspect-ratio: 4 / 3;
+        }
+        h1 {
+          font-size: 40px;
+          line-height: 1;
+        }
+        .lead {
+          font-size: 17px;
+          line-height: 1.5;
+        }
+        .section {
+          padding: 44px 16px;
+        }
+        .section h2 {
+          font-size: 31px;
+          line-height: 1.08;
+        }
+        .section-copy {
+          font-size: 15px;
+          line-height: 1.6;
+        }
+        .proof-strip {
+          margin: 0;
+          padding: 0 16px;
+          background: var(--paper);
+        }
+        .proof-inner {
+          transform: translateY(-18px);
+        }
         .features, .showcase-grid, .price-grid, .onboarding-grid, .customer-grid, .comparison-grid, .comparison-savings, .proof-inner, .faq-grid {
           grid-template-columns: 1fr;
         }
@@ -998,6 +989,29 @@
         }
         .hero-stats, .owner-metrics {
           grid-template-columns: 1fr;
+        }
+        .hero-stats {
+          margin-top: 18px;
+        }
+        .feature, .comparison-card, .price-card, .faq-panel {
+          padding: 16px;
+        }
+        .customer-login {
+          min-height: 360px;
+          padding: 18px;
+        }
+        .customer-settings {
+          display: none;
+        }
+        .customer-login-card {
+          padding: 20px;
+          border-radius: 22px;
+        }
+        .customer-login-logo {
+          width: min(190px, 78%);
+        }
+        .screen-body {
+          padding: 10px;
         }
         .cta-inner {
           align-items: flex-start;
@@ -1031,33 +1045,17 @@
     </nav>
 
     <header class="hero">
-      <div class="hero-visual" aria-hidden="true">
-        <div class="hero-lane">
-          <div class="hero-lane-title">New</div>
-          <div class="hero-ticket"><strong>#A18</strong><span>2 Iced Lattes<br />1 Matcha</span></div>
-          <div class="hero-ticket"><strong>#B42</strong><span>1 Cold Brew<br />1 Smoothie</span></div>
-        </div>
-        <div class="hero-lane">
-          <div class="hero-lane-title">Making</div>
-          <div class="hero-ticket"><strong>#C09</strong><span>3 Cappuccinos<br />Oat milk</span></div>
-        </div>
-        <div class="hero-lane">
-          <div class="hero-lane-title">Ready</div>
-          <div class="hero-ticket"><strong>#D77</strong><span>2 Chai Lattes<br />1 Refresher</span></div>
-          <div class="hero-ticket"><strong>#E31</strong><span>1 Americano</span></div>
-        </div>
-      </div>
       <div class="hero-inner">
         <div>
-          <p class="eyebrow">Built for coffee bars, smoothie shops, and drink counters</p>
-          <h1>DrinkFlow KDS for coffee shops and drink counters.</h1>
+          <p class="eyebrow">Built for coffee bars, food trucks, and drink counters</p>
+          <h1>A lighter KDS for small drink businesses.</h1>
           <p class="lead">
             DrinkFlow KDS turns Square&reg; orders into a clean live board, daily drink counts,
-            rush-hour visibility, average drinks-per-order, and owner-ready reports for shops
-            that want the counter to feel calm even when the line is not.
+            rush-hour visibility, average drinks-per-order, and owner-ready reports for coffee shops,
+            smoothie bars, tea stands, food trucks, and mobile counters.
           </p>
           <div class="hero-actions">
-            <a class="button primary" href="mailto:samantha@studiosamantha.com?subject=DrinkFlow%20KDS%20setup">Ask about setup</a>
+            <a class="button primary" href="mailto:samantha@studiosamantha.com?subject=DrinkFlow%20KDS%20onboarding">Plan onboarding</a>
             <a class="button" href="#pricing">See pricing</a>
           </div>
           <div class="hero-stats" aria-label="Product highlights">
@@ -1066,14 +1064,28 @@
             <div class="hero-stat"><strong>$60</strong><span>Launch annual price</span></div>
           </div>
         </div>
+        <div class="hero-product" aria-label="DrinkFlow KDS product visual">
+          <div class="hero-product-frame">
+            <img src="/drinkflow-ipad-kds.png" alt="DrinkFlow KDS running on an iPad at a coffee shop counter" />
+          </div>
+          <div class="hero-product-caption" aria-label="Supported screens">
+            <span>iPad</span>
+            <span>Phone</span>
+            <span>Monitor</span>
+            <span>TV display</span>
+          </div>
+          <p class="screen-note">
+            Runs in a browser on screens the shop already has, so small teams can avoid stacking per-screen KDS fees.
+          </p>
+        </div>
       </div>
     </header>
 
     <section class="proof-strip" aria-label="Why drink shops choose DrinkFlow KDS">
       <div class="proof-inner">
         <div class="proof-item">
-          <strong>Made for the drink rush</strong>
-          <span>Readable tickets, simple status moves, and a layout that works at the counter.</span>
+          <strong>Made for small rushes</strong>
+          <span>Readable tickets, simple status moves, and a layout that works at a counter or truck window.</span>
         </div>
         <div class="proof-item">
           <strong>Retail stays out of drink numbers</strong>
@@ -1088,12 +1100,12 @@
 
     <section class="section" id="features">
       <div class="section-inner">
-        <p class="eyebrow">What makes it different</p>
-        <h2>A lightweight KDS tuned for the way drink shops actually work.</h2>
+        <p class="eyebrow">Counter-first workflow</p>
+        <h2>Tickets stay obvious when the line starts moving.</h2>
         <p class="section-copy">
           Most kitchen display systems are built around entrees, courses, kitchen stations,
-          and large restaurant workflows. DrinkFlow KDS focuses on the counter: readable
-          tickets, fast status moves, counted drink categories, and owner visibility.
+          and large restaurant workflows. DrinkFlow focuses on the smaller, faster counter:
+          readable tickets, oldest orders first, quick status moves, and drink-focused totals.
         </p>
         <div class="grid features">
           <article class="card feature">
@@ -1110,16 +1122,6 @@
             <div class="icon">03</div>
             <h3>Clean drink analytics</h3>
             <p>Keep drink revenue, rush patterns, and category mix separate from retail items like merch, bagged coffee, or gifts.</p>
-          </article>
-          <article class="card feature">
-            <div class="icon">04</div>
-            <h3>Owner reports</h3>
-            <p>Download CSV, Excel, or branded PDF reports for the selected time period.</p>
-          </article>
-          <article class="card feature">
-            <div class="icon">05</div>
-            <h3>Shop-branded</h3>
-            <p>Custom domain, colors, logos, labels, password tools, and training mode can be tailored for each shop.</p>
           </article>
         </div>
       </div>
@@ -1161,24 +1163,6 @@
             <h3>Custom shop setup</h3>
             <p>Custom domain, branded login, role choices, screen labels, training mode, and feature changes are part of setup.</p>
           </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section photo-section">
-      <div class="section-inner">
-        <p class="eyebrow">Built for the bar</p>
-        <h2>Keep the drink rush moving without turning the counter into chaos.</h2>
-        <p class="section-copy">
-          DrinkFlow gives baristas a clean screen for active tickets, handoff timing,
-          and owner-level numbers on an iPad, a simple phone screen, or a display at handoff.
-        </p>
-        <div class="photo-frame">
-          <img src="/drinkflow-ipad-kds.png" alt="DrinkFlow KDS running on an iPad at a coffee shop counter" />
-          <div class="photo-caption">
-            <span><strong>Demo visual:</strong> live drink columns, ready tickets, daily numbers, and hourly volume in one counter-friendly view.</span>
-            <span>Shop-specific branding and feature choices happen during setup.</span>
-          </div>
         </div>
       </div>
     </section>

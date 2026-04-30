@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.7.0";
+const APP_VERSION = "v1.7.1";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v1";
@@ -24,8 +24,18 @@ const SETTINGS_HELP_TEXT =
 const DINING_OPTIONS = ["For here", "To go", "Pickup", "Delivery", "Drive thru"];
 const RELEASE_NOTES = [
   {
-    version: "v1.7.0",
+    version: "v1.7.1",
     date: "Current build",
+    summary: "Sorted KDS tickets oldest first.",
+    items: [
+      "Each live KDS column now shows older tickets at the top and newer tickets at the bottom.",
+      "This keeps the next order to start more obvious during a rush.",
+      "The Learn More page now leads with the product visual and speaks to coffee shops, food trucks, and small drink counters.",
+    ],
+  },
+  {
+    version: "v1.7.0",
+    date: "Previous build",
     summary: "Added owner history and coffee-shop analytics.",
     items: [
       "Owner Reports can save monthly snapshots to Supabase for long-term history.",
