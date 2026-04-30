@@ -1175,7 +1175,7 @@ async function upsertTicket(ticket, rawOrder = null) {
 
   const { data: existingOrder, error: existingError } = await supabase
     .from("kds_orders")
-    .select("status, customer_name, raw_order")
+    .select("status, customer_name, raw_order, updated_at")
     .eq("square_order_id", ticket.id)
     .maybeSingle();
 
@@ -1204,7 +1204,7 @@ async function upsertTicket(ticket, rawOrder = null) {
               null,
           })
         : existingOrder?.raw_order || null,
-      updated_at: new Date().toISOString(),
+      updated_at: existingOrder?.updated_at || new Date().toISOString(),
     },
     { onConflict: "square_order_id" }
   );
@@ -1592,55 +1592,18 @@ async function getDrinkReport(range = "today") {
   const end = getRangeEnd(range);
   const selectColumns = "square_order_id, created_at, updated_at";
 
-  let orders = [];
+  const { data, error: orderError } = await supabase
+    .from("kds_orders")
+    .select(selectColumns)
+    .gte("created_at", start.toISOString())
+    .lte("created_at", end.toISOString());
 
-  if (range === "today") {
-    const [createdResult, updatedResult] = await Promise.all([
-      supabase
-        .from("kds_orders")
-        .select(selectColumns)
-        .gte("created_at", start.toISOString())
-        .lte("created_at", end.toISOString()),
-      supabase
-        .from("kds_orders")
-        .select(selectColumns)
-        .gte("updated_at", start.toISOString())
-        .lte("updated_at", end.toISOString()),
-    ]);
+  if (orderError) throw orderError;
 
-    if (createdResult.error) throw createdResult.error;
-    if (updatedResult.error) throw updatedResult.error;
-
-    const orderMap = new Map();
-    for (const order of [...(createdResult.data || []), ...(updatedResult.data || [])]) {
-      const existing = orderMap.get(order.square_order_id);
-      const createdAt = new Date(order.created_at).getTime();
-      const updatedAt = order.updated_at ? new Date(order.updated_at).getTime() : createdAt;
-      const effectiveCreatedAt = Math.max(createdAt, updatedAt);
-
-      if (!existing || effectiveCreatedAt > existing.createdAt) {
-        orderMap.set(order.square_order_id, {
-          ...order,
-          createdAt: effectiveCreatedAt,
-        });
-      }
-    }
-
-    orders = Array.from(orderMap.values());
-  } else {
-    const { data, error: orderError } = await supabase
-      .from("kds_orders")
-      .select(selectColumns)
-      .gte("created_at", start.toISOString())
-      .lte("created_at", end.toISOString());
-
-    if (orderError) throw orderError;
-
-    orders = (data || []).map((order) => ({
-      ...order,
-      createdAt: new Date(order.created_at).getTime(),
-    }));
-  }
+  const orders = (data || []).map((order) => ({
+    ...order,
+    createdAt: new Date(order.created_at).getTime(),
+  }));
 
   if (!orders.length) return buildDrinkReport([], start);
 
