@@ -1661,6 +1661,7 @@ function LoginScreen({
   isTrainingMode,
   onTrainingToggle,
   themeStyle,
+  trainingStyle,
   onVersionClick,
 }) {
   const [employeeName, setEmployeeName] = useState("");
@@ -1730,7 +1731,7 @@ function LoginScreen({
   return (
     <div
       className="relative min-h-screen bg-[#EEE0C5] text-[#111111] flex items-center justify-center px-4"
-      style={themeStyle}
+      style={{ ...themeStyle, ...trainingStyle }}
     >
       <div className="absolute right-4 top-4 hidden sm:flex flex-col items-end gap-2">
         <ModeToggle
@@ -2030,6 +2031,18 @@ export default function GoldiesKDS() {
   const isSoftOpeningDay = getTodayDateKey() === SOFT_OPENING_DATE;
   const showSoftOpeningNote =
     authStatus === "login" && isSoftOpeningDay && !hideSoftOpeningNote;
+  const trainingThemeStyle = isTrainingMode
+    ? themeMode === "dark"
+      ? {
+          backgroundColor: "#1f2937",
+          color: "#f9fafb",
+          filter: "saturate(0.95)",
+        }
+      : {
+          backgroundColor: "#eff6ff",
+          color: "#1e3a8a",
+        }
+    : undefined;
   const themeStyle =
     themeMode === "dark"
       ? { filter: "invert(1) hue-rotate(180deg)" }
@@ -2515,6 +2528,7 @@ export default function GoldiesKDS() {
           isTrainingMode={isTrainingMode}
           onTrainingToggle={() => setIsTrainingMode((current) => !current)}
           themeStyle={themeStyle}
+          trainingStyle={trainingThemeStyle}
           onVersionClick={() => setShowReleaseNotes(true)}
         />
         <SoftOpeningDialog
@@ -2525,7 +2539,10 @@ export default function GoldiesKDS() {
     );
   } else {
     content = (
-      <div className="min-h-screen bg-[#EEE0C5] text-[#111111]" style={themeStyle}>
+      <div
+        className="min-h-screen bg-[#EEE0C5] text-[#111111]"
+        style={{ ...themeStyle, ...trainingThemeStyle }}
+      >
       <header className="border-b border-[#CA862B]/22 bg-[#FFFDF8]/95 backdrop-blur px-4 md:px-6 py-4">
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
           <div className="flex items-center gap-4">
