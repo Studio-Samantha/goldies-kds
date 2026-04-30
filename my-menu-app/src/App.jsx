@@ -6,9 +6,18 @@ const API_BASE_URL = import.meta.env.DEV
 const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
-const APP_VERSION = "v1.0.2";
+const APP_VERSION = "v1.0.3";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const RELEASE_NOTES = [
+  {
+    version: "v1.0.3",
+    date: "Current build",
+    summary: "The What's New page now opens from both login and the dashboard.",
+    items: [
+      "The version link now works from the login screen and the dashboard.",
+      "Staff can check recent fixes without leaving the app.",
+    ],
+  },
   {
     version: "v1.0.2",
     date: "Current build",
@@ -1897,8 +1906,10 @@ export default function GoldiesKDS() {
     setSignedInEmployee("");
   }
 
+  let content;
+
   if (authStatus === "checking") {
-    return (
+    content = (
       <div
         className="min-h-screen bg-[#EEE0C5] text-[#111111] flex items-center justify-center px-4"
         style={themeStyle}
@@ -1908,10 +1919,8 @@ export default function GoldiesKDS() {
         </div>
       </div>
     );
-  }
-
-  return authStatus === "login" ? (
-    <>
+  } else if (authStatus === "login") {
+    content = (
       <LoginScreen
         onLogin={(employeeName) => {
           setSignedInEmployee(employeeName);
@@ -1924,13 +1933,10 @@ export default function GoldiesKDS() {
         themeStyle={themeStyle}
         onVersionClick={() => setShowReleaseNotes(true)}
       />
-      <ReleaseNotesDialog
-        open={showReleaseNotes}
-        onClose={() => setShowReleaseNotes(false)}
-      />
-    </>
-  ) : (
-    <div className="min-h-screen bg-[#EEE0C5] text-[#111111]" style={themeStyle}>
+    );
+  } else {
+    content = (
+      <div className="min-h-screen bg-[#EEE0C5] text-[#111111]" style={themeStyle}>
       <header className="border-b border-[#CA862B]/22 bg-[#FFFDF8]/95 backdrop-blur px-4 md:px-6 py-4">
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -2189,5 +2195,16 @@ export default function GoldiesKDS() {
         error={passwordError}
       />
     </div>
+    );
+  }
+
+  return (
+    <>
+      {content}
+      <ReleaseNotesDialog
+        open={showReleaseNotes}
+        onClose={() => setShowReleaseNotes(false)}
+      />
+    </>
   );
 }
