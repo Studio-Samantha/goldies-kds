@@ -7,11 +7,20 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.1.2";
+const APP_VERSION = "v1.1.3";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-30";
 const RELEASE_NOTES = [
+  {
+    version: "v1.1.3",
+    date: "Current build",
+    summary: "The soft opening popup now has a small confetti animation.",
+    items: [
+      "The celebration popup now feels more festive when it appears.",
+      "The confetti stays subtle so it does not get in the way of the login screen.",
+    ],
+  },
   {
     version: "v1.1.2",
     date: "Current build",
@@ -157,9 +166,66 @@ function getTodayDateKey() {
 function SoftOpeningDialog({ open, onClose }) {
   if (!open) return null;
 
+  const confetti = useMemo(
+    () =>
+      Array.from({ length: 18 }, (_, index) => {
+        const colors = ["#CA862B", "#0F4036", "#EEE0C5", "#FFFFFF"];
+        const left = 4 + ((index * 13) % 92);
+        const size = 6 + (index % 4) * 2;
+        return {
+          id: index,
+          left: `${left}%`,
+          top: `${8 + (index % 5) * 9}%`,
+          size,
+          color: colors[index % colors.length],
+          rotate: (index * 31) % 360,
+          delay: `${(index % 6) * 0.18}s`,
+          duration: `${2.8 + (index % 4) * 0.35}s`,
+          drift: index % 2 === 0 ? -1 : 1,
+        };
+      }),
+    []
+  );
+
   return (
     <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] flex items-center justify-center p-4">
-      <div className="w-full max-w-lg rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)] overflow-hidden">
+      <style>{`
+        @keyframes confetti-fall {
+          0% {
+            transform: translate3d(0, -12px, 0) rotate(0deg);
+            opacity: 0;
+          }
+          10% {
+            opacity: 1;
+          }
+          100% {
+            transform: translate3d(var(--drift), 280px, 0) rotate(360deg);
+            opacity: 0;
+          }
+        }
+      `}</style>
+      <div className="relative w-full max-w-lg rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)] overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {confetti.map((piece) => (
+            <span
+              key={piece.id}
+              className="absolute rounded-sm"
+              aria-hidden="true"
+              style={{
+                left: piece.left,
+                top: piece.top,
+                width: `${piece.size}px`,
+                height: `${Math.max(6, Math.round(piece.size * 0.8))}px`,
+                backgroundColor: piece.color,
+                transform: `rotate(${piece.rotate}deg)`,
+                opacity: 0,
+                animation: `confetti-fall ${piece.duration} linear ${piece.delay} infinite`,
+                ["--drift"]: `${piece.drift * (18 + (piece.id % 4) * 6)}px`,
+              }}
+            />
+          ))}
+        </div>
+
         <div className="border-b border-[#CA862B]/18 px-5 py-4 bg-[#EEE0C5]/35">
           <div className="flex items-center justify-between gap-3">
             <div>
