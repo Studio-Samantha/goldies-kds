@@ -7,7 +7,7 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.1.22";
+const APP_VERSION = "v1.1.23";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -18,12 +18,12 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.1.22",
+    version: "v1.1.23",
     date: "Current build",
-    summary: "The pitch page was cleaned up and the dashboard footer link was removed.",
+    summary: "The login footer link was moved into the sign-in card so it clicks more reliably.",
     items: [
-      "The pitch page no longer shows the Goldie's logo.",
-      "The Learn more link stays on the login screen only.",
+      "The Learn more link is now inside the login card on phones.",
+      "This makes the link easier to tap and keeps it off the dashboard.",
     ],
   },
   {
@@ -2353,11 +2353,13 @@ function LoginScreen({
           </button>
         </form>
 
+        <div className="mt-8 flex justify-center pb-1 pointer-events-auto">
+          <BrandFooter
+            onPitchClick={openPitchPage}
+            className="max-w-full px-4 py-2 text-[11px] sm:text-[10px]"
+          />
+        </div>
       </main>
-
-      <div className="mt-6 flex justify-center px-4 pointer-events-auto sm:absolute sm:bottom-4 sm:left-0 sm:right-0 sm:z-30 sm:mt-0 sm:pb-[env(safe-area-inset-bottom)]">
-        <BrandFooter onPitchClick={openPitchPage} />
-      </div>
     </div>
   );
 }
