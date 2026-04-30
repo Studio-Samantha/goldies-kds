@@ -1962,6 +1962,12 @@ function OrdersByDayLookup({
   const [expandedTicketId, setExpandedTicketId] = useState(null);
   const [searchedDate, setSearchedDate] = useState(defaultDate);
 
+  function handleLookupSubmit(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    runLookup(date);
+  }
+
   async function runLookup(nextDate = date) {
     const trimmedDate = String(nextDate || "").trim();
     if (!trimmedDate) return;
@@ -2009,7 +2015,10 @@ function OrdersByDayLookup({
   }, [trainingMode, trainingTickets]);
 
   return (
-    <section className="space-y-2">
+    <section
+      className="space-y-2"
+      onClick={(event) => event.stopPropagation()}
+    >
       <div className="flex items-center justify-between gap-3 rounded-2xl bg-[#FFFDF8]/85 border border-[#CA862B]/18 px-4 py-3">
         <div>
           <h2 className="text-lg md:text-2xl font-black text-[#0F4036]">Orders By Day</h2>
@@ -2029,7 +2038,10 @@ function OrdersByDayLookup({
 
       {!collapsed && (
         <>
-          <div className="flex flex-col sm:flex-row gap-2 sm:items-center rounded-2xl bg-[#FFFDF8] border border-[#CA862B]/18 px-4 py-3">
+          <form
+            onSubmit={handleLookupSubmit}
+            className="flex flex-col sm:flex-row gap-2 sm:items-center rounded-2xl bg-[#FFFDF8] border border-[#CA862B]/18 px-4 py-3"
+          >
             <input
               type="date"
               value={date}
@@ -2037,14 +2049,13 @@ function OrdersByDayLookup({
               className="rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15"
             />
             <button
-              type="button"
-              onClick={() => runLookup(date)}
+              type="submit"
               disabled={loading}
               className="rounded-xl bg-[#0F4036] text-white px-4 py-2 text-sm font-black transition hover:bg-[#0b352d] disabled:cursor-not-allowed disabled:bg-neutral-300"
             >
               {loading ? "Looking up..." : "Lookup"}
             </button>
-          </div>
+          </form>
 
           {error && (
             <div className="rounded-xl bg-red-50 border border-red-100 text-red-900 px-4 py-3 font-medium">
