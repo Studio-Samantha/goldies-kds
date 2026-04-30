@@ -7,11 +7,20 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.0.9";
+const APP_VERSION = "v1.1.0";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-30";
 const RELEASE_NOTES = [
+  {
+    version: "v1.1.0",
+    date: "Current build",
+    summary: "Training mode now lives in the Mode card on the dashboard.",
+    items: [
+      "The Mode card now switches between Live and Training.",
+      "Training mode is easier to find and clearly marked as practice data.",
+    ],
+  },
   {
     version: "v1.0.9",
     date: "Current build",
@@ -1658,8 +1667,6 @@ function LoginScreen({
   onLogin,
   themeMode,
   onThemeToggle,
-  isTrainingMode,
-  onTrainingToggle,
   themeStyle,
   trainingStyle,
   onVersionClick,
@@ -1740,13 +1747,6 @@ function LoginScreen({
           onToggle={onThemeToggle}
           hint="Switch between the light and dark dashboard themes."
         />
-
-        <ModeToggle
-          active={isTrainingMode}
-          label={isTrainingMode ? "Training on" : "Training off"}
-          onToggle={onTrainingToggle}
-          hint="Training mode swaps in fake orders and counts so staff can practice without changing live Square data."
-        />
       </div>
 
       <a
@@ -1767,13 +1767,6 @@ function LoginScreen({
             label={themeMode === "dark" ? "Light mode" : "Dark mode"}
             onToggle={onThemeToggle}
             hint="Switch between the light and dark dashboard themes."
-          />
-
-          <ModeToggle
-            active={isTrainingMode}
-            label={isTrainingMode ? "Training on" : "Training off"}
-            onToggle={onTrainingToggle}
-            hint="Training mode swaps in fake orders and counts so staff can practice without changing live Square data."
           />
 
           <a
@@ -2525,8 +2518,6 @@ export default function GoldiesKDS() {
           onThemeToggle={() =>
             setThemeMode((current) => (current === "dark" ? "light" : "dark"))
           }
-          isTrainingMode={isTrainingMode}
-          onTrainingToggle={() => setIsTrainingMode((current) => !current)}
           themeStyle={themeStyle}
           trainingStyle={trainingThemeStyle}
           onVersionClick={() => setShowReleaseNotes(true)}
@@ -2596,13 +2587,6 @@ export default function GoldiesKDS() {
                 hint="Switch between the light and dark dashboard themes."
               />
 
-              <ModeToggle
-                active={isTrainingMode}
-                label={isTrainingMode ? "Training on" : "Training off"}
-                onToggle={() => setIsTrainingMode((current) => !current)}
-                hint="Training mode swaps in fake orders and counts so staff can practice without changing live Square data."
-              />
-
               <button
                 type="button"
                 onClick={() => {
@@ -2652,11 +2636,54 @@ export default function GoldiesKDS() {
 
       <main className="p-3 md:p-4 space-y-4 max-w-[1900px] mx-auto">
         <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-          <StatCard
-            label="Mode"
-            value={isTrainingMode ? "Training" : "Live"}
-            detail={isTrainingMode ? "Fake demo data" : "Production"}
-          />
+          <div className="rounded-xl bg-[#FFFDF8] border border-[#CA862B]/18 p-3 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-xs uppercase tracking-wide text-[#6A614F] font-bold">
+                  Mode
+                </div>
+                <div className="text-xl md:text-2xl font-black mt-1 text-[#111111]">
+                  {isTrainingMode ? "Training" : "Live"}
+                </div>
+                <div className="text-sm text-[#6A614F] mt-1">
+                  {isTrainingMode ? "Fake demo data" : "Production"}
+                </div>
+              </div>
+
+              <span
+                title="Training mode swaps in fake orders and counts so staff can practice without changing live Square data."
+                aria-label="Training mode swaps in fake orders and counts so staff can practice without changing live Square data."
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#CA862B]/20 bg-white text-xs font-black text-[#0F4036]"
+              >
+                ?
+              </span>
+            </div>
+
+            <div className="mt-3 inline-flex rounded-2xl border border-[#CA862B]/18 bg-[#EEE0C5]/45 p-1">
+              <button
+                type="button"
+                onClick={() => setIsTrainingMode(false)}
+                className={`rounded-xl px-4 py-2 text-sm font-black transition ${
+                  !isTrainingMode
+                    ? "bg-[#0F4036] text-white"
+                    : "bg-transparent text-[#0F4036] hover:bg-white/70"
+                }`}
+              >
+                Live
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsTrainingMode(true)}
+                className={`rounded-xl px-4 py-2 text-sm font-black transition ${
+                  isTrainingMode
+                    ? "bg-[#0F4036] text-white"
+                    : "bg-transparent text-[#0F4036] hover:bg-white/70"
+                }`}
+              >
+                Training
+              </button>
+            </div>
+          </div>
 
           <StatCard
             label="Connection"
