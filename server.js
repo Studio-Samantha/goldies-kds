@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const crypto = require("crypto");
+const nodemailer = require("nodemailer");
 const { createClient } = require("@supabase/supabase-js");
 const { Client, Environment } = require("square");
 
@@ -15,8 +16,27 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const KDS_PASSWORD = process.env.KDS_PASSWORD;
 const SESSION_SECRET = process.env.SESSION_SECRET || SQUARE_ACCESS_TOKEN;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || process.env.FRONTEND_ORIGIN || "";
+const ALERT_SMTP_HOST = process.env.ALERT_SMTP_HOST || "";
+const ALERT_SMTP_PORT = Number(process.env.ALERT_SMTP_PORT || 587);
+const ALERT_SMTP_SECURE = String(process.env.ALERT_SMTP_SECURE || "").toLowerCase() === "true";
+const ALERT_SMTP_USER = process.env.ALERT_SMTP_USER || "";
+const ALERT_SMTP_PASS = process.env.ALERT_SMTP_PASS || "";
+const ALERT_EMAIL_TO =
+  process.env.SQUARE_ALERT_EMAIL_TO ||
+  process.env.ALERT_EMAIL_TO ||
+  process.env.EMAIL_ALERT_TO ||
+  "";
+const ALERT_EMAIL_FROM =
+  process.env.SQUARE_ALERT_EMAIL_FROM ||
+  process.env.ALERT_EMAIL_FROM ||
+  process.env.EMAIL_ALERT_FROM ||
+  ALERT_SMTP_USER ||
+  ALERT_EMAIL_TO ||
+  "";
 const VALID_STATUSES = new Set(["new", "making", "ready", "completed", "done"]);
 const SQUARE_SYNC_INTERVAL_MS = 30 * 1000;
+const SQUARE_HEALTH_CHECK_INTERVAL_MS = 30 * 1000;
+const SQUARE_HEALTH_ALERT_COOLDOWN_MS = 15 * 60 * 1000;
 const SESSION_COOKIE_NAME = "goldies_kds_session";
 const SESSION_MAX_AGE_MS = 1000 * 60 * 60 * 12;
 const KDS_PASSWORD_SETTING_KEY = "kds_password";
@@ -45,6 +65,61 @@ if (!supabase) {
   console.warn(
     "WARNING: Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY for persistent storage."
   );
+}
+
+function hasAlertEmailConfig() {
+  return Boolean(
+    ALERT_SMTP_HOST &&
+      ALERT_SMTP_USER &&
+      ALERT_SMTP_PASS &&
+      ALERT_EMAIL_TO &&
+      ALERT_EMAIL_FROM
+  );
+}
+
+function getAlertMailer() {
+  if (!hasAlertEmailConfig()) return null;
+  if (alertMailer) return alertMailer;
+
+  alertMailer = nodemailer.createTransport({
+    host: ALERT_SMTP_HOST,
+    port: ALERT_SMTP_PORT,
+    secure: ALERT_SMTP_SECURE,
+    auth: {
+      user: ALERT_SMTP_USER,
+      pass: ALERT_SMTP_PASS,
+    },
+  });
+
+  return alertMailer;
+}
+
+async function sendSquareOfflineEmail(reason, details = "") {
+  const mailer = getAlertMailer();
+  if (!mailer) return false;
+
+  const subject = `Goldie's KDS: Square API offline${reason ? ` (${reason})` : ""}`;
+  const text = [
+    "Square API health check failed for Goldie's KDS.",
+    "",
+    `Reason: ${reason || "Unknown error"}`,
+    details ? `Details: ${details}` : "",
+    "",
+    `Time: ${new Date().toLocaleString()}`,
+    "",
+    "This alert sends once per outage until Square recovers.",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  await mailer.sendMail({
+    from: ALERT_EMAIL_FROM,
+    to: ALERT_EMAIL_TO,
+    subject,
+    text,
+  });
+
+  return true;
 }
 
 console.log("Initializing Square client...");
@@ -78,6 +153,14 @@ app.use(
 app.use(express.json());
 
 let lastSquareSyncAt = 0;
+let lastSquareHealthCheckAt = 0;
+let alertMailer = null;
+let squareApiAlertState = {
+  offline: false,
+  lastAlertAt: 0,
+  lastHealthyAt: Date.now(),
+  lastError: "",
+};
 const squareCustomerNameCache = new Map();
 const squareEmployeeNameCache = new Map();
 let kdsPasswordState = {
@@ -694,6 +777,87 @@ async function getSquareLocations() {
   } catch (error) {
     console.error("Error listing Square locations:", error.message);
     return [];
+  }
+}
+
+async function probeSquareApiHealth() {
+  const now = Date.now();
+  if (now - lastSquareHealthCheckAt < SQUARE_HEALTH_CHECK_INTERVAL_MS) return;
+
+  lastSquareHealthCheckAt = now;
+
+  try {
+    const { locationsApi, ordersApi } = squareClient;
+    const locationsResponse = await locationsApi.listLocations();
+    const locations = locationsResponse.result.locations || [];
+    const locationIds = uniqueLocationIds(locations);
+    const probeLocationId = locationIds[0];
+
+    if (!probeLocationId) {
+      throw new Error("Square returned no accessible locations");
+    }
+
+    const probeEnd = new Date();
+    const probeStart = new Date(probeEnd.getTime() - 5 * 60 * 1000);
+
+    await ordersApi.searchOrders({
+      locationIds: [probeLocationId],
+      query: {
+        filter: {
+          dateTimeFilter: {
+            createdAt: {
+              startAt: probeStart.toISOString(),
+              endAt: probeEnd.toISOString(),
+            },
+          },
+          stateFilter: {
+            states: ["OPEN", "COMPLETED"],
+          },
+        },
+        sort: {
+          sortField: "CREATED_AT",
+          sortOrder: "DESC",
+        },
+      },
+    });
+
+    if (squareApiAlertState.offline) {
+      console.log("Square API health recovered.");
+    }
+
+    squareApiAlertState = {
+      ...squareApiAlertState,
+      offline: false,
+      lastHealthyAt: Date.now(),
+      lastError: "",
+    };
+  } catch (error) {
+    const nowMs = Date.now();
+    const wasOffline = squareApiAlertState.offline;
+    squareApiAlertState = {
+      ...squareApiAlertState,
+      offline: true,
+      lastError: error.message || "Unknown Square API error",
+    };
+
+    const shouldAlert =
+      !wasOffline ||
+      nowMs - squareApiAlertState.lastAlertAt >= SQUARE_HEALTH_ALERT_COOLDOWN_MS;
+
+    if (shouldAlert) {
+      try {
+        await sendSquareOfflineEmail(
+          error.message || "Unknown Square API error",
+          "The Square health probe failed while checking locations and recent orders."
+        );
+        squareApiAlertState.lastAlertAt = nowMs;
+        console.error("Sent Square offline alert email:", error.message);
+      } catch (mailError) {
+        console.error("Failed to send Square offline alert email:", mailError.message);
+      }
+    } else {
+      console.error("Square API health probe failed:", error.message);
+    }
   }
 }
 
@@ -1523,6 +1687,14 @@ app.get("/api/health", (req, res) => {
     storage: supabase ? "supabase" : "memory",
     loginConfigured: isKdsLoginConfigured(),
     passwordSource: kdsPasswordState.source,
+    squareApi: {
+      online: !squareApiAlertState.offline,
+      lastHealthyAt: squareApiAlertState.lastHealthyAt
+        ? new Date(squareApiAlertState.lastHealthyAt).toISOString()
+        : null,
+      lastError: squareApiAlertState.lastError || null,
+      alertsConfigured: hasAlertEmailConfig(),
+    },
     time: new Date().toISOString(),
   });
 });
@@ -1953,6 +2125,16 @@ async function bootstrap() {
   app.listen(PORT, () => {
     console.log("Ready to receive requests!");
   });
+
+  probeSquareApiHealth().catch((error) => {
+    console.error("Initial Square health probe failed:", error.message);
+  });
+
+  setInterval(() => {
+    probeSquareApiHealth().catch((error) => {
+      console.error("Scheduled Square health probe failed:", error.message);
+    });
+  }, SQUARE_HEALTH_CHECK_INTERVAL_MS);
 }
 
 bootstrap().catch((error) => {
