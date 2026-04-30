@@ -2270,7 +2270,14 @@ app.post("/api/owner/logout", (req, res) => {
 
 app.get("/api/owner/reports/drink-revenue", requireOwnerAuth, async (req, res) => {
   try {
-    const allowedRanges = new Set(["today", "yesterday", "last7", "last30", "thisMonth"]);
+    const allowedRanges = new Set([
+      "today",
+      "yesterday",
+      "last7",
+      "last30",
+      "thisMonth",
+      "thisYear",
+    ]);
     const range = allowedRanges.has(req.query.range) ? req.query.range : "today";
     const report = await getOwnerDrinkRevenueReport(range);
 

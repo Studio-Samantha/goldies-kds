@@ -9,7 +9,7 @@ const LOGO_DARK_URL = "/goldies-logo-white.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.5.5";
+const APP_VERSION = "v1.5.6";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -20,8 +20,16 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.5.5",
+    version: "v1.5.6",
     date: "Current build",
+    summary: "Added this-year owner revenue reporting.",
+    items: [
+      "Drink Revenue now includes Today, Yesterday, 7 Days, 30 Days, This Month, and This Year.",
+    ],
+  },
+  {
+    version: "v1.5.5",
+    date: "Previous build",
     summary: "Added owner password reset email support.",
     items: [
       "Owner Login now includes an email link for password reset requests.",
@@ -2446,7 +2454,8 @@ const OWNER_REPORT_RANGES = [
   { key: "yesterday", label: "Yesterday" },
   { key: "last7", label: "7 Days" },
   { key: "last30", label: "30 Days" },
-  { key: "thisMonth", label: "Month" },
+  { key: "thisMonth", label: "This Month" },
+  { key: "thisYear", label: "This Year" },
 ];
 
 function OwnerLoginDialog({ open, onClose, onLogin, themeMode }) {
