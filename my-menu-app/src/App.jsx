@@ -1834,6 +1834,257 @@ function OwnerSnapshotCard({ report, range }) {
   );
 }
 
+function formatHourRange(hour) {
+  const start = new Date(2024, 0, 1, hour);
+  const end = new Date(2024, 0, 1, hour + 1);
+
+  return `${start.toLocaleTimeString([], {
+    hour: "numeric",
+  })}-${end.toLocaleTimeString([], { hour: "numeric" })}`;
+}
+
+function getHourlyVolumeStats(hourlyOrders = []) {
+  const active = hourlyOrders.filter((item) => Number(item.orderCount || 0) > 0);
+
+  if (!active.length) {
+    return {
+      active: [],
+      peak: null,
+      slowest: null,
+      maxOrders: 0,
+    };
+  }
+
+  const sortedByOrders = active
+    .slice()
+    .sort((a, b) => Number(b.orderCount || 0) - Number(a.orderCount || 0));
+
+  return {
+    active,
+    peak: sortedByOrders[0],
+    slowest: sortedByOrders[sortedByOrders.length - 1],
+    maxOrders: Number(sortedByOrders[0]?.orderCount || 0),
+  };
+}
+
+function HourlyVolumeChart({ report, range }) {
+  const hourlyOrders = report?.hourlyOrders || [];
+  const stats = getHourlyVolumeStats(hourlyOrders);
+  const chartWidth = 720;
+  const chartHeight = 220;
+  const padding = { top: 24, right: 18, bottom: 44, left: 38 };
+  const plotWidth = chartWidth - padding.left - padding.right;
+  const plotHeight = chartHeight - padding.top - padding.bottom;
+  const maxOrders = Math.max(stats.maxOrders, 1);
+  const points = hourlyOrders.map((item, index) => {
+    const x = padding.left + (plotWidth / 23) * index;
+    const y =
+      padding.top +
+      plotHeight -
+      (Number(item.orderCount || 0) / maxOrders) * plotHeight;
+
+    return { ...item, x, y };
+  });
+  const linePath = points
+    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
+    .join(" ");
+  const areaPath = `${linePath} L ${padding.left + plotWidth} ${padding.top + plotHeight} L ${padding.left} ${padding.top + plotHeight} Z`;
+  const tickHours = [6, 8, 10, 12, 14, 16, 18];
+  const rangeLabel = getOwnerRangeLabel(range);
+
+  return (
+    <section className="rounded-2xl border border-[#CA862B]/16 bg-white p-4 shadow-sm">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
+            Hourly Volume
+          </div>
+          <h2 className="mt-1 text-xl font-black text-[#0F4036]">
+            Drink Orders by Hour
+          </h2>
+          <p className="mt-1 text-sm font-semibold text-[#6A614F]">
+            {rangeLabel} drink orders from Supabase order history
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 text-sm sm:min-w-[280px]">
+          <div className="rounded-xl border border-[#CA862B]/12 bg-[#FFFDF8] px-3 py-2">
+            <div className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
+              Busiest
+            </div>
+            <div className="font-black text-[#111111]">
+              {stats.peak ? formatHourRange(stats.peak.hour) : "No data"}
+            </div>
+          </div>
+          <div className="rounded-xl border border-[#CA862B]/12 bg-[#FFFDF8] px-3 py-2">
+            <div className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
+              Lowest
+            </div>
+            <div className="font-black text-[#111111]">
+              {stats.slowest ? formatHourRange(stats.slowest.hour) : "No data"}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 overflow-x-auto">
+        <svg
+          viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+          role="img"
+          aria-label={`Hourly drink order chart for ${rangeLabel}`}
+          className="h-[240px] min-w-[640px] w-full"
+        >
+          {[0, 0.5, 1].map((tick) => {
+            const y = padding.top + plotHeight - tick * plotHeight;
+            return (
+              <g key={tick}>
+                <line
+                  x1={padding.left}
+                  x2={padding.left + plotWidth}
+                  y1={y}
+                  y2={y}
+                  stroke="#0F4036"
+                  strokeOpacity="0.08"
+                />
+                <text
+                  x={padding.left - 10}
+                  y={y + 4}
+                  textAnchor="end"
+                  className="fill-[#6A614F] text-[11px] font-bold"
+                >
+                  {Math.round(maxOrders * tick)}
+                </text>
+              </g>
+            );
+          })}
+
+          {linePath && (
+            <>
+              <path d={areaPath} fill="#CA862B" opacity="0.12" />
+              <path
+                d={linePath}
+                fill="none"
+                stroke="#0F4036"
+                strokeWidth="4"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+            </>
+          )}
+
+          {points.map((point) => {
+            const isPeak = stats.peak?.hour === point.hour;
+            return (
+              <g key={point.hour}>
+                <circle
+                  cx={point.x}
+                  cy={point.y}
+                  r={isPeak ? 6 : 4}
+                  fill={isPeak ? "#CA862B" : "#0F4036"}
+                />
+                <title>
+                  {formatHourRange(point.hour)}: {point.orderCount} orders, {point.units} units
+                </title>
+              </g>
+            );
+          })}
+
+          {tickHours.map((hour) => {
+            const x = padding.left + (plotWidth / 23) * hour;
+            return (
+              <text
+                key={hour}
+                x={x}
+                y={chartHeight - 14}
+                textAnchor="middle"
+                className="fill-[#6A614F] text-[11px] font-black"
+              >
+                {new Date(2024, 0, 1, hour).toLocaleTimeString([], {
+                  hour: "numeric",
+                })}
+              </text>
+            );
+          })}
+        </svg>
+      </div>
+    </section>
+  );
+}
+
+function CoffeeShopAdvice({ report, range }) {
+  const hourlyStats = getHourlyVolumeStats(report?.hourlyOrders || []);
+  const categories = report?.totalsByCategory || [];
+  const topCategory = categories
+    .slice()
+    .sort((a, b) => Number(b.units || 0) - Number(a.units || 0))[0];
+  const averageCents = Number(report?.averageDrinkOrderValueCents || 0);
+  const orderCount = Number(report?.orderCount || 0);
+  const rangeLabel = getOwnerRangeLabel(range);
+  const peakText = hourlyStats.peak
+    ? `${formatHourRange(hourlyStats.peak.hour)} is the strongest hour with ${hourlyStats.peak.orderCount} drink orders.`
+    : "No hourly drink pattern is visible yet.";
+  const slowText = hourlyStats.slowest && hourlyStats.active.length > 1
+    ? `${formatHourRange(hourlyStats.slowest.hour)} is the lowest active hour.`
+    : "There is not enough spread yet to call a true slow hour.";
+  const advice = [
+    {
+      title: "Staffing and bar flow",
+      body: hourlyStats.peak
+        ? `${peakText} Put the strongest bar coverage, stocked milk, cups, lids, and smoothie prep before that window.`
+        : "Once orders come in, this panel will call out where the busiest service window lands.",
+    },
+    {
+      title: "Prep focus",
+      body: topCategory?.units
+        ? `${topCategory.category} is leading ${rangeLabel.toLowerCase()} with ${topCategory.units} units. Prep around that lane first, then use the slower window to reset backups.`
+        : "No category has enough volume yet. Keep prep balanced until one lane starts leading.",
+    },
+    {
+      title: "Ticket value",
+      body: averageCents >= 900
+        ? `Average drink order value is strong at ${report?.averageDrinkOrderValue || "$0.00"}. Protect speed and consistency before pushing more add-ons.`
+        : averageCents >= 600
+          ? `Average drink order value is healthy at ${report?.averageDrinkOrderValue || "$0.00"}. A featured modifier or pastry prompt could lift it without slowing service.`
+          : `Average drink order value is modest at ${report?.averageDrinkOrderValue || "$0.00"}. Try simple add-on prompts during slower moments.`,
+    },
+    {
+      title: "Slow-window move",
+      body: orderCount
+        ? `${slowText} Use that window for restock, batching, social posts, or a small offer if it repeats across days.`
+        : "No drink orders are showing for this range yet. Check the report again once Square has synced today's service.",
+    },
+  ];
+
+  return (
+    <section className="rounded-2xl border border-[#CA862B]/16 bg-[#FFFDF8] p-4 shadow-sm">
+      <div>
+        <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
+          Coffee Shop Guidance
+        </div>
+        <h2 className="mt-1 text-xl font-black text-[#0F4036]">
+          Expert Read for {rangeLabel}
+        </h2>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+        {advice.map((item) => (
+          <div
+            key={item.title}
+            className="rounded-xl border border-[#CA862B]/12 bg-white px-4 py-3"
+          >
+            <div className="text-sm font-black text-[#0F4036]">
+              {item.title}
+            </div>
+            <p className="mt-1 text-sm font-semibold leading-6 text-[#5A4F3E]">
+              {item.body}
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function DailyDrinkCount({ drinkCounts, orderCount }) {
   const totalDrinks = drinkCounts.reduce((sum, drink) => sum + drink.qty, 0);
 
@@ -3163,6 +3414,11 @@ function OwnerReportsView({ ownerName, onClose, themeMode }) {
 
               <div className="mt-4">
                 <OwnerSnapshotCard report={report} range={range} />
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
+                <HourlyVolumeChart report={report} range={range} />
+                <CoffeeShopAdvice report={report} range={range} />
               </div>
 
               <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">

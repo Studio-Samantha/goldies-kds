@@ -2124,16 +2124,29 @@ function buildOwnerDrinkRevenueReport(orders = [], start, end) {
     "Not Coffee": { category: "Not Coffee", revenueCents: 0, taxCents: 0, totalCents: 0, units: 0 },
     Smoothies: { category: "Smoothies", revenueCents: 0, taxCents: 0, totalCents: 0, units: 0 },
   };
+  const hourly = Array.from({ length: 24 }, (_value, hour) => ({
+    hour,
+    label: new Date(2024, 0, 1, hour).toLocaleTimeString("en-US", {
+      hour: "numeric",
+      hour12: true,
+    }),
+    orderCount: 0,
+    units: 0,
+    revenueCents: 0,
+    revenue: "$0.00",
+  }));
   const orderIds = new Set();
 
   for (const order of orders || []) {
     const rawOrder = order.raw_order || {};
     const lineItems = rawOrder.lineItems || rawOrder.line_items || [];
     let orderHasDrink = false;
+    let orderUnits = 0;
+    let orderRevenueCents = 0;
 
     for (const lineItem of lineItems) {
       const name = lineItem.name || "";
-      const category = getDrinkCategory(name);
+      const category = getItemDrinkCategory({ name });
       if (!category) continue;
 
       const qty = Number.parseFloat(lineItem.quantity || "1") || 1;
@@ -2145,12 +2158,28 @@ function buildOwnerDrinkRevenueReport(orders = [], start, end) {
       categories[category].revenueCents += revenueCents;
       categories[category].taxCents += taxCents;
       categories[category].totalCents += totalCents;
+      orderUnits += qty;
+      orderRevenueCents += revenueCents;
       orderHasDrink = true;
     }
 
-    if (orderHasDrink) orderIds.add(order.square_order_id);
+    if (orderHasDrink) {
+      orderIds.add(order.square_order_id);
+
+      const createdAt = new Date(order.created_at);
+      if (!Number.isNaN(createdAt.getTime())) {
+        const bucket = hourly[createdAt.getHours()];
+        bucket.orderCount += 1;
+        bucket.units += orderUnits;
+        bucket.revenueCents += orderRevenueCents;
+      }
+    }
   }
 
+  const hourlyOrders = hourly.map((bucket) => ({
+    ...bucket,
+    revenue: formatCurrency(bucket.revenueCents),
+  }));
   const totalsByCategory = Object.values(categories).map((item) => ({
     ...item,
     revenue: formatCurrency(item.revenueCents),
@@ -2189,6 +2218,7 @@ function buildOwnerDrinkRevenueReport(orders = [], start, end) {
       orderIds.size ? Math.round(totalCollectedCents / orderIds.size) : 0
     ),
     totalsByCategory,
+    hourlyOrders,
   };
 }
 
