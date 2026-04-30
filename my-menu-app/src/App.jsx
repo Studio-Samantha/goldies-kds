@@ -20,7 +20,7 @@ const RELEASE_NOTES = [
   {
     version: "v1.1.21",
     date: "Current build",
-    summary: "A temporary preview link was added for the full pitch page.",
+    summary: "A temporary preview link was added for the Studio Samantha pitch page.",
     items: [
       "The live Learn more page stays simple.",
       "A preview route lets you inspect the fancier pitch layout before it is used anywhere else.",
@@ -619,18 +619,18 @@ function PitchPreviewPage({ open, onBack }) {
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
           <section className="rounded-[1.75rem] border border-white/70 bg-[rgba(255,253,248,0.92)] p-6 shadow-[0_28px_80px_rgba(15,64,54,0.14)] backdrop-blur-xl">
-            <div className="flex items-center gap-4">
-              <BrandMark size="lg" />
-            </div>
+          <div className="flex items-center gap-4">
+            <BrandMark size="lg" />
+          </div>
 
-            <h1 className="mt-6 text-4xl font-black tracking-tight text-[#0F4036]">
-              Goldie&apos;s KDS
-            </h1>
-            <p className="mt-3 max-w-2xl text-lg leading-8 text-[#2D261C]">
-              A polished kitchen display system for Square shops that keeps
-              orders moving, staff informed, and the board readable on laptops,
-              tablets, and phones.
-            </p>
+          <h1 className="mt-6 text-4xl font-black tracking-tight text-[#0F4036]">
+            Studio Samantha
+          </h1>
+          <p className="mt-3 max-w-2xl text-lg leading-8 text-[#2D261C]">
+            Custom Square tools for coffee shops and small businesses that need
+            a polished display, simple staff workflows, and a better-looking
+            daily operation.
+          </p>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {[
@@ -713,9 +713,12 @@ function PitchPreviewPage({ open, onBack }) {
                 Ready to talk?
               </div>
               <p className="mt-3 text-sm leading-6 text-white/90">
-                Use Suggest Fix to reach Samantha about setup, customization, or
-                a copy for another Square shop.
+                Use Suggest Fix to reach Samantha Carey about setup,
+                customization, or a copy for another Square shop.
               </p>
+              <div className="mt-4 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white/95">
+                samantha@studiosamantha.com
+              </div>
             </div>
           </aside>
         </div>
