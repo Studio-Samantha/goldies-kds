@@ -513,107 +513,65 @@ function PitchPage({ open, onBack }) {
           </button>
         </div>
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <section className="rounded-[1.75rem] border border-white/70 bg-[rgba(255,253,248,0.92)] p-6 shadow-[0_28px_80px_rgba(15,64,54,0.14)] backdrop-blur-xl">
-            <div className="flex items-center gap-4">
-              <BrandMark size="lg" />
-            </div>
+        <div className="mt-8 rounded-[1.75rem] border border-white/70 bg-[rgba(255,253,248,0.92)] p-6 shadow-[0_28px_80px_rgba(15,64,54,0.14)] backdrop-blur-xl">
+          <div className="flex items-center gap-4">
+            <BrandMark size="lg" />
+          </div>
 
-            <h1 className="mt-6 text-4xl font-black tracking-tight text-[#0F4036]">
-              Goldie&apos;s KDS
-            </h1>
-            <p className="mt-3 max-w-2xl text-lg leading-8 text-[#2D261C]">
-              A clean kitchen display system for Square shops that keeps orders
-              moving, staff informed, and the board readable on laptops,
-              tablets, and phones.
+          <h1 className="mt-6 text-4xl font-black tracking-tight text-[#0F4036]">
+            Goldie&apos;s KDS
+          </h1>
+          <p className="mt-3 max-w-3xl text-lg leading-8 text-[#2D261C]">
+            A simple kitchen display system for Square shops. It keeps tickets,
+            counts, and daily lookups in one place without making the screen
+            busy.
+          </p>
+
+          <div className="mt-6 space-y-5 text-base leading-7 text-[#2D261C]">
+            <p>
+              Live orders flow into New, Making, Ready, Completed, and Done.
+              Staff can change ticket status, add callout names, and see who is
+              signed in.
             </p>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {[
-                {
-                  title: "Live board",
-                  text: "Active tickets flow into New, Making, Ready, Completed, and Done.",
-                },
-                {
-                  title: "Useful counts",
-                  text: "Today&apos;s counts, drink stats, and completed totals stay easy to read.",
-                },
-                {
-                  title: "Staff tools",
-                  text: "Password controls, training mode, and support links stay built in.",
-                },
-                {
-                  title: "Square sync",
-                  text: "Orders and status updates stay connected to Square and Supabase.",
-                },
-                {
-                  title: "Brand ready",
-                  text: "Colors, logo, and footer branding can match each shop.",
-                },
-                {
-                  title: "Mobile friendly",
-                  text: "The dashboard and login stay usable on phones and tablets too.",
-                },
-              ].map((item) => (
-                <div
-                  key={item.title}
-                  className="rounded-2xl border border-[#CA862B]/14 bg-white px-4 py-4 shadow-sm"
-                >
-                  <div className="text-sm font-black text-[#0F4036]">{item.title}</div>
-                  <div className="mt-2 text-sm leading-6 text-[#4E4637]">
-                    {item.text}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
+            <p>
+              The dashboard includes today&apos;s counts, completed orders,
+              reports, order lookup by day, training mode, and a support link
+              for quick help.
+            </p>
 
-          <aside className="space-y-4">
-            <div className="rounded-[1.75rem] border border-white/70 bg-[rgba(255,253,248,0.92)] p-5 shadow-[0_28px_80px_rgba(15,64,54,0.12)] backdrop-blur-xl">
-              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
-                Example dashboard
-              </div>
-              <div className="mt-4 space-y-3">
-                {[
-                  ["New", "4 tickets"],
-                  ["Making", "2 tickets"],
-                  ["Ready", "1 ticket"],
-                  ["Completed", "3 tickets"],
-                ].map(([label, value]) => (
-                  <div
-                    key={label}
-                    className="flex items-center justify-between rounded-2xl border border-[#CA862B]/14 bg-white px-4 py-3 shadow-sm"
-                  >
-                    <div className="font-black text-[#111111]">{label}</div>
-                    <div className="text-sm font-black text-[#0F4036]">{value}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <p>
+              Branding, colors, and the footer can be matched to each shop so
+              the app feels like part of the business instead of a generic
+              tool.
+            </p>
+          </div>
 
-            <div className="rounded-[1.75rem] border border-white/70 bg-[rgba(255,253,248,0.92)] p-5 shadow-[0_28px_80px_rgba(15,64,54,0.12)] backdrop-blur-xl">
-              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
-                What it can do
+          <div className="mt-8 grid gap-3 sm:grid-cols-2">
+            {[
+              "Live Square order board",
+              "Daily counts and reports",
+              "Training mode for practice",
+              "Password and support tools",
+            ].map((item) => (
+              <div
+                key={item}
+                className="rounded-2xl border border-[#CA862B]/14 bg-white px-4 py-3 shadow-sm text-sm font-semibold text-[#0F4036]"
+              >
+                {item}
               </div>
-              <ul className="mt-3 space-y-2 text-sm leading-6 text-[#2D261C]">
-                <li>Live Square orders in a simple kitchen board</li>
-                <li>Customer names and employee tracking when available</li>
-                <li>Reports, history, and daily order lookup</li>
-                <li>Training mode for practice without live data</li>
-                <li>Support link, password controls, and release notes</li>
-              </ul>
-            </div>
+            ))}
+          </div>
 
-            <div className="rounded-[1.75rem] border border-white/70 bg-[#0F4036] p-5 text-white shadow-[0_28px_80px_rgba(15,64,54,0.2)]">
-              <div className="text-xs font-black uppercase tracking-[0.18em] text-white/70">
-                Ready to talk?
-              </div>
-              <p className="mt-3 text-sm leading-6 text-white/90">
-                Use Suggest Fix to reach Samantha about setup, customization, or
-                a copy for another Square shop.
-              </p>
+          <div className="mt-8 rounded-2xl border border-[#CA862B]/14 bg-[#EEE0C5]/45 px-4 py-4">
+            <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
+              Contact
             </div>
-          </aside>
+            <p className="mt-2 text-sm leading-6 text-[#2D261C]">
+              Use Suggest Fix to reach Samantha about setup, improvements, or a
+              custom version for another Square shop.
+            </p>
+          </div>
         </div>
       </div>
     </div>
