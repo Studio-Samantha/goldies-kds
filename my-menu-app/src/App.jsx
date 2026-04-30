@@ -2258,6 +2258,10 @@ function LoginScreen({
   onThemeToggle,
   themeStyle,
   trainingStyle,
+  showInstallPrompt,
+  isIosInstall,
+  onInstall,
+  onDismissInstallPrompt,
   settingsOpen,
   onToggleSettings,
   onCloseSettings,
@@ -2453,10 +2457,10 @@ function LoginScreen({
         </form>
 
         <InstallPromptCard
-          open={showInstallPrompt && authStatus === "login"}
+          open={showInstallPrompt}
           isIos={isIosInstall}
-          onInstall={handleInstallAction}
-          onDismiss={dismissInstallPrompt}
+          onInstall={onInstall}
+          onDismiss={onDismissInstallPrompt}
         />
 
         <div className="mt-8 flex justify-center pb-1 pointer-events-auto">
@@ -3301,6 +3305,10 @@ export default function GoldiesKDS() {
           }
           themeStyle={themeStyle}
           trainingStyle={trainingThemeStyle}
+          showInstallPrompt={showInstallPrompt}
+          isIosInstall={isIosInstall}
+          onInstall={handleInstallAction}
+          onDismissInstallPrompt={dismissInstallPrompt}
           settingsOpen={showSettingsMenu}
           onToggleSettings={() => setShowSettingsMenu((current) => !current)}
           onCloseSettings={() => setShowSettingsMenu(false)}
