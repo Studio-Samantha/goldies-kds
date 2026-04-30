@@ -1319,6 +1319,7 @@ function SettingsPopover({
   suggestFixHref,
   onVersionClick,
   showPasswordAction = true,
+  onInfoClick,
 }) {
   if (!open) return null;
 
@@ -1332,13 +1333,27 @@ function SettingsPopover({
           <div className="text-sm font-black text-[#111111]">App tools</div>
         </div>
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded-lg border border-[#CA862B]/18 bg-white px-2.5 py-1.5 text-xs font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-        >
-          Close
-        </button>
+        <div className="flex items-center gap-2">
+          {onInfoClick && (
+            <button
+              type="button"
+              onClick={onInfoClick}
+              aria-label="Explain Settings"
+              title="Settings includes the main utility actions for the app."
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#CA862B]/20 bg-white text-xs font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+            >
+              ?
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-[#CA862B]/18 bg-white px-2.5 py-1.5 text-xs font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+          >
+            Close
+          </button>
+        </div>
       </div>
 
       <div className="p-3 space-y-2">
@@ -2825,6 +2840,12 @@ export default function GoldiesKDS() {
                     setShowSettingsMenu(false);
                     setShowReleaseNotes(true);
                   }}
+                  onInfoClick={() =>
+                    setModeHelp({
+                      title: "Settings",
+                      body: "Settings holds the app tools you may need: theme, password change, support, and release notes.",
+                    })
+                  }
                 />
               </div>
 
