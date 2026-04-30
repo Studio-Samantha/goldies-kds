@@ -7,7 +7,7 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.1.15";
+const APP_VERSION = "v1.1.16";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-30";
@@ -15,13 +15,12 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.1.15",
+    version: "v1.1.16",
     date: "Current build",
-    summary: "Studio Samantha now sits a little darker at the bottom of the login screen and dashboard.",
+    summary: "The Studio Samantha footer was simplified into one clean brand chip.",
     items: [
-      "A small Studio Samantha copyright line now sits at the bottom of the login screen.",
-      "The same footer also appears at the bottom of the dashboard.",
-      "The footer is muted, but a little more visible than the watermark.",
+      "The footer now uses a single soft brand chip on both the login screen and dashboard.",
+      "It stays muted so it does not compete with the KDS tool itself.",
     ],
   },
   {
@@ -1332,7 +1331,9 @@ function WatermarkLayer({ trainingMode = false }) {
 
 function BrandFooter({ className = "" }) {
   return (
-    <div className={`text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5A4F3E] ${className}`}>
+    <div
+      className={`inline-flex items-center rounded-full border border-[#CA862B]/12 bg-white/72 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5A4F3E] shadow-[0_8px_18px_rgba(15,64,54,0.06)] backdrop-blur-md ${className}`}
+    >
       Studio Samantha © 2026
     </div>
   );
@@ -2143,9 +2144,7 @@ function LoginScreen({
       </main>
 
       <div className="absolute bottom-4 left-0 right-0 flex justify-center px-4">
-        <div className="rounded-full border border-white/70 bg-[rgba(255,253,248,0.84)] px-3 py-1.5 shadow-sm backdrop-blur-md">
-          <BrandFooter />
-        </div>
+        <BrandFooter />
       </div>
     </div>
   );
