@@ -6,11 +6,21 @@ const API_BASE_URL = import.meta.env.DEV
 const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
-const APP_VERSION = "v1.0.8";
+const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
+const APP_VERSION = "v1.0.9";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-30";
 const RELEASE_NOTES = [
+  {
+    version: "v1.0.9",
+    date: "Current build",
+    summary: "Training mode can now switch the dashboard to fake practice data.",
+    items: [
+      "A training toggle was added so staff can practice without touching live Square data.",
+      "A hover hint explains what the training switch does.",
+    ],
+  },
   {
     version: "v1.0.8",
     date: "Current build",
@@ -242,6 +252,131 @@ function getSavedThemeMode() {
   } catch {
     return "light";
   }
+}
+
+function getSavedTrainingMode() {
+  if (typeof window === "undefined") return false;
+
+  try {
+    return window.localStorage.getItem(TRAINING_MODE_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function getLocalDayBounds(date = new Date()) {
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+
+  return { start: start.getTime(), end: end.getTime() };
+}
+
+function getRangeBounds(rangeKey) {
+  const today = new Date();
+  const todayBounds = getLocalDayBounds(today);
+  const todayStart = new Date(todayBounds.start);
+  const end = todayBounds.end;
+
+  if (rangeKey === "today") {
+    return todayBounds;
+  }
+
+  if (rangeKey === "yesterday") {
+    const start = new Date(todayStart);
+    start.setDate(start.getDate() - 1);
+    const next = new Date(start);
+    next.setDate(next.getDate() + 1);
+    return { start: start.getTime(), end: next.getTime() };
+  }
+
+  if (rangeKey === "last7" || rangeKey === "last30") {
+    const days = rangeKey === "last7" ? 7 : 30;
+    const start = new Date(todayStart);
+    start.setDate(start.getDate() - (days - 1));
+    return { start: start.getTime(), end };
+  }
+
+  if (rangeKey === "thisMonth") {
+    const start = new Date(today.getFullYear(), today.getMonth(), 1);
+    return { start: start.getTime(), end };
+  }
+
+  if (rangeKey === "thisYear") {
+    const start = new Date(today.getFullYear(), 0, 1);
+    return { start: start.getTime(), end };
+  }
+
+  return todayBounds;
+}
+
+function isSameLocalDay(timestamp, dateValue) {
+  if (!timestamp || !dateValue) return false;
+
+  const left = new Date(timestamp);
+  const right = new Date(`${dateValue}T00:00:00`);
+
+  return (
+    left.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth() &&
+    left.getDate() === right.getDate()
+  );
+}
+
+function countBeverageOrdersForDay(tickets, dateValue) {
+  return tickets.filter(
+    (ticket) =>
+      isSameLocalDay(ticket.createdAt, dateValue) && hasDrinkItems(ticket)
+  ).length;
+}
+
+function buildDrinkReportFromTickets(tickets, rangeKey) {
+  const { start, end } = getRangeBounds(rangeKey);
+  const names = {};
+  const categories = {};
+  let orderCount = 0;
+
+  tickets
+    .filter((ticket) => ticket.createdAt >= start && ticket.createdAt < end)
+    .forEach((ticket) => {
+      const drinkItems = ticket.items.filter((item) => isDrinkItem(item.name));
+      if (!drinkItems.length) return;
+
+      orderCount += 1;
+
+      drinkItems.forEach((item) => {
+        const qty = Number(item.qty || 1);
+        const category = getBeverageCategory(item.name);
+
+        names[item.name] = (names[item.name] || 0) + qty;
+        if (category) {
+          categories[category] = (categories[category] || 0) + qty;
+        }
+      });
+    });
+
+  return {
+    orderCount,
+    totalsByName: Object.entries(names)
+      .map(([name, qty]) => ({ name, qty }))
+      .sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name)),
+    totalsByCategory: categories,
+  };
+}
+
+function buildTrainingReports(tickets) {
+  return REPORT_RANGES.reduce((acc, range) => {
+    acc[range.key] = buildDrinkReportFromTickets(tickets, range.key);
+    return acc;
+  }, {});
+}
+
+function getTrainingLookupResults(tickets, dateValue) {
+  return tickets
+    .filter((ticket) => isSameLocalDay(ticket.createdAt, dateValue))
+    .sort((a, b) => a.createdAt - b.createdAt);
 }
 
 const STATUS_COLUMNS = [
@@ -597,6 +732,139 @@ function normalizeTicket(ticket) {
   };
 }
 
+function getTrainingTimestamp(dayOffset, hour, minute) {
+  const date = new Date();
+  date.setDate(date.getDate() + dayOffset);
+  date.setHours(hour, minute, 0, 0);
+  return date.getTime();
+}
+
+function createTrainingTickets() {
+  return [
+    {
+      id: "demo-1001",
+      orderNumber: "T1001",
+      customerName: "",
+      employeeName: "Blake",
+      createdAt: getTrainingTimestamp(0, 7, 58),
+      completedAt: null,
+      source: "Square Register",
+      status: "new",
+      diningOption: "To go",
+      items: [
+        { name: "Americano", qty: 1, modifiers: ["Oat milk"], note: "" },
+        { name: "Butter Croissant", qty: 1, modifiers: [], note: "" },
+      ],
+    },
+    {
+      id: "demo-1002",
+      orderNumber: "T1002",
+      customerName: "Mia",
+      employeeName: "Zahra",
+      createdAt: getTrainingTimestamp(0, 8, 7),
+      completedAt: null,
+      source: "Square Register",
+      status: "making",
+      diningOption: "Pickup",
+      items: [
+        { name: "Latte", qty: 2, modifiers: ["Extra hot"], note: "" },
+        { name: "Blueberry Muffin", qty: 1, modifiers: [], note: "" },
+      ],
+    },
+    {
+      id: "demo-1003",
+      orderNumber: "T1003",
+      customerName: "Sammy",
+      employeeName: "Clair",
+      createdAt: getTrainingTimestamp(0, 8, 15),
+      completedAt: null,
+      source: "Square Register",
+      status: "ready",
+      diningOption: "For here",
+      items: [
+        { name: "Matcha Latte", qty: 1, modifiers: ["Coconut milk"], note: "" },
+        { name: "Bagel", qty: 1, modifiers: ["Toasted"], note: "" },
+      ],
+    },
+    {
+      id: "demo-1004",
+      orderNumber: "T1004",
+      customerName: "Jordan",
+      employeeName: "Blake",
+      createdAt: getTrainingTimestamp(0, 8, 29),
+      completedAt: getTrainingTimestamp(0, 8, 42),
+      source: "Square Register",
+      status: "completed",
+      diningOption: "Delivery",
+      items: [
+        { name: "Chai Latte", qty: 1, modifiers: ["Extra cinnamon"], note: "" },
+        { name: "Refresher-Strawberry Mango", qty: 1, modifiers: [], note: "" },
+        { name: "Scone", qty: 1, modifiers: [], note: "" },
+      ],
+    },
+    {
+      id: "demo-1005",
+      orderNumber: "T1005",
+      customerName: "",
+      employeeName: "Zahra",
+      createdAt: getTrainingTimestamp(0, 8, 39),
+      completedAt: getTrainingTimestamp(0, 8, 51),
+      source: "Square Register",
+      status: "done",
+      diningOption: "Drive thru",
+      items: [
+        { name: "Cold Brew", qty: 1, modifiers: [], note: "" },
+        { name: "Chocolate P/B Banana", qty: 1, modifiers: [], note: "" },
+      ],
+    },
+    {
+      id: "demo-0998",
+      orderNumber: "T0998",
+      customerName: "Ashley",
+      employeeName: "Clair",
+      createdAt: getTrainingTimestamp(-1, 9, 4),
+      completedAt: getTrainingTimestamp(-1, 9, 19),
+      source: "Square Handheld",
+      status: "done",
+      diningOption: "Pickup",
+      items: [
+        { name: "Espresso", qty: 2, modifiers: [], note: "" },
+        { name: "Drip Refill", qty: 1, modifiers: [], note: "" },
+      ],
+    },
+    {
+      id: "demo-0999",
+      orderNumber: "T0999",
+      customerName: "Nora",
+      employeeName: "Blake",
+      createdAt: getTrainingTimestamp(-1, 13, 11),
+      completedAt: getTrainingTimestamp(-1, 13, 27),
+      source: "Square Handheld",
+      status: "done",
+      diningOption: "To go",
+      items: [
+        { name: "Strawberry Banana", qty: 1, modifiers: [], note: "" },
+        { name: "Teas", qty: 1, modifiers: [], note: "" },
+      ],
+    },
+    {
+      id: "demo-0995",
+      orderNumber: "T0995",
+      customerName: "Theo",
+      employeeName: "Zahra",
+      createdAt: getTrainingTimestamp(-3, 10, 22),
+      completedAt: getTrainingTimestamp(-3, 10, 39),
+      source: "Square Register",
+      status: "done",
+      diningOption: "For here",
+      items: [
+        { name: "Cappuccino", qty: 1, modifiers: ["Whole milk"], note: "" },
+        { name: "Muffin", qty: 1, modifiers: [], note: "" },
+      ],
+    },
+  ].map(normalizeTicket);
+}
+
 function TicketCard({ ticket, onStatusChange, onNameChange }) {
   const [nameValue, setNameValue] = useState(ticket.customerName || "");
   const orderTime = formatOrderTime(ticket.createdAt);
@@ -861,6 +1129,32 @@ function BrandMark({ size = "md" }) {
   );
 }
 
+function ModeToggle({ active, label, onToggle, hint }) {
+  return (
+    <div className="inline-flex items-center gap-1.5">
+      <button
+        type="button"
+        onClick={onToggle}
+        className={`rounded-xl border px-4 py-2 text-sm font-black transition ${
+          active
+            ? "border-[#0F4036] bg-[#0F4036] text-white hover:bg-[#0b352d]"
+            : "border-[#CA862B]/22 bg-white text-[#0F4036] hover:bg-[#EEE0C5]/45"
+        }`}
+      >
+        {label}
+      </button>
+
+      <span
+        title={hint}
+        aria-label={hint}
+        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#CA862B]/20 bg-white text-xs font-black text-[#0F4036]"
+      >
+        ?
+      </span>
+    </div>
+  );
+}
+
 function DrinkStats({ reports }) {
   return (
     <section className="rounded-2xl bg-[#FFFDF8] border border-[#0F4036]/12 p-4 shadow-sm">
@@ -1100,7 +1394,13 @@ function CompletedTransactions({ tickets }) {
   );
 }
 
-function OrdersByDayLookup({ defaultDate, collapsed, onToggle }) {
+function OrdersByDayLookup({
+  defaultDate,
+  collapsed,
+  onToggle,
+  trainingMode,
+  trainingTickets,
+}) {
   const [date, setDate] = useState(defaultDate);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -1112,10 +1412,18 @@ function OrdersByDayLookup({ defaultDate, collapsed, onToggle }) {
     const trimmedDate = String(nextDate || "").trim();
     if (!trimmedDate) return;
 
-    setLoading(true);
-    setError("");
-
     try {
+      setLoading(true);
+      setError("");
+
+      if (trainingMode) {
+        const localResults = getTrainingLookupResults(trainingTickets, trimmedDate);
+        setResults(localResults);
+        setSearchedDate(trimmedDate);
+        setExpandedTicketId(null);
+        return;
+      }
+
       const response = await fetch(apiUrl(`/api/tickets/day?date=${trimmedDate}`), {
         credentials: "include",
       });
@@ -1144,7 +1452,7 @@ function OrdersByDayLookup({ defaultDate, collapsed, onToggle }) {
   useEffect(() => {
     runLookup(defaultDate);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [trainingMode, trainingTickets]);
 
   return (
     <section className="space-y-2">
@@ -1350,6 +1658,8 @@ function LoginScreen({
   onLogin,
   themeMode,
   onThemeToggle,
+  isTrainingMode,
+  onTrainingToggle,
   themeStyle,
   onVersionClick,
 }) {
@@ -1422,17 +1732,25 @@ function LoginScreen({
       className="relative min-h-screen bg-[#EEE0C5] text-[#111111] flex items-center justify-center px-4"
       style={themeStyle}
     >
-      <button
-        type="button"
-        onClick={onThemeToggle}
-        className="absolute right-4 top-4 rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-      >
-        {themeMode === "dark" ? "Light mode" : "Dark mode"}
-      </button>
+      <div className="absolute right-4 top-4 hidden sm:flex flex-col items-end gap-2">
+        <ModeToggle
+          active={themeMode === "dark"}
+          label={themeMode === "dark" ? "Light mode" : "Dark mode"}
+          onToggle={onThemeToggle}
+          hint="Switch between the light and dark dashboard themes."
+        />
+
+        <ModeToggle
+          active={isTrainingMode}
+          label={isTrainingMode ? "Training on" : "Training off"}
+          onToggle={onTrainingToggle}
+          hint="Training mode swaps in fake orders and counts so staff can practice without changing live Square data."
+        />
+      </div>
 
       <a
         href={buildSupportMailto()}
-        className="absolute right-4 top-16 rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+        className="absolute right-4 top-24 hidden sm:inline-flex rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
       >
         Suggest Fix
       </a>
@@ -1440,6 +1758,29 @@ function LoginScreen({
       <main className="w-full max-w-md rounded-3xl bg-[#FFFDF8] border border-[#CA862B]/22 shadow-[0_20px_60px_rgba(15,64,54,0.08)] p-6 flex flex-col items-center text-center">
         <div className="flex items-center justify-center gap-4 mb-5">
           <BrandMark size="lg" />
+        </div>
+
+        <div className="sm:hidden mb-4 flex flex-wrap items-center justify-center gap-2 w-full">
+          <ModeToggle
+            active={themeMode === "dark"}
+            label={themeMode === "dark" ? "Light mode" : "Dark mode"}
+            onToggle={onThemeToggle}
+            hint="Switch between the light and dark dashboard themes."
+          />
+
+          <ModeToggle
+            active={isTrainingMode}
+            label={isTrainingMode ? "Training on" : "Training off"}
+            onToggle={onTrainingToggle}
+            hint="Training mode swaps in fake orders and counts so staff can practice without changing live Square data."
+          />
+
+          <a
+            href={buildSupportMailto()}
+            className="rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+          >
+            Suggest Fix
+          </a>
         </div>
 
         <h1 className="text-4xl font-black tracking-tight text-[#0F4036]">
@@ -1655,6 +1996,7 @@ function PasswordSettingsDialog({
 
 export default function GoldiesKDS() {
   const [themeMode, setThemeMode] = useState(getSavedThemeMode);
+  const [isTrainingMode, setIsTrainingMode] = useState(getSavedTrainingMode);
   const [authStatus, setAuthStatus] = useState("checking");
   const [signedInEmployee, setSignedInEmployee] = useState("");
   const [tickets, setTickets] = useState([]);
@@ -1692,6 +2034,9 @@ export default function GoldiesKDS() {
     themeMode === "dark"
       ? { filter: "invert(1) hue-rotate(180deg)" }
       : undefined;
+  const [trainingTickets, setTrainingTickets] = useState(() =>
+    createTrainingTickets()
+  );
 
   useEffect(() => {
     try {
@@ -1700,6 +2045,32 @@ export default function GoldiesKDS() {
       // ignore storage failures
     }
   }, [themeMode]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        TRAINING_MODE_STORAGE_KEY,
+        isTrainingMode ? "true" : "false"
+      );
+    } catch {
+      // ignore storage failures
+    }
+  }, [isTrainingMode]);
+
+  useEffect(() => {
+    if (!isTrainingMode) return;
+
+    setTrainingTickets(createTrainingTickets());
+    setConnectionStatus("Training mode");
+    setLastError("");
+    setLastPoll(new Date());
+  }, [isTrainingMode]);
+
+  useEffect(() => {
+    if (!isTrainingMode && authStatus === "authenticated") {
+      setConnectionStatus("Connecting...");
+    }
+  }, [isTrainingMode, authStatus]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1762,7 +2133,7 @@ export default function GoldiesKDS() {
   }, []);
 
   useEffect(() => {
-    if (authStatus !== "authenticated") return undefined;
+    if (authStatus !== "authenticated" || isTrainingMode) return undefined;
 
     let mounted = true;
 
@@ -1822,10 +2193,11 @@ export default function GoldiesKDS() {
       mounted = false;
       clearInterval(interval);
     };
-  }, [authStatus]);
+  }, [authStatus, isTrainingMode]);
 
   useEffect(() => {
-    if (authStatus !== "authenticated" || !showCompletedToday) return undefined;
+    if (authStatus !== "authenticated" || !showCompletedToday || isTrainingMode)
+      return undefined;
 
     let mounted = true;
 
@@ -1869,10 +2241,11 @@ export default function GoldiesKDS() {
       mounted = false;
       clearInterval(interval);
     };
-  }, [authStatus, showCompletedToday]);
+  }, [authStatus, showCompletedToday, isTrainingMode]);
 
   useEffect(() => {
-    if (authStatus !== "authenticated" || !showStats) return undefined;
+    if (authStatus !== "authenticated" || !showStats || isTrainingMode)
+      return undefined;
 
     let mounted = true;
 
@@ -1928,9 +2301,29 @@ export default function GoldiesKDS() {
       mounted = false;
       clearInterval(interval);
     };
-  }, [authStatus, showStats]);
+  }, [authStatus, showStats, isTrainingMode]);
 
-  const activeTickets = tickets.filter((ticket) => ticket.status !== "done");
+  const displayedTickets = isTrainingMode ? trainingTickets : tickets;
+  const displayedCompletedTickets = isTrainingMode
+    ? displayedTickets.filter(
+        (ticket) =>
+          ["completed", "done"].includes(ticket.status) &&
+          isSameLocalDay(ticket.completedAt || ticket.createdAt, getTodayDateKey())
+      )
+    : completedTickets;
+  const displayedDrinkCounts = isTrainingMode
+    ? getDailyDrinkCounts(displayedTickets)
+    : drinkCounts;
+  const displayedDrinkOrderCount = isTrainingMode
+    ? countBeverageOrdersForDay(displayedTickets, getTodayDateKey())
+    : drinkOrderCount;
+  const displayedDrinkReports = isTrainingMode
+    ? buildTrainingReports(displayedTickets)
+    : drinkReports;
+  const displayedConnectionStatus = isTrainingMode
+    ? "Training mode"
+    : connectionStatus;
+  const activeTickets = displayedTickets.filter((ticket) => ticket.status !== "done");
   const hasOpenTickets = activeTickets.length > 0;
 
   const grouped = useMemo(() => {
@@ -1950,6 +2343,24 @@ export default function GoldiesKDS() {
   }, [activeTickets]);
 
   function handleStatusChange(id, status) {
+    if (isTrainingMode) {
+      setTrainingTickets((current) =>
+        current.map((ticket) =>
+          ticket.id === id
+            ? {
+                ...ticket,
+                status,
+                completedAt:
+                  status === "completed" || status === "done"
+                    ? Date.now()
+                    : null,
+              }
+            : ticket
+        )
+      );
+      return;
+    }
+
     setTickets((current) =>
       current.map((ticket) =>
         ticket.id === id ? { ...ticket, status } : ticket
@@ -1978,6 +2389,15 @@ export default function GoldiesKDS() {
   }
 
   function handleNameChange(id, customerName) {
+    if (isTrainingMode) {
+      setTrainingTickets((current) =>
+        current.map((ticket) =>
+          ticket.id === id ? { ...ticket, customerName } : ticket
+        )
+      );
+      return;
+    }
+
     setTickets((current) =>
       current.map((ticket) =>
         ticket.id === id ? { ...ticket, customerName } : ticket
@@ -2092,6 +2512,8 @@ export default function GoldiesKDS() {
           onThemeToggle={() =>
             setThemeMode((current) => (current === "dark" ? "light" : "dark"))
           }
+          isTrainingMode={isTrainingMode}
+          onTrainingToggle={() => setIsTrainingMode((current) => !current)}
           themeStyle={themeStyle}
           onVersionClick={() => setShowReleaseNotes(true)}
         />
@@ -2148,15 +2570,21 @@ export default function GoldiesKDS() {
             </div>
 
             <div className="flex flex-wrap gap-2 justify-start xl:justify-end">
-              <button
-                type="button"
-                onClick={() =>
+              <ModeToggle
+                active={themeMode === "dark"}
+                label={themeMode === "dark" ? "Light mode" : "Dark mode"}
+                onToggle={() =>
                   setThemeMode((current) => (current === "dark" ? "light" : "dark"))
                 }
-                className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-              >
-                {themeMode === "dark" ? "Light mode" : "Dark mode"}
-              </button>
+                hint="Switch between the light and dark dashboard themes."
+              />
+
+              <ModeToggle
+                active={isTrainingMode}
+                label={isTrainingMode ? "Training on" : "Training off"}
+                onToggle={() => setIsTrainingMode((current) => !current)}
+                hint="Training mode swaps in fake orders and counts so staff can practice without changing live Square data."
+              />
 
               <button
                 type="button"
@@ -2209,13 +2637,13 @@ export default function GoldiesKDS() {
         <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
           <StatCard
             label="Mode"
-            value="Live"
-            detail="Production"
+            value={isTrainingMode ? "Training" : "Live"}
+            detail={isTrainingMode ? "Fake demo data" : "Production"}
           />
 
           <StatCard
             label="Connection"
-            value={connectionStatus}
+            value={displayedConnectionStatus}
             detail="Square API"
           />
 
@@ -2266,7 +2694,10 @@ export default function GoldiesKDS() {
           </div>
 
           {showTodayCount && (
-            <DailyDrinkCount drinkCounts={drinkCounts} orderCount={drinkOrderCount} />
+            <DailyDrinkCount
+              drinkCounts={displayedDrinkCounts}
+              orderCount={displayedDrinkOrderCount}
+            />
           )}
         </section>
 
@@ -2280,7 +2711,7 @@ export default function GoldiesKDS() {
           </button>
         </div>
 
-        {showStats && <DrinkStats reports={drinkReports} />}
+        {showStats && <DrinkStats reports={displayedDrinkReports} />}
 
         <section className="grid grid-cols-1 xl:grid-cols-4 gap-3">
           {STATUS_COLUMNS.map((column) => (
@@ -2341,13 +2772,17 @@ export default function GoldiesKDS() {
             </button>
           </div>
 
-          {showCompletedToday && <CompletedTransactions tickets={completedTickets} />}
+          {showCompletedToday && (
+            <CompletedTransactions tickets={displayedCompletedTickets} />
+          )}
         </section>
 
         <OrdersByDayLookup
           defaultDate={defaultLookupDate}
           collapsed={!showOrdersByDay}
           onToggle={() => setShowOrdersByDay((current) => !current)}
+          trainingMode={isTrainingMode}
+          trainingTickets={displayedTickets}
         />
       </main>
 
