@@ -7,7 +7,7 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.1.12";
+const APP_VERSION = "v1.1.13";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-30";
@@ -15,12 +15,12 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.1.12",
+    version: "v1.1.13",
     date: "Current build",
-    summary: "Settings help now opens from both the login screen and dashboard.",
+    summary: "The login screen now gives the Settings buttons more room on phones.",
     items: [
-      "The question-mark button next to Settings now opens the help popup on both screens.",
-      "The help popup explains what Settings contains.",
+      "The login screen now keeps the Settings buttons clear of the sign-in card on mobile phones.",
+      "The question-mark button next to Settings still opens the help popup.",
     ],
   },
   {
@@ -2011,7 +2011,7 @@ function LoginScreen({
 
   return (
     <div
-      className="relative min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,253,248,0.96),_rgba(238,224,197,1)_50%,_rgba(230,210,173,1)_100%)] text-[#111111] flex items-center justify-center px-4 overflow-hidden"
+      className="relative min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,253,248,0.96),_rgba(238,224,197,1)_50%,_rgba(230,210,173,1)_100%)] text-[#111111] flex items-start justify-center px-4 pt-20 sm:items-center sm:pt-0 overflow-hidden"
       style={{ ...themeStyle, ...trainingStyle }}
     >
       <div
@@ -2023,7 +2023,7 @@ function LoginScreen({
         }}
       />
       <WatermarkLayer trainingMode={false} />
-      <div className="absolute right-4 top-4">
+      <div className="absolute right-4 top-6 sm:top-4">
         <div className="flex items-center gap-1.5">
           <button
             type="button"
