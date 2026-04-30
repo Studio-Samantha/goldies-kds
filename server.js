@@ -596,12 +596,15 @@ function addTicket(ticket) {
 }
 
 function updateLocalTicketStatus(id, status) {
+  const completedAt =
+    status === "completed" || status === "done" ? Date.now() : null;
+
   tickets = tickets.map((ticket) =>
     ticket.id === id
       ? {
           ...ticket,
           status,
-          completedAt: status === "done" ? Date.now() : ticket.completedAt,
+          completedAt: completedAt || ticket.completedAt,
         }
       : ticket
   );
@@ -1332,7 +1335,6 @@ async function setTicketName(id, customerName) {
     .from("kds_orders")
     .update({
       customer_name: normalizedName || null,
-      updated_at: new Date().toISOString(),
     })
     .eq("square_order_id", id)
     .select("square_order_id")
