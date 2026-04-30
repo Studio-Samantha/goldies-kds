@@ -1169,7 +1169,7 @@ async function getCompletedTicketsToday() {
       .filter((ticket) => {
         const completedAt = ticket.completedAt || ticket.createdAt;
         return (
-          ticket.status === "done" &&
+          (ticket.status === "completed" || ticket.status === "done") &&
           completedAt >= start.getTime() &&
           completedAt <= end.getTime()
         );
@@ -1180,7 +1180,7 @@ async function getCompletedTicketsToday() {
   const { data: orders, error } = await supabase
     .from("kds_orders")
     .select("square_order_id, order_number, customer_name, created_at, updated_at, source, status, dining_option, raw_order")
-    .eq("status", "done")
+    .in("status", ["completed", "done"])
     .gte("updated_at", start.toISOString())
     .lte("updated_at", end.toISOString())
     .order("updated_at", { ascending: false });
