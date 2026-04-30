@@ -141,6 +141,16 @@ function normalizeName(name = "") {
   return String(name).trim();
 }
 
+function normalizeDrinkText(name = "") {
+  return normalizeName(name)
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
 function matchesAnyPattern(value, patterns = []) {
   const text = String(value || "").toLowerCase();
   return patterns.some((pattern) => pattern.test(text));
@@ -148,7 +158,8 @@ function matchesAnyPattern(value, patterns = []) {
 
 function getDrinkCategory(itemName = "") {
   const name = normalizeName(itemName);
-  const lower = name.toLowerCase();
+  const lower = normalizeDrinkText(name);
+  const compact = lower.replace(/\s+/g, "");
 
   if (COFFEE_DRINKS.has(name)) return "Coffee";
   if (NOT_COFFEE_DRINKS.has(name)) return "Not Coffee";
@@ -164,11 +175,15 @@ function getDrinkCategory(itemName = "") {
       /\bmocha\b/,
       /\bmacchiato\b/,
       /\bcold brew\b/,
+      /\bcoldbrew\b/,
       /\bdrip\b/,
       /\bpour over\b/,
+      /\bpourover\b/,
       /\bgibraltar\b/,
       /\bflat white\b/,
-    ])
+      /\bcortado\b/,
+      /\bbreve\b/,
+    ]) || compact.includes("icedcoffee") || compact.includes("hotcoffee")
   ) {
     return "Coffee";
   }
@@ -183,12 +198,14 @@ function getDrinkCategory(itemName = "") {
       /\brefresher\b/,
       /\bhot chocolate\b/,
       /\bfog\b/,
+      /\bboba\b/,
     ])
   ) {
     return "Not Coffee";
   }
 
   if (lower.includes("smoothie")) return "Smoothies";
+  if (compact.includes("greens")) return "Smoothies";
 
   return null;
 }

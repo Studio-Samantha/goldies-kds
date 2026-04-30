@@ -139,9 +139,21 @@ function matchesAnyPattern(value, patterns = []) {
   return patterns.some((pattern) => pattern.test(text));
 }
 
+function normalizeDrinkText(name = "") {
+  return String(name || "")
+    .trim()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
 function getBeverageCategory(itemName = "") {
   const name = String(itemName || "").trim();
-  const lower = name.toLowerCase();
+  const lower = normalizeDrinkText(name);
+  const compact = lower.replace(/\s+/g, "");
 
   if (
     [
@@ -171,11 +183,15 @@ function getBeverageCategory(itemName = "") {
       /\bmocha\b/i,
       /\bmacchiato\b/i,
       /\bcold brew\b/i,
+      /\bcoldbrew\b/i,
       /\bdrip\b/i,
       /\bpour over\b/i,
+      /\bpourover\b/i,
       /\bgibraltar\b/i,
       /\bflat white\b/i,
-    ])
+      /\bcortado\b/i,
+      /\bbreve\b/i,
+    ]) || compact.includes("icedcoffee") || compact.includes("hotcoffee")
   ) {
     return "Coffee";
   }
@@ -204,6 +220,7 @@ function getBeverageCategory(itemName = "") {
       /\brefresher\b/i,
       /\bhot chocolate\b/i,
       /\bfog\b/i,
+      /\bboba\b/i,
     ])
   ) {
     return "Not Coffee";
@@ -217,7 +234,8 @@ function getBeverageCategory(itemName = "") {
       "Strawberry",
       "Strawberry Banana",
     ].includes(name) ||
-    /smoothie/i.test(name)
+    /smoothie/i.test(lower) ||
+    compact.includes("greens")
   ) {
     return "Smoothies";
   }
