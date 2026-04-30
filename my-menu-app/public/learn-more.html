@@ -692,6 +692,23 @@
         font-size: 13px;
         line-height: 1.45;
       }
+      .ticket-actions {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+      }
+      .ticket-actions button {
+        min-height: 28px;
+        border: 1px solid rgba(15, 64, 54, 0.14);
+        border-radius: 7px;
+        background: #fff;
+        color: var(--green);
+        padding: 0 8px;
+        font: inherit;
+        font-size: 11px;
+        font-weight: 950;
+      }
       .owner-card {
         padding: 18px;
       }
@@ -867,6 +884,10 @@
       }
       .lite-screen .ticket {
         background: #fff7e8;
+      }
+      .lite-screen .ticket-actions button.primary-action {
+        background: var(--green);
+        color: #fff;
       }
       .pricing {
         background: var(--green);
@@ -1820,7 +1841,8 @@
         <p class="section-copy">
           DrinkFlow connects through the Square&reg; API, so the shop needs to already use Square&reg;
           for orders or payments. Lite keeps the live KDS simple on a DrinkFlow-hosted URL.
-          KDS adds the owner portal, reports, branding, and custom-domain polish.
+          Lite is password protected, but it does not include separate employee logins.
+          KDS adds the owner portal, reports, branding, user options, and custom-domain polish.
         </p>
         <div class="grid price-grid">
           <article class="price-card">
@@ -1836,6 +1858,8 @@
                 <li>Oldest tickets first</li>
                 <li>Square&reg; connection and basic drink filtering</li>
                 <li>Phone, iPad, monitor, or TV browser display</li>
+                <li>Password protected access</li>
+                <li>No separate employee/user logins</li>
                 <li>DrinkFlow-hosted URL, no custom domain</li>
               </ul>
             </details>
@@ -1926,7 +1950,7 @@
     <section class="section lite-demo" id="lite-demo">
       <div class="section-inner">
         <p class="eyebrow">DrinkFlow Lite example</p>
-        <h2>The stripped-down version is just the board.</h2>
+        <h2>The Lite version is just the board.</h2>
         <div class="grid lite-demo-grid">
           <div>
             <p class="section-copy">
@@ -1937,6 +1961,7 @@
             <div class="lite-demo-list">
               <span>No owner portal</span>
               <span>No custom domain</span>
+              <span>Password protected, no separate user logins</span>
               <span>No monthly report exports</span>
               <span>Just the live DrinkFlow-hosted KDS</span>
             </div>
@@ -1950,20 +1975,35 @@
               <div class="lane-grid">
                 <div class="lane">
                   <div class="lane-head">New</div>
-                  <div class="ticket"><strong>#104 <em>8:04</em></strong><span>1 Latte<br />1 Chai</span></div>
-                  <div class="ticket"><strong>#105 <em>8:06</em></strong><span>2 Cold Brews</span></div>
+                  <div class="ticket">
+                    <strong>#104 <em>8:04</em></strong><span>1 Latte<br />1 Chai</span>
+                    <div class="ticket-actions"><button class="primary-action" type="button">Start</button></div>
+                  </div>
+                  <div class="ticket">
+                    <strong>#105 <em>8:06</em></strong><span>2 Cold Brews</span>
+                    <div class="ticket-actions"><button class="primary-action" type="button">Start</button></div>
+                  </div>
                 </div>
                 <div class="lane">
                   <div class="lane-head">Making</div>
-                  <div class="ticket"><strong>#103 <em>8:02</em></strong><span>1 Matcha<br />1 Cappuccino</span></div>
+                  <div class="ticket">
+                    <strong>#103 <em>8:02</em></strong><span>1 Matcha<br />1 Cappuccino</span>
+                    <div class="ticket-actions"><button type="button">Back</button><button class="primary-action" type="button">Ready</button></div>
+                  </div>
                 </div>
                 <div class="lane">
                   <div class="lane-head">Ready</div>
-                  <div class="ticket"><strong>#102 <em>8:00</em></strong><span>1 Americano</span></div>
+                  <div class="ticket">
+                    <strong>#102 <em>8:00</em></strong><span>1 Americano</span>
+                    <div class="ticket-actions"><button type="button">Back</button><button class="primary-action" type="button">Done</button></div>
+                  </div>
                 </div>
                 <div class="lane">
                   <div class="lane-head">Completed</div>
-                  <div class="ticket"><strong>#101 <em>7:58</em></strong><span>2 Iced Lattes</span></div>
+                  <div class="ticket">
+                    <strong>#101 <em>7:58</em></strong><span>2 Iced Lattes</span>
+                    <div class="ticket-actions"><button type="button">Reopen</button></div>
+                  </div>
                 </div>
               </div>
             </div>
