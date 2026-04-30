@@ -6,18 +6,18 @@ const API_BASE_URL = import.meta.env.DEV
 const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
-const APP_VERSION = "v1.0.0";
+const APP_VERSION = "v1.0.1";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const RELEASE_NOTES = [
   {
-    version: "v1.0.0",
+    version: "v1.0.1",
     date: "Current build",
+    summary: "Fixes and small improvements for daily use.",
     items: [
-      "Live Square order sync into the KDS",
-      "Login gate with shared staff access",
-      "Customer names, callout names, and taken-by support",
-      "Collapsible Today, Completed Today, Stats, and Orders By Day panels",
-      "Light and dark mode with Goldie’s branding",
+      "Today's Count now shows orders and drinks separately.",
+      "Completed Today now shows the full ticket details when you click an order number.",
+      "The dashboard keeps the main ticket columns front and center.",
+      "Login, password changes, and support links stay easy to find.",
     ],
   },
 ];
@@ -81,6 +81,7 @@ function ReleaseNotesDialog({ open, onClose }) {
                 <div>
                   <div className="text-lg font-black text-[#111111]">{release.version}</div>
                   <div className="text-sm font-semibold text-[#6A614F]">{release.date}</div>
+                  <div className="mt-1 text-sm text-[#4E4637]">{release.summary}</div>
                 </div>
               </div>
 
