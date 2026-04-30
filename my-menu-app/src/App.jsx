@@ -7,7 +7,7 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.2.1";
+const APP_VERSION = "v1.2.2";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
@@ -19,12 +19,12 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.2.1",
+    version: "v1.2.2",
     date: "Current build",
-    summary: "The settings menu now stays clear of the dashboard cards on smaller screens.",
+    summary: "Training mode now has a stronger practice-only color scheme.",
     items: [
-      "Settings opens as a floating panel so its bottom no longer gets covered.",
-      "The install prompt is still available for phones and tablets that support it.",
+      "Training mode now looks obviously different from the live board.",
+      "The settings menu still stays clear of the dashboard cards on smaller screens.",
     ],
   },
   {
@@ -1571,7 +1571,9 @@ function WatermarkLayer({ trainingMode = false }) {
         transform: "rotate(-8deg) scale(1.08)",
         transformOrigin: "center",
         mixBlendMode: "multiply",
-        filter: trainingMode ? "saturate(0.95) contrast(1.02)" : "grayscale(1) contrast(1.05)",
+        filter: trainingMode
+          ? "hue-rotate(185deg) saturate(1.25) contrast(1.05)"
+          : "grayscale(1) contrast(1.05)",
       }}
     />
   );
@@ -2665,13 +2667,14 @@ export default function GoldiesKDS() {
   const trainingThemeStyle = isTrainingMode
     ? themeMode === "dark"
       ? {
-          backgroundColor: "#1f2937",
-          color: "#f9fafb",
-          filter: "saturate(0.95)",
+          backgroundColor: "#0f172a",
+          color: "#e2e8f0",
+          filter: "hue-rotate(185deg) saturate(0.95) brightness(0.98) contrast(1.06)",
         }
       : {
-          backgroundColor: "#eff6ff",
+          backgroundColor: "#dbeafe",
           color: "#1e3a8a",
+          filter: "hue-rotate(190deg) saturate(1.18) brightness(1.02) contrast(1.04)",
         }
     : undefined;
   const themeStyle =
