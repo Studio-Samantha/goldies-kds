@@ -1865,8 +1865,8 @@ export default function GoldiesKDS() {
     );
   }
 
-  if (authStatus === "login") {
-    return (
+  return authStatus === "login" ? (
+    <>
       <LoginScreen
         onLogin={(employeeName) => {
           setSignedInEmployee(employeeName);
@@ -1879,10 +1879,12 @@ export default function GoldiesKDS() {
         themeStyle={themeStyle}
         onVersionClick={() => setShowReleaseNotes(true)}
       />
-    );
-  }
-
-  return (
+      <ReleaseNotesDialog
+        open={showReleaseNotes}
+        onClose={() => setShowReleaseNotes(false)}
+      />
+    </>
+  ) : (
     <div className="min-h-screen bg-[#EEE0C5] text-[#111111]" style={themeStyle}>
       <header className="border-b border-[#CA862B]/22 bg-[#FFFDF8]/95 backdrop-blur px-4 md:px-6 py-4">
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
@@ -2140,10 +2142,6 @@ export default function GoldiesKDS() {
         onSubmit={handlePasswordChange}
         saving={passwordSaving}
         error={passwordError}
-      />
-      <ReleaseNotesDialog
-        open={showReleaseNotes}
-        onClose={() => setShowReleaseNotes(false)}
       />
     </div>
   );
