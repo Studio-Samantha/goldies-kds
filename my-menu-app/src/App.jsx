@@ -359,7 +359,8 @@ function WebServicesReminderDialog({ open, onClose }) {
 
         <div className="px-5 py-5 space-y-5 text-[#2D261C]">
           <p className="text-base leading-7">
-            Keep me in mind if you guys ever decide you need a website - Sammy.
+            Keep me in mind if you guys ever decide you need a website or any
+            design services - Sammy.
           </p>
 
           <div className="rounded-2xl border border-[#CA862B]/14 bg-white px-4 py-4 shadow-sm">
@@ -367,8 +368,9 @@ function WebServicesReminderDialog({ open, onClose }) {
               Website services
             </div>
             <p className="mt-2 text-sm leading-6 text-[#2D261C]">
-              Custom websites, branded ordering pages, launch pages, and small
-              updates for Square shops that want a polished online presence.
+              Custom websites, branded ordering pages, launch pages, logo
+              support, and small design updates for Square shops that want a
+              polished online presence.
             </p>
           </div>
 
