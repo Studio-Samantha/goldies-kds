@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.7.1";
+const APP_VERSION = "v1.7.2";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v1";
@@ -24,8 +24,18 @@ const SETTINGS_HELP_TEXT =
 const DINING_OPTIONS = ["For here", "To go", "Pickup", "Delivery", "Drive thru"];
 const RELEASE_NOTES = [
   {
-    version: "v1.7.1",
+    version: "v1.7.2",
     date: "Current build",
+    summary: "Added the Goldie's living case study.",
+    items: [
+      "The Learn More page now links to a dedicated Goldie's Coffee & Goods case study.",
+      "The case study documents opening-week feedback, version fixes, and future Supabase-backed proof points.",
+      "Goldie's is now documented as the founding customer with lifetime free use of its current setup.",
+    ],
+  },
+  {
+    version: "v1.7.1",
+    date: "Previous build",
     summary: "Sorted KDS tickets oldest first.",
     items: [
       "Each live KDS column now shows older tickets at the top and newer tickets at the bottom.",
