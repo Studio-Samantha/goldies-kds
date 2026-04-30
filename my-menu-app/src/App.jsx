@@ -6,11 +6,20 @@ const API_BASE_URL = import.meta.env.DEV
 const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
-const APP_VERSION = "v1.0.6";
+const APP_VERSION = "v1.0.7";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-30";
 const RELEASE_NOTES = [
+  {
+    version: "v1.0.7",
+    date: "Current build",
+    summary: "The soft opening message is now more festive on the login screen.",
+    items: [
+      "The soft opening popup now feels more celebratory.",
+      "It still only appears on the planned day.",
+    ],
+  },
   {
     version: "v1.0.6",
     date: "Current build",
@@ -105,19 +114,35 @@ function SoftOpeningDialog({ open, onClose }) {
   return (
     <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] flex items-center justify-center p-4">
       <div className="w-full max-w-lg rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)] overflow-hidden">
-        <div className="border-b border-[#CA862B]/18 px-5 py-4">
-          <div className="text-sm font-black uppercase tracking-[0.18em] text-[#6A614F]">
-            Soft Opening
+        <div className="border-b border-[#CA862B]/18 px-5 py-4 bg-[#EEE0C5]/35">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-sm font-black uppercase tracking-[0.18em] text-[#6A614F]">
+                Soft Opening
+              </div>
+              <h2 className="text-2xl font-black text-[#0F4036] mt-1">
+                Congratulations, Goldie&apos;s
+              </h2>
+            </div>
+
+            <div className="flex items-center gap-1.5" aria-hidden="true">
+              <span className="h-3 w-3 rounded-full bg-[#CA862B]" />
+              <span className="h-3 w-3 rounded-full bg-[#0F4036]" />
+              <span className="h-3 w-3 rounded-full bg-[#EEE0C5] border border-[#CA862B]/30" />
+            </div>
           </div>
-          <h2 className="text-2xl font-black text-[#0F4036] mt-1">
-            Congratulations, Goldie&apos;s
-          </h2>
         </div>
 
         <div className="px-5 py-5 space-y-4 text-[#2D261C]">
-          <p className="text-base leading-7">
-            Wishing you all the luck on your soft opening from Samantha and Zahra.
-          </p>
+          <div className="rounded-2xl border border-[#CA862B]/18 bg-[#EEE0C5]/45 px-4 py-3">
+            <div className="text-sm font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
+              Today&apos;s message
+            </div>
+            <p className="mt-2 text-base leading-7">
+              Wishing you all the luck on your soft opening from Samantha and Zahra.
+            </p>
+          </div>
+
           <p className="text-base leading-7">
             We&apos;ll be by for coffee tomorrow morning to show support.
           </p>
