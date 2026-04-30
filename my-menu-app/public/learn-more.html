@@ -318,6 +318,46 @@
         font-size: 14px;
         line-height: 1.5;
       }
+      .case-proof {
+        position: relative;
+        z-index: 1;
+        margin: 16px clamp(16px, 4vw, 48px) 0;
+      }
+      .case-proof-inner {
+        max-width: 1180px;
+        margin: 0 auto;
+        border: 1px solid rgba(202, 134, 43, 0.2);
+        border-radius: 8px;
+        background: linear-gradient(135deg, rgba(255, 253, 248, 0.96), rgba(246, 239, 225, 0.86));
+        color: var(--ink);
+        padding: 18px;
+        display: grid;
+        grid-template-columns: minmax(0, 0.7fr) auto;
+        gap: 16px;
+        align-items: center;
+        box-shadow: 0 14px 38px rgba(15, 64, 54, 0.08);
+      }
+      .case-proof strong {
+        display: block;
+        color: var(--green);
+        font-size: 18px;
+      }
+      .case-proof span {
+        display: block;
+        margin-top: 5px;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+      .case-badge {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: #fff;
+        color: var(--green);
+        padding: 9px 12px;
+        font-size: 12px;
+        font-weight: 950;
+        white-space: nowrap;
+      }
 
       .section {
         padding: 64px clamp(16px, 4vw, 48px);
@@ -1228,8 +1268,15 @@
         .proof-inner {
           transform: translateY(-18px);
         }
-        .features, .showcase-grid, .price-grid, .onboarding-grid, .customer-grid, .comparison-grid, .comparison-savings, .proof-inner, .faq-grid, .support-card-inner, .founder-grid, .founder-points {
+        .features, .showcase-grid, .price-grid, .onboarding-grid, .customer-grid, .comparison-grid, .comparison-savings, .proof-inner, .faq-grid, .support-card-inner, .founder-grid, .founder-points, .case-proof-inner {
           grid-template-columns: 1fr;
+        }
+        .case-proof {
+          margin: 0;
+          padding: 0 16px 12px;
+        }
+        .case-badge {
+          justify-self: start;
         }
         .lane-grid {
           grid-template-columns: 1fr;
@@ -1362,6 +1409,16 @@
           <strong>Owner reports are built in</strong>
           <span>Download CSV, Excel, and branded PDF reports with charts and daily guidance.</span>
         </div>
+      </div>
+    </section>
+
+    <section class="case-proof" aria-label="Current customer case study">
+      <div class="case-proof-inner">
+        <div>
+          <strong>Built first for Goldie&apos;s Coffee &amp; Goods.</strong>
+          <span>Goldie&apos;s is the founding customer, approved case study, and first real shop using DrinkFlow during opening week.</span>
+        </div>
+        <div class="case-badge">Founding customer example</div>
       </div>
     </section>
 
