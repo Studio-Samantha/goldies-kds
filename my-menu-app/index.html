@@ -8,18 +8,46 @@
     <link rel="icon" type="image/png" href="/pwa/icon-192.png" />
     <link rel="apple-touch-icon" href="/pwa/icon-180.png" />
     <title>Goldie's KDS</title>
+    <style>
+      #startup-fallback {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #EEE0C5;
+        color: #0F4036;
+        font-family: Arial, sans-serif;
+        padding: 24px;
+        text-align: center;
+      }
+      #startup-fallback strong {
+        display: block;
+        font-size: 20px;
+        margin-bottom: 8px;
+      }
+      #startup-fallback span {
+        display: block;
+        max-width: 360px;
+        margin: 0 auto;
+        font-size: 14px;
+        line-height: 1.6;
+        color: #5a4f3e;
+      }
+      .app-ready #startup-fallback {
+        display: none;
+      }
+    </style>
   </head>
   <body>
-    <div id="root">
-      <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#EEE0C5;color:#0F4036;font-family:Arial,sans-serif;padding:24px;text-align:center;">
-        <div style="max-width:360px;">
-          <div style="font-weight:800;font-size:20px;margin-bottom:8px;">Goldie's KDS</div>
-          <div style="font-size:14px;line-height:1.6;color:#5a4f3e;">
-            Loading the kitchen display. If this screen stays here, refresh once after clearing site data for goldieskds.com.
-          </div>
-        </div>
+    <div id="startup-fallback">
+      <div>
+        <strong>Goldie's KDS</strong>
+        <span>
+          Loading the kitchen display. If this screen stays here, refresh once after clearing site data for goldieskds.com.
+        </span>
       </div>
     </div>
+    <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
