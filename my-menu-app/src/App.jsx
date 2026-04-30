@@ -7,11 +7,23 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.1.8";
+const APP_VERSION = "v1.1.10";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-30";
+const SETTINGS_HELP_TEXT =
+  "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
+  {
+    version: "v1.1.10",
+    date: "Current build",
+    summary: "The app background now has a subtle Goldie's logo watermark.",
+    items: [
+      "A faint repeating logo pattern was added behind the app.",
+      "The Settings help button now sits next to the label where it is easier to find.",
+      "It gives the app a more branded look without getting in the way.",
+    ],
+  },
   {
     version: "v1.1.8",
     date: "Current build",
@@ -1298,6 +1310,25 @@ function BrandMark({ size = "md" }) {
   );
 }
 
+function WatermarkLayer({ trainingMode = false }) {
+  return (
+    <div
+      aria-hidden="true"
+      className="absolute inset-0 pointer-events-none"
+      style={{
+        backgroundImage: `url(${LOGO_URL})`,
+        backgroundRepeat: "repeat",
+        backgroundSize: "280px auto",
+        backgroundPosition: "center top",
+        opacity: trainingMode ? 0.055 : 0.028,
+        transform: "rotate(-8deg) scale(1.08)",
+        transformOrigin: "center",
+        filter: trainingMode ? "saturate(0.9)" : "grayscale(1)",
+      }}
+    />
+  );
+}
+
 function ModeToggle({ active, label, onToggle, hint, onInfoClick }) {
   return (
     <div className="inline-flex items-center gap-1.5">
@@ -1979,9 +2010,10 @@ function LoginScreen({
 
   return (
     <div
-      className="relative min-h-screen bg-[#EEE0C5] text-[#111111] flex items-center justify-center px-4"
+      className="relative min-h-screen bg-[#EEE0C5] text-[#111111] flex items-center justify-center px-4 overflow-hidden"
       style={{ ...themeStyle, ...trainingStyle }}
     >
+      <WatermarkLayer trainingMode={false} />
       <div className="absolute right-4 top-4">
         <div className="flex items-center gap-1.5">
           <button
@@ -1997,7 +2029,7 @@ function LoginScreen({
             onClick={() =>
               setModeHelp({
                 title: "Settings",
-                body: "Settings holds the app tools you may need: theme, password change, support, and release notes.",
+                body: SETTINGS_HELP_TEXT,
               })
             }
             aria-label="Explain Settings"
@@ -2021,7 +2053,7 @@ function LoginScreen({
         </div>
       </div>
 
-      <main className="w-full max-w-md rounded-3xl bg-[#FFFDF8] border border-[#CA862B]/22 shadow-[0_20px_60px_rgba(15,64,54,0.08)] p-6 flex flex-col items-center text-center">
+      <main className="relative z-10 w-full max-w-md rounded-3xl bg-[#FFFDF8] border border-[#CA862B]/22 shadow-[0_20px_60px_rgba(15,64,54,0.08)] p-6 flex flex-col items-center text-center">
         <div className="flex items-center justify-center gap-4 mb-5">
           <BrandMark size="lg" />
         </div>
@@ -2738,9 +2770,10 @@ export default function GoldiesKDS() {
   if (authStatus === "checking") {
     content = (
       <div
-        className="min-h-screen bg-[#EEE0C5] text-[#111111] flex items-center justify-center px-4"
+        className="relative min-h-screen bg-[#EEE0C5] text-[#111111] flex items-center justify-center px-4 overflow-hidden"
         style={themeStyle}
       >
+        <WatermarkLayer trainingMode={isTrainingMode} />
         <div className="rounded-3xl bg-[#FFFDF8] border border-[#CA862B]/22 shadow-sm p-6 text-xl font-black text-[#0F4036]">
           Loading Kitchen Display
         </div>
@@ -2784,10 +2817,12 @@ export default function GoldiesKDS() {
   } else {
     content = (
       <div
-        className="min-h-screen bg-[#EEE0C5] text-[#111111]"
+        className="relative min-h-screen bg-[#EEE0C5] text-[#111111] overflow-hidden"
         style={{ ...themeStyle, ...trainingThemeStyle }}
         onClick={() => setShowSettingsMenu(false)}
       >
+        <WatermarkLayer trainingMode={isTrainingMode} />
+      <div className="relative z-10">
       <header className="border-b border-[#CA862B]/22 bg-[#FFFDF8]/95 backdrop-blur px-4 md:px-6 py-4">
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -2833,13 +2868,30 @@ export default function GoldiesKDS() {
 
             <div className="flex flex-wrap gap-2 justify-start xl:justify-end">
               <div className="relative" onClick={(event) => event.stopPropagation()}>
-                <button
-                  type="button"
-                  onClick={() => setShowSettingsMenu((current) => !current)}
-                  className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-                >
-                  Settings
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setShowSettingsMenu((current) => !current)}
+                    className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                  >
+                    Settings
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setModeHelp({
+                        title: "Settings",
+                        body: SETTINGS_HELP_TEXT,
+                      })
+                    }
+                    aria-label="Explain Settings"
+                    title="Settings includes the main utility actions for the app."
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#CA862B]/20 bg-white text-xs font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                  >
+                    ?
+                  </button>
+                </div>
 
                 <SettingsPopover
                   open={showSettingsMenu}
@@ -2862,12 +2914,6 @@ export default function GoldiesKDS() {
                     setShowSettingsMenu(false);
                     setShowReleaseNotes(true);
                   }}
-                  onInfoClick={() =>
-                    setModeHelp({
-                      title: "Settings",
-                      body: "Settings holds the app tools you may need: theme, password change, support, and release notes.",
-                    })
-                  }
                 />
               </div>
 
@@ -3091,6 +3137,7 @@ export default function GoldiesKDS() {
           trainingTickets={displayedTickets}
         />
       </main>
+      </div>
 
       <PasswordSettingsDialog
         open={showPasswordModal}
