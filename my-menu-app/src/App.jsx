@@ -7,7 +7,7 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.1.14";
+const APP_VERSION = "v1.1.15";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-30";
@@ -15,12 +15,13 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.1.14",
+    version: "v1.1.15",
     date: "Current build",
-    summary: "Studio Samantha now appears at the bottom of the login screen and dashboard.",
+    summary: "Studio Samantha now sits a little darker at the bottom of the login screen and dashboard.",
     items: [
       "A small Studio Samantha copyright line now sits at the bottom of the login screen.",
       "The same footer also appears at the bottom of the dashboard.",
+      "The footer is muted, but a little more visible than the watermark.",
     ],
   },
   {
@@ -1331,7 +1332,7 @@ function WatermarkLayer({ trainingMode = false }) {
 
 function BrandFooter({ className = "" }) {
   return (
-    <div className={`text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6A614F] ${className}`}>
+    <div className={`text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5A4F3E] ${className}`}>
       Studio Samantha © 2026
     </div>
   );
