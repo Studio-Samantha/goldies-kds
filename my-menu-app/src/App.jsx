@@ -29,9 +29,11 @@ const RELEASE_NOTES = [
     summary: "Added the themed shop survey and Lite preview.",
     items: [
       "The marketing site now has a DrinkFlow-themed survey page that can save responses to Supabase.",
+      "The survey includes contact name, shop name, email, POS, screen, pricing, and feature questions.",
       "The Learn More page now shows an example of what DrinkFlow Lite looks like: live KDS columns without the owner portal or custom domain.",
       "The hero and Lite pricing now show a $2.99/month starting point.",
       "The a la carte section now gives clearer examples of small post-launch improvements.",
+      "The survey and landing page now mention the first month of DrinkFlow Lite free after survey completion and onboarding.",
     ],
   },
   {

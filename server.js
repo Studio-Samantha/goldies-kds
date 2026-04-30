@@ -3088,6 +3088,7 @@ app.post("/api/drinkflow-surveys", async (req, res) => {
 
     const survey = {
       email,
+      contact_name: cleanLeadText(req.body?.contactName, 120),
       shop_name: cleanLeadText(req.body?.shopName, 120),
       business_type: cleanLeadText(req.body?.businessType, 120),
       pos_system: cleanLeadText(req.body?.posSystem, 80),
@@ -3107,6 +3108,7 @@ app.post("/api/drinkflow-surveys", async (req, res) => {
 
     const hasUsefulAnswer =
       survey.email ||
+      survey.contact_name ||
       survey.shop_name ||
       survey.business_type ||
       survey.pos_system ||

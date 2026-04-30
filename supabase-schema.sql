@@ -143,6 +143,7 @@ create index if not exists drinkflow_leads_source_idx
 create table if not exists public.drinkflow_surveys (
   id bigserial primary key,
   email text not null default '',
+  contact_name text not null default '',
   shop_name text not null default '',
   business_type text not null default '',
   pos_system text not null default '',

@@ -150,16 +150,6 @@
         padding: 22px;
         box-shadow: var(--shadow);
       }
-      .visual::after {
-        content: "";
-        position: absolute;
-        right: 12px;
-        top: 12px;
-        width: 140px;
-        height: 140px;
-        background: url("/studio-samantha-leaf.png") center / contain no-repeat;
-        opacity: 0.16;
-      }
       .visual strong {
         position: relative;
         z-index: 1;
@@ -305,16 +295,23 @@
           </p>
           <div class="visual">
             <strong>Built first for Square&reg;. Starting at $2.99/month for Lite.</strong>
-            <span>Every answer helps keep DrinkFlow practical, affordable, and grounded in real counter workflows.</span>
+            <span>Every answer helps keep DrinkFlow practical, affordable, and grounded in real counter workflows. Complete the survey and onboarding to get the first month of DrinkFlow Lite free.</span>
           </div>
         </section>
 
         <form class="form-card" id="survey-form">
           <div class="field two">
             <div>
+              <label for="contact-name">Your name</label>
+              <input id="contact-name" name="contactName" type="text" autocomplete="name" />
+            </div>
+            <div>
               <label for="shop-name">Shop or business name</label>
               <input id="shop-name" name="shopName" type="text" autocomplete="organization" />
             </div>
+          </div>
+
+          <div class="field">
             <div>
               <label for="email">Email for updates or demo</label>
               <input id="email" name="email" type="email" autocomplete="email" />
@@ -450,6 +447,7 @@
         const submitButton = form.querySelector("button[type='submit']");
         const payload = {
           shopName: formData.get("shopName") || "",
+          contactName: formData.get("contactName") || "",
           email: formData.get("email") || "",
           businessType: formData.get("businessType") || "",
           posSystem: formData.get("posSystem") || "",

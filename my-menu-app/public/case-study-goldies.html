@@ -197,29 +197,124 @@
         position: relative;
         min-height: 480px;
       }
-      .leaf {
-        position: absolute;
-        z-index: 0;
-        width: 220px;
-        right: -54px;
-        top: -50px;
-        opacity: 0.22;
-        transform: rotate(14deg);
-      }
       .screen {
         position: relative;
         z-index: 1;
         border: 1px solid rgba(15, 64, 54, 0.18);
         border-radius: 22px;
-        background: #10100e;
+        background: #f6efe1;
         box-shadow: var(--shadow);
         padding: 14px;
         transform: rotate(1.2deg);
       }
-      .screen img {
-        display: block;
-        width: 100%;
+      .goldies-login {
+        position: relative;
+        min-height: 520px;
         border-radius: 13px;
+        overflow: hidden;
+        display: grid;
+        place-items: center;
+        padding: 30px;
+        background:
+          linear-gradient(rgba(246, 239, 225, 0.84), rgba(246, 239, 225, 0.84)),
+          url("/goldies-logo.png") center / 170px auto repeat;
+      }
+      .goldies-login::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(circle at 24% 18%, rgba(202, 134, 43, 0.16), transparent 28%),
+          linear-gradient(135deg, rgba(255, 253, 248, 0.62), rgba(15, 64, 54, 0.08));
+      }
+      .goldies-settings {
+        position: absolute;
+        z-index: 2;
+        top: 18px;
+        right: 18px;
+        display: flex;
+        gap: 8px;
+      }
+      .goldies-settings span {
+        display: grid;
+        place-items: center;
+        min-width: 36px;
+        height: 34px;
+        border: 1px solid rgba(15, 64, 54, 0.18);
+        border-radius: 999px;
+        background: rgba(255, 253, 248, 0.9);
+        color: var(--green);
+        font-size: 12px;
+        font-weight: 950;
+      }
+      .goldies-login-card {
+        position: relative;
+        z-index: 1;
+        width: min(330px, 100%);
+        border: 1px solid rgba(15, 64, 54, 0.14);
+        border-radius: 24px;
+        background: rgba(255, 253, 248, 0.93);
+        box-shadow: 0 18px 50px rgba(15, 64, 54, 0.16);
+        padding: 24px;
+        text-align: center;
+      }
+      .goldies-login-card img {
+        display: block;
+        width: min(210px, 82%);
+        margin: 0 auto 12px;
+      }
+      .goldies-pill {
+        display: inline-flex;
+        border-radius: 999px;
+        background: rgba(15, 64, 54, 0.1);
+        color: var(--green);
+        padding: 6px 10px;
+        font-size: 11px;
+        font-weight: 950;
+        text-transform: uppercase;
+      }
+      .goldies-login-card h3 {
+        margin: 10px 0 6px;
+        color: var(--green);
+        font-size: 26px;
+      }
+      .goldies-login-card p {
+        margin: 0 0 14px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .goldies-field {
+        margin-top: 10px;
+        text-align: left;
+      }
+      .goldies-field span {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 850;
+      }
+      .goldies-line {
+        height: 38px;
+        margin-top: 5px;
+        border: 1px solid rgba(15, 64, 54, 0.16);
+        border-radius: 8px;
+        background: #fff;
+      }
+      .goldies-button {
+        display: grid;
+        place-items: center;
+        min-height: 42px;
+        margin-top: 14px;
+        border-radius: 8px;
+        background: var(--green);
+        color: #fff;
+        font-weight: 950;
+      }
+      .goldies-footer {
+        margin-top: 12px;
+        color: rgba(15, 64, 54, 0.54);
+        font-size: 10px;
+        font-weight: 900;
+        text-transform: uppercase;
       }
       .floating-note {
         position: absolute;
@@ -461,10 +556,30 @@
               </div>
             </div>
           </div>
-          <div class="device-wrap" aria-label="DrinkFlow KDS product visual">
-            <img class="leaf" src="/studio-samantha-leaf.png" alt="" />
+          <div class="device-wrap" aria-label="Goldie's branded KDS login visual">
             <div class="screen">
-              <img src="/drinkflow-ipad-kds.png" alt="DrinkFlow KDS running on an iPad at a coffee shop counter" />
+              <div class="goldies-login" role="img" aria-label="Goldie's branded KDS login screen">
+                <div class="goldies-settings">
+                  <span>Settings</span>
+                  <span>?</span>
+                </div>
+                <div class="goldies-login-card">
+                  <img src="/goldies-logo.png" alt="Goldie's Coffee Shop logo" />
+                  <div class="goldies-pill">Goldie&apos;s KDS</div>
+                  <h3>Kitchen Display</h3>
+                  <p>Enter your name and password to continue.</p>
+                  <div class="goldies-field">
+                    <span>Name</span>
+                    <div class="goldies-line"></div>
+                  </div>
+                  <div class="goldies-field">
+                    <span>Password</span>
+                    <div class="goldies-line"></div>
+                  </div>
+                  <div class="goldies-button">Sign in</div>
+                  <div class="goldies-footer">Studio Samantha 2026</div>
+                </div>
+              </div>
             </div>
             <div class="floating-note">
               <strong>Built around their shop.</strong>
