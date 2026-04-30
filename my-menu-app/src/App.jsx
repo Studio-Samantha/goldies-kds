@@ -7,10 +7,11 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.1.26";
+const APP_VERSION = "v1.2.1";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
+const INSTALL_PROMPT_HIDE_KEY = "goldies-kds-hidden-install-prompt";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-30";
 const WEB_SERVICES_REMINDER_DATE = "2026-05-02";
@@ -18,12 +19,12 @@ const SETTINGS_HELP_TEXT =
   "Settings holds the app tools you may need: theme, password change, support, and release notes.";
 const RELEASE_NOTES = [
   {
-    version: "v1.1.26",
+    version: "v1.2.1",
     date: "Current build",
-    summary: "The Learn more link now opens a dedicated page so it is more reliable.",
+    summary: "The settings menu now stays clear of the dashboard cards on smaller screens.",
     items: [
-      "The Learn more control now opens its own page.",
-      "This avoids the blank page problem on phones.",
+      "Settings opens as a floating panel so its bottom no longer gets covered.",
+      "The install prompt is still available for phones and tablets that support it.",
     ],
   },
   {
@@ -1593,6 +1594,49 @@ function BrandFooter({ className = "" }) {
   );
 }
 
+function InstallPromptCard({ open, isIos, onInstall, onDismiss }) {
+  if (!open) return null;
+
+  return (
+    <div className="mt-5 rounded-2xl border border-[#CA862B]/18 bg-[#EEE0C5]/50 px-4 py-4 text-left shadow-[0_12px_28px_rgba(15,64,54,0.08)]">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-[11px] font-black uppercase tracking-[0.18em] text-[#6A614F]">
+            Install app
+          </div>
+          <div className="mt-1 text-sm font-black text-[#0F4036]">
+            Add Goldie&apos;s KDS to your home screen
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="rounded-lg border border-[#CA862B]/18 bg-white px-2.5 py-1 text-xs font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+        >
+          Not now
+        </button>
+      </div>
+
+      <p className="mt-2 text-sm leading-6 text-[#2D261C]">
+        {isIos
+          ? "On iPhone or iPad, tap Share and then choose Add to Home Screen."
+          : "Install it once and it opens like a home screen app on this device."}
+      </p>
+
+      <div className="mt-3">
+        <button
+          type="button"
+          onClick={onInstall}
+          className="rounded-xl bg-[#0F4036] px-4 py-2.5 text-sm font-black text-white transition hover:bg-[#0b352d]"
+        >
+          {isIos ? "Show steps" : "Add to Home Screen"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ModeToggle({ active, label, onToggle, hint, onInfoClick }) {
   return (
     <div className="inline-flex items-center gap-1.5">
@@ -1636,7 +1680,7 @@ function SettingsPopover({
   if (!open) return null;
 
   return (
-    <div className="fixed left-1/2 top-16 z-50 w-[min(20rem,calc(100vw-1.5rem))] max-h-[calc(100vh-5rem)] -translate-x-1/2 overflow-y-auto rounded-2xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_18px_50px_rgba(0,0,0,0.16)] sm:absolute sm:right-0 sm:top-full sm:mt-2 sm:left-auto sm:w-[20rem] sm:translate-x-0 sm:max-h-none">
+    <div className="fixed left-1/2 top-1/2 z-50 w-[min(20rem,calc(100vw-1.5rem))] max-h-[calc(100vh-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_18px_50px_rgba(0,0,0,0.16)] sm:right-4 sm:left-auto sm:top-24 sm:translate-x-0 sm:translate-y-0 sm:w-[20rem] sm:max-h-[calc(100vh-6rem)]">
       <div className="flex items-center justify-between border-b border-[#CA862B]/16 px-4 py-3">
         <div>
           <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
@@ -2395,6 +2439,13 @@ function LoginScreen({
           </button>
         </form>
 
+        <InstallPromptCard
+          open={showInstallPrompt && authStatus === "login"}
+          isIos={isIosInstall}
+          onInstall={handleInstallAction}
+          onDismiss={dismissInstallPrompt}
+        />
+
         <div className="mt-8 flex justify-center pb-1 pointer-events-auto">
           <BrandFooter className="max-w-full px-4 py-2 text-[11px] sm:text-[10px]" />
         </div>
@@ -2549,6 +2600,20 @@ export default function GoldiesKDS() {
   const [showOrdersByDay, setShowOrdersByDay] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showReleaseNotes, setShowReleaseNotes] = useState(false);
+  const [installHelp, setInstallHelp] = useState(null);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const [installPromptEvent, setInstallPromptEvent] = useState(null);
+  const [isIosInstall, setIsIosInstall] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [hideInstallPrompt, setHideInstallPrompt] = useState(() => {
+    if (typeof window === "undefined") return false;
+
+    try {
+      return window.localStorage.getItem(INSTALL_PROMPT_HIDE_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
   const [showPitch, setShowPitch] = useState(false);
   const [pitchHash, setPitchHash] = useState(() => {
     if (typeof window === "undefined") return "";
@@ -2681,6 +2746,74 @@ export default function GoldiesKDS() {
       // ignore storage failures
     }
   }, [hideWebServicesReminder]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    try {
+      if (hideInstallPrompt) {
+        window.localStorage.setItem(INSTALL_PROMPT_HIDE_KEY, "true");
+      } else {
+        window.localStorage.removeItem(INSTALL_PROMPT_HIDE_KEY);
+      }
+    } catch {
+      // ignore storage failures
+    }
+  }, [hideInstallPrompt]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const standaloneMatch =
+      window.matchMedia?.("(display-mode: standalone)")?.matches ||
+      window.navigator.standalone === true;
+    const iosMatch =
+      /iphone|ipad|ipod/i.test(window.navigator.userAgent) ||
+      (window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1);
+
+    setIsStandalone(Boolean(standaloneMatch));
+    setIsIosInstall(Boolean(iosMatch));
+
+    const handleBeforeInstallPrompt = (event) => {
+      event.preventDefault();
+      setInstallPromptEvent(event);
+      if (!hideInstallPrompt && !standaloneMatch) {
+        setShowInstallPrompt(true);
+      }
+    };
+
+    const handleAppInstalled = () => {
+      setShowInstallPrompt(false);
+      setInstallPromptEvent(null);
+      setHideInstallPrompt(true);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
+
+    if (!standaloneMatch && !hideInstallPrompt) {
+      setShowInstallPrompt(true);
+    }
+
+    return () => {
+      window.removeEventListener(
+        "beforeinstallprompt",
+        handleBeforeInstallPrompt
+      );
+      window.removeEventListener("appinstalled", handleAppInstalled);
+    };
+  }, [hideInstallPrompt]);
+
+  useEffect(() => {
+    if (isStandalone || hideInstallPrompt || authStatus !== "login") {
+      setShowInstallPrompt(false);
+      return;
+    }
+
+    if (installPromptEvent || isIosInstall) {
+      setShowInstallPrompt(true);
+    }
+  }, [authStatus, hideInstallPrompt, installPromptEvent, isIosInstall, isStandalone]);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -2930,25 +3063,27 @@ export default function GoldiesKDS() {
   const activeTickets = displayedTickets.filter((ticket) => ticket.status !== "done");
   const hasOpenTickets = activeTickets.length > 0;
 
-  const openPitchPage = () => {
-    setShowPitch(true);
-
-    if (typeof window !== "undefined") {
-      window.location.hash = "learn-more";
+  const handleInstallAction = async () => {
+    if (installPromptEvent) {
+      installPromptEvent.prompt();
+      await installPromptEvent.userChoice.catch(() => null);
+      setInstallPromptEvent(null);
+      setShowInstallPrompt(false);
+      setHideInstallPrompt(true);
+      return;
     }
+
+    setInstallHelp({
+      title: "Add to Home Screen",
+      body: isIosInstall
+        ? "On iPhone or iPad, tap the Share button in Safari and choose Add to Home Screen."
+        : "This browser does not support the install prompt right now. Try using the browser menu to add the app to the home screen.",
+    });
   };
 
-  const closePitchPage = () => {
-    setShowPitch(false);
-
-    if (typeof window !== "undefined") {
-      window.history.replaceState(
-        null,
-        "",
-        window.location.pathname + window.location.search
-      );
-      setPitchHash("");
-    }
+  const dismissInstallPrompt = () => {
+    setShowInstallPrompt(false);
+    setHideInstallPrompt(true);
   };
 
   const grouped = useMemo(() => {
@@ -3539,6 +3674,12 @@ export default function GoldiesKDS() {
         title={settingsHelp?.title || ""}
         body={settingsHelp?.body || ""}
         onClose={() => setSettingsHelp(null)}
+      />
+      <HelpDialog
+        open={Boolean(installHelp)}
+        title={installHelp?.title || ""}
+        body={installHelp?.body || ""}
+        onClose={() => setInstallHelp(null)}
       />
       <WebServicesReminderDialog
         open={showWebServicesReminder}
