@@ -1578,9 +1578,11 @@ async function getTicketsForDay(dateString) {
       .sort((a, b) => b.createdAt - a.createdAt);
   }
 
+  await syncRecentSquareOrders();
+
   const { data: orders, error } = await supabase
     .from("kds_orders")
-    .select("square_order_id, order_number, customer_name, created_at, updated_at, source, status, dining_option, raw_order")
+    .select("square_order_id, order_number, customer_name, created_at, completed_at, updated_at, source, status, dining_option, raw_order")
     .gte("created_at", range.start.toISOString())
     .lte("created_at", range.end.toISOString())
     .order("created_at", { ascending: false });
