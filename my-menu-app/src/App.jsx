@@ -1204,12 +1204,8 @@ function LoginScreen({ onLogin, themeMode, onThemeToggle, themeStyle }) {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               autoComplete="current-password"
-              placeholder="espresso"
               className="mt-2 w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 text-lg font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15"
             />
-            <div className="mt-1 text-xs font-semibold text-[#6A614F]">
-              Staff password is espresso.
-            </div>
           </label>
 
           {error && (
