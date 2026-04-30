@@ -288,6 +288,12 @@ function isNonDrinkItem(itemName = "") {
     /\bsoap\b/,
     /\bshower steamer\b/,
     /\bbestseller\b/,
+    /\bbagged coffee\b/,
+    /\bcoffee beans\b/,
+    /\bwhole bean\b/,
+    /\bground coffee\b/,
+    /\bbeans\b/,
+    /\bretail\b/,
   ]);
 }
 
@@ -455,6 +461,41 @@ function formatCurrency(cents) {
     style: "currency",
     currency: "USD",
   }).format((Number(cents) || 0) / 100);
+}
+
+function getLocalDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getMonthRange(monthValue = "") {
+  const match = String(monthValue || "").match(/^(\d{4})-(\d{2})$/);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  const start = new Date(year, monthIndex, 1);
+  const end = new Date(year, monthIndex + 1, 1);
+
+  return { start, end };
+}
+
+function escapeCsv(value) {
+  const text = String(value ?? "");
+  if (!/[",\n\r]/.test(text)) return text;
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function snapshotsTableMissing(error) {
+  const message = String(error?.message || "");
+  return (
+    error?.code === "42P01" ||
+    error?.code === "PGRST205" ||
+    message.includes("kds_owner_snapshots") ||
+    message.includes("Could not find the table")
+  );
 }
 
 function parseCookies(cookieHeader = "") {
@@ -2243,6 +2284,97 @@ async function getOwnerDrinkRevenueReport(range = "today") {
   return buildOwnerDrinkRevenueReport(orders || [], start, end);
 }
 
+function normalizeSnapshotPayload(body = {}, ownerName = "Owner") {
+  const report = body.report || {};
+  const advice = Array.isArray(body.advice) ? body.advice : [];
+  const rangeKey = normalizeName(body.range || report.range || "today");
+  const rangeLabel = normalizeName(body.rangeLabel || rangeKey);
+  const snapshotDate = normalizeName(body.snapshotDate || getLocalDateKey());
+  const hourly = Array.isArray(report.hourlyOrders) ? report.hourlyOrders : [];
+  const activeHours = hourly.filter((item) => Number(item.orderCount || 0) > 0);
+  const peak = activeHours
+    .slice()
+    .sort((a, b) => Number(b.orderCount || 0) - Number(a.orderCount || 0))[0];
+  const slow = activeHours
+    .slice()
+    .sort((a, b) => Number(a.orderCount || 0) - Number(b.orderCount || 0))[0];
+  const categories = Array.isArray(report.totalsByCategory)
+    ? report.totalsByCategory
+    : [];
+  const topCategory = categories
+    .slice()
+    .sort((a, b) => Number(b.units || 0) - Number(a.units || 0))[0];
+  const findAdvice = (title) =>
+    advice.find((item) =>
+      String(item.title || "").toLowerCase().includes(title)
+    )?.body || "";
+
+  return {
+    snapshot_date: snapshotDate,
+    range_key: rangeKey,
+    range_label: rangeLabel,
+    start_at: report.startAt || null,
+    end_at: report.endAt || null,
+    order_count: Number(report.orderCount || 0),
+    drink_units: Number(report.totalUnits || 0),
+    total_revenue_cents: Number(report.totalRevenueCents || 0),
+    average_order_value_cents: Number(report.averageDrinkOrderValueCents || 0),
+    top_category: topCategory?.category || null,
+    peak_hour: peak ? Number(peak.hour) : null,
+    peak_hour_label: peak?.label || null,
+    slow_hour: slow ? Number(slow.hour) : null,
+    slow_hour_label: slow?.label || null,
+    summary: normalizeName(body.summary || ""),
+    money_signal: normalizeName(body.moneySignal || findAdvice("money signal")),
+    owner_action: normalizeName(body.ownerAction || findAdvice("owner action")),
+    report,
+    advice,
+    created_by: normalizeName(ownerName || "Owner"),
+    updated_at: new Date().toISOString(),
+  };
+}
+
+function ownerSnapshotToCsv(snapshots = []) {
+  const columns = [
+    "snapshot_date",
+    "range_key",
+    "range_label",
+    "order_count",
+    "drink_units",
+    "total_revenue",
+    "average_order_value",
+    "top_category",
+    "peak_hour",
+    "slow_hour",
+    "summary",
+    "money_signal",
+    "owner_action",
+    "created_by",
+    "updated_at",
+  ];
+  const rows = snapshots.map((snapshot) => [
+    snapshot.snapshot_date,
+    snapshot.range_key,
+    snapshot.range_label,
+    snapshot.order_count,
+    snapshot.drink_units,
+    formatCurrency(snapshot.total_revenue_cents),
+    formatCurrency(snapshot.average_order_value_cents),
+    snapshot.top_category || "",
+    snapshot.peak_hour_label || "",
+    snapshot.slow_hour_label || "",
+    snapshot.summary || "",
+    snapshot.money_signal || "",
+    snapshot.owner_action || "",
+    snapshot.created_by || "",
+    snapshot.updated_at || "",
+  ]);
+
+  return [columns, ...rows]
+    .map((row) => row.map(escapeCsv).join(","))
+    .join("\n");
+}
+
 app.get("/api/health", (req, res) => {
   res.json({
     ok: true,
@@ -2402,6 +2534,111 @@ app.get("/api/owner/reports/drink-revenue", requireOwnerAuth, async (req, res) =
   } catch (error) {
     console.error("Error fetching owner drink revenue report:", error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/owner/snapshots", requireOwnerAuth, async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ error: "Supabase is not configured." });
+    }
+
+    const cookies = parseCookies(req.headers.cookie || "");
+    const ownerSession = getSessionFromToken(cookies[OWNER_SESSION_COOKIE_NAME]);
+    const snapshot = normalizeSnapshotPayload(req.body, ownerSession?.ownerName);
+
+    const { data, error } = await supabase
+      .from("kds_owner_snapshots")
+      .upsert(snapshot, { onConflict: "snapshot_date,range_key" })
+      .select("*")
+      .single();
+
+    if (error) throw error;
+
+    res.json({ ok: true, snapshot: data });
+  } catch (error) {
+    if (snapshotsTableMissing(error)) {
+      return res.status(503).json({
+        error:
+          "Owner snapshot table is not installed in Supabase yet. Run the latest supabase-schema.sql.",
+      });
+    }
+
+    console.error("Error saving owner snapshot:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/owner/snapshots", requireOwnerAuth, async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ error: "Supabase is not configured." });
+    }
+
+    const month = normalizeName(req.query.month || getLocalDateKey().slice(0, 7));
+    const range = getMonthRange(month);
+    if (!range) return res.status(400).json({ error: "Month must be YYYY-MM." });
+
+    const { data, error } = await supabase
+      .from("kds_owner_snapshots")
+      .select("*")
+      .gte("snapshot_date", getLocalDateKey(range.start))
+      .lt("snapshot_date", getLocalDateKey(range.end))
+      .order("snapshot_date", { ascending: false })
+      .order("range_key", { ascending: true });
+
+    if (error) throw error;
+
+    res.json({ month, snapshots: data || [] });
+  } catch (error) {
+    if (snapshotsTableMissing(error)) {
+      return res.json({
+        month: normalizeName(req.query.month || getLocalDateKey().slice(0, 7)),
+        snapshots: [],
+        tableMissing: true,
+      });
+    }
+
+    console.error("Error fetching owner snapshots:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/owner/snapshots.csv", requireOwnerAuth, async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).send("Supabase is not configured.");
+    }
+
+    const month = normalizeName(req.query.month || getLocalDateKey().slice(0, 7));
+    const range = getMonthRange(month);
+    if (!range) return res.status(400).send("Month must be YYYY-MM.");
+
+    const { data, error } = await supabase
+      .from("kds_owner_snapshots")
+      .select("*")
+      .gte("snapshot_date", getLocalDateKey(range.start))
+      .lt("snapshot_date", getLocalDateKey(range.end))
+      .order("snapshot_date", { ascending: true })
+      .order("range_key", { ascending: true });
+
+    if (error) throw error;
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="goldies-owner-snapshots-${month}.csv"`
+    );
+    res.send(ownerSnapshotToCsv(data || []));
+  } catch (error) {
+    if (snapshotsTableMissing(error)) {
+      return res.status(503).send(
+        "Owner snapshot table is not installed in Supabase yet."
+      );
+    }
+
+    console.error("Error downloading owner snapshots:", error);
+    res.status(500).send(error.message);
   }
 });
 

@@ -158,6 +158,22 @@
         margin-top: 12px;
         padding: 16px;
       }
+      .owner-panel {
+        margin-top: 18px;
+        padding: 18px;
+      }
+      .owner-row {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        margin-top: 12px;
+      }
+      .owner-note {
+        border-radius: 16px;
+        border: 1px solid rgba(202,134,43,.14);
+        background: rgba(255,253,248,.78);
+        padding: 14px;
+      }
       .sample-head {
         display: flex;
         align-items: center;
@@ -324,6 +340,32 @@
               </div>
             </div>
           </div>
+
+          <div class="owner-panel card">
+            <div class="eyebrow">Owner portal example</div>
+            <div class="owner-row">
+              <div class="metric">
+                <div class="label">Drink revenue</div>
+                <div class="value">$487</div>
+              </div>
+              <div class="metric">
+                <div class="label">Peak hour</div>
+                <div class="value">9 AM</div>
+              </div>
+              <div class="metric">
+                <div class="label">Top lane</div>
+                <div class="value" style="font-size: 26px;">Coffee</div>
+              </div>
+            </div>
+            <div class="owner-note" style="margin-top: 12px;">
+              <div class="section-title">Coffee shop guidance</div>
+              <p class="section-body">
+                The owner view can save daily reads, hourly rush patterns,
+                ticket-value notes, and monthly CSV exports so the shop can
+                compare what changed over time.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div class="grid">
@@ -337,6 +379,10 @@
             <p class="section-body">
               Training mode is included for practice without live data, and each
               version can be branded for the coffee shop or drink counter using it.
+            </p>
+            <p class="section-body">
+              The private owner portal can track drink revenue, hourly volume,
+              saved advice snapshots, and month-by-month CSV downloads.
             </p>
           </div>
 

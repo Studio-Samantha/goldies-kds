@@ -79,3 +79,36 @@ create index if not exists kds_audit_logs_actor_employee_name_idx
 
 create index if not exists kds_audit_logs_created_at_idx
   on public.kds_audit_logs(created_at desc);
+
+create table if not exists public.kds_owner_snapshots (
+  id bigserial primary key,
+  snapshot_date date not null,
+  range_key text not null,
+  range_label text not null,
+  start_at timestamptz,
+  end_at timestamptz,
+  order_count integer not null default 0,
+  drink_units numeric not null default 0,
+  total_revenue_cents integer not null default 0,
+  average_order_value_cents integer not null default 0,
+  top_category text,
+  peak_hour integer,
+  peak_hour_label text,
+  slow_hour integer,
+  slow_hour_label text,
+  summary text not null default '',
+  money_signal text not null default '',
+  owner_action text not null default '',
+  report jsonb not null default '{}'::jsonb,
+  advice jsonb not null default '[]'::jsonb,
+  created_by text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (snapshot_date, range_key)
+);
+
+create index if not exists kds_owner_snapshots_snapshot_date_idx
+  on public.kds_owner_snapshots(snapshot_date desc);
+
+create index if not exists kds_owner_snapshots_range_key_idx
+  on public.kds_owner_snapshots(range_key);

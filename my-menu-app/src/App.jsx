@@ -9,7 +9,7 @@ const LOGO_DARK_URL = "/goldies-logo-white.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.6.2";
+const APP_VERSION = "v1.7.0";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
@@ -22,8 +22,19 @@ const SETTINGS_HELP_TEXT =
 const DINING_OPTIONS = ["For here", "To go", "Pickup", "Delivery", "Drive thru"];
 const RELEASE_NOTES = [
   {
-    version: "v1.6.2",
+    version: "v1.7.0",
     date: "Current build",
+    summary: "Added owner history and coffee-shop analytics.",
+    items: [
+      "Owner Reports can save monthly snapshots to Supabase for long-term history.",
+      "The owner portal now includes hourly drink volume, daily rotating coffee-shop guidance, and CSV download support.",
+      "Retail items like bagged coffee, soap, shower steamers, and packaged goods stay out of drink counts.",
+      "The Learn More page now pitches the app specifically for coffee shops, smoothie shops, cafes, and drink counters.",
+    ],
+  },
+  {
+    version: "v1.6.2",
+    date: "Previous build",
     summary: "Made owner snapshots more fluid as stats grow.",
     items: [
       "Owner snapshot cards now adapt more deeply to volume, ticket value, units per order, and category concentration.",
@@ -1195,6 +1206,10 @@ function getLocalDateInputValue(date = new Date()) {
   return `${year}-${month}-${day}`;
 }
 
+function getLocalMonthInputValue(date = new Date()) {
+  return getLocalDateInputValue(date).slice(0, 7);
+}
+
 function matchesAnyPattern(value, patterns = []) {
   const text = String(value || "").toLowerCase();
   return patterns.some((pattern) => pattern.test(text));
@@ -1220,6 +1235,12 @@ function isNonDrinkItem(itemName = "") {
     /\bsoap\b/i,
     /\bshower steamer\b/i,
     /\bbestseller\b/i,
+    /\bbagged coffee\b/i,
+    /\bcoffee beans\b/i,
+    /\bwhole bean\b/i,
+    /\bground coffee\b/i,
+    /\bbeans\b/i,
+    /\bretail\b/i,
   ]);
 }
 
@@ -2094,7 +2115,7 @@ function pickDailyAdvice(seed, options) {
   return options[getDailyAdviceIndex(seed, options.length)];
 }
 
-function CoffeeShopAdvice({ report, range }) {
+function buildCoffeeShopAdvice(report, range) {
   const hourlyStats = getHourlyVolumeStats(report?.hourlyOrders || []);
   const categories = report?.totalsByCategory || [];
   const topCategory = categories
@@ -2164,6 +2185,13 @@ function CoffeeShopAdvice({ report, range }) {
     },
   ];
 
+  return advice;
+}
+
+function CoffeeShopAdvice({ report, range }) {
+  const rangeLabel = getOwnerRangeLabel(range);
+  const advice = buildCoffeeShopAdvice(report, range);
+
   return (
     <section className="rounded-2xl border border-[#CA862B]/16 bg-[#FFFDF8] p-4 shadow-sm">
       <div>
@@ -2192,6 +2220,140 @@ function CoffeeShopAdvice({ report, range }) {
             </p>
           </div>
         ))}
+      </div>
+    </section>
+  );
+}
+
+function OwnerSnapshotHistory({
+  snapshots,
+  month,
+  onMonthChange,
+  onRefresh,
+  onSave,
+  saving,
+  loading,
+  notice,
+  error,
+  tableMissing,
+}) {
+  return (
+    <section className="rounded-2xl border border-[#CA862B]/16 bg-white p-4 shadow-sm">
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+        <div>
+          <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
+            Owner History
+          </div>
+          <h2 className="mt-1 text-xl font-black text-[#0F4036]">
+            Saved Monthly Snapshots
+          </h2>
+          <p className="mt-1 text-sm font-semibold text-[#6A614F]">
+            Save the current read, then download month-by-month CSV records.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <input
+            type="month"
+            value={month}
+            onChange={(event) => onMonthChange(event.target.value)}
+            className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-3 py-2 text-sm font-black text-[#0F4036] outline-none focus:border-[#CA862B]"
+          />
+          <button
+            type="button"
+            onClick={onRefresh}
+            className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+          >
+            Refresh
+          </button>
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={saving || tableMissing}
+            className="rounded-xl bg-[#0F4036] px-4 py-2 text-sm font-black text-white transition hover:bg-[#0b352d] disabled:cursor-not-allowed disabled:bg-neutral-300"
+          >
+            {saving ? "Saving..." : "Save Snapshot"}
+          </button>
+          <a
+            href={apiUrl(`/api/owner/snapshots.csv?month=${month}`)}
+            className={`rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-center text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45 ${tableMissing ? "pointer-events-none opacity-50" : ""}`}
+          >
+            Download CSV
+          </a>
+        </div>
+      </div>
+
+      {notice && (
+        <div className="mt-3 rounded-xl border border-[#0F4036]/12 bg-[#0F4036]/8 px-4 py-3 text-sm font-bold text-[#0F4036]">
+          {notice}
+        </div>
+      )}
+      {error && (
+        <div className="mt-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-red-900">
+          {error}
+        </div>
+      )}
+      {tableMissing && (
+        <div className="mt-3 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">
+          Supabase needs the new `kds_owner_snapshots` table before history can save.
+        </div>
+      )}
+
+      <div className="mt-4 overflow-x-auto rounded-xl border border-[#CA862B]/12">
+        <table className="w-full min-w-[760px] text-left text-sm">
+          <thead className="bg-[#EEE0C5]/55 text-xs uppercase tracking-wide text-[#6A614F]">
+            <tr>
+              <th className="px-3 py-2 font-black">Date</th>
+              <th className="px-3 py-2 font-black">Range</th>
+              <th className="px-3 py-2 font-black">Revenue</th>
+              <th className="px-3 py-2 font-black">Orders</th>
+              <th className="px-3 py-2 font-black">Peak</th>
+              <th className="px-3 py-2 font-black">Top</th>
+              <th className="px-3 py-2 font-black">Owner Action</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#CA862B]/10 bg-[#FFFDF8]">
+            {loading ? (
+              <tr>
+                <td colSpan="7" className="px-3 py-6 text-center font-bold text-[#6A614F]">
+                  Loading saved snapshots
+                </td>
+              </tr>
+            ) : snapshots.length ? (
+              snapshots.map((snapshot) => (
+                <tr key={`${snapshot.snapshot_date}-${snapshot.range_key}`} className="align-top">
+                  <td className="px-3 py-3 font-black text-[#111111]">
+                    {snapshot.snapshot_date}
+                  </td>
+                  <td className="px-3 py-3 font-bold text-[#0F4036]">
+                    {snapshot.range_label || snapshot.range_key}
+                  </td>
+                  <td className="px-3 py-3 font-bold text-[#111111]">
+                    {formatCurrencyCents(snapshot.total_revenue_cents)}
+                  </td>
+                  <td className="px-3 py-3 font-bold text-[#111111]">
+                    {snapshot.order_count}
+                  </td>
+                  <td className="px-3 py-3 font-bold text-[#111111]">
+                    {snapshot.peak_hour_label || "-"}
+                  </td>
+                  <td className="px-3 py-3 font-bold text-[#111111]">
+                    {snapshot.top_category || "-"}
+                  </td>
+                  <td className="max-w-md px-3 py-3 font-semibold leading-6 text-[#5A4F3E]">
+                    {snapshot.owner_action || snapshot.summary || "-"}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="7" className="px-3 py-6 text-center font-bold text-[#6A614F]">
+                  No saved snapshots for this month yet.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </section>
   );
@@ -3333,6 +3495,13 @@ function OwnerReportsView({ ownerName, onClose, themeMode }) {
   const [ownerPasswordError, setOwnerPasswordError] = useState("");
   const [ownerPasswordNotice, setOwnerPasswordNotice] = useState("");
   const [ownerPasswordSaving, setOwnerPasswordSaving] = useState(false);
+  const [snapshotMonth, setSnapshotMonth] = useState(() => getLocalMonthInputValue());
+  const [snapshots, setSnapshots] = useState([]);
+  const [snapshotsLoading, setSnapshotsLoading] = useState(false);
+  const [snapshotsTableMissing, setSnapshotsTableMissing] = useState(false);
+  const [snapshotNotice, setSnapshotNotice] = useState("");
+  const [snapshotError, setSnapshotError] = useState("");
+  const [snapshotSaving, setSnapshotSaving] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -3365,6 +3534,81 @@ function OwnerReportsView({ ownerName, onClose, themeMode }) {
       mounted = false;
     };
   }, [range]);
+
+  async function fetchSnapshots(month = snapshotMonth) {
+    try {
+      setSnapshotsLoading(true);
+      setSnapshotError("");
+      const response = await fetch(apiUrl(`/api/owner/snapshots?month=${month}`), {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || `Snapshot history unavailable: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setSnapshots(data.snapshots || []);
+      setSnapshotsTableMissing(Boolean(data.tableMissing));
+    } catch (historyError) {
+      setSnapshotError(historyError.message || "Snapshot history unavailable");
+    } finally {
+      setSnapshotsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchSnapshots(snapshotMonth);
+  }, [snapshotMonth]);
+
+  async function handleSaveSnapshot() {
+    if (!report) return;
+
+    const snapshot = buildOwnerSnapshotAnalysis(report, range);
+    const advice = buildCoffeeShopAdvice(report, range);
+    const moneySignal =
+      snapshot.watch.find((item) => item.title === "Money signal")?.body || "";
+    const ownerAction =
+      snapshot.watch.find((item) => item.title === "Owner action")?.body || "";
+
+    try {
+      setSnapshotSaving(true);
+      setSnapshotError("");
+      setSnapshotNotice("");
+
+      const response = await fetch(apiUrl("/api/owner/snapshots"), {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          range,
+          rangeLabel: getOwnerRangeLabel(range),
+          snapshotDate: getTodayDateKey(),
+          summary: snapshot.summary,
+          moneySignal,
+          ownerAction,
+          report: { ...report, range },
+          advice,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || `Snapshot save failed: ${response.status}`);
+      }
+
+      setSnapshotNotice("Owner snapshot saved for this month.");
+      setSnapshotsTableMissing(false);
+      setSnapshotMonth(getLocalMonthInputValue());
+      await fetchSnapshots(getLocalMonthInputValue());
+    } catch (saveError) {
+      setSnapshotError(saveError.message || "Snapshot save failed");
+    } finally {
+      setSnapshotSaving(false);
+    }
+  }
 
   async function handleLogout() {
     await fetch(apiUrl("/api/owner/logout"), {
@@ -3531,6 +3775,21 @@ function OwnerReportsView({ ownerName, onClose, themeMode }) {
               <div className="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
                 <HourlyVolumeChart report={report} range={range} />
                 <CoffeeShopAdvice report={report} range={range} />
+              </div>
+
+              <div className="mt-4">
+                <OwnerSnapshotHistory
+                  snapshots={snapshots}
+                  month={snapshotMonth}
+                  onMonthChange={setSnapshotMonth}
+                  onRefresh={() => fetchSnapshots(snapshotMonth)}
+                  onSave={handleSaveSnapshot}
+                  saving={snapshotSaving}
+                  loading={snapshotsLoading}
+                  notice={snapshotNotice}
+                  error={snapshotError}
+                  tableMissing={snapshotsTableMissing}
+                />
               </div>
 
               <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
