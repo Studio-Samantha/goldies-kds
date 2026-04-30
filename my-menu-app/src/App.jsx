@@ -6,10 +6,20 @@ const API_BASE_URL = import.meta.env.DEV
 const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
-const APP_VERSION = "v1.0.5";
+const APP_VERSION = "v1.0.6";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
+const SOFT_OPENING_DATE = "2026-04-30";
 const RELEASE_NOTES = [
+  {
+    version: "v1.0.6",
+    date: "Current build",
+    summary: "A one-day soft opening message now appears on the login screen.",
+    items: [
+      "Tomorrow's login screen will show a congratulatory message for the soft opening.",
+      "The message can be closed after it is seen.",
+    ],
+  },
   {
     version: "v1.0.5",
     date: "Current build",
@@ -83,6 +93,48 @@ function buildSupportMailto() {
   );
 
   return `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
+}
+
+function getTodayDateKey() {
+  return getLocalDateInputValue();
+}
+
+function SoftOpeningDialog({ open, onClose }) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] flex items-center justify-center p-4">
+      <div className="w-full max-w-lg rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)] overflow-hidden">
+        <div className="border-b border-[#CA862B]/18 px-5 py-4">
+          <div className="text-sm font-black uppercase tracking-[0.18em] text-[#6A614F]">
+            Soft Opening
+          </div>
+          <h2 className="text-2xl font-black text-[#0F4036] mt-1">
+            Congratulations, Goldie&apos;s
+          </h2>
+        </div>
+
+        <div className="px-5 py-5 space-y-4 text-[#2D261C]">
+          <p className="text-base leading-7">
+            Wishing you all the luck on your soft opening from Samantha and Zahra.
+          </p>
+          <p className="text-base leading-7">
+            We&apos;ll be by for coffee tomorrow morning to show support.
+          </p>
+
+          <div className="flex justify-end pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl bg-[#0F4036] text-white px-4 py-2.5 font-black transition hover:bg-[#0b352d]"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function ReleaseNotesDialog({ open, onClose, onHideForNow }) {
@@ -1582,6 +1634,7 @@ export default function GoldiesKDS() {
   const [showOrdersByDay, setShowOrdersByDay] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showReleaseNotes, setShowReleaseNotes] = useState(false);
+  const [hideSoftOpeningNote, setHideSoftOpeningNote] = useState(false);
   const [hiddenReleaseNotesVersion, setHiddenReleaseNotesVersion] = useState(() => {
     if (typeof window === "undefined") return "";
 
@@ -1598,6 +1651,9 @@ export default function GoldiesKDS() {
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
   const [lastError, setLastError] = useState("");
   const [defaultLookupDate] = useState(() => getLocalDateInputValue());
+  const isSoftOpeningDay = getTodayDateKey() === SOFT_OPENING_DATE;
+  const showSoftOpeningNote =
+    authStatus === "login" && isSoftOpeningDay && !hideSoftOpeningNote;
   const themeStyle =
     themeMode === "dark"
       ? { filter: "invert(1) hue-rotate(180deg)" }
@@ -1992,18 +2048,24 @@ export default function GoldiesKDS() {
     );
   } else if (authStatus === "login") {
     content = (
-      <LoginScreen
-        onLogin={(employeeName) => {
-          setSignedInEmployee(employeeName);
-          setAuthStatus("authenticated");
-        }}
-        themeMode={themeMode}
-        onThemeToggle={() =>
-          setThemeMode((current) => (current === "dark" ? "light" : "dark"))
-        }
-        themeStyle={themeStyle}
-        onVersionClick={() => setShowReleaseNotes(true)}
-      />
+      <>
+        <LoginScreen
+          onLogin={(employeeName) => {
+            setSignedInEmployee(employeeName);
+            setAuthStatus("authenticated");
+          }}
+          themeMode={themeMode}
+          onThemeToggle={() =>
+            setThemeMode((current) => (current === "dark" ? "light" : "dark"))
+          }
+          themeStyle={themeStyle}
+          onVersionClick={() => setShowReleaseNotes(true)}
+        />
+        <SoftOpeningDialog
+          open={showSoftOpeningNote}
+          onClose={() => setHideSoftOpeningNote(true)}
+        />
+      </>
     );
   } else {
     content = (
