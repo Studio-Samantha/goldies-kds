@@ -715,20 +715,35 @@ function DrinkStats({ reports }) {
               </div>
 
               {report.totalsByName?.length > 0 && (
-                <div className="mt-4 border-t border-[#0F4036]/10 pt-3 space-y-2">
-                  {report.totalsByName.slice(0, 4).map((drink) => (
-                    <div
-                      key={drink.name}
-                      className="flex items-center justify-between gap-3 text-sm"
-                    >
-                      <span className="font-bold text-[#111111] truncate">
-                        {drink.name}
-                      </span>
-                      <span className="font-black text-[#0F4036]">
-                        {drink.qty}
-                      </span>
-                    </div>
-                  ))}
+                <div className="mt-4 border-t border-[#0F4036]/10 pt-3">
+                  <div className="text-xs font-black uppercase tracking-wide text-[#6A614F] mb-2">
+                    Drink breakdown
+                  </div>
+
+                  <div className="max-h-44 overflow-y-auto space-y-2 pr-1">
+                    {report.totalsByName.map((drink) => (
+                      <div
+                        key={drink.name}
+                        className="flex items-center justify-between gap-3 text-sm rounded-lg bg-[#FFFDF8] border border-[#0F4036]/8 px-3 py-2"
+                      >
+                        <span className="font-bold text-[#111111] truncate">
+                          {drink.name}
+                        </span>
+                        <span className="font-black text-[#0F4036]">
+                          {drink.qty}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between gap-3 rounded-lg bg-[#EEE0C5]/55 border border-[#0F4036]/12 px-3 py-2">
+                    <span className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
+                      Total drinks
+                    </span>
+                    <span className="text-sm font-black text-[#111111]">
+                      {total}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
