@@ -7,11 +7,20 @@ const LOGO_URL = "/goldies-logo.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.1.0";
+const APP_VERSION = "v1.1.1";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-30";
 const RELEASE_NOTES = [
+  {
+    version: "v1.1.1",
+    date: "Current build",
+    summary: "The help icon now opens an explanation when you tap it.",
+    items: [
+      "The question-mark button now opens a popup instead of only showing a hover hint.",
+      "This works better on tablets and phones.",
+    ],
+  },
   {
     version: "v1.1.0",
     date: "Current build",
@@ -247,6 +256,37 @@ function ReleaseNotesDialog({ open, onClose, onHideForNow }) {
               </ul>
             </section>
           ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HelpDialog({ open, title, body, onClose }) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] flex items-center justify-center p-4">
+      <div className="w-full max-w-lg rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)] overflow-hidden">
+        <div className="border-b border-[#CA862B]/18 px-5 py-4 bg-[#EEE0C5]/35">
+          <div className="text-sm font-black uppercase tracking-[0.18em] text-[#6A614F]">
+            Help
+          </div>
+          <h2 className="text-2xl font-black text-[#0F4036] mt-1">{title}</h2>
+        </div>
+
+        <div className="px-5 py-5 space-y-4 text-[#2D261C]">
+          <p className="text-base leading-7">{body}</p>
+
+          <div className="flex justify-end pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl bg-[#0F4036] text-white px-4 py-2.5 font-black transition hover:bg-[#0b352d]"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1138,7 +1178,7 @@ function BrandMark({ size = "md" }) {
   );
 }
 
-function ModeToggle({ active, label, onToggle, hint }) {
+function ModeToggle({ active, label, onToggle, hint, onInfoClick }) {
   return (
     <div className="inline-flex items-center gap-1.5">
       <button
@@ -1153,13 +1193,15 @@ function ModeToggle({ active, label, onToggle, hint }) {
         {label}
       </button>
 
-      <span
+      <button
+        type="button"
+        onClick={onInfoClick}
         title={hint}
         aria-label={hint}
-        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#CA862B]/20 bg-white text-xs font-black text-[#0F4036]"
+        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#CA862B]/20 bg-white text-xs font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
       >
         ?
-      </span>
+      </button>
     </div>
   );
 }
@@ -1670,6 +1712,7 @@ function LoginScreen({
   themeStyle,
   trainingStyle,
   onVersionClick,
+  onThemeHelp,
 }) {
   const [employeeName, setEmployeeName] = useState("");
   const [password, setPassword] = useState("");
@@ -1746,6 +1789,7 @@ function LoginScreen({
           label={themeMode === "dark" ? "Light mode" : "Dark mode"}
           onToggle={onThemeToggle}
           hint="Switch between the light and dark dashboard themes."
+          onInfoClick={onThemeHelp}
         />
       </div>
 
@@ -1767,6 +1811,7 @@ function LoginScreen({
             label={themeMode === "dark" ? "Light mode" : "Dark mode"}
             onToggle={onThemeToggle}
             hint="Switch between the light and dark dashboard themes."
+            onInfoClick={onThemeHelp}
           />
 
           <a
@@ -2004,6 +2049,7 @@ export default function GoldiesKDS() {
   const [showOrdersByDay, setShowOrdersByDay] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showReleaseNotes, setShowReleaseNotes] = useState(false);
+  const [modeHelp, setModeHelp] = useState(null);
   const [hideSoftOpeningNote, setHideSoftOpeningNote] = useState(false);
   const [hiddenReleaseNotesVersion, setHiddenReleaseNotesVersion] = useState(() => {
     if (typeof window === "undefined") return "";
@@ -2521,6 +2567,12 @@ export default function GoldiesKDS() {
           themeStyle={themeStyle}
           trainingStyle={trainingThemeStyle}
           onVersionClick={() => setShowReleaseNotes(true)}
+          onThemeHelp={() =>
+            setModeHelp({
+              title: "Theme mode",
+              body: "This changes the look of the login screen and dashboard between light and dark mode.",
+            })
+          }
         />
         <SoftOpeningDialog
           open={showSoftOpeningNote}
@@ -2585,6 +2637,12 @@ export default function GoldiesKDS() {
                   setThemeMode((current) => (current === "dark" ? "light" : "dark"))
                 }
                 hint="Switch between the light and dark dashboard themes."
+                onInfoClick={() =>
+                  setModeHelp({
+                    title: "Theme mode",
+                    body: "This changes the dashboard look between light mode and dark mode.",
+                  })
+                }
               />
 
               <button
@@ -2650,13 +2708,20 @@ export default function GoldiesKDS() {
                 </div>
               </div>
 
-              <span
+              <button
+                type="button"
+                onClick={() =>
+                  setModeHelp({
+                    title: "Training mode",
+                    body: "Training mode swaps in fake practice orders and sample counts. It does not change live Square data.",
+                  })
+                }
                 title="Training mode swaps in fake orders and counts so staff can practice without changing live Square data."
                 aria-label="Training mode swaps in fake orders and counts so staff can practice without changing live Square data."
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#CA862B]/20 bg-white text-xs font-black text-[#0F4036]"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#CA862B]/20 bg-white text-xs font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
               >
                 ?
-              </span>
+              </button>
             </div>
 
             <div className="mt-3 inline-flex rounded-2xl border border-[#CA862B]/18 bg-[#EEE0C5]/45 p-1">
@@ -2854,6 +2919,12 @@ export default function GoldiesKDS() {
           setHiddenReleaseNotesVersion(APP_VERSION);
           setShowReleaseNotes(false);
         }}
+      />
+      <HelpDialog
+        open={Boolean(modeHelp)}
+        title={modeHelp?.title || ""}
+        body={modeHelp?.body || ""}
+        onClose={() => setModeHelp(null)}
       />
     </>
   );
