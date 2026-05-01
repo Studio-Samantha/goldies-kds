@@ -4429,17 +4429,15 @@ function getDisplayRoute() {
 }
 
 function DisplayBackground({ children, accent = "gold" }) {
-  const glow =
-    accent === "green"
-      ? "radial-gradient(circle at 20% 12%, rgba(15,64,54,0.22), transparent 30%), radial-gradient(circle at 82% 8%, rgba(202,134,43,0.26), transparent 30%)"
-      : "radial-gradient(circle at 18% 10%, rgba(202,134,43,0.3), transparent 32%), radial-gradient(circle at 84% 0%, rgba(15,64,54,0.18), transparent 34%)";
+  const isGreen = accent === "green";
+  const backgroundImage = isGreen
+    ? "radial-gradient(circle at 20% 12%, rgba(15,64,54,0.22), transparent 30%), radial-gradient(circle at 82% 8%, rgba(202,134,43,0.26), transparent 30%), linear-gradient(135deg, #FFFDF8 0%, #F4E8D1 46%, #EEE0C5 100%)"
+    : "radial-gradient(circle at 12% 8%, rgba(202,134,43,0.2), transparent 28%), radial-gradient(circle at 86% 4%, rgba(15,64,54,0.2), transparent 32%), linear-gradient(135deg, #FFFDF8 0%, #F8F1E5 48%, #E7EEE9 100%)";
 
   return (
     <div
       className="min-h-screen bg-[#FFFDF8] text-[#111111] px-4 py-5 md:px-8 md:py-7 overflow-hidden"
-      style={{
-        backgroundImage: `${glow}, linear-gradient(135deg, #FFFDF8 0%, #F4E8D1 46%, #EEE0C5 100%)`,
-      }}
+      style={{ backgroundImage }}
     >
       <div
         aria-hidden="true"
@@ -4499,6 +4497,17 @@ function DisplayStatus({ loading, error, updatedAt }) {
   );
 }
 
+function DisplayBackButton() {
+  return (
+    <a
+      href="/"
+      className="fixed right-4 top-4 z-30 rounded-full border border-white/24 bg-[#0F4036]/88 px-4 py-2 text-sm font-semibold text-white shadow-[0_16px_44px_rgba(15,64,54,0.22)] backdrop-blur-md transition hover:bg-[#0b352d]"
+    >
+      Back to KDS
+    </a>
+  );
+}
+
 function MenuBoardDisplay() {
   const [menu, setMenu] = useState([]);
   const [updatedAt, setUpdatedAt] = useState("");
@@ -4550,42 +4559,60 @@ function MenuBoardDisplay() {
 
   return (
     <DisplayBackground>
+      <DisplayBackButton />
       <div className="mx-auto flex min-h-[calc(100vh-56px)] max-w-[1500px] flex-col gap-8">
-        <DisplayHeader
-          eyebrow="Goldie's Coffee & Goods"
-          title="Drink Menu"
-          subtitle="Coffee, not coffee, and smoothies from the Goldie's drink counter."
-        />
+        <header className="overflow-hidden rounded-[34px] border border-[#0F4036]/14 bg-[#0F4036] text-white shadow-[0_28px_90px_rgba(15,64,54,0.22)]">
+          <div className="grid gap-6 p-5 md:grid-cols-[auto_1fr_auto] md:items-center md:p-7">
+            <div className="grid h-24 w-24 place-items-center rounded-[28px] bg-white shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
+              <img
+                src={LOGO_URL}
+                alt="Goldie's Coffee & Goods"
+                className="max-h-16 max-w-16 object-contain"
+              />
+            </div>
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.3em] text-[#F3D39B]">
+                Goldie's Coffee & Goods
+              </div>
+              <h1 className="mt-2 text-5xl font-semibold tracking-normal md:text-7xl">
+                Drink Menu
+              </h1>
+            </div>
+            <div className="hidden rounded-full border border-white/16 bg-white/10 px-5 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-white/82 md:block">
+              Fresh today
+            </div>
+          </div>
+        </header>
         <DisplayStatus loading={loading} error={error} updatedAt={updatedAt} />
 
-        <main className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-3">
+        <main className="grid flex-1 grid-cols-1 gap-5 lg:grid-cols-3">
           {(menu.length ? menu : fallbackMenu).map((category) => (
             <section
               key={category.key || category.label}
-              className="flex min-h-[420px] flex-col rounded-[28px] border border-white/80 bg-white/78 p-5 shadow-[0_26px_80px_rgba(15,64,54,0.14)] backdrop-blur-xl"
+              className="flex min-h-[420px] flex-col overflow-hidden rounded-[30px] border border-[#0F4036]/10 bg-white shadow-[0_24px_70px_rgba(15,64,54,0.12)]"
             >
-              <div className="border-b border-[#CA862B]/18 pb-4">
-                <h2 className="text-3xl font-black text-[#0F4036] md:text-5xl">
+              <div className="border-b border-[#0F4036]/10 bg-[#FFFDF8] px-5 py-5">
+                <h2 className="text-3xl font-semibold tracking-normal text-[#0F4036] md:text-5xl">
                   {category.label}
                 </h2>
               </div>
-              <div className="mt-4 grid gap-3">
+              <div className="grid gap-0 divide-y divide-[#0F4036]/8">
                 {category.items?.length ? (
                   category.items.map((item) => (
                     <div
                       key={item.name}
-                      className="grid grid-cols-[1fr_auto] items-baseline gap-4 rounded-2xl border border-[#CA862B]/10 bg-[#FFFDF8]/78 px-4 py-3"
+                      className="grid grid-cols-[1fr_auto] items-baseline gap-4 px-5 py-4"
                     >
-                      <span className="text-xl font-black leading-tight text-[#2D261C] md:text-2xl">
+                      <span className="text-xl font-medium leading-tight tracking-normal text-[#2D261C] md:text-2xl">
                         {item.name}
                       </span>
-                      <span className="text-xl font-black text-[#8B5A1D] md:text-2xl">
+                      <span className="rounded-full bg-[#0F4036]/8 px-3 py-1 text-lg font-semibold text-[#0F4036] md:text-xl">
                         {item.price || "Ask"}
                       </span>
                     </div>
                   ))
                 ) : (
-                  <div className="rounded-2xl border border-dashed border-[#CA862B]/24 bg-white/70 p-6 text-lg font-bold text-[#6A614F]">
+                  <div className="m-5 rounded-2xl border border-dashed border-[#CA862B]/24 bg-[#FFFDF8] p-6 text-lg font-semibold text-[#6A614F]">
                     Menu loading
                   </div>
                 )}
@@ -4647,40 +4674,60 @@ function OrdersUpDisplay() {
 
   return (
     <DisplayBackground accent="green">
+      <DisplayBackButton />
       <div className="mx-auto flex min-h-[calc(100vh-56px)] max-w-[1500px] flex-col gap-8">
-        <DisplayHeader
-          eyebrow="Goldie's Coffee & Goods"
-          title="Orders Up"
-          subtitle="Watch for your order number, then pick up at the counter when it appears here."
-        />
+        <header className="overflow-hidden rounded-[34px] border border-[#0F4036]/14 bg-[#0F4036] text-white shadow-[0_28px_90px_rgba(15,64,54,0.22)]">
+          <div className="grid gap-6 p-5 md:grid-cols-[auto_1fr_auto] md:items-center md:p-7">
+            <div className="grid h-24 w-24 place-items-center rounded-[28px] bg-white shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
+              <img
+                src={LOGO_URL}
+                alt="Goldie's Coffee & Goods"
+                className="max-h-16 max-w-16 object-contain"
+              />
+            </div>
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.3em] text-[#F3D39B]">
+                Goldie's Coffee & Goods
+              </div>
+              <h1 className="mt-2 text-5xl font-semibold tracking-normal md:text-7xl">
+                Orders Up
+              </h1>
+            </div>
+            <div className="hidden rounded-full border border-white/16 bg-white/10 px-5 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-white/82 md:block">
+              Pickup counter
+            </div>
+          </div>
+        </header>
         <DisplayStatus loading={loading} error={error} updatedAt={updatedAt} />
 
         <main className="grid flex-1 grid-cols-1 gap-5 lg:grid-cols-[1.35fr_0.65fr]">
-          <section className="rounded-[32px] border border-white/80 bg-[#0F4036] p-5 text-white shadow-[0_30px_90px_rgba(15,64,54,0.26)]">
-            <div className="flex items-end justify-between gap-4 border-b border-white/16 pb-4">
+          <section className="overflow-hidden rounded-[30px] border border-[#0F4036]/10 bg-white shadow-[0_24px_70px_rgba(15,64,54,0.12)]">
+            <div className="flex items-end justify-between gap-4 border-b border-[#0F4036]/10 bg-[#FFFDF8] px-5 py-5">
               <div>
-                <div className="text-sm font-black uppercase tracking-[0.22em] text-[#F3D39B]">
+                <div className="text-sm font-semibold uppercase tracking-[0.22em] text-[#8B5A1D]">
                   Ready now
                 </div>
-                <h2 className="mt-1 text-4xl font-black md:text-7xl">Pick up</h2>
+                <h2 className="mt-1 text-4xl font-semibold tracking-normal text-[#0F4036] md:text-6xl">
+                  Pick up
+                </h2>
               </div>
-              <div className="rounded-full bg-white/12 px-5 py-2 text-2xl font-black">
+              <div className="rounded-full bg-[#0F4036]/8 px-5 py-2 text-2xl font-semibold text-[#0F4036]">
                 {orders.ready.length}
               </div>
             </div>
 
             {orders.ready.length ? (
-              <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-2 gap-4 p-5 md:grid-cols-3 xl:grid-cols-4">
                 {orders.ready.map((order) => (
                   <div
                     key={order.id}
-                    className="grid aspect-[1.18/1] place-items-center rounded-[26px] border border-[#F3D39B]/24 bg-white text-[#0F4036] shadow-[0_18px_50px_rgba(0,0,0,0.18)]"
+                    className="grid aspect-[1.18/1] place-items-center rounded-[26px] border border-[#0F4036]/10 bg-[#0F4036] text-white shadow-[0_18px_50px_rgba(15,64,54,0.18)]"
                   >
                     <div className="text-center">
-                      <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
+                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#F3D39B]">
                         Order
                       </div>
-                      <div className="mt-1 text-5xl font-black tracking-tight md:text-7xl">
+                      <div className="mt-1 text-5xl font-semibold tracking-normal md:text-7xl">
                         {order.orderNumber}
                       </div>
                     </div>
@@ -4688,10 +4735,12 @@ function OrdersUpDisplay() {
                 ))}
               </div>
             ) : (
-              <div className="grid min-h-[390px] place-items-center text-center">
+              <div className="grid min-h-[390px] place-items-center p-5 text-center">
                 <div>
-                  <div className="text-5xl font-black md:text-7xl">Making drinks</div>
-                  <p className="mt-4 text-xl font-bold text-white/76">
+                  <div className="text-5xl font-semibold tracking-normal text-[#0F4036] md:text-7xl">
+                    Making drinks
+                  </div>
+                  <p className="mt-4 text-xl font-medium text-[#6A614F]">
                     Ready order numbers will show here.
                   </p>
                 </div>
@@ -4699,30 +4748,30 @@ function OrdersUpDisplay() {
             )}
           </section>
 
-          <section className="rounded-[32px] border border-white/80 bg-white/82 p-5 shadow-[0_26px_80px_rgba(15,64,54,0.14)] backdrop-blur-xl">
-            <div className="border-b border-[#CA862B]/18 pb-4">
-              <div className="text-sm font-black uppercase tracking-[0.22em] text-[#8B5A1D]">
+          <section className="overflow-hidden rounded-[30px] border border-[#0F4036]/10 bg-white shadow-[0_24px_70px_rgba(15,64,54,0.12)]">
+            <div className="border-b border-[#0F4036]/10 bg-[#FFFDF8] px-5 py-5">
+              <div className="text-sm font-semibold uppercase tracking-[0.22em] text-[#8B5A1D]">
                 Recently picked up
               </div>
-              <h2 className="mt-1 text-3xl font-black text-[#0F4036] md:text-5xl">
+              <h2 className="mt-1 text-3xl font-semibold tracking-normal text-[#0F4036] md:text-5xl">
                 Completed
               </h2>
             </div>
-            <div className="mt-4 grid gap-3">
+            <div className="grid gap-0 divide-y divide-[#0F4036]/8">
               {orders.recentlyCompleted.length ? (
                 orders.recentlyCompleted.map((order) => (
                   <div
                     key={order.id}
-                    className="flex items-center justify-between rounded-2xl border border-[#CA862B]/12 bg-[#FFFDF8]/82 px-4 py-3"
+                    className="flex items-center justify-between px-5 py-4"
                   >
-                    <span className="text-lg font-black text-[#2D261C]">Order {order.orderNumber}</span>
-                    <span className="rounded-full bg-[#0F4036]/8 px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-[#0F4036]">
+                    <span className="text-lg font-medium text-[#2D261C]">Order {order.orderNumber}</span>
+                    <span className="rounded-full bg-[#0F4036]/8 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[#0F4036]">
                       Picked up
                     </span>
                   </div>
                 ))
               ) : (
-                <div className="rounded-2xl border border-dashed border-[#CA862B]/24 bg-white/70 p-6 text-lg font-bold text-[#6A614F]">
+                <div className="m-5 rounded-2xl border border-dashed border-[#CA862B]/24 bg-[#FFFDF8] p-6 text-lg font-semibold text-[#6A614F]">
                   Completed orders will appear here briefly.
                 </div>
               )}
