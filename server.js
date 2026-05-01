@@ -388,6 +388,47 @@ function formatCatalogMoney(cents) {
   return formatMoney(Number(cents || 0));
 }
 
+function normalizeCatalogLabel(value) {
+  return String(value || "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function getCatalogSizeToken(value) {
+  const text = normalizeCatalogLabel(value);
+  const ounceMatch = text.match(/\b(8|10|12|16|20|24)\s*(oz|ounce|ounces)\b/);
+  if (ounceMatch) return ounceMatch[1];
+  if (/\b(small|sm)\b/.test(text)) return "12";
+  if (/\b(large|lg)\b/.test(text)) return "16";
+  return "";
+}
+
+function isTemperatureModifierGroup(group = {}) {
+  const text = normalizeCatalogLabel(
+    `${group.name || ""} ${(group.options || []).map((option) => option.name).join(" ")}`
+  );
+  return /\bhot\b/.test(text) && /\b(iced|ice)\b/.test(text);
+}
+
+function filterModifierGroupsForVariation(modifierGroups, itemName, variationName) {
+  const variationSize = getCatalogSizeToken(`${itemName} ${variationName}`);
+
+  return (modifierGroups || [])
+    .filter((group) => {
+      const groupSize = getCatalogSizeToken(group.name);
+      return !groupSize || !variationSize || groupSize === variationSize;
+    })
+    .map((group) => {
+      const temperatureGroup = isTemperatureModifierGroup(group);
+      return {
+        ...group,
+        required: Number(group.minSelected || 0) > 0 || temperatureGroup,
+        minSelected: temperatureGroup ? Math.max(1, Number(group.minSelected || 0)) : group.minSelected,
+        maxSelected: temperatureGroup ? 1 : group.maxSelected,
+        selectionType:
+          temperatureGroup || Number(group.maxSelected || 0) === 1 ? "single" : "multiple",
+      };
+    });
+}
+
 function buildStaticOnlineOrderingMenu() {
   const grouped = new Map();
   for (const item of ONLINE_ORDERING_BETA_MENU) {
@@ -491,18 +532,26 @@ async function getSquareOnlineOrderingMenu() {
       const variationData = variation.item_variation_data || {};
       const priceCents = Number(variationData.price_money?.amount || 0);
       if (!priceCents) continue;
+      const itemName = itemData.name || variationData.name || "Drink";
+      const variationName =
+        variationData.name && variationData.name !== "Regular" ? variationData.name : "";
+      const variationModifierGroups = filterModifierGroupsForVariation(
+        modifierGroups,
+        itemName,
+        variationName
+      );
 
       if (!groups.has(categoryName)) groups.set(categoryName, []);
       groups.get(categoryName).push({
         id: variation.id,
-        name: itemData.name || variationData.name || "Drink",
+        name: itemName,
         category: categoryName,
         price: formatCatalogMoney(priceCents),
         priceCents,
         variationId: variation.id,
-        variationName: variationData.name && variationData.name !== "Regular" ? variationData.name : "",
+        variationName,
         description: itemData.description || "",
-        modifierGroups,
+        modifierGroups: variationModifierGroups,
         source: "square",
       });
     }
@@ -548,6 +597,11 @@ async function buildOnlineOrderingBetaLineItems(rawItems) {
       for (const group of menuItem.modifierGroups || []) {
         const allowedGroupIds = new Set((group.options || []).map((option) => option.id));
         const selectedInGroup = selectedModifierIds.filter((id) => allowedGroupIds.has(id));
+        if (group.required && !selectedInGroup.length) {
+          const error = new Error(`Choose ${group.name} for ${menuItem.name}.`);
+          error.statusCode = 400;
+          throw error;
+        }
         const cappedSelection =
           Number(group.maxSelected || 0) > 0
             ? selectedInGroup.slice(0, Number(group.maxSelected || 0))
@@ -4662,7 +4716,7 @@ app.post("/api/beta/online-order/checkout", async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating online ordering beta checkout:", error);
-    res.status(500).json({ error: error.message });
+    res.status(error.statusCode || 500).json({ error: error.message });
   }
 });
 

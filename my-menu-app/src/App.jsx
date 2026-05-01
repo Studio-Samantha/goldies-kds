@@ -6415,6 +6415,17 @@ function OnlineOrderingBetaPage() {
       setOrderError("ASAP pickup is closed. Choose a scheduled pickup time during store hours.");
       return;
     }
+    for (const item of cart) {
+      for (const group of item.modifierGroups || []) {
+        if (!group.required) continue;
+        const optionIds = new Set((group.options || []).map((option) => option.id));
+        const hasSelection = (item.modifierIds || []).some((id) => optionIds.has(id));
+        if (!hasSelection) {
+          setOrderError(`Choose ${group.name} for ${item.name}.`);
+          return;
+        }
+      }
+    }
 
     setSubmitting(true);
     setOrderError("");
@@ -6636,7 +6647,11 @@ function OnlineOrderingBetaPage() {
                                 {group.name}
                               </div>
                               <span className="rounded-full bg-[#CA862B]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.1em] text-[#8B5A1D]">
-                                {group.selectionType === "single" ? "Choose one" : "Choose any"}
+                                {group.required
+                                  ? "Required"
+                                  : group.selectionType === "single"
+                                    ? "Choose one"
+                                    : "Choose any"}
                               </span>
                             </div>
                             <div className="mt-2 flex flex-wrap gap-2">
