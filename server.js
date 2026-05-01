@@ -287,6 +287,13 @@ const SMOOTHIE_DRINKS = new Set([
   "Strawberry Banana",
 ]);
 
+const GOLDIES_MENU_CATEGORIES = [
+  { key: "Coffee", label: "Coffee", items: Array.from(COFFEE_DRINKS) },
+  { key: "Not Coffee", label: "Not Coffee", items: Array.from(NOT_COFFEE_DRINKS) },
+  { key: "Smoothies", label: "Smoothies", items: Array.from(SMOOTHIE_DRINKS) },
+];
+let menuCatalogCache = { fetchedAt: 0, items: [] };
+
 function normalizeName(name = "") {
   return String(name).trim();
 }
@@ -393,6 +400,146 @@ function getItemDrinkCategory(item = {}) {
   }
 
   return getDrinkCategory(item.name);
+}
+
+function getSquareRestBaseUrl() {
+  return SQUARE_ENVIRONMENT === "sandbox"
+    ? "https://connect.squareupsandbox.com"
+    : "https://connect.squareup.com";
+}
+
+function getCatalogItemPrice(item = {}) {
+  const variations = item?.itemData?.variations || item?.item_data?.variations || [];
+  const prices = variations
+    .map((variation) => {
+      const variationData = variation.itemVariationData || variation.item_variation_data || {};
+      return Number(
+        variationData.priceMoney?.amount ?? variationData.price_money?.amount
+      );
+    })
+    .filter((price) => Number.isFinite(price) && price > 0);
+
+  return prices.length ? Math.min(...prices) : null;
+}
+
+function buildStaticMenuItems() {
+  return GOLDIES_MENU_CATEGORIES.map((category) => ({
+    ...category,
+    items: category.items
+      .slice()
+      .sort((a, b) => a.localeCompare(b))
+      .map((name) => ({ name, priceCents: null, price: "Ask" })),
+  }));
+}
+
+async function fetchSquareMenuCatalogItems() {
+  if (!SQUARE_ACCESS_TOKEN) return [];
+
+  const now = Date.now();
+  if (now - menuCatalogCache.fetchedAt < 10 * 60 * 1000) {
+    return menuCatalogCache.items;
+  }
+
+  const response = await fetch(`${getSquareRestBaseUrl()}/v2/catalog/search`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${SQUARE_ACCESS_TOKEN}`,
+      "Content-Type": "application/json",
+      "Square-Version": "2026-01-22",
+    },
+    body: JSON.stringify({
+      object_types: ["ITEM"],
+      include_deleted_objects: false,
+      include_related_objects: true,
+      limit: 1000,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Square menu catalog unavailable: ${response.status}`);
+  }
+
+  const data = await response.json();
+  menuCatalogCache = {
+    fetchedAt: now,
+    items: (data.objects || [])
+      .filter((object) => object.type === "ITEM")
+      .map((object) => {
+        const itemData = object.itemData || object.item_data || {};
+        return {
+          id: object.id,
+          name: itemData.name || "",
+          priceCents: getCatalogItemPrice(object),
+        };
+      })
+      .filter((item) => item.name && getDrinkCategory(item.name)),
+  };
+
+  return menuCatalogCache.items;
+}
+
+async function getGoldiesMenuBoard() {
+  const staticMenu = buildStaticMenuItems();
+
+  try {
+    const catalogItems = await fetchSquareMenuCatalogItems();
+    const catalogByName = new Map(
+      catalogItems.map((item) => [normalizeDrinkText(item.name), item])
+    );
+
+    return staticMenu.map((category) => ({
+      ...category,
+      items: category.items.map((item) => {
+        const catalogItem = catalogByName.get(normalizeDrinkText(item.name));
+        const priceCents = catalogItem?.priceCents || null;
+        return {
+          ...item,
+          priceCents,
+          price: priceCents ? formatCurrency(priceCents) : "Ask",
+        };
+      }),
+    }));
+  } catch (error) {
+    console.error("Error building menu board from Square catalog:", error.message);
+    return staticMenu;
+  }
+}
+
+async function getCustomerOrdersUp() {
+  const active = await getActiveTickets();
+  const completed = await getCompletedTicketsToday().catch(() => []);
+  const recentCompletedCutoff = Date.now() - 15 * 60 * 1000;
+
+  const ready = active
+    .filter((ticket) => ticket.status === "ready" && ticketHasDrinkItem(ticket))
+    .sort((a, b) => Number(a.createdAt || 0) - Number(b.createdAt || 0))
+    .map((ticket) => ({
+      id: ticket.id,
+      orderNumber: ticket.orderNumber || ticket.id,
+      status: "Ready",
+      readyAt: ticket.updatedAt || ticket.createdAt || null,
+    }));
+
+  const recentlyCompleted = completed
+    .filter(
+      (ticket) =>
+        ticketHasDrinkItem(ticket) &&
+        Number(ticket.completedAt || ticket.updatedAt || 0) >= recentCompletedCutoff
+    )
+    .sort(
+      (a, b) =>
+        Number(b.completedAt || b.updatedAt || 0) -
+        Number(a.completedAt || a.updatedAt || 0)
+    )
+    .slice(0, 8)
+    .map((ticket) => ({
+      id: ticket.id,
+      orderNumber: ticket.orderNumber || ticket.id,
+      status: "Picked up",
+      completedAt: ticket.completedAt || ticket.updatedAt || null,
+    }));
+
+  return { ready, recentlyCompleted, updatedAt: new Date().toISOString() };
 }
 
 function sanitizeStatus(status) {
@@ -3585,6 +3732,35 @@ app.get("/api/tickets/day", requireKdsAuth, async (req, res) => {
   } catch (error) {
     console.error("Error fetching tickets for day:", error);
     res.status(error.statusCode || 500).json({ error: error.message });
+  }
+});
+
+app.get("/api/display/menu", requireKdsAuth, async (_req, res) => {
+  try {
+    const categories = await getGoldiesMenuBoard();
+    res.json({
+      ok: true,
+      shopName: "Goldie's Coffee & Goods",
+      categories,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("Error fetching menu board:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/display/orders-up", requireKdsAuth, async (_req, res) => {
+  try {
+    const display = await getCustomerOrdersUp();
+    res.json({
+      ok: true,
+      shopName: "Goldie's Coffee & Goods",
+      ...display,
+    });
+  } catch (error) {
+    console.error("Error fetching customer orders display:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 

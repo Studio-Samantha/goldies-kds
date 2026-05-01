@@ -20,6 +20,22 @@
       "destination": "/survey.html"
     },
     {
+      "source": "/goldies-menu",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/menu-board",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/orders-up",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/customer-orders",
+      "destination": "/index.html"
+    },
+    {
       "source": "/case-study/goldies",
       "destination": "/case-study-goldies.html"
     },

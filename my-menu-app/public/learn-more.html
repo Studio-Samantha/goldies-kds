@@ -427,6 +427,51 @@
       .difference .feature {
         background: rgba(255, 255, 255, 0.88);
       }
+      .setup-visual {
+        background: #fffdf8;
+      }
+      .setup-grid {
+        margin-top: 30px;
+        grid-template-columns: minmax(0, 1.08fr) minmax(280px, 0.72fr);
+        align-items: stretch;
+      }
+      .setup-photo {
+        overflow: hidden;
+        border: 1px solid rgba(15, 64, 54, 0.14);
+        border-radius: 8px;
+        background: #e6d2ad;
+        box-shadow: var(--shadow);
+      }
+      .setup-photo img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        min-height: 430px;
+        object-fit: cover;
+      }
+      .setup-notes {
+        display: grid;
+        gap: 12px;
+      }
+      .setup-note {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        padding: 18px;
+        box-shadow: 0 12px 34px rgba(15, 64, 54, 0.07);
+      }
+      .setup-note strong {
+        display: block;
+        color: var(--green);
+        font-size: 16px;
+      }
+      .setup-note span {
+        display: block;
+        margin-top: 7px;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.55;
+      }
       .showcase {
         background: var(--cream);
       }
@@ -1471,8 +1516,11 @@
         .proof-inner {
           transform: translateY(-18px);
         }
-        .features, .showcase-grid, .price-grid, .onboarding-grid, .customer-grid, .comparison-grid, .comparison-savings, .proof-inner, .faq-grid, .support-card-inner, .founder-grid, .founder-points, .case-proof-inner, .lite-demo-grid, .a-la-carte-grid, .theme-grid {
+        .features, .showcase-grid, .price-grid, .onboarding-grid, .customer-grid, .setup-grid, .comparison-grid, .comparison-savings, .proof-inner, .faq-grid, .support-card-inner, .founder-grid, .founder-points, .case-proof-inner, .lite-demo-grid, .a-la-carte-grid, .theme-grid {
           grid-template-columns: 1fr;
+        }
+        .setup-photo img {
+          min-height: 280px;
         }
         .case-proof {
           margin: 0;
@@ -1570,8 +1618,8 @@
           <h1>A lighter KDS for the rush, the handoff, and the owner.</h1>
           <p class="lead">
             DrinkFlow turns Square&reg; orders into a calm live board for staff and clean drink-shop
-            insights for owners, with a browser dashboard that works best on touch screens and can
-            also run on monitor or TV setups with a remote, mouse, or nearby device.
+            insights for owners. Use a TV as the big shared board, then move tickets from a touch
+            screen, mouse, remote, or smaller nearby device.
           </p>
           <div class="hero-actions">
             <a class="button primary" href="mailto:samantha@studiosamantha.com?subject=DrinkFlow%20KDS%20onboarding">Plan onboarding</a>
@@ -1594,7 +1642,7 @@
             <span>TV display</span>
           </div>
           <p class="screen-note">
-            Runs in a browser on screens the shop already has. Best on touch screens; usable on displays with a remote or mouse.
+            Runs in a browser on screens the shop already has: touch screens for control, TVs or monitors for visibility.
           </p>
         </div>
       </div>
@@ -1607,8 +1655,8 @@
           <span>Readable tickets, clear priority, and quick status moves.</span>
         </div>
         <div class="proof-item">
-          <strong>Touch-first display</strong>
-          <span>Best on iPads and touch screens; flexible for remotes, mice, and TV displays.</span>
+          <strong>Big board, small controls</strong>
+          <span>Put the rush on a TV, then move tickets from a touch screen, mouse, or remote.</span>
         </div>
         <div class="proof-item">
           <strong>Drink numbers stay clean</strong>
@@ -1655,6 +1703,36 @@
             <h3>Clean drink analytics</h3>
             <p>Keep drink revenue, rush patterns, and category mix separate from retail items like merch, packaged goods, or gifts.</p>
           </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section setup-visual">
+      <div class="section-inner">
+        <p class="eyebrow">Screen setup</p>
+        <h2>One board for the room. Smaller screens for the hands doing the work.</h2>
+        <p class="section-copy">
+          DrinkFlow can run in a browser on the devices a shop already has. A TV or monitor can be the big shared view,
+          while staff move tickets from a touch screen, phone, mouse, or nearby control device.
+        </p>
+        <div class="grid setup-grid">
+          <div class="setup-photo">
+            <img src="/drinkflow-screen-setup.png" alt="DrinkFlow KDS screen setup with a wall display, tablet, and phone at a drink counter" />
+          </div>
+          <div class="setup-notes">
+            <div class="setup-note">
+              <strong>Kitchen display</strong>
+              <span>Large readable columns for New, Making, Ready, and Completed orders.</span>
+            </div>
+            <div class="setup-note">
+              <strong>Customer-facing options</strong>
+              <span>Menu boards and orders-up displays can be added a la carte for pickup counters and food trucks.</span>
+            </div>
+            <div class="setup-note">
+              <strong>Flexible control</strong>
+              <span>Use touch screens where they help, or keep a TV visible while staff control tickets from a smaller device.</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -1995,6 +2073,7 @@
         <p class="section-copy">
           Free is coming soon for simple Square&reg; drink shops. Lite keeps the regular dashboard without
           Owner Portal access. KDS adds owner reports, branding, user options, and custom-domain polish.
+          Customer-facing menu boards and orders-up screens can be added a la carte when a shop wants a bigger front-counter display.
         </p>
         <div class="grid price-grid">
           <article class="price-card">
@@ -2048,6 +2127,7 @@
                 <li>Hourly volume, average drinks, and 2+ drink order rate</li>
                 <li>CSV, Excel, and branded PDF reports</li>
                 <li>Branded login, custom categories, and custom domain setup</li>
+                <li>Optional customer-facing display boards quoted a la carte</li>
               </ul>
             </details>
           </article>
@@ -2055,12 +2135,13 @@
             <h3>A la carte</h3>
             <span class="price-tag">After launch</span>
             <div class="price">$25+ <small>updates</small></div>
-            <p>For thoughtful additions after launch: new reports, workflow changes, themes, and extra polish.</p>
+            <p>For thoughtful additions after launch: customer displays, new reports, workflow changes, themes, and extra polish.</p>
             <details>
               <summary>How it works</summary>
               <ul>
                 <li>Small updates start at $25</li>
                 <li>Medium or larger features are quoted first</li>
+                <li>Menu boards and customer order-number displays can be scoped per shop</li>
                 <li>Custom visual themes can use Studio Samantha artwork</li>
                 <li>Source-code handoff can be discussed separately later</li>
               </ul>
@@ -2097,6 +2178,10 @@
             </div>
           </div>
           <div class="grid a-la-carte-grid" aria-label="A la carte examples">
+            <div class="a-la-carte-item">
+              <strong>Customer displays</strong>
+              <span>Add a branded menu board, an orders-up screen, or a pickup display for a counter or food truck.</span>
+            </div>
             <div class="a-la-carte-item">
               <strong>New reports</strong>
               <span>Add a monthly PDF, a different chart, or a cleaner owner summary.</span>
@@ -2213,7 +2298,11 @@
             </details>
             <details>
               <summary>What screens work best?</summary>
-              <p>DrinkFlow works best on touch screens like iPads, tablets, and phones. It can also run on monitors or TV displays when staff have a remote, mouse, or nearby device for moving tickets.</p>
+              <p>The best setup is often a TV or monitor as the shared real-time board, with staff moving tickets from an iPad, phone, mouse, remote, or nearby control device.</p>
+            </details>
+            <details>
+              <summary>Can customers see order numbers too?</summary>
+              <p>Yes. A customer-facing orders-up display can be added a la carte for coffee shops, food trucks, and pickup counters that want customers to see when orders are ready.</p>
             </details>
             <details>
               <summary>What happens to retail items?</summary>

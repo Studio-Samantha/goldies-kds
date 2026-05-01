@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.7.4";
+const APP_VERSION = "v1.7.5";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v1";
@@ -24,8 +24,19 @@ const SETTINGS_HELP_TEXT =
 const DINING_OPTIONS = ["For here", "To go", "Pickup", "Delivery", "Drive thru"];
 const RELEASE_NOTES = [
   {
-    version: "v1.7.4",
+    version: "v1.7.5",
     date: "Current build",
+    summary: "Added customer-facing display boards.",
+    items: [
+      "The dashboard now has quick buttons for a branded menu board and a customer orders-up display.",
+      "The menu board shows Goldie's Coffee, Not Coffee, and Smoothies sections with prices from Square when available.",
+      "The customer display shows ready order numbers without exposing customer names or full ticket details.",
+      "DrinkFlow marketing now includes customer-facing display boards as an a la carte enhancement.",
+    ],
+  },
+  {
+    version: "v1.7.4",
+    date: "Previous build",
     summary: "Added the themed shop survey and Lite preview.",
     items: [
       "The marketing site now has a DrinkFlow-themed survey page that can save responses to Supabase.",
@@ -3811,25 +3822,31 @@ function OwnerReportsView({
         <header className="flex flex-col gap-4 rounded-3xl border border-white/70 bg-[rgba(255,253,248,0.94)] p-4 shadow-sm md:flex-row md:items-center md:justify-between">
           <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
             <div className="flex h-16 w-32 shrink-0 items-center justify-center rounded-2xl border border-[#CA862B]/14 bg-white/80 px-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:h-[72px] sm:w-40">
-              <img
-                src={OWNER_LOGO_URL}
-                alt="Goldie's Coffee & Goods"
-                className="max-h-full max-w-full object-contain"
-                loading="eager"
-                onError={(event) => {
-                  event.currentTarget.style.display = "none";
-                }}
-              />
+              {demoMode ? (
+                <DemoBrandMark size="sm" />
+              ) : (
+                <img
+                  src={OWNER_LOGO_URL}
+                  alt="Goldie's Coffee & Goods"
+                  className="max-h-full max-w-full object-contain"
+                  loading="eager"
+                  onError={(event) => {
+                    event.currentTarget.style.display = "none";
+                  }}
+                />
+              )}
             </div>
             <div className="min-w-0">
               <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
-                Owner Reports
+                {demoMode ? "DF Demo Cafe" : "Owner Reports"}
               </div>
               <h1 className="mt-1 text-3xl font-black text-[#0F4036]">
-                Drink Revenue
+                {demoMode ? "Owner Reports Demo" : "Drink Revenue"}
               </h1>
               <p className="mt-1 text-sm text-[#6A614F]">
-                Coffee, Not Coffee, and Smoothies only
+                {demoMode
+                  ? "Sample drink analytics for a demo cafe"
+                  : "Coffee, Not Coffee, and Smoothies only"}
               </p>
             </div>
           </div>
@@ -4403,7 +4420,325 @@ function PasswordSettingsDialog({
   );
 }
 
+function getDisplayRoute() {
+  if (typeof window === "undefined") return "";
+  const path = window.location.pathname.replace(/\/+$/, "");
+  if (path === "/goldies-menu" || path === "/menu-board") return "menu";
+  if (path === "/orders-up" || path === "/customer-orders") return "orders";
+  return "";
+}
+
+function DisplayBackground({ children, accent = "gold" }) {
+  const glow =
+    accent === "green"
+      ? "radial-gradient(circle at 20% 12%, rgba(15,64,54,0.22), transparent 30%), radial-gradient(circle at 82% 8%, rgba(202,134,43,0.26), transparent 30%)"
+      : "radial-gradient(circle at 18% 10%, rgba(202,134,43,0.3), transparent 32%), radial-gradient(circle at 84% 0%, rgba(15,64,54,0.18), transparent 34%)";
+
+  return (
+    <div
+      className="min-h-screen bg-[#FFFDF8] text-[#111111] px-4 py-5 md:px-8 md:py-7 overflow-hidden"
+      style={{
+        backgroundImage: `${glow}, linear-gradient(135deg, #FFFDF8 0%, #F4E8D1 46%, #EEE0C5 100%)`,
+      }}
+    >
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 pointer-events-none opacity-[0.035]"
+        style={{
+          backgroundImage: `url(${LOGO_URL})`,
+          backgroundSize: "180px",
+          backgroundRepeat: "repeat",
+          transform: "rotate(-8deg) scale(1.08)",
+        }}
+      />
+      <div className="relative z-10">{children}</div>
+    </div>
+  );
+}
+
+function DisplayHeader({ eyebrow, title, subtitle }) {
+  return (
+    <header className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+      <div className="flex items-center gap-4">
+        <div className="grid h-20 w-20 place-items-center rounded-3xl border border-[#CA862B]/20 bg-white/82 shadow-[0_22px_60px_rgba(15,64,54,0.12)]">
+          <img src={LOGO_URL} alt="Goldie's Coffee & Goods" className="max-h-14 max-w-14 object-contain" />
+        </div>
+        <div>
+          <div className="text-xs md:text-sm font-black uppercase tracking-[0.22em] text-[#8B5A1D]">
+            {eyebrow}
+          </div>
+          <h1 className="mt-1 text-4xl font-black tracking-tight text-[#0F4036] md:text-6xl">
+            {title}
+          </h1>
+        </div>
+      </div>
+      <p className="max-w-xl text-base font-bold leading-7 text-[#5A4F3E] md:text-xl md:text-right">
+        {subtitle}
+      </p>
+    </header>
+  );
+}
+
+function DisplayStatus({ loading, error, updatedAt }) {
+  return (
+    <div className="mt-5 flex flex-wrap items-center gap-3 text-sm font-black uppercase tracking-[0.16em] text-[#6A614F]">
+      <span className="rounded-full border border-[#CA862B]/18 bg-white/76 px-4 py-2 shadow-sm">
+        {loading ? "Refreshing" : "Live display"}
+      </span>
+      {updatedAt && (
+        <span className="rounded-full border border-[#CA862B]/18 bg-white/76 px-4 py-2 shadow-sm">
+          Updated {new Date(updatedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+        </span>
+      )}
+      {error && (
+        <span className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-red-900 shadow-sm">
+          {error}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function MenuBoardDisplay() {
+  const [menu, setMenu] = useState([]);
+  const [updatedAt, setUpdatedAt] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function refreshMenu() {
+      try {
+        const response = await fetch(apiUrl("/api/display/menu"), {
+          credentials: "include",
+        });
+
+        if (response.status === 401) {
+          throw new Error("Sign in to the KDS on this device first.");
+        }
+        if (!response.ok) {
+          throw new Error(`Menu unavailable: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (!mounted) return;
+        setMenu(data.categories || []);
+        setUpdatedAt(data.updatedAt || "");
+        setError("");
+      } catch (displayError) {
+        if (!mounted) return;
+        setError(displayError.message || "Menu unavailable");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    refreshMenu();
+    const interval = setInterval(refreshMenu, 5 * 60 * 1000);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  const fallbackMenu = ["Coffee", "Not Coffee", "Smoothies"].map((label) => ({
+    label,
+    items: [],
+  }));
+
+  return (
+    <DisplayBackground>
+      <div className="mx-auto flex min-h-[calc(100vh-56px)] max-w-[1500px] flex-col gap-8">
+        <DisplayHeader
+          eyebrow="Goldie's Coffee & Goods"
+          title="Drink Menu"
+          subtitle="Coffee, not coffee, and smoothies from the Goldie's drink counter."
+        />
+        <DisplayStatus loading={loading} error={error} updatedAt={updatedAt} />
+
+        <main className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-3">
+          {(menu.length ? menu : fallbackMenu).map((category) => (
+            <section
+              key={category.key || category.label}
+              className="flex min-h-[420px] flex-col rounded-[28px] border border-white/80 bg-white/78 p-5 shadow-[0_26px_80px_rgba(15,64,54,0.14)] backdrop-blur-xl"
+            >
+              <div className="border-b border-[#CA862B]/18 pb-4">
+                <h2 className="text-3xl font-black text-[#0F4036] md:text-5xl">
+                  {category.label}
+                </h2>
+              </div>
+              <div className="mt-4 grid gap-3">
+                {category.items?.length ? (
+                  category.items.map((item) => (
+                    <div
+                      key={item.name}
+                      className="grid grid-cols-[1fr_auto] items-baseline gap-4 rounded-2xl border border-[#CA862B]/10 bg-[#FFFDF8]/78 px-4 py-3"
+                    >
+                      <span className="text-xl font-black leading-tight text-[#2D261C] md:text-2xl">
+                        {item.name}
+                      </span>
+                      <span className="text-xl font-black text-[#8B5A1D] md:text-2xl">
+                        {item.price || "Ask"}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-[#CA862B]/24 bg-white/70 p-6 text-lg font-bold text-[#6A614F]">
+                    Menu loading
+                  </div>
+                )}
+              </div>
+            </section>
+          ))}
+        </main>
+      </div>
+    </DisplayBackground>
+  );
+}
+
+function OrdersUpDisplay() {
+  const [orders, setOrders] = useState({ ready: [], recentlyCompleted: [] });
+  const [updatedAt, setUpdatedAt] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function refreshOrders() {
+      try {
+        const response = await fetch(apiUrl("/api/display/orders-up"), {
+          credentials: "include",
+        });
+
+        if (response.status === 401) {
+          throw new Error("Sign in to the KDS on this device first.");
+        }
+        if (!response.ok) {
+          throw new Error(`Orders unavailable: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (!mounted) return;
+        setOrders({
+          ready: data.ready || [],
+          recentlyCompleted: data.recentlyCompleted || [],
+        });
+        setUpdatedAt(data.updatedAt || "");
+        setError("");
+      } catch (displayError) {
+        if (!mounted) return;
+        setError(displayError.message || "Orders unavailable");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    refreshOrders();
+    const interval = setInterval(refreshOrders, 5000);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  return (
+    <DisplayBackground accent="green">
+      <div className="mx-auto flex min-h-[calc(100vh-56px)] max-w-[1500px] flex-col gap-8">
+        <DisplayHeader
+          eyebrow="Goldie's Coffee & Goods"
+          title="Orders Up"
+          subtitle="Watch for your order number, then pick up at the counter when it appears here."
+        />
+        <DisplayStatus loading={loading} error={error} updatedAt={updatedAt} />
+
+        <main className="grid flex-1 grid-cols-1 gap-5 lg:grid-cols-[1.35fr_0.65fr]">
+          <section className="rounded-[32px] border border-white/80 bg-[#0F4036] p-5 text-white shadow-[0_30px_90px_rgba(15,64,54,0.26)]">
+            <div className="flex items-end justify-between gap-4 border-b border-white/16 pb-4">
+              <div>
+                <div className="text-sm font-black uppercase tracking-[0.22em] text-[#F3D39B]">
+                  Ready now
+                </div>
+                <h2 className="mt-1 text-4xl font-black md:text-7xl">Pick up</h2>
+              </div>
+              <div className="rounded-full bg-white/12 px-5 py-2 text-2xl font-black">
+                {orders.ready.length}
+              </div>
+            </div>
+
+            {orders.ready.length ? (
+              <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+                {orders.ready.map((order) => (
+                  <div
+                    key={order.id}
+                    className="grid aspect-[1.18/1] place-items-center rounded-[26px] border border-[#F3D39B]/24 bg-white text-[#0F4036] shadow-[0_18px_50px_rgba(0,0,0,0.18)]"
+                  >
+                    <div className="text-center">
+                      <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
+                        Order
+                      </div>
+                      <div className="mt-1 text-5xl font-black tracking-tight md:text-7xl">
+                        {order.orderNumber}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid min-h-[390px] place-items-center text-center">
+                <div>
+                  <div className="text-5xl font-black md:text-7xl">Making drinks</div>
+                  <p className="mt-4 text-xl font-bold text-white/76">
+                    Ready order numbers will show here.
+                  </p>
+                </div>
+              </div>
+            )}
+          </section>
+
+          <section className="rounded-[32px] border border-white/80 bg-white/82 p-5 shadow-[0_26px_80px_rgba(15,64,54,0.14)] backdrop-blur-xl">
+            <div className="border-b border-[#CA862B]/18 pb-4">
+              <div className="text-sm font-black uppercase tracking-[0.22em] text-[#8B5A1D]">
+                Recently picked up
+              </div>
+              <h2 className="mt-1 text-3xl font-black text-[#0F4036] md:text-5xl">
+                Completed
+              </h2>
+            </div>
+            <div className="mt-4 grid gap-3">
+              {orders.recentlyCompleted.length ? (
+                orders.recentlyCompleted.map((order) => (
+                  <div
+                    key={order.id}
+                    className="flex items-center justify-between rounded-2xl border border-[#CA862B]/12 bg-[#FFFDF8]/82 px-4 py-3"
+                  >
+                    <span className="text-lg font-black text-[#2D261C]">Order {order.orderNumber}</span>
+                    <span className="rounded-full bg-[#0F4036]/8 px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-[#0F4036]">
+                      Picked up
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-2xl border border-dashed border-[#CA862B]/24 bg-white/70 p-6 text-lg font-bold text-[#6A614F]">
+                  Completed orders will appear here briefly.
+                </div>
+              )}
+            </div>
+          </section>
+        </main>
+      </div>
+    </DisplayBackground>
+  );
+}
+
 export default function GoldiesKDS() {
+  const displayRoute = getDisplayRoute();
+  if (displayRoute === "menu") return <MenuBoardDisplay />;
+  if (displayRoute === "orders") return <OrdersUpDisplay />;
+
   const isDemoRoute = isDemoTrainingRoute();
   const [themeMode, setThemeMode] = useState(getSavedThemeMode);
   const [isTrainingMode, setIsTrainingMode] = useState(getSavedTrainingMode);
@@ -5350,6 +5685,24 @@ export default function GoldiesKDS() {
                 className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
               >
                 Square Dashboard
+              </a>
+
+              <a
+                href="/goldies-menu"
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
+              >
+                Menu Board
+              </a>
+
+              <a
+                href="/orders-up"
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
+              >
+                Orders Up
               </a>
 
               <button
