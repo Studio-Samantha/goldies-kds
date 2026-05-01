@@ -6090,7 +6090,7 @@ export default function GoldiesKDS() {
           </div>
         )}
       <div className="relative z-10">
-      <header className="border-b border-white/70 bg-[rgba(255,253,248,0.9)] backdrop-blur-xl px-4 md:px-6 py-4 shadow-[0_12px_30px_rgba(15,64,54,0.06)]">
+      <header className="relative z-40 border-b border-white/70 bg-[rgba(255,253,248,0.9)] backdrop-blur-xl px-4 md:px-6 py-4 shadow-[0_12px_30px_rgba(15,64,54,0.06)]">
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
           <div className="flex items-center gap-4">
             <BrandMark darkMode={themeMode === "dark"} demoMode={isDemoRoute} />
@@ -6261,7 +6261,7 @@ export default function GoldiesKDS() {
                 </button>
 
                 {showDisplaysMenu && (
-                  <div className="absolute right-0 top-full z-20 mt-2 w-56 overflow-hidden rounded-2xl border border-[#CA862B]/22 bg-white p-1.5 shadow-[0_18px_45px_rgba(15,64,54,0.16)]">
+                  <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-[#CA862B]/22 bg-white p-1.5 shadow-[0_18px_45px_rgba(15,64,54,0.16)]">
                     <a
                       href="/goldies-menu"
                       target="_blank"
