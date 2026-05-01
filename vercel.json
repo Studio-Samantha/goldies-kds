@@ -60,6 +60,14 @@
       "destination": "/index.html"
     },
     {
+      "source": "/online-ordering-beta",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/order-beta",
+      "destination": "/index.html"
+    },
+    {
       "source": "/case-study/goldies",
       "destination": "/case-study-goldies.html"
     },

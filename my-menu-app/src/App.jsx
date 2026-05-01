@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.8.3";
+const APP_VERSION = "v1.9.0";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -22,10 +22,32 @@ const WEB_SERVICES_REMINDER_DATE = "2026-05-02";
 const SETTINGS_HELP_TEXT =
   "Settings has the app tools: theme, password change, support, and release notes.";
 const DINING_OPTIONS = ["For here", "To go", "Pickup", "Delivery", "Drive thru"];
+const DAILY_UPDATE_NOTICE = {
+  id: APP_VERSION,
+  eyebrow: "KDS update",
+  title: "What changed today",
+  message:
+    "Online Ordering Beta is now wired for a real drink pickup test. Build a drink order, pay through Square Checkout, and the paid order can flow back into the KDS.",
+  note:
+    "Online pickup tickets now get a red pending-order alert on the dashboard. Also new: Volume Board, Drive Thru display, Menu Board, Orders Up display, Focus Board, and cleaner owner reporting tools.",
+};
 const RELEASE_NOTES = [
   {
-    version: "v1.8.3",
+    version: "v1.9.0",
     date: "Current build",
+    summary: "Added the first real online ordering beta path.",
+    items: [
+      "Owner Reports now links to a customer-facing Online Ordering Beta where testers can build a drink pickup order.",
+      "The beta order page sends selected drinks to Square Checkout so a paid test order can flow back into the KDS.",
+      "New online pickup tickets now show a red pending-order alert with placed time and drink details.",
+      "Orders Up now labels Online versus In person orders.",
+      "The ordering beta keeps menu prices controlled by the backend instead of trusting browser-entered prices.",
+      "The sign-in update message now tells owners what changed in the KDS before they start service.",
+    ],
+  },
+  {
+    version: "v1.8.3",
+    date: "Previous build",
     summary: "Added service-window guidance and a volume display.",
     items: [
       "Owner Reports now reads Today Snapshot against Goldie's 7 AM-3 PM Central service window.",
@@ -1214,6 +1236,12 @@ function isDemoTrainingRoute() {
   }
 }
 
+function isOnlineOrderingBetaRoute() {
+  if (typeof window === "undefined") return false;
+  const path = window.location.pathname.replace(/\/+$/, "");
+  return path === "/online-ordering-beta" || path === "/order-beta";
+}
+
 function getLocalDayBounds(date = new Date()) {
   const start = new Date(date);
   start.setHours(0, 0, 0, 0);
@@ -1506,6 +1534,13 @@ function formatOrderTime(createdAt) {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+function isOnlineTicket(ticket = {}) {
+  return (
+    Boolean(ticket.isOnlineOrder) ||
+    String(ticket.source || "").toLowerCase().includes("online")
+  );
 }
 
 function formatCompletedTime(completedAt) {
@@ -1813,6 +1848,9 @@ function normalizeTicket(ticket) {
               Date.now()
           ).getTime(),
     source: ticket.source || "Square",
+    isOnlineOrder:
+      Boolean(ticket.isOnlineOrder || ticket.is_online_order) ||
+      String(ticket.source || "").toLowerCase().includes("online"),
     status: ticket.status || "new",
     items: (ticket.items || []).map((item) => ({
       name: item.name || "Unnamed item",
@@ -1985,6 +2023,7 @@ function TicketCard({
   const hasSpecificDiningOption =
     ticket.diningOption &&
     !["Unspecified", "Order"].includes(ticket.diningOption);
+  const isOnlineOrder = isOnlineTicket(ticket);
 
   let actions = [];
 
@@ -2068,6 +2107,11 @@ function TicketCard({
                   {ticket.diningOption}
                 </span>
               )}
+              {isOnlineOrder && (
+                <span className="rounded-lg border border-[#0F4036]/14 bg-[#0F4036] px-2 py-1 text-xs font-black text-white">
+                  Online order
+                </span>
+              )}
             </div>
           ) : ticket.customerName ? (
             <div className="mt-2 rounded-xl border border-[#0F4036]/14 bg-[#0F4036]/6 px-3 py-2">
@@ -2102,9 +2146,13 @@ function TicketCard({
           )}
 
           {!compact && (
-          <div className="text-sm text-[#6A614F] mt-1">
-            {ticket.source}
-          </div>
+            <div className={`mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-black ${
+              isOnlineOrder
+                ? "bg-[#0F4036] text-white"
+                : "bg-[#CA862B]/10 text-[#6A614F]"
+            }`}>
+              {isOnlineOrder ? "Online order" : ticket.source}
+            </div>
           )}
 
           {!compact && ticket.employeeName && (
@@ -3567,13 +3615,14 @@ function buildOwnerSnapshotAnalysis(report, rangeKey) {
   const topCategory = activeCategories
     .slice()
     .sort((a, b) => Number(b.units || 0) - Number(a.units || 0))[0];
+  const serviceWindow = rangeKey === "today" ? getTodayServiceWindowRead() : null;
 
   if (!orderCount && !drinkUnits) {
     return {
       eyebrow: copy.eyebrow,
       question: copy.question,
-      tone: "Quiet service window",
-      summary: copy.empty,
+      tone: serviceWindow?.label || "Quiet service window",
+      summary: serviceWindow ? `${serviceWindow.pace} ${copy.empty}` : copy.empty,
       watch: [
         {
           title: "Connection check",
@@ -3581,7 +3630,7 @@ function buildOwnerSnapshotAnalysis(report, rangeKey) {
         },
         {
           title: "Owner action",
-          body: copy.action,
+          body: serviceWindow?.action || copy.action,
         },
       ],
     };
@@ -3653,7 +3702,7 @@ function buildOwnerSnapshotAnalysis(report, rangeKey) {
   const dailyOrders = (orderCount / rangeDays).toFixed(orderCount < rangeDays ? 1 : 0);
   const rangeLabel = getOwnerRangeLabel(rangeKey);
   const moneySignalByRange = {
-    today: `Live service read: ${revenueRead} ${averageOrderRead} Watch the rest of today for whether average ticket value climbs during rush periods.`,
+    today: `${serviceWindow?.pace || "Live service read:"} ${revenueRead} ${averageOrderRead} Watch the rest of today for whether average ticket value climbs during rush periods.`,
     yesterday: `Closed-day read: yesterday finished at ${report?.totalRevenue || "$0.00"} before tax. ${averageOrderRead} Use it as a clean comparison against today, not as a live staffing signal.`,
     last7: `Short-term trend: this week is averaging ${dailyOrders} drink orders and ${dailyRevenue} in drink revenue per day. ${revenueRead} Compare this to staffing and prep for the current week.`,
     last30: `Monthly trend: the last 30 days average ${dailyOrders} drink orders and ${dailyRevenue} in drink revenue per day. ${averageOrderRead} This is the better range for menu and promo decisions.`,
@@ -3663,8 +3712,8 @@ function buildOwnerSnapshotAnalysis(report, rangeKey) {
   const ownerActionByRange = {
     today:
       averageCents < 600
-        ? "For the rest of today, coach add-ons or premium drink suggestions and see whether the average ticket improves before close."
-        : "For the rest of today, protect speed and prep on the strongest category so higher-value tickets do not slow the bar.",
+        ? `${serviceWindow?.action || "For the rest of today, coach add-ons or premium drink suggestions and see whether the average ticket improves before close."}`
+        : `${serviceWindow?.action || "For the rest of today, protect speed and prep on the strongest category so higher-value tickets do not slow the bar."}`,
     yesterday:
       "Use yesterday as a review: compare the strongest category, average ticket value, and staffing notes before changing today's plan.",
     last7:
@@ -3684,8 +3733,8 @@ function buildOwnerSnapshotAnalysis(report, rangeKey) {
   return {
     eyebrow: copy.eyebrow,
     question: copy.question,
-    tone: `${rangeLabel} read`,
-    summary: `${quietRead}${rangeLabel} looks ${volumeRead}: ${orderCount} drink orders, ${drinkUnits} drink units, and ${report?.totalRevenue || "$0.00"} in drink revenue before tax. The average collected per drink order is ${report?.averageDrinkOrderValue || "$0.00"}, which points to ${averageRead}.`,
+    tone: serviceWindow?.label || `${rangeLabel} read`,
+    summary: `${serviceWindow ? `${serviceWindow.pace} ` : ""}${quietRead}${rangeLabel} looks ${volumeRead}: ${orderCount} drink orders, ${drinkUnits} drink units, and ${report?.totalRevenue || "$0.00"} in drink revenue before tax. The average collected per drink order is ${report?.averageDrinkOrderValue || "$0.00"}, which points to ${averageRead}.`,
     watch: [
       {
         title: "Demand mix",
@@ -3845,6 +3894,7 @@ function OwnerReportsView({
   const [snapshotError, setSnapshotError] = useState("");
   const [snapshotSaving, setSnapshotSaving] = useState(false);
   const [reportExportMenuOpen, setReportExportMenuOpen] = useState(false);
+  const demoQuery = demoMode ? "?demo=training" : "";
 
   useEffect(() => {
     let mounted = true;
@@ -4160,6 +4210,33 @@ function OwnerReportsView({
               {error}
             </div>
           )}
+
+          <div className="mb-4 rounded-2xl border border-[#CA862B]/18 bg-white/80 p-3 shadow-sm">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
+                  Beta tools
+                </div>
+                <div className="mt-1 text-sm font-semibold leading-6 text-[#6A614F]">
+                  Owner-facing test boards for volume and future online ordering.
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <a
+                  href={`/volume-board${demoQuery}`}
+                  className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                >
+                  Volume Board
+                </a>
+                <a
+                  href={`/online-ordering-beta${demoQuery}`}
+                  className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                >
+                  Online Orders Beta
+                </a>
+              </div>
+            </div>
+          </div>
 
           {loading ? (
             <div className="rounded-2xl border border-dashed border-[#CA862B]/22 bg-white/70 p-8 text-center font-semibold text-[#6A614F]">
@@ -5062,6 +5139,17 @@ function CustomerOrderDetails({ order, darkMode = false, compact = false }) {
             {order.customerName}
           </span>
         ) : null}
+        <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${
+          order.isOnlineOrder
+            ? darkMode
+              ? "bg-red-500/22 text-red-100"
+              : "bg-red-100 text-red-800"
+            : darkMode
+              ? "bg-white/10 text-[#FFF7EA]/76"
+              : "bg-[#0F4036]/8 text-[#0F4036]"
+        }`}>
+          {order.isOnlineOrder ? "Online" : "In person"}
+        </span>
       </div>
       <div className={`mt-2 grid gap-1.5 ${compact ? "" : "sm:grid-cols-2"}`}>
         {items.length ? (
@@ -5911,7 +5999,267 @@ function OnlineOrdersDisplay() {
   );
 }
 
+const ONLINE_ORDERING_BETA_MENU = [
+  {
+    category: "Coffee",
+    items: [
+      { id: "latte", name: "Latte", price: "$5.75" },
+      { id: "americano", name: "Americano", price: "$4.25" },
+      { id: "cold-brew", name: "Cold Brew", price: "$5.50" },
+      { id: "cappuccino", name: "Cappuccino", price: "$5.25" },
+    ],
+  },
+  {
+    category: "Not Coffee",
+    items: [
+      { id: "london-fog", name: "London Fog", price: "$5.75" },
+      { id: "chai-latte", name: "Chai Latte", price: "$5.75" },
+      { id: "matcha-latte", name: "Matcha Latte", price: "$6.25" },
+    ],
+  },
+  {
+    category: "Smoothies",
+    items: [
+      { id: "strawberry-banana", name: "Strawberry Banana", price: "$7.00" },
+      { id: "chocolate-pb-banana", name: "Chocolate P/B Banana", price: "$7.00" },
+      { id: "green-smoothie", name: "Green Smoothie", price: "$7.00" },
+    ],
+  },
+];
+
+function OnlineOrderingBetaPage() {
+  const demoMode = isDemoTrainingRoute();
+  const ordered = typeof window !== "undefined" && window.location.search.includes("ordered=1");
+  const [cart, setCart] = useState([]);
+  const [customerName, setCustomerName] = useState("");
+  const [pickupTime, setPickupTime] = useState("");
+  const [notes, setNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [orderError, setOrderError] = useState("");
+  const cartTotalCents = cart.reduce((sum, item) => {
+    const price = Number.parseFloat(String(item.price || "").replace(/[^0-9.]/g, ""));
+    return sum + Math.round((Number.isFinite(price) ? price : 0) * 100) * item.qty;
+  }, 0);
+  const cartItemCount = cart.reduce((sum, item) => sum + item.qty, 0);
+
+  function addItem(item, category) {
+    setCart((current) => {
+      const existing = current.find((entry) => entry.id === item.id);
+      if (existing) {
+        return current.map((entry) =>
+          entry.id === item.id ? { ...entry, qty: entry.qty + 1 } : entry
+        );
+      }
+
+      return [...current, { ...item, category, qty: 1 }];
+    });
+  }
+
+  function updateQty(id, delta) {
+    setCart((current) =>
+      current
+        .map((entry) =>
+          entry.id === id ? { ...entry, qty: Math.max(0, entry.qty + delta) } : entry
+        )
+        .filter((entry) => entry.qty > 0)
+    );
+  }
+
+  async function createCheckout() {
+    if (!cart.length || submitting) return;
+
+    setSubmitting(true);
+    setOrderError("");
+
+    try {
+      const response = await fetch(apiUrl("/api/beta/online-order/checkout"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          customerName,
+          pickupTime,
+          notes,
+          items: cart.map((item) => ({ id: item.id, qty: item.qty })),
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.details || data.error || "Checkout could not be created.");
+      }
+
+      if (!data.checkoutUrl) {
+        throw new Error("Square did not return a checkout link.");
+      }
+
+      window.location.href = data.checkoutUrl;
+    } catch (error) {
+      setOrderError(error.message || "Checkout could not be created.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-[#EEE0C5] text-[#111111]">
+      <div className="relative overflow-hidden bg-[#0F4036] text-white">
+        <div className="absolute inset-0 opacity-15" style={{ backgroundImage: `url(${LOGO_DARK_URL})`, backgroundSize: "220px auto", backgroundRepeat: "repeat", transform: "rotate(-8deg) scale(1.1)" }} />
+        <div className="relative mx-auto grid max-w-6xl gap-6 px-4 py-6 md:grid-cols-[minmax(0,1fr)_420px] md:items-center md:py-10">
+          <div>
+            <a
+              href={demoMode ? "/?demo=training" : "/"}
+              className="inline-flex rounded-full border border-white/18 bg-white/10 px-4 py-2 text-sm font-black text-white transition hover:bg-white/16"
+            >
+              Back to KDS
+            </a>
+            <div className="mt-8 flex items-center gap-4">
+              <div className="grid h-20 w-20 place-items-center rounded-3xl border border-white/16 bg-white shadow-[0_24px_70px_rgba(0,0,0,0.22)]">
+                {demoMode ? <DemoBrandMark size="sm" /> : <img src={LOGO_URL} alt="Goldie's Coffee & Goods" className="max-h-16 max-w-16 object-contain" />}
+              </div>
+              <div>
+                <div className="text-xs font-black uppercase tracking-[0.24em] text-[#F3D39B]">Online ordering beta</div>
+                <h1 className="mt-2 text-4xl font-black leading-none md:text-6xl">Goldie&apos;s drinks, ordered ahead.</h1>
+              </div>
+            </div>
+            <p className="mt-5 max-w-2xl text-lg font-semibold leading-8 text-white/78">
+              Choose your drink, add a pickup name, and pay through Square checkout. This test is drinks-only while the pickup workflow is being proven live.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2 text-xs font-black uppercase tracking-[0.16em] text-[#F3D39B]">
+              <span className="rounded-full border border-white/16 bg-white/10 px-3 py-2">7 AM-3 PM</span>
+              <span className="rounded-full border border-white/16 bg-white/10 px-3 py-2">Pickup test</span>
+              <span className="rounded-full border border-white/16 bg-white/10 px-3 py-2">Square checkout</span>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-1">
+            <div className="overflow-hidden rounded-3xl border border-white/14 bg-white/10 p-3 shadow-[0_30px_90px_rgba(0,0,0,0.28)] backdrop-blur">
+              <img src="/goldies-login-screenshot.png" alt="Goldie's branded ordering preview" className="h-60 w-full rounded-2xl object-cover object-top" />
+            </div>
+            <div className="rounded-3xl border border-white/14 bg-[rgba(255,253,248,0.95)] p-4 text-[#0F4036] shadow-[0_30px_90px_rgba(0,0,0,0.18)]">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">Pickup flow</div>
+              <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+                {["Choose", "Pay", "Pickup"].map((step) => (
+                  <div key={step} className="rounded-2xl border border-[#CA862B]/16 bg-white px-2 py-3 text-sm font-black">{step}</div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-6xl space-y-4 p-4">
+
+        {ordered ? (
+          <div className="rounded-3xl border border-[#0F4036]/14 bg-white/90 p-4 text-sm font-bold leading-6 text-[#0F4036] shadow-sm">
+            Payment complete. Square may take a moment to send the order back to the KDS.
+          </div>
+        ) : null}
+
+        <main className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
+          <section className="grid gap-3 md:grid-cols-3">
+            {ONLINE_ORDERING_BETA_MENU.map((group) => (
+              <article key={group.category} className="rounded-3xl border border-white/70 bg-[rgba(255,253,248,0.95)] p-4 shadow-[0_18px_48px_rgba(15,64,54,0.08)]">
+                <div className="flex items-end justify-between gap-3">
+                  <h2 className="text-2xl font-black text-[#0F4036]">{group.category}</h2>
+                  <span className="rounded-full bg-[#CA862B]/10 px-2.5 py-1 text-xs font-black text-[#8B5A1D]">
+                    {group.items.length}
+                  </span>
+                </div>
+                <div className="mt-3 grid gap-2">
+                  {group.items.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => addItem(item, group.category)}
+                      className="group rounded-2xl border border-[#CA862B]/16 bg-white p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:bg-[#EEE0C5]/45 hover:shadow-md"
+                    >
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="block text-base font-black text-[#111111]">{item.name}</span>
+                        <span className="rounded-full bg-[#0F4036]/8 px-2 py-1 text-xs font-black text-[#0F4036] group-hover:bg-[#0F4036] group-hover:text-white">Add</span>
+                      </span>
+                      <span className="mt-1 block text-sm font-semibold text-[#6A614F]">{item.price}</span>
+                    </button>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </section>
+
+          <aside className="rounded-3xl border border-white/70 bg-[rgba(255,253,248,0.97)] p-4 shadow-[0_24px_70px_rgba(15,64,54,0.12)] lg:sticky lg:top-4 lg:self-start">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">Your pickup</div>
+                <h2 className="mt-1 text-2xl font-black text-[#0F4036]">Beta order</h2>
+              </div>
+              <div className="rounded-2xl bg-[#0F4036] px-3 py-2 text-right text-white">
+                <div className="text-xs font-black uppercase tracking-[0.12em] text-white/70">{cartItemCount} items</div>
+                <div className="text-lg font-black">${(cartTotalCents / 100).toFixed(2)}</div>
+              </div>
+            </div>
+            <div className="mt-3 grid gap-2">
+              {cart.length ? (
+                cart.map((item) => (
+                  <div key={item.id} className="rounded-2xl border border-[#CA862B]/16 bg-white p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="font-black text-[#111111]">{item.name}</div>
+                        <div className="text-sm font-semibold text-[#6A614F]">{item.price}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button type="button" onClick={() => updateQty(item.id, -1)} className="grid h-8 w-8 place-items-center rounded-full border border-[#CA862B]/22 bg-white font-black text-[#0F4036]">-</button>
+                        <span className="w-6 text-center font-black">{item.qty}</span>
+                        <button type="button" onClick={() => updateQty(item.id, 1)} className="grid h-8 w-8 place-items-center rounded-full border border-[#CA862B]/22 bg-white font-black text-[#0F4036]">+</button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-2xl border border-dashed border-[#CA862B]/22 bg-white/70 p-4 text-sm font-semibold text-[#6A614F]">
+                  Add drinks to start a beta pickup request.
+                </div>
+              )}
+            </div>
+
+            <label className="mt-4 block">
+              <span className="text-sm font-black text-[#0F4036]">Pickup name</span>
+              <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} className="mt-2 w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15" />
+            </label>
+            <label className="mt-3 block">
+              <span className="text-sm font-black text-[#0F4036]">Pickup time</span>
+              <input value={pickupTime} onChange={(event) => setPickupTime(event.target.value)} placeholder="Example: 7:45 AM" className="mt-2 w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15" />
+            </label>
+            <label className="mt-3 block">
+              <span className="text-sm font-black text-[#0F4036]">Notes or flavor request</span>
+              <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Example: London Fog with lavender if available" rows="4" className="mt-2 w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15" />
+            </label>
+            {orderError ? (
+              <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
+                {orderError}
+              </div>
+            ) : null}
+            <button
+              type="button"
+              onClick={createCheckout}
+              disabled={!cart.length || !customerName.trim() || submitting}
+              className={`mt-4 flex min-h-12 w-full items-center justify-center rounded-2xl px-4 py-3 text-center font-black text-white transition ${
+                cart.length && customerName.trim() && !submitting ? "bg-[#0F4036] hover:bg-[#0b352d]" : "bg-neutral-300"
+              }`}
+            >
+              {submitting ? "Opening Square checkout..." : "Pay with Square"}
+            </button>
+            <p className="mt-3 text-xs font-semibold leading-5 text-[#6A614F]">
+              Beta behavior: payment opens in Square checkout. Once paid, Square sends the order back for KDS intake.
+            </p>
+          </aside>
+        </main>
+      </div>
+    </div>
+  );
+}
+
 export default function GoldiesKDS() {
+  if (isOnlineOrderingBetaRoute()) return <OnlineOrderingBetaPage />;
+
   const displayRoute = getDisplayRoute();
   if (displayRoute === "menu") return <MenuBoardDisplay />;
   if (displayRoute === "orders") return <OrdersUpDisplay />;
@@ -5946,6 +6294,7 @@ export default function GoldiesKDS() {
   const [showCompletedToday, setShowCompletedToday] = useState(false);
   const [showOrdersByDay, setShowOrdersByDay] = useState(false);
   const [showFocusBoard, setShowFocusBoard] = useState(false);
+  const [showOnlineOrderAlertDetails, setShowOnlineOrderAlertDetails] = useState(false);
   const [showDiningOnTickets, setShowDiningOnTickets] = useState(true);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showOwnerLogin, setShowOwnerLogin] = useState(false);
@@ -6005,15 +6354,35 @@ export default function GoldiesKDS() {
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
   const [lastError, setLastError] = useState("");
   const [defaultLookupDate] = useState(() => getLocalDateInputValue());
+  function resetDashboardViews() {
+    setShowStats(false);
+    setShowTodayCount(false);
+    setShowCompletedToday(false);
+    setShowOrdersByDay(false);
+    setShowFocusBoard(false);
+    setShowSettingsMenu(false);
+    setShowDisplaysMenu(false);
+    setShowOwnerLogin(false);
+    setShowOwnerReports(false);
+    setSignedInOwner("");
+    setShowPitch(false);
+    setPitchHash("");
+    setModeHelp(null);
+    setSettingsHelp(null);
+  }
+
   const todayDateKey = getTodayDateKey();
   const scheduledCelebration = getScheduledCelebration(todayDateKey);
   const scheduledCelebrationKey = scheduledCelebration
     ? `${todayDateKey}:${scheduledCelebration.id}`
     : "";
+  const dailyUpdateKey = `${todayDateKey}:daily-update:${DAILY_UPDATE_NOTICE.id}`;
   const showCelebrationNote =
     authStatus === "login" &&
-    scheduledCelebration &&
-    hiddenCelebrationKey !== scheduledCelebrationKey;
+    ((scheduledCelebration && hiddenCelebrationKey !== scheduledCelebrationKey) ||
+      (!scheduledCelebration && hiddenCelebrationKey !== dailyUpdateKey));
+  const loginCelebration = scheduledCelebration || DAILY_UPDATE_NOTICE;
+  const loginCelebrationKey = scheduledCelebration ? scheduledCelebrationKey : dailyUpdateKey;
   const isWebServicesReminderDay = getTodayDateKey() === WEB_SERVICES_REMINDER_DATE;
   const showWebServicesReminder =
     authStatus === "authenticated" &&
@@ -6194,6 +6563,9 @@ export default function GoldiesKDS() {
 
         setAuthStatus(session.authenticated ? "authenticated" : "login");
         setSignedInEmployee(session.employeeName || "");
+        if (!session.authenticated) {
+          resetDashboardViews();
+        }
         if (!session.configured) {
           setLastError("KDS login is not configured on the backend.");
         }
@@ -6434,6 +6806,9 @@ export default function GoldiesKDS() {
       ticket.status !== "completed" &&
       hasDrinkItems(ticket)
   );
+  const pendingOnlineOrders = activeTickets
+    .filter((ticket) => ticket.status === "new" && isOnlineTicket(ticket))
+    .sort((a, b) => Number(a.createdAt || 0) - Number(b.createdAt || 0));
   const hasOpenTickets = activeTickets.length > 0;
 
   const grouped = useMemo(() => {
@@ -6632,11 +7007,10 @@ export default function GoldiesKDS() {
     setShowPasswordModal(false);
     setPasswordError("");
     setPasswordNotice("");
+    resetDashboardViews();
     setAuthStatus("login");
     setSignedInEmployee("");
     setHideWebServicesReminder(false);
-    setShowPitch(false);
-    setPitchHash("");
   }
 
   let content;
@@ -6666,6 +7040,7 @@ export default function GoldiesKDS() {
       <>
         <LoginScreen
           onLogin={(employeeName) => {
+            resetDashboardViews();
             setSignedInEmployee(employeeName);
             setAuthStatus("authenticated");
           }}
@@ -6703,8 +7078,8 @@ export default function GoldiesKDS() {
         />
         <CelebrationDialog
           open={showCelebrationNote}
-          celebration={scheduledCelebration}
-          onClose={() => setHiddenCelebrationKey(scheduledCelebrationKey)}
+          celebration={loginCelebration}
+          onClose={() => setHiddenCelebrationKey(loginCelebrationKey)}
         />
         <OwnerReportsNoticeDialog
           open={showOwnerReportsNotice}
@@ -7087,6 +7462,71 @@ export default function GoldiesKDS() {
           <div className="rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-900 px-4 py-3 font-medium">
             {passwordNotice}
           </div>
+        )}
+
+        {pendingOnlineOrders.length > 0 && (
+          <section className="overflow-hidden rounded-2xl border border-red-200 bg-red-50 shadow-[0_16px_40px_rgba(185,28,28,0.12)]">
+            <button
+              type="button"
+              onClick={() => setShowOnlineOrderAlertDetails((current) => !current)}
+              className="flex w-full flex-col gap-2 px-4 py-3 text-left sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div>
+                <div className="text-xs font-black uppercase tracking-[0.16em] text-red-700">
+                  Online pickup alert
+                </div>
+                <div className="mt-1 text-xl font-black text-red-900">
+                  {pendingOnlineOrders.length} pending online {pendingOnlineOrders.length === 1 ? "order" : "orders"}
+                </div>
+              </div>
+              <span className="rounded-xl bg-red-700 px-3 py-2 text-sm font-black text-white">
+                {showOnlineOrderAlertDetails ? "Hide details" : "Show details"}
+              </span>
+            </button>
+
+            {showOnlineOrderAlertDetails && (
+              <div className="grid gap-2 border-t border-red-200 px-4 py-3 md:grid-cols-2 xl:grid-cols-3">
+                {pendingOnlineOrders.map((ticket) => {
+                  const drinkItems = getDrinkItems(ticket);
+                  return (
+                    <div key={ticket.id} className="rounded-xl border border-red-200 bg-white px-3 py-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-lg font-black text-red-900">
+                            #{ticket.orderNumber}
+                          </div>
+                          <div className="text-sm font-bold text-red-700">
+                            Placed {formatOrderTime(ticket.createdAt)}
+                          </div>
+                        </div>
+                        <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-black text-red-800">
+                          Online
+                        </span>
+                      </div>
+                      {ticket.customerName ? (
+                        <div className="mt-2 text-sm font-black text-[#111111]">
+                          {ticket.customerName}
+                        </div>
+                      ) : null}
+                      <div className="mt-2 space-y-1.5">
+                        {drinkItems.map((item, index) => (
+                          <div key={`${ticket.id}-${item.name}-${index}`} className="rounded-lg bg-red-50 px-2.5 py-2 text-sm font-bold text-red-950">
+                            {item.qty > 1 ? `${item.qty}x ` : ""}
+                            {item.name}
+                            {item.modifiers?.length || item.note ? (
+                              <span className="block text-xs font-semibold text-red-700">
+                                {[...(item.modifiers || []), item.note].filter(Boolean).join(", ")}
+                              </span>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
         )}
 
         {!showFocusBoard && (

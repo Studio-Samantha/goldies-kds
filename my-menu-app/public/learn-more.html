@@ -268,6 +268,174 @@
         object-fit: cover;
         transition: aspect-ratio 180ms ease, object-position 180ms ease;
       }
+      .device-shot {
+        display: none;
+        width: 100%;
+        min-height: 350px;
+        border-radius: 14px;
+        background: #fffdf8;
+        color: #111;
+        overflow: hidden;
+      }
+      .device-shot.active {
+        display: block;
+      }
+      .shot-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px;
+        border-bottom: 1px solid rgba(202, 134, 43, 0.18);
+        background: rgba(238, 224, 197, 0.45);
+      }
+      .shot-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 950;
+        color: #0f4036;
+      }
+      .shot-logo {
+        display: grid;
+        width: 34px;
+        height: 34px;
+        place-items: center;
+        border-radius: 10px;
+        background: #0f4036;
+        color: #fffdf8;
+        font-size: 13px;
+      }
+      .shot-pill {
+        border-radius: 999px;
+        background: rgba(15, 64, 54, 0.1);
+        padding: 8px 10px;
+        color: #0f4036;
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+      .shot-board {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        padding: 12px;
+      }
+      .shot-col {
+        min-height: 260px;
+        border: 1px solid rgba(202, 134, 43, 0.16);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.82);
+        padding: 10px;
+      }
+      .shot-col h4 {
+        margin: 0 0 9px;
+        color: #0f4036;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      .shot-ticket {
+        margin-top: 8px;
+        border-radius: 8px;
+        background: #fff;
+        border: 1px solid rgba(15, 64, 54, 0.1);
+        padding: 9px;
+        box-shadow: 0 8px 20px rgba(45, 38, 28, 0.07);
+      }
+      .shot-ticket strong {
+        display: block;
+        color: #111;
+        font-size: 13px;
+      }
+      .shot-ticket span {
+        display: block;
+        margin-top: 4px;
+        color: #6a614f;
+        font-size: 11px;
+        font-weight: 800;
+      }
+      .phone-shot {
+        min-height: 520px;
+      }
+      .phone-shot .shot-board {
+        grid-template-columns: 1fr;
+        padding: 10px;
+      }
+      .phone-shot .shot-col {
+        min-height: 0;
+      }
+      .monitor-shot .shot-board {
+        grid-template-columns: 1.15fr 1fr;
+      }
+      .shot-chart {
+        height: 170px;
+        border-radius: 10px;
+        background:
+          linear-gradient(180deg, transparent 74%, rgba(202, 134, 43, 0.18) 75%),
+          linear-gradient(90deg, rgba(15, 64, 54, 0.18) 8%, transparent 8% 16%, rgba(15, 64, 54, 0.34) 16% 26%, transparent 26% 36%, rgba(202, 134, 43, 0.72) 36% 50%, transparent 50% 60%, rgba(15, 64, 54, 0.52) 60% 72%, transparent 72% 82%, rgba(202, 134, 43, 0.38) 82% 92%);
+        border: 1px solid rgba(202, 134, 43, 0.18);
+      }
+      .shot-metrics {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .shot-metric {
+        border-radius: 9px;
+        background: #fff;
+        border: 1px solid rgba(15, 64, 54, 0.09);
+        padding: 10px;
+      }
+      .shot-metric strong {
+        display: block;
+        color: #0f4036;
+        font-size: 23px;
+      }
+      .shot-metric span {
+        color: #6a614f;
+        font-size: 11px;
+        font-weight: 850;
+      }
+      .tv-shot {
+        min-height: 360px;
+        background: #102f28;
+        color: #fffdf8;
+      }
+      .tv-shot .shot-topbar {
+        background: rgba(255, 253, 248, 0.08);
+        border-color: rgba(255, 255, 255, 0.12);
+      }
+      .tv-shot .shot-brand,
+      .tv-shot .shot-pill {
+        color: #fffdf8;
+      }
+      .tv-orders {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        padding: 18px;
+      }
+      .tv-order {
+        min-height: 170px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.08);
+        padding: 18px;
+      }
+      .tv-order strong {
+        display: block;
+        font-size: 34px;
+        line-height: 1;
+      }
+      .tv-order span {
+        display: block;
+        margin-top: 10px;
+        color: rgba(255, 253, 248, 0.76);
+        font-size: 15px;
+        font-weight: 800;
+      }
       .hero-product-frame.device-ipad {
         max-width: 620px;
         padding: 10px;
@@ -1850,6 +2018,26 @@
         .hero-product {
           order: -1;
         }
+        .device-shot {
+          min-height: 310px;
+        }
+        .phone-shot {
+          min-height: 470px;
+        }
+        .shot-board,
+        .monitor-shot .shot-board,
+        .tv-orders {
+          grid-template-columns: 1fr;
+        }
+        .shot-col {
+          min-height: 0;
+        }
+        .tv-order {
+          min-height: 92px;
+        }
+        .tv-order strong {
+          font-size: 28px;
+        }
         .hero-product-frame img,
         .hero-product-frame.device-monitor img,
         .hero-product-frame.device-tv img {
@@ -2022,11 +2210,76 @@
         </div>
         <div class="hero-product" aria-label="DrinkFlow KDS product visual">
           <div class="hero-product-frame device-ipad" id="hero-device-frame">
-            <img
-              id="hero-device-image"
-              src="/drinkflow-ipad-kds.png"
-              alt="DrinkFlow KDS running on an iPad at a coffee shop counter"
-            />
+            <div class="device-shot ipad-shot active" data-device-shot="ipad" role="img" aria-label="DrinkFlow KDS running on an iPad at a coffee shop counter">
+              <div class="shot-topbar">
+                <div class="shot-brand"><span class="shot-logo">DF</span><span>Kitchen Display</span></div>
+                <span class="shot-pill">Focus Board</span>
+              </div>
+              <div class="shot-board">
+                <div class="shot-col">
+                  <h4>New Tickets</h4>
+                  <div class="shot-ticket"><strong>#128 Mia</strong><span>Latte · Oat · Vanilla</span></div>
+                  <div class="shot-ticket"><strong>#129 Walk-up</strong><span>Cold Brew · Cream</span></div>
+                </div>
+                <div class="shot-col">
+                  <h4>Making</h4>
+                  <div class="shot-ticket"><strong>#126 Sam</strong><span>London Fog · Honey</span></div>
+                  <div class="shot-ticket"><strong>#127 Pickup</strong><span>2x Smoothies</span></div>
+                </div>
+                <div class="shot-col">
+                  <h4>Ready</h4>
+                  <div class="shot-ticket"><strong>#125 Alex</strong><span>Matcha Latte</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="device-shot phone-shot" data-device-shot="phone" role="img" aria-label="DrinkFlow KDS running on a phone for quick counter checks">
+              <div class="shot-topbar">
+                <div class="shot-brand"><span class="shot-logo">DF</span><span>Phone View</span></div>
+                <span class="shot-pill">Touch</span>
+              </div>
+              <div class="shot-board">
+                <div class="shot-col">
+                  <h4>Next Drinks</h4>
+                  <div class="shot-ticket"><strong>#128 Mia</strong><span>Latte · Oat · Vanilla</span></div>
+                  <div class="shot-ticket"><strong>#129 Walk-up</strong><span>Cold Brew · Cream</span></div>
+                  <div class="shot-ticket"><strong>#130 Bank pickup</strong><span>Cappuccino · 7:45 AM</span></div>
+                  <div class="shot-ticket"><strong>#131 Eli</strong><span>Chai Latte</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="device-shot monitor-shot" data-device-shot="monitor" role="img" aria-label="DrinkFlow owner dashboard running on a monitor at a drink counter">
+              <div class="shot-topbar">
+                <div class="shot-brand"><span class="shot-logo">DF</span><span>Owner Reports</span></div>
+                <span class="shot-pill">Today</span>
+              </div>
+              <div class="shot-board">
+                <div class="shot-col">
+                  <h4>Hourly Volume</h4>
+                  <div class="shot-chart" aria-hidden="true"></div>
+                  <div class="shot-metrics">
+                    <div class="shot-metric"><strong>34%</strong><span>2+ drink orders</span></div>
+                    <div class="shot-metric"><strong>1.4</strong><span>avg drinks/order</span></div>
+                  </div>
+                </div>
+                <div class="shot-col">
+                  <h4>Owner Read</h4>
+                  <div class="shot-ticket"><strong>Rush window</strong><span>9 AM is the strongest drink hour.</span></div>
+                  <div class="shot-ticket"><strong>Prep focus</strong><span>Coffee is leading the drink mix today.</span></div>
+                  <div class="shot-ticket"><strong>Export</strong><span>CSV · Excel · PDF</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="device-shot tv-shot" data-device-shot="tv" role="img" aria-label="DrinkFlow customer orders display running on a TV">
+              <div class="shot-topbar">
+                <div class="shot-brand"><span class="shot-logo">DF</span><span>Orders Up</span></div>
+                <span class="shot-pill">Customer Display</span>
+              </div>
+              <div class="tv-orders">
+                <div class="tv-order"><strong>#125</strong><span>Alex · Matcha Latte</span></div>
+                <div class="tv-order"><strong>#126</strong><span>Sam · London Fog</span></div>
+                <div class="tv-order"><strong>#127</strong><span>Pickup · Smoothies</span></div>
+              </div>
+            </div>
           </div>
           <div class="hero-product-caption" aria-label="Supported screens">
             <button class="active" type="button" data-device="ipad">iPad</button>
@@ -2921,27 +3174,18 @@
       const leadForm = document.getElementById("lead-form");
       const leadStatus = document.getElementById("lead-status");
       const heroDeviceFrame = document.getElementById("hero-device-frame");
-      const heroDeviceImage = document.getElementById("hero-device-image");
       const heroDeviceNote = document.getElementById("hero-device-note");
       const heroDevices = {
         ipad: {
-          image: "/drinkflow-ipad-kds.png",
-          alt: "DrinkFlow KDS running on an iPad at a coffee shop counter",
           note: "Use an iPad near the bar when staff need fast touch controls for moving tickets.",
         },
         phone: {
-          image: "/drinkflow-ipad-kds.png",
-          alt: "DrinkFlow KDS running on a phone for quick counter checks",
           note: "Use a phone for quick checks, owner review, or a tiny counter setup when space is tight.",
         },
         monitor: {
-          image: "/drinkflow-screen-setup.png",
-          alt: "DrinkFlow KDS running on a monitor at a drink counter",
           note: "Use a monitor for a shared back-counter board while staff control tickets from another device.",
         },
         tv: {
-          image: "/drinkflow-screen-setup.png",
-          alt: "DrinkFlow KDS running on a TV display for the whole team",
           note: "Use a TV as the big readable board, then move tickets from an iPad, phone, mouse, or remote.",
         },
       };
@@ -2950,15 +3194,16 @@
         button.addEventListener("click", () => {
           const device = button.dataset.device;
           const option = heroDevices[device];
-          if (!option || !heroDeviceFrame || !heroDeviceImage || !heroDeviceNote) return;
+          if (!option || !heroDeviceFrame || !heroDeviceNote) return;
 
           document.querySelectorAll("[data-device]").forEach((toggle) => {
             toggle.classList.toggle("active", toggle === button);
           });
+          document.querySelectorAll("[data-device-shot]").forEach((shot) => {
+            shot.classList.toggle("active", shot.dataset.deviceShot === device);
+          });
 
           heroDeviceFrame.className = `hero-product-frame device-${device}`;
-          heroDeviceImage.src = option.image;
-          heroDeviceImage.alt = option.alt;
           heroDeviceNote.textContent = option.note;
         });
       });

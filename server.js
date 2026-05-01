@@ -56,6 +56,22 @@ const OWNER_SESSION_COOKIE_NAME = "goldies_owner_session";
 const SESSION_MAX_AGE_MS = 1000 * 60 * 60 * 12;
 const KDS_PASSWORD_SETTING_KEY = "kds_password";
 const OWNER_PASSWORD_SETTING_KEY = "owner_password";
+const SQUARE_API_VERSION = process.env.SQUARE_API_VERSION || "2025-04-16";
+const ONLINE_ORDERING_BETA_MENU = [
+  { id: "latte", name: "Latte", category: "Coffee", priceCents: 575 },
+  { id: "americano", name: "Americano", category: "Coffee", priceCents: 425 },
+  { id: "cold-brew", name: "Cold Brew", category: "Coffee", priceCents: 550 },
+  { id: "cappuccino", name: "Cappuccino", category: "Coffee", priceCents: 525 },
+  { id: "london-fog", name: "London Fog", category: "Not Coffee", priceCents: 575 },
+  { id: "chai-latte", name: "Chai Latte", category: "Not Coffee", priceCents: 575 },
+  { id: "matcha-latte", name: "Matcha Latte", category: "Not Coffee", priceCents: 625 },
+  { id: "strawberry-banana", name: "Strawberry Banana", category: "Smoothies", priceCents: 700 },
+  { id: "chocolate-pb-banana", name: "Chocolate P/B Banana", category: "Smoothies", priceCents: 700 },
+  { id: "green-smoothie", name: "Green Smoothie", category: "Smoothies", priceCents: 700 },
+];
+const ONLINE_ORDERING_BETA_MENU_BY_ID = new Map(
+  ONLINE_ORDERING_BETA_MENU.map((item) => [item.id, item])
+);
 
 if (!SQUARE_ACCESS_TOKEN) {
   console.error("ERROR: SQUARE_ACCESS_TOKEN environment variable is required");
@@ -181,6 +197,61 @@ function cleanLeadList(value, maxItems = 12, maxItemLength = 80) {
     .map((item) => cleanLeadText(item, maxItemLength))
     .filter(Boolean)
     .slice(0, maxItems);
+}
+
+function getFirstCorsOrigin() {
+  return (
+    CORS_ORIGIN.split(",")
+      .map((origin) => origin.trim())
+      .find(Boolean) || ""
+  );
+}
+
+function getOnlineOrderingReturnUrl(req) {
+  const envOrigin = process.env.FRONTEND_ORIGIN || getFirstCorsOrigin();
+  const requestOrigin = String(req.get("origin") || "").trim();
+  const origin = envOrigin || (requestOrigin.startsWith("http") ? requestOrigin : "") || "https://goldieskds.com";
+  return `${origin.replace(/\/+$/, "")}/online-ordering-beta?ordered=1`;
+}
+
+function getSquareRestBaseUrl() {
+  return SQUARE_ENVIRONMENT === "sandbox"
+    ? "https://connect.squareupsandbox.com"
+    : "https://connect.squareup.com";
+}
+
+function formatMoney(cents) {
+  return `$${(Number(cents || 0) / 100).toFixed(2)}`;
+}
+
+function cleanOrderText(value, maxLength = 240) {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLength);
+}
+
+function buildOnlineOrderingBetaLineItems(rawItems) {
+  if (!Array.isArray(rawItems)) return [];
+
+  return rawItems
+    .map((rawItem) => {
+      const menuItem = ONLINE_ORDERING_BETA_MENU_BY_ID.get(String(rawItem?.id || ""));
+      const quantity = Math.min(10, Math.max(0, Number.parseInt(rawItem?.qty, 10) || 0));
+      if (!menuItem || quantity <= 0) return null;
+
+      return {
+        name: menuItem.name,
+        quantity: String(quantity),
+        base_price_money: {
+          amount: menuItem.priceCents,
+          currency: "USD",
+        },
+        note: menuItem.category,
+      };
+    })
+    .filter(Boolean)
+    .slice(0, 20);
 }
 
 console.log("Initializing Square client...");
@@ -558,6 +629,9 @@ async function getCustomerOrdersUp() {
       id: ticket.id,
       orderNumber: ticket.orderNumber || ticket.id,
       customerName: ticket.customerName || "",
+      diningOption: ticket.diningOption || "Pickup",
+      source: ticket.source || "Square",
+      isOnlineOrder: isOnlineOrderTicket(ticket),
       items: getDisplayDrinkItems(ticket),
       status: "Ready",
       readyAt: ticket.updatedAt || ticket.createdAt || null,
@@ -579,12 +653,26 @@ async function getCustomerOrdersUp() {
       id: ticket.id,
       orderNumber: ticket.orderNumber || ticket.id,
       customerName: ticket.customerName || "",
+      diningOption: ticket.diningOption || "Pickup",
+      source: ticket.source || "Square",
+      isOnlineOrder: isOnlineOrderTicket(ticket),
       items: getDisplayDrinkItems(ticket),
       status: "Picked up",
       completedAt: ticket.completedAt || ticket.updatedAt || null,
     }));
 
   return { ready, recentlyCompleted, updatedAt: new Date().toISOString() };
+}
+
+function isOnlineOrderTicket(ticket = {}) {
+  const source = String(ticket.source || "").toLowerCase();
+  const rawOrder = ticket.rawOrder || ticket.raw_order || {};
+  const rawSource = String(rawOrder.source?.name || "").toLowerCase();
+  const drinkflowSource = String(
+    rawOrder.metadata?.drinkflow_source || rawOrder.metadata?.drinkflowSource || ""
+  ).toLowerCase();
+
+  return source.includes("online order") || rawSource.includes("drinkflow online") || drinkflowSource.includes("online");
 }
 
 function isPickupDriveThruTicket(ticket = {}) {
@@ -1481,6 +1569,22 @@ function getSquareOrderStatus(order) {
   return "new";
 }
 
+function getSquareOrderSourceLabel(order = {}) {
+  const sourceName = String(order.source?.name || order.sourceName || order.source_name || "").trim();
+  const drinkflowSource = String(
+    order.metadata?.drinkflow_source || order.metadata?.drinkflowSource || ""
+  ).toLowerCase();
+
+  if (
+    drinkflowSource.includes("online_ordering") ||
+    sourceName.toLowerCase().includes("drinkflow online")
+  ) {
+    return "Online order";
+  }
+
+  return sourceName || "Square Register";
+}
+
 function getDiningOption(order) {
   const fulfillment = order.fulfillments?.[0] || {};
   const type = String(fulfillment.type || "").toUpperCase();
@@ -1715,7 +1819,7 @@ async function normalizeSquareOrder(order, payment = null) {
     customerName: await getSquareCustomerName(order),
     employeeName: await getSquareEmployeeName(order, payment),
     createdAt: new Date(order.createdAt || Date.now()).getTime(),
-    source: "Square Register",
+    source: getSquareOrderSourceLabel(order),
     status: "new",
     diningOption: getDiningOption(order),
     items,
@@ -1738,7 +1842,7 @@ function ticketFromDb(order, items = []) {
     employeeName: order.employee_name || order.raw_order?.employeeName || "",
     createdAt: new Date(order.created_at).getTime(),
     completedAt: order.updated_at ? new Date(order.updated_at).getTime() : null,
-    source: order.source || "Square Register",
+    source: order.source || getSquareOrderSourceLabel(order.raw_order || {}),
     status: sanitizeStatus(order.status),
     diningOption: storedDiningOption || rawDiningOption || "",
     items: items.map((item) => ({
@@ -3892,6 +3996,97 @@ app.get("/api/display/online-orders", requireKdsAuth, async (_req, res) => {
     });
   } catch (error) {
     console.error("Error fetching online orders display:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/beta/online-order/checkout", async (req, res) => {
+  try {
+    const customerName = cleanOrderText(req.body?.customerName, 80);
+    const pickupTime = cleanOrderText(req.body?.pickupTime, 80);
+    const notes = cleanOrderText(req.body?.notes, 300);
+    const lineItems = buildOnlineOrderingBetaLineItems(req.body?.items);
+
+    if (!customerName) {
+      return res.status(400).json({ error: "Pickup name is required." });
+    }
+
+    if (!lineItems.length) {
+      return res.status(400).json({ error: "Choose at least one drink." });
+    }
+
+    const pickupNote = [
+      "DrinkFlow online ordering beta",
+      pickupTime ? `Requested pickup: ${pickupTime}` : "",
+      notes ? `Customer notes: ${notes}` : "",
+    ]
+      .filter(Boolean)
+      .join(" | ");
+
+    const squareResponse = await fetch(
+      `${getSquareRestBaseUrl()}/v2/online-checkout/payment-links`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${SQUARE_ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+          "Square-Version": SQUARE_API_VERSION,
+        },
+        body: JSON.stringify({
+          idempotency_key: crypto.randomUUID(),
+          order: {
+            location_id: SQUARE_LOCATION_ID,
+            source: {
+              name: "DrinkFlow Online Beta",
+            },
+            line_items: lineItems,
+            fulfillments: [
+              {
+                type: "PICKUP",
+                state: "PROPOSED",
+                pickup_details: {
+                  recipient: {
+                    display_name: customerName,
+                  },
+                  schedule_type: "ASAP",
+                  note: pickupNote,
+                },
+              },
+            ],
+            metadata: {
+              drinkflow_source: "online_ordering_beta",
+              customer_name: customerName,
+              pickup_time: pickupTime,
+            },
+          },
+          checkout_options: {
+            allow_tipping: true,
+            ask_for_shipping_address: false,
+            redirect_url: getOnlineOrderingReturnUrl(req),
+          },
+        }),
+      }
+    );
+
+    const payload = await squareResponse.json().catch(() => ({}));
+
+    if (!squareResponse.ok) {
+      console.error("Square checkout link error:", JSON.stringify(payload));
+      return res.status(502).json({
+        error: "Square checkout could not be created.",
+        details: payload?.errors?.[0]?.detail || payload?.errors?.[0]?.code || "",
+      });
+    }
+
+    const paymentLink = payload.payment_link || {};
+    res.json({
+      ok: true,
+      checkoutUrl: paymentLink.url,
+      paymentLinkId: paymentLink.id || "",
+      orderId: paymentLink.order_id || "",
+    });
+  } catch (error) {
+    console.error("Error creating online ordering beta checkout:", error);
     res.status(500).json({ error: error.message });
   }
 });
