@@ -6246,24 +6246,18 @@ export default function GoldiesKDS() {
                   <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-[#CA862B]/22 bg-white p-1.5 shadow-[0_18px_45px_rgba(15,64,54,0.16)]">
                     <a
                       href="/goldies-menu"
-                      target="_blank"
-                      rel="noreferrer"
                       className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
                     >
                       Menu Board
                     </a>
                     <a
                       href="/orders-up"
-                      target="_blank"
-                      rel="noreferrer"
                       className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
                     >
                       Orders Up
                     </a>
                     <a
                       href="/drive-thru"
-                      target="_blank"
-                      rel="noreferrer"
                       className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
                     >
                       Drive Thru
