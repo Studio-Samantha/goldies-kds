@@ -5247,7 +5247,6 @@ export default function GoldiesKDS() {
 
   const {
     isFullscreen: isDashboardFullscreen,
-    fullscreenMessage: dashboardFullscreenMessage,
     toggleFullscreen: toggleDashboardFullscreen,
   } = useFullscreenMode();
   const isDemoRoute = isDemoTrainingRoute();
@@ -6072,23 +6071,6 @@ export default function GoldiesKDS() {
           darkMode={themeMode === "dark"}
           demoMode={isDemoRoute}
         />
-        {isDashboardFullscreen && (
-          <div className="fixed right-3 top-3 z-40 sm:right-4 sm:top-4">
-            <button
-              type="button"
-              onClick={handleDashboardFullscreen}
-              aria-label="Exit full screen"
-              className="grid h-10 w-10 place-items-center rounded-full border border-white/24 bg-[#0F4036]/90 text-lg font-black leading-none text-white shadow-[0_16px_44px_rgba(15,64,54,0.22)] backdrop-blur-md transition hover:bg-[#0b352d] sm:h-11 sm:w-11"
-            >
-              X
-            </button>
-            {dashboardFullscreenMessage && (
-              <div className="mt-2 max-w-[190px] rounded-2xl bg-white/92 px-3 py-2 text-xs font-semibold text-[#0F4036] shadow-lg">
-                {dashboardFullscreenMessage}
-              </div>
-            )}
-          </div>
-        )}
       <div className="relative z-10">
       <header className="relative z-40 border-b border-white/70 bg-[rgba(255,253,248,0.9)] backdrop-blur-xl px-4 md:px-6 py-4 shadow-[0_12px_30px_rgba(15,64,54,0.06)]">
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
