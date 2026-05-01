@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.7.9";
+const APP_VERSION = "v1.7.10";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -24,8 +24,18 @@ const SETTINGS_HELP_TEXT =
 const DINING_OPTIONS = ["For here", "To go", "Pickup", "Delivery", "Drive thru"];
 const RELEASE_NOTES = [
   {
-    version: "v1.7.9",
+    version: "v1.7.10",
     date: "Current build",
+    summary: "Clarified monthly and annual pricing.",
+    items: [
+      "The Learn More page now shows DrinkFlow KDS as $6.99/month or $60/year.",
+      "DrinkFlow Lite pricing now makes the discounted $25/year option clearer beside $2.99/month.",
+      "The savings copy now compares monthly and annual plans more accurately.",
+    ],
+  },
+  {
+    version: "v1.7.9",
+    date: "Previous build",
     summary: "Added drink details to the Orders Up display.",
     items: [
       "Orders Up now shows the order number, customer name when available, and drink-only item details.",
