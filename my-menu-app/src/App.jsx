@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.7.8";
+const APP_VERSION = "v1.7.9";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -24,8 +24,18 @@ const SETTINGS_HELP_TEXT =
 const DINING_OPTIONS = ["For here", "To go", "Pickup", "Delivery", "Drive thru"];
 const RELEASE_NOTES = [
   {
-    version: "v1.7.8",
+    version: "v1.7.9",
     date: "Current build",
+    summary: "Added drink details to the Orders Up display.",
+    items: [
+      "Orders Up now shows the order number, customer name when available, and drink-only item details.",
+      "The customer display keeps non-drink retail and food items off the pickup screen.",
+      "Ready and recently picked-up orders both use the customer-safe drink summary.",
+    ],
+  },
+  {
+    version: "v1.7.8",
+    date: "Previous build",
     summary: "Added an owner reports example to the case study.",
     items: [
       "The Goldie's case study now shows an example Drink Revenue Dashboard.",
@@ -62,7 +72,7 @@ const RELEASE_NOTES = [
     items: [
       "The dashboard now has quick buttons for a branded menu board and a customer orders-up display.",
       "The menu board shows Goldie's Coffee, Not Coffee, and Smoothies sections with prices from Square when available.",
-      "The customer display shows ready order numbers without exposing customer names or full ticket details.",
+      "The customer display shows ready order numbers and can be expanded into a customer-safe pickup board.",
       "DrinkFlow marketing now includes customer-facing display boards as an a la carte enhancement.",
     ],
   },
@@ -4778,6 +4788,55 @@ function MenuBoardDisplay() {
   );
 }
 
+function CustomerOrderDetails({ order, darkMode = false, compact = false }) {
+  const items = Array.isArray(order.items) ? order.items : [];
+  const nameClass = darkMode ? "text-[#FFF7EA]" : "text-[#2D261C]";
+  const detailClass = darkMode ? "text-[#FFF7EA]/68" : "text-[#6A614F]";
+
+  return (
+    <div className="min-w-0">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <strong className={`text-xl font-semibold leading-none tracking-normal sm:text-2xl ${nameClass}`}>
+          Order {order.orderNumber}
+        </strong>
+        {order.customerName ? (
+          <span className={`min-w-0 text-base font-medium sm:text-lg ${detailClass}`}>
+            {order.customerName}
+          </span>
+        ) : null}
+      </div>
+      <div className={`mt-3 grid gap-2 ${compact ? "" : "sm:grid-cols-2"}`}>
+        {items.length ? (
+          items.map((item, index) => (
+            <div
+              key={`${order.id}-${item.name}-${index}`}
+              className={`rounded-2xl border px-3 py-2 ${
+                darkMode
+                  ? "border-white/10 bg-white/8"
+                  : "border-[#0F4036]/10 bg-[#FFFDF8]"
+              }`}
+            >
+              <div className={`text-base font-semibold leading-tight ${nameClass}`}>
+                {item.qty > 1 ? `${item.qty}x ` : ""}
+                {item.name}
+              </div>
+              {(item.modifiers?.length || item.note) ? (
+                <div className={`mt-1 text-sm font-medium leading-snug ${detailClass}`}>
+                  {[...(item.modifiers || []), item.note].filter(Boolean).join(", ")}
+                </div>
+              ) : null}
+            </div>
+          ))
+        ) : (
+          <div className={`rounded-2xl border px-3 py-2 text-sm font-semibold ${darkMode ? "border-white/10 bg-white/8 text-[#FFF7EA]/68" : "border-[#0F4036]/10 bg-[#FFFDF8] text-[#6A614F]"}`}>
+            Drink details loading
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function OrdersUpDisplay() {
   const { themeMode, isDark, toggleTheme } = useDisplayTheme();
   const [orders, setOrders] = useState({ ready: [], recentlyCompleted: [] });
@@ -4834,8 +4893,8 @@ function OrdersUpDisplay() {
   const headingClass = isDark ? "text-[#FFF7EA]" : "text-[#0F4036]";
   const mutedClass = isDark ? "text-[#FFF7EA]/68" : "text-[#6A614F]";
   const readyTileClass = isDark
-    ? "border-[#CA862B]/22 bg-[#FFF7EA] text-[#0F4036]"
-    : "border-[#0F4036]/10 bg-[#0F4036] text-white";
+    ? "border-[#CA862B]/22 bg-[#082622] text-[#FFF7EA]"
+    : "border-[#0F4036]/10 bg-white text-[#111111]";
 
   return (
     <DisplayBackground accent="green" darkMode={isDark}>
@@ -4884,20 +4943,13 @@ function OrdersUpDisplay() {
             </div>
 
             {orders.ready.length ? (
-              <div className="grid grid-cols-2 gap-3 p-4 sm:gap-4 sm:p-5 md:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-3 p-4 sm:gap-4 sm:p-5 xl:grid-cols-2">
                 {orders.ready.map((order) => (
                   <div
                     key={order.id}
-                    className={`grid aspect-[1.18/1] min-h-[118px] place-items-center rounded-[20px] border shadow-[0_18px_50px_rgba(15,64,54,0.18)] sm:rounded-[26px] ${readyTileClass}`}
+                    className={`rounded-[20px] border p-4 shadow-[0_18px_50px_rgba(15,64,54,0.14)] sm:rounded-[26px] sm:p-5 ${readyTileClass}`}
                   >
-                    <div className="text-center">
-                      <div className={`text-[10px] font-semibold uppercase tracking-[0.16em] sm:text-xs sm:tracking-[0.18em] ${isDark ? "text-[#8B5A1D]" : "text-[#F3D39B]"}`}>
-                        Order
-                      </div>
-                      <div className="mt-1 max-w-[9ch] break-words text-4xl font-semibold leading-none tracking-normal sm:text-5xl md:text-6xl xl:text-7xl">
-                        {order.orderNumber}
-                      </div>
-                    </div>
+                    <CustomerOrderDetails order={order} darkMode={isDark} />
                   </div>
                 ))}
               </div>
@@ -4929,12 +4981,14 @@ function OrdersUpDisplay() {
                 orders.recentlyCompleted.map((order) => (
                   <div
                     key={order.id}
-                    className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-4"
+                    className="grid gap-3 px-4 py-3 sm:px-5 sm:py-4"
                   >
-                    <span className={`min-w-0 text-base font-medium sm:text-lg ${isDark ? "text-[#FFF7EA]" : "text-[#2D261C]"}`}>Order {order.orderNumber}</span>
-                    <span className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] sm:text-xs ${isDark ? "bg-[#CA862B]/18 text-[#F3D39B]" : "bg-[#0F4036]/8 text-[#0F4036]"}`}>
-                      Picked up
-                    </span>
+                    <div className="flex items-start justify-between gap-3">
+                      <CustomerOrderDetails order={order} darkMode={isDark} compact />
+                      <span className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] sm:text-xs ${isDark ? "bg-[#CA862B]/18 text-[#F3D39B]" : "bg-[#0F4036]/8 text-[#0F4036]"}`}>
+                        Picked up
+                      </span>
+                    </div>
                   </div>
                 ))
               ) : (

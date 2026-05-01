@@ -557,6 +557,8 @@ async function getCustomerOrdersUp() {
     .map((ticket) => ({
       id: ticket.id,
       orderNumber: ticket.orderNumber || ticket.id,
+      customerName: ticket.customerName || "",
+      items: getDisplayDrinkItems(ticket),
       status: "Ready",
       readyAt: ticket.updatedAt || ticket.createdAt || null,
     }));
@@ -576,6 +578,8 @@ async function getCustomerOrdersUp() {
     .map((ticket) => ({
       id: ticket.id,
       orderNumber: ticket.orderNumber || ticket.id,
+      customerName: ticket.customerName || "",
+      items: getDisplayDrinkItems(ticket),
       status: "Picked up",
       completedAt: ticket.completedAt || ticket.updatedAt || null,
     }));
@@ -2239,6 +2243,17 @@ async function getDrinkReport(range = "today") {
 
 function ticketHasDrinkItem(ticket) {
   return (ticket.items || []).some((item) => getItemDrinkCategory(item));
+}
+
+function getDisplayDrinkItems(ticket) {
+  return (ticket.items || [])
+    .filter((item) => getItemDrinkCategory(item))
+    .map((item) => ({
+      name: item.name || "Drink",
+      qty: Number(item.qty || item.quantity || 1) || 1,
+      modifiers: Array.isArray(item.modifiers) ? item.modifiers.filter(Boolean) : [],
+      note: item.note || "",
+    }));
 }
 
 function getMakingDurationFromEvents(events, start, end) {
