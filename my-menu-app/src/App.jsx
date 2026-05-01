@@ -2194,10 +2194,12 @@ function TicketCard({
             </button>
           ))}
 
-          {previousStatus && !compact && (
+          {previousStatus && (
             <button
               onClick={() => onStatusChange(ticket.id, previousStatus)}
-              className="rounded-xl px-4 py-2 font-black transition bg-white border border-[#CA862B]/24 text-[#0F4036] hover:bg-[#EEE0C5]/45"
+              className={`rounded-xl font-black transition bg-white border border-[#CA862B]/24 text-[#0F4036] hover:bg-[#EEE0C5]/45 ${
+                compact ? "px-3 py-2 text-sm" : "px-4 py-2"
+              }`}
             >
               Back
             </button>
