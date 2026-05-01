@@ -587,6 +587,37 @@ async function getCustomerOrdersUp() {
   return { ready, recentlyCompleted, updatedAt: new Date().toISOString() };
 }
 
+function isPickupDriveThruTicket(ticket = {}) {
+  const option = String(ticket.diningOption || "").trim().toLowerCase();
+  return option.includes("pickup") || option.includes("drive");
+}
+
+async function getDriveThruDisplay() {
+  const active = await getActiveTickets();
+  const displayStatuses = new Set(["new", "making", "ready"]);
+
+  const orders = active
+    .filter(
+      (ticket) =>
+        displayStatuses.has(ticket.status) &&
+        ticketHasDrinkItem(ticket) &&
+        isPickupDriveThruTicket(ticket)
+    )
+    .sort((a, b) => Number(a.createdAt || 0) - Number(b.createdAt || 0))
+    .map((ticket) => ({
+      id: ticket.id,
+      orderNumber: ticket.orderNumber || ticket.id,
+      customerName: ticket.customerName || "",
+      diningOption: ticket.diningOption || "Pickup",
+      status: ticket.status,
+      createdAt: ticket.createdAt || null,
+      updatedAt: ticket.updatedAt || ticket.createdAt || null,
+      items: getDisplayDrinkItems(ticket),
+    }));
+
+  return { orders, updatedAt: new Date().toISOString() };
+}
+
 function sanitizeStatus(status) {
   return VALID_STATUSES.has(status) ? status : "new";
 }
@@ -3816,6 +3847,20 @@ app.get("/api/display/orders-up", requireKdsAuth, async (_req, res) => {
     });
   } catch (error) {
     console.error("Error fetching customer orders display:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/display/drive-thru", requireKdsAuth, async (_req, res) => {
+  try {
+    const display = await getDriveThruDisplay();
+    res.json({
+      ok: true,
+      shopName: "Goldie's Coffee & Goods",
+      ...display,
+    });
+  } catch (error) {
+    console.error("Error fetching drive thru display:", error);
     res.status(500).json({ error: error.message });
   }
 });

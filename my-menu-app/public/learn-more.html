@@ -222,7 +222,7 @@
       .hero-stats {
         display: grid;
         gap: 10px;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         max-width: 640px;
         margin-top: 28px;
       }
@@ -901,8 +901,8 @@
       }
       .lite-demo-grid {
         margin-top: 30px;
-        grid-template-columns: minmax(0, 0.56fr) minmax(360px, 1fr);
-        align-items: center;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: stretch;
       }
       .lite-demo-list {
         display: grid;
@@ -957,6 +957,116 @@
       .lite-screen .ticket-actions button.primary-action {
         background: var(--green);
         color: #fff;
+      }
+      .tier-compare-card {
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        gap: 16px;
+      }
+      .tier-compare-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-top: 18px;
+      }
+      .tier-compare-card.featured {
+        border-color: rgba(202, 134, 43, 0.28);
+        background: linear-gradient(180deg, #fffdf8, #fff7ea);
+      }
+      .tier-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .tier-price {
+        border-radius: 999px;
+        background: rgba(15, 64, 54, 0.08);
+        color: var(--green);
+        padding: 8px 10px;
+        font-size: 13px;
+        font-weight: 950;
+        white-space: nowrap;
+      }
+      .tier-visual {
+        border: 1px solid rgba(15, 64, 54, 0.1);
+        border-radius: 8px;
+        background: #fff;
+        padding: 12px;
+      }
+      .tier-visual-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: var(--green);
+        font-size: 13px;
+        font-weight: 950;
+      }
+      .mini-board {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .mini-board-lane {
+        min-height: 112px;
+        border: 1px solid rgba(15, 64, 54, 0.1);
+        border-radius: 8px;
+        background: rgba(246, 239, 225, 0.42);
+        padding: 8px;
+      }
+      .mini-board-lane strong {
+        display: block;
+        color: var(--green);
+        font-size: 11px;
+      }
+      .mini-ticket {
+        margin-top: 7px;
+        border-radius: 7px;
+        background: #fff;
+        padding: 7px;
+        color: var(--ink);
+        font-size: 11px;
+        font-weight: 850;
+        line-height: 1.35;
+      }
+      .mini-owner-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .mini-owner-metric {
+        border: 1px solid rgba(15, 64, 54, 0.1);
+        border-radius: 8px;
+        background: rgba(246, 239, 225, 0.48);
+        padding: 10px;
+      }
+      .mini-owner-metric span {
+        display: block;
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 850;
+        text-transform: uppercase;
+      }
+      .mini-owner-metric strong {
+        display: block;
+        margin-top: 4px;
+        color: var(--green);
+        font-size: 20px;
+      }
+      .tier-checks {
+        display: grid;
+        gap: 8px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .tier-checks li {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.74);
+        color: var(--muted);
+        padding: 10px 12px;
+        font-weight: 800;
       }
       .pricing {
         background: var(--green);
@@ -1032,6 +1142,47 @@
         color: inherit;
         opacity: 0.78;
         line-height: 1.6;
+      }
+      .billing-toggle {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+        margin-top: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 8px;
+        padding: 5px;
+      }
+      .price-card.featured .billing-toggle {
+        border-color: rgba(15, 64, 54, 0.14);
+      }
+      .billing-toggle button {
+        min-height: 36px;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 950;
+      }
+      .billing-toggle button.active {
+        background: #fff;
+        color: var(--green);
+      }
+      .price-card.featured .billing-toggle button.active {
+        background: var(--green);
+        color: #fff;
+      }
+      .savings-line {
+        display: inline-flex;
+        margin-top: 10px;
+        border-radius: 999px;
+        background: rgba(202, 134, 43, 0.2);
+        padding: 6px 10px;
+        color: inherit;
+        font-size: 12px;
+        font-weight: 950;
       }
       .price-card details {
         margin-top: 14px;
@@ -1540,7 +1691,7 @@
         .proof-inner {
           transform: translateY(-18px);
         }
-        .features, .showcase-grid, .price-grid, .onboarding-grid, .customer-grid, .setup-grid, .comparison-grid, .comparison-savings, .proof-inner, .faq-grid, .support-card-inner, .founder-grid, .founder-points, .case-proof-inner, .lite-demo-grid, .a-la-carte-grid, .theme-grid {
+        .features, .showcase-grid, .price-grid, .onboarding-grid, .customer-grid, .setup-grid, .comparison-grid, .comparison-savings, .proof-inner, .faq-grid, .support-card-inner, .founder-grid, .founder-points, .case-proof-inner, .lite-demo-grid, .a-la-carte-grid, .theme-grid, .tier-compare-grid {
           grid-template-columns: 1fr;
         }
         .setup-photo img {
@@ -1560,6 +1711,9 @@
           grid-template-columns: 1fr;
         }
         .lite-toolbar {
+          grid-template-columns: 1fr;
+        }
+        .mini-board {
           grid-template-columns: 1fr;
         }
         .lane {
@@ -1656,6 +1810,7 @@
             <div class="hero-stat"><strong>Live</strong><span>Square&reg; order board</span></div>
             <div class="hero-stat"><strong>PDF</strong><span>Owner reports</span></div>
             <div class="hero-stat"><strong>Free</strong><span>Board-only coming soon</span></div>
+            <div class="hero-stat"><strong>Pickup</strong><span>Customer order boards</span></div>
           </div>
         </div>
         <div class="hero-product" aria-label="DrinkFlow KDS product visual">
@@ -1753,7 +1908,7 @@
             </div>
             <div class="setup-note">
               <strong>Customer-facing options</strong>
-              <span>Add a menu board or orders-up screen when the pickup counter needs its own display.</span>
+              <span>Add a menu board, orders-up screen, or pickup/drive-thru board when the counter needs its own customer display.</span>
             </div>
             <div class="setup-note">
               <strong>Flexible control</strong>
@@ -2100,7 +2255,7 @@
           Free is coming soon for simple Square&reg; drink shops. Lite keeps the regular dashboard without
           the Owner Portal. KDS adds owner reports, branding, user options, and custom-domain setup.
           Lite and KDS both have monthly plans, with a small annual discount for shops that prefer one bill.
-          Customer-facing menu boards and orders-up screens can be added later when the front counter needs them.
+          Customer-facing menu boards, orders-up screens, and pickup/drive-thru boards can be added later when the front counter needs them.
         </p>
         <div class="grid price-grid">
           <article class="price-card">
@@ -2124,8 +2279,12 @@
           <article class="price-card">
             <h3>DrinkFlow Lite</h3>
             <span class="price-tag">Hosted by DrinkFlow</span>
-            <div class="price">$2.99 <small>/ month</small></div>
-            <p>Or $25/year. Annual saves about $11/year.</p>
+            <div class="price" data-price="lite">$2.99 <small>/ month</small></div>
+            <div class="billing-toggle" aria-label="DrinkFlow Lite billing">
+              <button class="active" type="button" data-billing-target="lite" data-billing="monthly">Monthly</button>
+              <button type="button" data-billing-target="lite" data-billing="annual">Annual</button>
+            </div>
+            <div class="savings-line" data-savings="lite">Annual saves about 30%.</div>
             <p>For counters that want the regular dashboard but do not need owner reports.</p>
             <details>
               <summary>What&apos;s included</summary>
@@ -2145,8 +2304,12 @@
           <article class="price-card featured">
             <h3>DrinkFlow KDS</h3>
             <span class="price-tag">Custom domain included</span>
-            <div class="price">$6.99 <small>/ month</small></div>
-            <p>Or $60/year for a discounted annual plan. Annual saves about $24/year.</p>
+            <div class="price" data-price="kds">$6.99 <small>/ month</small></div>
+            <div class="billing-toggle" aria-label="DrinkFlow KDS billing">
+              <button class="active" type="button" data-billing-target="kds" data-billing="monthly">Monthly</button>
+              <button type="button" data-billing-target="kds" data-billing="annual">Annual</button>
+            </div>
+            <div class="savings-line" data-savings="kds">Annual saves about 28%.</div>
             <p>The full setup: polished KDS, branded login, custom domain, owner reports, and drink analytics.</p>
             <details open>
               <summary>What&apos;s included</summary>
@@ -2156,7 +2319,7 @@
                 <li>Hourly volume, average drinks, and 2+ drink order rate</li>
                 <li>CSV, Excel, and branded PDF reports</li>
                 <li>Branded login, custom categories, and custom domain setup</li>
-                <li>Optional customer-facing boards, including drink-detail pickup screens</li>
+                <li>Optional customer-facing boards, including menu, orders-up, and pickup/drive-thru screens</li>
               </ul>
             </details>
           </article>
@@ -2170,7 +2333,7 @@
               <ul>
                 <li>Small updates start at $25</li>
                 <li>Medium or larger features are priced before work starts</li>
-                <li>Menu boards and pickup displays can show order numbers, customer names when available, and drink-only details</li>
+                <li>Menu boards, orders-up screens, and pickup/drive-thru displays can show order numbers, customer names when available, and drink-only details</li>
                 <li>Custom visual themes can use Studio Samantha artwork</li>
                 <li>Source-code handoff can be discussed separately later</li>
               </ul>
@@ -2210,7 +2373,7 @@
           <div class="grid a-la-carte-grid" aria-label="A la carte examples">
             <div class="a-la-carte-item">
               <strong>Customer displays</strong>
-              <span>Add a branded menu board, an orders-up screen, or a pickup display with drink-only order details.</span>
+              <span>Add a branded menu board, an orders-up screen, or a pickup/drive-thru display with drink-only order details.</span>
             </div>
             <div class="a-la-carte-item">
               <strong>New reports</strong>
@@ -2243,6 +2406,59 @@
               Lite keeps the staff dashboard: columns, actions, settings, and a hosted screen.
               The Owner Portal and exports stay in the full KDS tier.
             </p>
+            <div class="grid tier-compare-grid">
+              <article class="card tier-compare-card">
+                <div class="tier-head">
+                  <div>
+                    <h3>Lite</h3>
+                    <p>Dashboard only.</p>
+                  </div>
+                  <span class="tier-price">$2.99/mo</span>
+                </div>
+                <div class="tier-visual">
+                  <div class="tier-visual-title">
+                    <span>Staff board</span>
+                    <span>No Owner Portal</span>
+                  </div>
+                  <div class="mini-board">
+                    <div class="mini-board-lane"><strong>New</strong><div class="mini-ticket">#104<br />Latte, Chai</div></div>
+                    <div class="mini-board-lane"><strong>Making</strong><div class="mini-ticket">#103<br />Matcha</div></div>
+                    <div class="mini-board-lane"><strong>Ready</strong><div class="mini-ticket">#102<br />Americano</div></div>
+                  </div>
+                </div>
+                <ul class="tier-checks">
+                  <li>Live columns and ticket actions</li>
+                  <li>Settings, theme, training, and support tools</li>
+                  <li>No reports, exports, or custom domain</li>
+                </ul>
+              </article>
+              <article class="card tier-compare-card featured">
+                <div class="tier-head">
+                  <div>
+                    <h3>KDS</h3>
+                    <p>Dashboard plus owner layer.</p>
+                  </div>
+                  <span class="tier-price">$6.99/mo</span>
+                </div>
+                <div class="tier-visual">
+                  <div class="tier-visual-title">
+                    <span>Owner Portal</span>
+                    <span>Reports</span>
+                  </div>
+                  <div class="mini-owner-grid">
+                    <div class="mini-owner-metric"><span>Revenue</span><strong>$482</strong></div>
+                    <div class="mini-owner-metric"><span>Avg drinks</span><strong>1.8</strong></div>
+                    <div class="mini-owner-metric"><span>2+ drinks</span><strong>34%</strong></div>
+                    <div class="mini-owner-metric"><span>Peak</span><strong>9 AM</strong></div>
+                  </div>
+                </div>
+                <ul class="tier-checks">
+                  <li>Owner analytics and daily guidance</li>
+                  <li>CSV, Excel, and branded PDF reports</li>
+                  <li>Custom domain, branding, and optional displays</li>
+                </ul>
+              </article>
+            </div>
             <div class="lite-demo-list">
               <span>Regular KDS dashboard</span>
               <span>No Owner Portal access</span>
@@ -2429,6 +2645,51 @@
     <script>
       const leadForm = document.getElementById("lead-form");
       const leadStatus = document.getElementById("lead-status");
+      const pricingPlans = {
+        lite: {
+          monthly: {
+            price: "$2.99",
+            suffix: "/ month",
+            savings: "Annual saves about 30%.",
+          },
+          annual: {
+            price: "$25",
+            suffix: "/ year",
+            savings: "Save about $11 compared with monthly.",
+          },
+        },
+        kds: {
+          monthly: {
+            price: "$6.99",
+            suffix: "/ month",
+            savings: "Annual saves about 28%.",
+          },
+          annual: {
+            price: "$60",
+            suffix: "/ year",
+            savings: "Save about $24 compared with monthly.",
+          },
+        },
+      };
+
+      document.querySelectorAll("[data-billing-target]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const target = button.dataset.billingTarget;
+          const billing = button.dataset.billing;
+          const plan = pricingPlans[target]?.[billing];
+          const priceNode = document.querySelector(`[data-price="${target}"]`);
+          const savingsNode = document.querySelector(`[data-savings="${target}"]`);
+
+          if (!plan || !priceNode || !savingsNode) return;
+
+          document.querySelectorAll(`[data-billing-target="${target}"]`).forEach((toggle) => {
+            toggle.classList.toggle("active", toggle === button);
+          });
+
+          priceNode.innerHTML = `${plan.price} <small>${plan.suffix}</small>`;
+          savingsNode.textContent = plan.savings;
+        });
+      });
 
       if (leadForm && leadStatus) {
         leadForm.addEventListener("submit", async (event) => {

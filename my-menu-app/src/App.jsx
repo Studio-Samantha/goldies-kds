@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.8.1";
+const APP_VERSION = "v1.8.2";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -24,8 +24,18 @@ const SETTINGS_HELP_TEXT =
 const DINING_OPTIONS = ["For here", "To go", "Pickup", "Delivery", "Drive thru"];
 const RELEASE_NOTES = [
   {
-    version: "v1.8.1",
+    version: "v1.8.2",
     date: "Current build",
+    summary: "Added a drive-thru display path.",
+    items: [
+      "The dashboard now has a Displays menu with Menu Board, Orders Up, and Drive Thru links.",
+      "The new display only shows Pickup and Drive thru drink orders.",
+      "The display uses simple status labels, drink details, and car graphics so customers can read it at a glance.",
+    ],
+  },
+  {
+    version: "v1.8.1",
+    date: "Previous build",
     summary: "Cleaned up wording across the app.",
     items: [
       "App labels, public pages, survey wording, policy copy, and release notes got a consistency pass.",
@@ -4534,6 +4544,7 @@ function getDisplayRoute() {
   const path = window.location.pathname.replace(/\/+$/, "");
   if (path === "/goldies-menu" || path === "/menu-board") return "menu";
   if (path === "/orders-up" || path === "/customer-orders") return "orders";
+  if (path === "/drive-thru" || path === "/drive-thru-board") return "drive-thru";
   return "";
 }
 
@@ -5061,10 +5072,178 @@ function OrdersUpDisplay() {
   );
 }
 
+function DriveThruCarIcon({ ready = false }) {
+  return (
+    <svg viewBox="0 0 120 64" aria-hidden="true" className="h-12 w-24 shrink-0">
+      <path
+        d="M19 42h7l8-16c2-4 6-7 11-7h29c5 0 9 3 12 7l8 16h7c4 0 7 3 7 7v5H12v-5c0-4 3-7 7-7Z"
+        fill="none"
+        stroke={ready ? "#0F4036" : "#CA862B"}
+        strokeWidth="5"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M39 41h42l-6-12H45l-6 12Z"
+        fill={ready ? "rgba(15,64,54,0.12)" : "rgba(202,134,43,0.16)"}
+        stroke={ready ? "#0F4036" : "#CA862B"}
+        strokeWidth="4"
+        strokeLinejoin="round"
+      />
+      <circle cx="35" cy="54" r="7" fill="#FFFDF8" stroke={ready ? "#0F4036" : "#CA862B"} strokeWidth="5" />
+      <circle cx="86" cy="54" r="7" fill="#FFFDF8" stroke={ready ? "#0F4036" : "#CA862B"} strokeWidth="5" />
+    </svg>
+  );
+}
+
+function getDriveThruStatusCopy(status) {
+  if (status === "ready") return { label: "Ready", helper: "Pick up", ready: true };
+  if (status === "making") return { label: "Making", helper: "At the bar", ready: false };
+  return { label: "Received", helper: "In line", ready: false };
+}
+
+function DriveThruDisplay() {
+  const { themeMode, isDark, toggleTheme } = useDisplayTheme();
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function refreshDriveThru() {
+      try {
+        const response = await fetch(apiUrl("/api/display/drive-thru"), {
+          credentials: "include",
+        });
+
+        if (response.status === 401) {
+          throw new Error("Sign in to the KDS on this device first.");
+        }
+        if (!response.ok) {
+          throw new Error(`Drive thru display unavailable: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (!mounted) return;
+        setOrders(data.orders || []);
+        setError("");
+      } catch (displayError) {
+        if (!mounted) return;
+        setError(displayError.message || "Drive thru display unavailable");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    refreshDriveThru();
+    const interval = setInterval(refreshDriveThru, 5000);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  const cardClass = isDark
+    ? "border-white/12 bg-[#082622] shadow-[0_24px_70px_rgba(0,0,0,0.22)]"
+    : "border-[#0F4036]/10 bg-white shadow-[0_24px_70px_rgba(15,64,54,0.12)]";
+  const headingClass = isDark ? "text-[#FFF7EA]" : "text-[#0F4036]";
+  const mutedClass = isDark ? "text-[#FFF7EA]/68" : "text-[#6A614F]";
+
+  return (
+    <DisplayBackground accent="green" darkMode={isDark}>
+      <DisplayBackButton />
+      <FullscreenButton darkMode={isDark} />
+      <DisplayThemeButton themeMode={themeMode} onToggle={toggleTheme} darkMode={isDark} />
+      <div className="mx-auto flex min-h-[calc(100vh-32px)] max-w-[1500px] flex-col gap-3 sm:min-h-[calc(100vh-44px)] md:gap-4">
+        <header className="overflow-hidden rounded-[20px] border border-[#0F4036]/14 bg-[#0F4036] text-white shadow-[0_20px_60px_rgba(15,64,54,0.18)] sm:rounded-[26px]">
+          <div className="grid gap-3 p-3 sm:grid-cols-[auto_1fr_auto] sm:items-center sm:p-4 md:gap-4 md:p-5">
+            <div className="grid h-14 w-14 place-items-center rounded-[16px] bg-white shadow-[0_14px_36px_rgba(0,0,0,0.16)] sm:h-16 sm:w-16 sm:rounded-[18px] md:h-20 md:w-20 md:rounded-[22px]">
+              <img
+                src={LOGO_URL}
+                alt="Goldie's Coffee & Goods"
+                className="max-h-10 max-w-10 object-contain sm:max-h-12 sm:max-w-12 md:max-h-14 md:max-w-14"
+              />
+            </div>
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F3D39B] sm:text-xs sm:tracking-[0.24em]">
+                Pickup & Drive Thru
+              </div>
+              <h1 className="mt-1 text-3xl font-semibold tracking-normal sm:text-4xl md:text-6xl">
+                Order Board
+              </h1>
+            </div>
+            <div className="hidden justify-self-end rounded-full border border-white/16 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/82 md:block">
+              Watch for your order
+            </div>
+          </div>
+        </header>
+        <DisplayStatus error={error} />
+
+        {orders.length ? (
+          <main className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {orders.map((order) => {
+              const statusCopy = getDriveThruStatusCopy(order.status);
+              return (
+                <section
+                  key={order.id}
+                  className={`rounded-[18px] border p-4 sm:rounded-[24px] sm:p-5 ${cardClass}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className={`text-[11px] font-semibold uppercase tracking-[0.16em] ${statusCopy.ready ? "text-[#0F4036]" : "text-[#8B5A1D]"}`}>
+                        {statusCopy.helper}
+                      </div>
+                      <h2 className={`mt-1 text-3xl font-semibold leading-none tracking-normal sm:text-4xl ${headingClass}`}>
+                        Order {order.orderNumber}
+                      </h2>
+                      {order.customerName ? (
+                        <div className={`mt-2 text-lg font-semibold ${mutedClass}`}>
+                          {order.customerName}
+                        </div>
+                      ) : null}
+                    </div>
+                    <DriveThruCarIcon ready={statusCopy.ready} />
+                  </div>
+
+                  <div className={`mt-4 rounded-2xl border px-3 py-2 text-sm font-black uppercase tracking-[0.14em] ${
+                    statusCopy.ready
+                      ? "border-[#0F4036]/18 bg-[#0F4036]/8 text-[#0F4036]"
+                      : "border-[#CA862B]/24 bg-[#CA862B]/10 text-[#8B5A1D]"
+                  }`}>
+                    {statusCopy.label}
+                  </div>
+
+                  <div className="mt-3">
+                    <CustomerOrderDetails order={order} darkMode={isDark} compact />
+                  </div>
+                </section>
+              );
+            })}
+          </main>
+        ) : (
+          <main className={`grid flex-1 place-items-center rounded-[18px] border p-6 text-center sm:rounded-[24px] ${cardClass}`}>
+            <div>
+              <DriveThruCarIcon />
+              <h2 className={`mt-4 text-3xl font-semibold tracking-normal sm:text-5xl ${headingClass}`}>
+                {loading ? "Checking orders" : "No pickup orders yet"}
+              </h2>
+              <p className={`mt-3 text-base font-medium sm:text-lg ${mutedClass}`}>
+                Pickup and drive-thru drink orders will show here.
+              </p>
+            </div>
+          </main>
+        )}
+      </div>
+    </DisplayBackground>
+  );
+}
+
 export default function GoldiesKDS() {
   const displayRoute = getDisplayRoute();
   if (displayRoute === "menu") return <MenuBoardDisplay />;
   if (displayRoute === "orders") return <OrdersUpDisplay />;
+  if (displayRoute === "drive-thru") return <DriveThruDisplay />;
 
   const {
     isFullscreen: isDashboardFullscreen,
@@ -5109,6 +5288,7 @@ export default function GoldiesKDS() {
   const [modeHelp, setModeHelp] = useState(null);
   const [settingsHelp, setSettingsHelp] = useState(null);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [showDisplaysMenu, setShowDisplaysMenu] = useState(false);
   const [hiddenCelebrationKey, setHiddenCelebrationKey] = useState(() => {
     if (typeof window === "undefined") return "";
 
@@ -5874,7 +6054,10 @@ export default function GoldiesKDS() {
             : ""
         }`}
         style={{ ...themeStyle, ...trainingThemeStyle }}
-        onClick={() => setShowSettingsMenu(false)}
+        onClick={() => {
+          setShowSettingsMenu(false);
+          setShowDisplaysMenu(false);
+        }}
       >
         <div
           aria-hidden="true"
@@ -5989,7 +6172,10 @@ export default function GoldiesKDS() {
                 <div className="flex items-center gap-1.5 rounded-2xl border border-[#CA862B]/14 bg-white/75 px-1.5 py-1 shadow-sm">
                   <button
                     type="button"
-                    onClick={() => setShowSettingsMenu((current) => !current)}
+                    onClick={() => {
+                      setShowDisplaysMenu(false);
+                      setShowSettingsMenu((current) => !current);
+                    }}
                     className="rounded-xl border border-transparent bg-transparent px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
                   >
                     Settings
@@ -6061,23 +6247,48 @@ export default function GoldiesKDS() {
                 Square Dashboard
               </a>
 
-              <a
-                href="/goldies-menu"
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
-              >
-                Menu Board
-              </a>
+              <div className="relative" onClick={(event) => event.stopPropagation()}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSettingsMenu(false);
+                    setShowDisplaysMenu((current) => !current);
+                  }}
+                  className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
+                  aria-expanded={showDisplaysMenu}
+                >
+                  Displays
+                </button>
 
-              <a
-                href="/orders-up"
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
-              >
-                Orders Up
-              </a>
+                {showDisplaysMenu && (
+                  <div className="absolute right-0 top-full z-20 mt-2 w-56 overflow-hidden rounded-2xl border border-[#CA862B]/22 bg-white p-1.5 shadow-[0_18px_45px_rgba(15,64,54,0.16)]">
+                    <a
+                      href="/goldies-menu"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
+                    >
+                      Menu Board
+                    </a>
+                    <a
+                      href="/orders-up"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
+                    >
+                      Orders Up
+                    </a>
+                    <a
+                      href="/drive-thru"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
+                    >
+                      Drive Thru
+                    </a>
+                  </div>
+                )}
+              </div>
 
               <button
                 type="button"

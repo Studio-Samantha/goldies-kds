@@ -36,6 +36,14 @@
       "destination": "/index.html"
     },
     {
+      "source": "/drive-thru",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/drive-thru-board",
+      "destination": "/index.html"
+    },
+    {
       "source": "/case-study/goldies",
       "destination": "/case-study-goldies.html"
     },
