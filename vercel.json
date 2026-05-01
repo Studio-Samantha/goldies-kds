@@ -68,6 +68,14 @@
       "destination": "/index.html"
     },
     {
+      "source": "/self-order-kiosk",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/kiosk",
+      "destination": "/index.html"
+    },
+    {
       "source": "/case-study/goldies",
       "destination": "/case-study-goldies.html"
     },

@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.9.1";
+const APP_VERSION = "v1.9.2";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -27,14 +27,26 @@ const DAILY_UPDATE_NOTICE = {
   eyebrow: "KDS update",
   title: "What changed today",
   message:
-    "Online Ordering Beta now has cleaner drink rules and the first Self Order Kiosk path.",
+    "Online Ordering Beta and the first Self Order Kiosk path are cleaner now.",
   note:
-    "For-here-only drinks stay off online ordering, hot or iced choices are separated from drink additions, and the kiosk beta uses the same order engine for future in-shop ordering.",
+    "For-here-only drinks stay off customer ordering, hot/iced and size choices are separated from drink additions, Online Orders only shows online pickup orders, and Orders Up labels Online versus In person.",
 };
 const RELEASE_NOTES = [
   {
-    version: "v1.9.1",
+    version: "v1.9.2",
     date: "Current build",
+    summary: "Tightened customer ordering and display routing.",
+    items: [
+      "Self Order Kiosk now has a direct app route.",
+      "Online Orders display now filters to true online pickup orders only.",
+      "Orders Up keeps a clear Online or In person label on customer-facing order cards.",
+      "Mixed Square modifier lists are separated into Temperature, Size, and Drink additions for customer ordering.",
+      "The public pages now reflect online ordering, kiosk beta, and a la carte customer-facing display options.",
+    ],
+  },
+  {
+    version: "v1.9.1",
+    date: "Previous build",
     summary: "Cleaned up drink choices and added a kiosk beta path.",
     items: [
       "Online Ordering Beta now removes for-here-only espresso, gibraltar, and pour over drinks.",
@@ -5060,17 +5072,12 @@ function getDemoDriveThruDisplay() {
 
 function getDemoOnlineOrdersDisplay() {
   return getDemoDisplayTickets()
-    .filter((ticket) => {
-      const option = String(ticket.diningOption || "").toLowerCase();
-      return (
-        ["new", "making", "ready"].includes(ticket.status) &&
-        hasDrinkItems(ticket) &&
-        (option.includes("pickup") || option.includes("drive") || option.includes("to go"))
-      );
-    })
+    .filter((ticket) => ["new", "making", "ready"].includes(ticket.status) && hasDrinkItems(ticket))
+    .slice(0, 3)
     .map((ticket) => ({
       ...ticketToCustomerDisplayOrder(ticket),
       source: "Online Pickup Beta",
+      isOnlineOrder: true,
     }));
 }
 

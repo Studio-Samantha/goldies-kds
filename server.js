@@ -417,6 +417,24 @@ function isSizeModifierGroup(group = {}) {
   return /\b(size|oz|ounce|ounces|small|large|medium)\b/.test(text);
 }
 
+function isTemperatureOption(option = {}) {
+  const text = normalizeCatalogLabel(option.name);
+  return text === "hot" || text === "iced" || text === "ice";
+}
+
+function isHotOption(option = {}) {
+  return normalizeCatalogLabel(option.name) === "hot";
+}
+
+function isSizeOption(option = {}) {
+  return Boolean(getCatalogSizeToken(option.name));
+}
+
+function isServiceOption(option = {}) {
+  const text = normalizeCatalogLabel(option.name).replace(/[^a-z0-9]+/g, " ").trim();
+  return text === "here" || text === "to go" || text === "togo" || text === "for here";
+}
+
 function getOnlineOrderingDrinkRule(itemName = "") {
   const text = normalizeCatalogLabel(itemName);
   if (
@@ -497,34 +515,70 @@ function filterModifierGroupsForVariation(modifierGroups, itemName, variationNam
       const groupSize = getCatalogSizeToken(group.name);
       return !groupSize || !variationSize || groupSize === variationSize;
     })
-    .map((group) => {
-      const temperatureGroup = isTemperatureModifierGroup(group);
-      const sizeGroup = isSizeModifierGroup(group);
-      const role = temperatureGroup ? "temperature" : sizeGroup ? "size" : "addition";
-      let options = group.options || [];
-      if (temperatureGroup) {
-        hasTemperatureGroup = true;
-        if (drinkRule.temperature === "hot") {
-          options = options.filter((option) => /\bhot\b/.test(normalizeCatalogLabel(option.name)));
+    .flatMap((group) => {
+      const options = (group.options || []).filter((option) => !isServiceOption(option));
+      const temperatureOptions = options.filter(isTemperatureOption);
+      const filteredTemperatureOptions =
+          drinkRule.temperature === "hot" ? temperatureOptions.filter(isHotOption) : temperatureOptions;
+      const sizeOptions = options.filter(isSizeOption);
+      const additionOptions = options.filter(
+        (option) => !isTemperatureOption(option) && !isSizeOption(option)
+      );
+
+      if (temperatureOptions.length || sizeOptions.length) {
+        const splitGroups = [];
+
+        if (filteredTemperatureOptions.length && !hasTemperatureGroup) {
+          hasTemperatureGroup = true;
+          splitGroups.push({
+            ...group,
+            id: `${group.id}-temperature`,
+            role: "temperature",
+            options: filteredTemperatureOptions,
+            required: ["choice", "hot"].includes(drinkRule.temperature),
+            minSelected: ["choice", "hot"].includes(drinkRule.temperature) ? 1 : 0,
+            maxSelected: 1,
+            selectionType: "single",
+          });
         }
+
+        if (sizeOptions.length > 1) {
+          splitGroups.push({
+            ...group,
+            id: `${group.id}-size`,
+            role: "size",
+            options: sizeOptions,
+            required: true,
+            minSelected: 1,
+            maxSelected: 1,
+            selectionType: "single",
+          });
+        }
+
+        if (additionOptions.length) {
+          splitGroups.push({
+            ...group,
+            id: `${group.id}-additions`,
+            role: "addition",
+            options: additionOptions,
+            required: false,
+            minSelected: 0,
+            maxSelected: 0,
+            selectionType: "multiple",
+          });
+        }
+
+        return splitGroups;
       }
 
       return {
         ...group,
-        role,
+        role: "addition",
         options,
-        required:
-          Number(group.minSelected || 0) > 0 ||
-          (temperatureGroup && ["choice", "hot"].includes(drinkRule.temperature)),
-        minSelected:
-          temperatureGroup && ["choice", "hot"].includes(drinkRule.temperature)
-            ? Math.max(1, Number(group.minSelected || 0))
-            : group.minSelected,
-        maxSelected: temperatureGroup || sizeGroup ? 1 : group.maxSelected,
-        selectionType:
-          temperatureGroup || sizeGroup || Number(group.maxSelected || 0) === 1
-            ? "single"
-            : "multiple",
+        required: Number(group.minSelected || 0) > 0,
+        minSelected: group.minSelected,
+        maxSelected: group.maxSelected,
+        selectionType: Number(group.maxSelected || 0) === 1 ? "single" : "multiple",
       };
     })
     .filter((group) => group.options.length);
@@ -4621,7 +4675,12 @@ app.get("/api/display/online-orders", requireKdsAuth, async (_req, res) => {
     const active = await getActiveTickets();
     const displayStatuses = new Set(["new", "making", "ready"]);
     const orders = active
-      .filter((ticket) => displayStatuses.has(ticket.status) && ticketHasDrinkItem(ticket))
+      .filter(
+        (ticket) =>
+          displayStatuses.has(ticket.status) &&
+          ticketHasDrinkItem(ticket) &&
+          isOnlineOrderTicket(ticket)
+      )
       .sort((a, b) => Number(a.createdAt || 0) - Number(b.createdAt || 0))
       .map((ticket) => ({
         id: ticket.id,
@@ -4629,7 +4688,8 @@ app.get("/api/display/online-orders", requireKdsAuth, async (_req, res) => {
         customerName: ticket.customerName || "",
         diningOption: ticket.diningOption || "Pickup",
         status: ticket.status,
-        source: ticket.source || "Square",
+        source: ticket.source || "Online order",
+        isOnlineOrder: true,
         createdAt: ticket.createdAt || null,
         updatedAt: ticket.updatedAt || ticket.createdAt || null,
         items: getDisplayDrinkItems(ticket),
