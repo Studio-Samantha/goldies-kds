@@ -78,6 +78,16 @@ const ONLINE_ORDERING_BETA_MENU = [
 const ONLINE_ORDERING_BETA_MENU_BY_ID = new Map(
   ONLINE_ORDERING_BETA_MENU.map((item) => [item.id, item])
 );
+const SHOP_TIME_ZONE = "America/Chicago";
+const SHOP_HOURS = {
+  0: null,
+  1: { openHour: 7, closeHour: 15 },
+  2: { openHour: 7, closeHour: 15 },
+  3: { openHour: 7, closeHour: 15 },
+  4: { openHour: 7, closeHour: 15 },
+  5: { openHour: 7, closeHour: 15 },
+  6: { openHour: 8, closeHour: 13 },
+};
 
 if (!SQUARE_ACCESS_TOKEN) {
   console.error("ERROR: SQUARE_ACCESS_TOKEN environment variable is required");
@@ -235,6 +245,110 @@ function cleanOrderText(value, maxLength = 240) {
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, maxLength);
+}
+
+function getShopDateParts(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: SHOP_TIME_ZONE,
+    weekday: "short",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "numeric",
+    minute: "numeric",
+    hour12: false,
+  }).formatToParts(date);
+  const getPart = (type) => parts.find((part) => part.type === type)?.value || "";
+  const weekdayName = getPart("weekday");
+  const weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(weekdayName);
+  const hour = Number(getPart("hour") || 0);
+  const minute = Number(getPart("minute") || 0);
+
+  return {
+    weekday,
+    hour,
+    minute,
+    minutes: hour * 60 + minute,
+  };
+}
+
+function getShopHoursForDate(date = new Date()) {
+  const { weekday } = getShopDateParts(date);
+  return SHOP_HOURS[weekday] || null;
+}
+
+function getOnlineOrderingHoursStatus(date = new Date()) {
+  const parts = getShopDateParts(date);
+  const hours = SHOP_HOURS[parts.weekday] || null;
+
+  if (!hours) {
+    return {
+      accepting: false,
+      label: "Closed today",
+      message: "Goldie's is closed on Sundays. Online pickup ordering reopens Monday at 7:00 AM.",
+    };
+  }
+
+  const openMinute = hours.openHour * 60;
+  const closeMinute = hours.closeHour * 60;
+  const accepting =
+    parts.minutes >= openMinute && parts.minutes < closeMinute - 15;
+
+  return {
+    accepting,
+    openHour: hours.openHour,
+    closeHour: hours.closeHour,
+    label: accepting ? "Open for pickup orders" : "Outside pickup hours",
+    message: accepting
+      ? `ASAP pickup ordering is available until 15 minutes before close.`
+      : `Goldie's pickup hours today are ${hours.openHour}:00 AM-${hours.closeHour > 12 ? `${hours.closeHour - 12}:00 PM` : `${hours.closeHour}:00 AM`}.`,
+  };
+}
+
+function generatePickupSlots(date = new Date()) {
+  const now = new Date(date);
+  const first = new Date(now.getTime() + 15 * 60000);
+  first.setMinutes(Math.ceil(first.getMinutes() / 15) * 15, 0, 0);
+
+  const slots = [];
+  for (let index = 0; index < 7 * 24 * 4; index += 1) {
+    const slot = new Date(first.getTime() + index * 15 * 60000);
+    const slotParts = getShopDateParts(slot);
+    const slotHours = getShopHoursForDate(slot);
+    if (!slotHours) continue;
+    const slotMinutes = slotParts.minutes;
+    if (
+      slotMinutes < slotHours.openHour * 60 ||
+      slotMinutes > slotHours.closeHour * 60 - 15
+    ) {
+      continue;
+    }
+
+    slots.push({
+      value: slot.toISOString(),
+      label: slot.toLocaleString("en-US", {
+        weekday: slot.toDateString() === now.toDateString() ? undefined : "short",
+        hour: "numeric",
+        minute: "2-digit",
+        timeZone: SHOP_TIME_ZONE,
+      }),
+    });
+  }
+
+  return slots.slice(0, 16);
+}
+
+function isPickupTimeInsideShopHours(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+  const hours = getShopHoursForDate(date);
+  if (!hours) return false;
+  const parts = getShopDateParts(date);
+  return (
+    parts.minutes >= hours.openHour * 60 &&
+    parts.minutes <= hours.closeHour * 60 - 15 &&
+    date.getTime() > Date.now()
+  );
 }
 
 async function fetchSquareCatalogObjects(types) {
@@ -4344,12 +4458,15 @@ app.get("/api/display/online-orders", requireKdsAuth, async (_req, res) => {
 app.get("/api/beta/online-order/menu", async (_req, res) => {
   try {
     const menu = await getSquareOnlineOrderingMenu();
+    const hours = getOnlineOrderingHoursStatus();
     res.json({
       ok: true,
       source: menu.some((group) => group.items?.some((item) => item.source === "square"))
         ? "square"
         : "static",
       categories: menu,
+      hours,
+      pickupSlots: generatePickupSlots(),
       updatedAt: new Date().toISOString(),
     });
   } catch (error) {
@@ -4358,6 +4475,8 @@ app.get("/api/beta/online-order/menu", async (_req, res) => {
       ok: true,
       source: "static",
       categories: buildStaticOnlineOrderingMenu(),
+      hours: getOnlineOrderingHoursStatus(),
+      pickupSlots: generatePickupSlots(),
       updatedAt: new Date().toISOString(),
       warning: error.message,
     });
@@ -4366,6 +4485,16 @@ app.get("/api/beta/online-order/menu", async (_req, res) => {
 
 app.get("/api/beta/online-order/quote", async (req, res) => {
   try {
+    const hours = getOnlineOrderingHoursStatus();
+    if (!hours.accepting) {
+      return res.json({
+        ok: true,
+        accepting: false,
+        hours,
+        pickupSlots: generatePickupSlots(),
+      });
+    }
+
     const cartUnits = Math.min(20, Math.max(1, Number.parseInt(req.query.items, 10) || 1));
     const active = await getActiveTickets();
     const queueTickets = active.filter(
@@ -4401,6 +4530,9 @@ app.get("/api/beta/online-order/quote", async (req, res) => {
       averageLabel: makingReport.label || formatDurationSeconds(averageSeconds),
       estimatedMinutes,
       readyAt: readyAt.toISOString(),
+      accepting: true,
+      hours,
+      pickupSlots: generatePickupSlots(),
       readyTimeLabel: readyAt.toLocaleTimeString("en-US", {
         hour: "numeric",
         minute: "2-digit",
@@ -4415,8 +4547,25 @@ app.get("/api/beta/online-order/quote", async (req, res) => {
 
 app.post("/api/beta/online-order/checkout", async (req, res) => {
   try {
+    const hours = getOnlineOrderingHoursStatus();
     const customerName = cleanOrderText(req.body?.customerName, 80);
     const rawPickupTime = cleanOrderText(req.body?.pickupTime, 120);
+    const scheduledPickup = rawPickupTime.startsWith("20");
+
+    if (!hours.accepting && !scheduledPickup) {
+      return res.status(400).json({
+        error:
+          "ASAP pickup ordering is closed. Choose a scheduled pickup time during store hours.",
+      });
+    }
+
+    if (scheduledPickup && !isPickupTimeInsideShopHours(rawPickupTime)) {
+      return res.status(400).json({
+        error:
+          "Choose a pickup time during Goldie's hours: Mon-Fri 7 AM-3 PM or Saturday 8 AM-1 PM.",
+      });
+    }
+
     const pickupTime = rawPickupTime.startsWith("20")
       ? new Date(rawPickupTime).toLocaleTimeString("en-US", {
           hour: "numeric",

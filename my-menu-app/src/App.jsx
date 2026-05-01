@@ -6231,6 +6231,8 @@ function OnlineOrderingBetaPage() {
     .slice(0, 80);
   const [menuGroups, setMenuGroups] = useState(ONLINE_ORDERING_BETA_MENU);
   const [menuSource, setMenuSource] = useState("static");
+  const [orderingHours, setOrderingHours] = useState(null);
+  const [serverPickupSlots, setServerPickupSlots] = useState([]);
   const [cart, setCart] = useState([]);
   const [customerName, setCustomerName] = useState(testerName);
   const [pickupMode, setPickupMode] = useState("asap");
@@ -6256,22 +6258,7 @@ function OnlineOrderingBetaPage() {
     return sum + (baseCents + modifierCents) * item.qty;
   }, 0);
   const cartItemCount = cart.reduce((sum, item) => sum + item.qty, 0);
-  const pickupSlots = useMemo(() => {
-    const slots = [];
-    const now = new Date();
-    const first = new Date(now.getTime() + 15 * 60000);
-    first.setMinutes(Math.ceil(first.getMinutes() / 15) * 15, 0, 0);
-
-    for (let index = 0; index < 16; index += 1) {
-      const slot = new Date(first.getTime() + index * 15 * 60000);
-      slots.push({
-        value: slot.toISOString(),
-        label: slot.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
-      });
-    }
-
-    return slots;
-  }, []);
+  const pickupSlots = serverPickupSlots.length ? serverPickupSlots : [];
   const pickupTime =
     pickupMode === "scheduled"
       ? scheduledPickupTime
@@ -6289,6 +6276,8 @@ function OnlineOrderingBetaPage() {
         if (!mounted || !response.ok || !Array.isArray(data.categories)) return;
         setMenuGroups(data.categories.length ? data.categories : ONLINE_ORDERING_BETA_MENU);
         setMenuSource(data.source || "static");
+        setOrderingHours(data.hours || null);
+        setServerPickupSlots(data.pickupSlots || []);
       } catch {
         if (mounted) setMenuSource("static");
       }
@@ -6316,6 +6305,8 @@ function OnlineOrderingBetaPage() {
         const data = await response.json().catch(() => ({}));
         if (!mounted || !response.ok) return;
         setReadyQuote(data);
+        setOrderingHours(data.hours || null);
+        setServerPickupSlots(data.pickupSlots || []);
       } catch {
         if (mounted) setReadyQuote(null);
       }
@@ -6380,6 +6371,10 @@ function OnlineOrderingBetaPage() {
 
   async function createCheckout() {
     if (!cart.length || submitting) return;
+    if (pickupMode === "asap" && orderingHours && !orderingHours.accepting) {
+      setOrderError("ASAP pickup is closed. Choose a scheduled pickup time during store hours.");
+      return;
+    }
 
     setSubmitting(true);
     setOrderError("");
@@ -6445,10 +6440,15 @@ function OnlineOrderingBetaPage() {
               Choose your drink, add a pickup name, and pay through Square checkout. This test is drinks-only while the pickup workflow is being proven live.
             </p>
             <div className="mt-5 flex flex-wrap gap-2 text-xs font-black uppercase tracking-[0.16em] text-[#F3D39B]">
-              <span className="rounded-full border border-white/16 bg-white/10 px-3 py-2">7 AM-3 PM</span>
+              <span className="rounded-full border border-white/16 bg-white/10 px-3 py-2">Mon-Fri 7-3 · Sat 8-1</span>
               <span className="rounded-full border border-white/16 bg-white/10 px-3 py-2">Pickup test</span>
               <span className="rounded-full border border-white/16 bg-white/10 px-3 py-2">Square checkout</span>
             </div>
+            {orderingHours && !orderingHours.accepting ? (
+              <div className="mt-5 rounded-2xl border border-[#F3D39B]/30 bg-white/10 px-4 py-3 text-sm font-bold leading-6 text-white">
+                {orderingHours.message} You can still schedule a pickup during open hours.
+              </div>
+            ) : null}
           </div>
           <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-1">
             <div className="rounded-[2rem] border border-white/20 bg-[rgba(255,253,248,0.96)] p-4 text-[#111111] shadow-[0_30px_90px_rgba(0,0,0,0.28)]">
@@ -6645,8 +6645,10 @@ function OnlineOrderingBetaPage() {
                 }}
                 className="mt-2 w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15"
               >
-                <option value="asap">
-                  ASAP{readyQuote?.readyTimeLabel ? ` - estimated ${readyQuote.readyTimeLabel}` : ""}
+                <option value="asap" disabled={orderingHours && !orderingHours.accepting}>
+                  {orderingHours && !orderingHours.accepting
+                    ? "ASAP unavailable outside pickup hours"
+                    : `ASAP${readyQuote?.readyTimeLabel ? ` - estimated ${readyQuote.readyTimeLabel}` : ""}`}
                 </option>
                 {pickupSlots.map((slot) => (
                   <option key={slot.value} value={slot.value}>
