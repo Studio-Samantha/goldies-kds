@@ -482,7 +482,10 @@ async function getGoldiesMenuBoard() {
   const staticMenu = buildStaticMenuItems();
 
   try {
-    const catalogItems = await fetchSquareMenuCatalogItems();
+    const [catalogItems, recentPrices] = await Promise.all([
+      fetchSquareMenuCatalogItems(),
+      fetchRecentMenuPrices(),
+    ]);
     const catalogByName = new Map(
       catalogItems.map((item) => [normalizeDrinkText(item.name), item])
     );
@@ -491,7 +494,8 @@ async function getGoldiesMenuBoard() {
       ...category,
       items: category.items.map((item) => {
         const catalogItem = catalogByName.get(normalizeDrinkText(item.name));
-        const priceCents = catalogItem?.priceCents || null;
+        const priceCents =
+          catalogItem?.priceCents || recentPrices.get(normalizeDrinkText(item.name)) || null;
         return {
           ...item,
           priceCents,
@@ -503,6 +507,43 @@ async function getGoldiesMenuBoard() {
     console.error("Error building menu board from Square catalog:", error.message);
     return staticMenu;
   }
+}
+
+async function fetchRecentMenuPrices() {
+  const prices = new Map();
+  if (!supabase) return prices;
+
+  const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: orders, error } = await supabase
+    .from("kds_orders")
+    .select("raw_order")
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(250);
+
+  if (error) {
+    console.error("Error fetching recent menu prices:", error.message);
+    return prices;
+  }
+
+  for (const order of orders || []) {
+    const lineItems = order.raw_order?.lineItems || order.raw_order?.line_items || [];
+    for (const lineItem of lineItems) {
+      const name = lineItem.name || "";
+      if (!getDrinkCategory(name)) continue;
+
+      const key = normalizeDrinkText(name);
+      if (prices.has(key)) continue;
+
+      const qty = Number.parseFloat(lineItem.quantity || "1") || 1;
+      const totalCents = getLineItemAmountCents(lineItem);
+      const taxCents = getLineItemTaxCents(lineItem);
+      const unitCents = Math.round(Math.max(totalCents - taxCents, 0) / qty);
+      if (unitCents > 0) prices.set(key, unitCents);
+    }
+  }
+
+  return prices;
 }
 
 async function getCustomerOrdersUp() {

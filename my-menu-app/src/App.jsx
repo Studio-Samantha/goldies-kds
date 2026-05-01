@@ -13,7 +13,7 @@ const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
 const APP_VERSION = "v1.7.5";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
-const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v1";
+const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
 const WEB_SERVICES_REMINDER_HIDE_KEY =
   "goldies-kds-hidden-web-services-reminder";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
@@ -769,23 +769,25 @@ function OwnerReportsNoticeDialog({ open, onClose, onOpenOwnerLogin }) {
       <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)]">
         <div className="border-b border-[#CA862B]/18 bg-[#EEE0C5]/35 px-5 py-4">
           <div className="text-sm font-black uppercase tracking-[0.18em] text-[#6A614F]">
-            Owner Portal Update
+            Goldie&apos;s KDS Update
           </div>
           <h2 className="mt-1 text-2xl font-black text-[#0F4036]">
-            Downloadable reports are live
+            Reports and display boards are live
           </h2>
         </div>
 
         <div className="space-y-4 px-5 py-5 text-[#2D261C]">
           <p className="text-base leading-7">
-            Owner Reports can now download the selected view as CSV, Excel, or a branded PDF.
+            Owner Reports can download CSV, Excel, or branded PDF reports. The dashboard also has
+            new Menu Board and Orders Up buttons for customer-facing displays.
           </p>
           <div className="rounded-2xl border border-[#CA862B]/18 bg-white px-4 py-3">
             <div className="text-sm font-black text-[#0F4036]">
-              Find it in Settings
+              Where to find everything
             </div>
             <p className="mt-1 text-sm font-semibold leading-6 text-[#6A614F]">
-              Open Settings, choose Owner Login, then use Download Report in the owner portal.
+              Reports are in Settings under Owner Login. Menu Board and Orders Up are in the top
+              dashboard buttons and can be opened on a customer-facing screen.
             </p>
           </div>
 
@@ -4436,7 +4438,7 @@ function DisplayBackground({ children, accent = "gold" }) {
 
   return (
     <div
-      className="min-h-screen bg-[#FFFDF8] text-[#111111] px-4 py-5 md:px-8 md:py-7 overflow-hidden"
+      className="min-h-screen bg-[#FFFDF8] text-[#111111] px-3 py-4 sm:px-4 sm:py-5 md:px-8 md:py-7 overflow-hidden"
       style={{ backgroundImage }}
     >
       <div
@@ -4479,17 +4481,17 @@ function DisplayHeader({ eyebrow, title, subtitle }) {
 
 function DisplayStatus({ loading, error, updatedAt }) {
   return (
-    <div className="mt-5 flex flex-wrap items-center gap-3 text-sm font-black uppercase tracking-[0.16em] text-[#6A614F]">
-      <span className="rounded-full border border-[#CA862B]/18 bg-white/76 px-4 py-2 shadow-sm">
+    <div className="mt-4 flex flex-wrap items-center gap-2 text-[11px] font-black uppercase tracking-[0.14em] text-[#6A614F] sm:mt-5 sm:gap-3 sm:text-sm sm:tracking-[0.16em]">
+      <span className="rounded-full border border-[#CA862B]/18 bg-white/76 px-3 py-2 shadow-sm sm:px-4">
         {loading ? "Refreshing" : "Live display"}
       </span>
       {updatedAt && (
-        <span className="rounded-full border border-[#CA862B]/18 bg-white/76 px-4 py-2 shadow-sm">
+        <span className="rounded-full border border-[#CA862B]/18 bg-white/76 px-3 py-2 shadow-sm sm:px-4">
           Updated {new Date(updatedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
         </span>
       )}
       {error && (
-        <span className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-red-900 shadow-sm">
+        <span className="rounded-full border border-red-200 bg-red-50 px-3 py-2 text-red-900 shadow-sm sm:px-4">
           {error}
         </span>
       )}
@@ -4501,10 +4503,46 @@ function DisplayBackButton() {
   return (
     <a
       href="/"
-      className="fixed right-4 top-4 z-30 rounded-full border border-white/24 bg-[#0F4036]/88 px-4 py-2 text-sm font-semibold text-white shadow-[0_16px_44px_rgba(15,64,54,0.22)] backdrop-blur-md transition hover:bg-[#0b352d]"
+      className="fixed bottom-3 right-3 z-30 rounded-full border border-white/24 bg-[#0F4036]/90 px-3 py-2 text-xs font-semibold text-white shadow-[0_16px_44px_rgba(15,64,54,0.22)] backdrop-blur-md transition hover:bg-[#0b352d] sm:right-4 sm:top-4 sm:bottom-auto sm:px-4 sm:text-sm"
     >
       Back to KDS
     </a>
+  );
+}
+
+function FullscreenButton() {
+  const [message, setMessage] = useState("");
+
+  async function handleFullscreen() {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        setMessage("");
+        return;
+      }
+
+      await document.documentElement.requestFullscreen();
+      setMessage("");
+    } catch {
+      setMessage("Use your browser menu if full screen is blocked.");
+    }
+  }
+
+  return (
+    <div className="fixed bottom-3 left-3 z-30 sm:left-auto sm:right-32 sm:top-4 sm:bottom-auto">
+      <button
+        type="button"
+        onClick={handleFullscreen}
+        className="rounded-full border border-white/24 bg-[#0F4036]/90 px-3 py-2 text-xs font-semibold text-white shadow-[0_16px_44px_rgba(15,64,54,0.22)] backdrop-blur-md transition hover:bg-[#0b352d] sm:px-4 sm:text-sm"
+      >
+        Full screen
+      </button>
+      {message && (
+        <div className="mt-2 max-w-[190px] rounded-2xl bg-white/92 px-3 py-2 text-xs font-semibold text-[#0F4036] shadow-lg">
+          {message}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -4560,21 +4598,22 @@ function MenuBoardDisplay() {
   return (
     <DisplayBackground>
       <DisplayBackButton />
-      <div className="mx-auto flex min-h-[calc(100vh-56px)] max-w-[1500px] flex-col gap-8">
-        <header className="overflow-hidden rounded-[34px] border border-[#0F4036]/14 bg-[#0F4036] text-white shadow-[0_28px_90px_rgba(15,64,54,0.22)]">
-          <div className="grid gap-6 p-5 md:grid-cols-[auto_1fr_auto] md:items-center md:p-7">
-            <div className="grid h-24 w-24 place-items-center rounded-[28px] bg-white shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
+      <FullscreenButton />
+      <div className="mx-auto flex min-h-[calc(100vh-40px)] max-w-[1500px] flex-col gap-4 sm:min-h-[calc(100vh-56px)] sm:gap-6 md:gap-8">
+        <header className="overflow-hidden rounded-[24px] border border-[#0F4036]/14 bg-[#0F4036] text-white shadow-[0_28px_90px_rgba(15,64,54,0.22)] sm:rounded-[34px]">
+          <div className="grid gap-4 p-4 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-5 sm:p-5 md:grid-cols-[auto_1fr_auto] md:gap-6 md:p-7">
+            <div className="grid h-16 w-16 place-items-center rounded-[20px] bg-white shadow-[0_18px_50px_rgba(0,0,0,0.18)] sm:h-20 sm:w-20 sm:rounded-[24px] md:h-24 md:w-24 md:rounded-[28px]">
               <img
                 src={LOGO_URL}
                 alt="Goldie's Coffee & Goods"
-                className="max-h-16 max-w-16 object-contain"
+                className="max-h-11 max-w-11 object-contain sm:max-h-14 sm:max-w-14 md:max-h-16 md:max-w-16"
               />
             </div>
             <div>
-              <div className="text-xs font-semibold uppercase tracking-[0.3em] text-[#F3D39B]">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#F3D39B] sm:text-xs sm:tracking-[0.3em]">
                 Goldie's Coffee & Goods
               </div>
-              <h1 className="mt-2 text-5xl font-semibold tracking-normal md:text-7xl">
+              <h1 className="mt-1 text-4xl font-semibold tracking-normal sm:mt-2 sm:text-5xl md:text-7xl">
                 Drink Menu
               </h1>
             </div>
@@ -4585,14 +4624,14 @@ function MenuBoardDisplay() {
         </header>
         <DisplayStatus loading={loading} error={error} updatedAt={updatedAt} />
 
-        <main className="grid flex-1 grid-cols-1 gap-5 lg:grid-cols-3">
+        <main className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-5">
           {(menu.length ? menu : fallbackMenu).map((category) => (
             <section
               key={category.key || category.label}
-              className="flex min-h-[420px] flex-col overflow-hidden rounded-[30px] border border-[#0F4036]/10 bg-white shadow-[0_24px_70px_rgba(15,64,54,0.12)]"
+              className="flex min-h-0 flex-col overflow-hidden rounded-[22px] border border-[#0F4036]/10 bg-white shadow-[0_24px_70px_rgba(15,64,54,0.12)] sm:rounded-[30px] lg:min-h-[420px]"
             >
-              <div className="border-b border-[#0F4036]/10 bg-[#FFFDF8] px-5 py-5">
-                <h2 className="text-3xl font-semibold tracking-normal text-[#0F4036] md:text-5xl">
+              <div className="border-b border-[#0F4036]/10 bg-[#FFFDF8] px-4 py-4 sm:px-5 sm:py-5">
+                <h2 className="text-2xl font-semibold tracking-normal text-[#0F4036] sm:text-3xl md:text-5xl">
                   {category.label}
                 </h2>
               </div>
@@ -4601,12 +4640,12 @@ function MenuBoardDisplay() {
                   category.items.map((item) => (
                     <div
                       key={item.name}
-                      className="grid grid-cols-[1fr_auto] items-baseline gap-4 px-5 py-4"
+                      className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 px-4 py-3 sm:gap-4 sm:px-5 sm:py-4"
                     >
-                      <span className="text-xl font-medium leading-tight tracking-normal text-[#2D261C] md:text-2xl">
+                      <span className="min-w-0 text-lg font-medium leading-tight tracking-normal text-[#2D261C] sm:text-xl md:text-2xl">
                         {item.name}
                       </span>
-                      <span className="rounded-full bg-[#0F4036]/8 px-3 py-1 text-lg font-semibold text-[#0F4036] md:text-xl">
+                      <span className="rounded-full bg-[#0F4036]/8 px-2.5 py-1 text-base font-semibold text-[#0F4036] sm:px-3 sm:text-lg md:text-xl">
                         {item.price || "Ask"}
                       </span>
                     </div>
@@ -4675,21 +4714,22 @@ function OrdersUpDisplay() {
   return (
     <DisplayBackground accent="green">
       <DisplayBackButton />
-      <div className="mx-auto flex min-h-[calc(100vh-56px)] max-w-[1500px] flex-col gap-8">
-        <header className="overflow-hidden rounded-[34px] border border-[#0F4036]/14 bg-[#0F4036] text-white shadow-[0_28px_90px_rgba(15,64,54,0.22)]">
-          <div className="grid gap-6 p-5 md:grid-cols-[auto_1fr_auto] md:items-center md:p-7">
-            <div className="grid h-24 w-24 place-items-center rounded-[28px] bg-white shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
+      <FullscreenButton />
+      <div className="mx-auto flex min-h-[calc(100vh-40px)] max-w-[1500px] flex-col gap-4 sm:min-h-[calc(100vh-56px)] sm:gap-6 md:gap-8">
+        <header className="overflow-hidden rounded-[24px] border border-[#0F4036]/14 bg-[#0F4036] text-white shadow-[0_28px_90px_rgba(15,64,54,0.22)] sm:rounded-[34px]">
+          <div className="grid gap-4 p-4 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-5 sm:p-5 md:grid-cols-[auto_1fr_auto] md:gap-6 md:p-7">
+            <div className="grid h-16 w-16 place-items-center rounded-[20px] bg-white shadow-[0_18px_50px_rgba(0,0,0,0.18)] sm:h-20 sm:w-20 sm:rounded-[24px] md:h-24 md:w-24 md:rounded-[28px]">
               <img
                 src={LOGO_URL}
                 alt="Goldie's Coffee & Goods"
-                className="max-h-16 max-w-16 object-contain"
+                className="max-h-11 max-w-11 object-contain sm:max-h-14 sm:max-w-14 md:max-h-16 md:max-w-16"
               />
             </div>
             <div>
-              <div className="text-xs font-semibold uppercase tracking-[0.3em] text-[#F3D39B]">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#F3D39B] sm:text-xs sm:tracking-[0.3em]">
                 Goldie's Coffee & Goods
               </div>
-              <h1 className="mt-2 text-5xl font-semibold tracking-normal md:text-7xl">
+              <h1 className="mt-1 text-4xl font-semibold tracking-normal sm:mt-2 sm:text-5xl md:text-7xl">
                 Orders Up
               </h1>
             </div>
@@ -4700,34 +4740,34 @@ function OrdersUpDisplay() {
         </header>
         <DisplayStatus loading={loading} error={error} updatedAt={updatedAt} />
 
-        <main className="grid flex-1 grid-cols-1 gap-5 lg:grid-cols-[1.35fr_0.65fr]">
-          <section className="overflow-hidden rounded-[30px] border border-[#0F4036]/10 bg-white shadow-[0_24px_70px_rgba(15,64,54,0.12)]">
-            <div className="flex items-end justify-between gap-4 border-b border-[#0F4036]/10 bg-[#FFFDF8] px-5 py-5">
+        <main className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1.35fr_0.65fr] lg:gap-5">
+          <section className="overflow-hidden rounded-[22px] border border-[#0F4036]/10 bg-white shadow-[0_24px_70px_rgba(15,64,54,0.12)] sm:rounded-[30px]">
+            <div className="flex items-end justify-between gap-3 border-b border-[#0F4036]/10 bg-[#FFFDF8] px-4 py-4 sm:gap-4 sm:px-5 sm:py-5">
               <div>
-                <div className="text-sm font-semibold uppercase tracking-[0.22em] text-[#8B5A1D]">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8B5A1D] sm:text-sm sm:tracking-[0.22em]">
                   Ready now
                 </div>
-                <h2 className="mt-1 text-4xl font-semibold tracking-normal text-[#0F4036] md:text-6xl">
+                <h2 className="mt-1 text-3xl font-semibold tracking-normal text-[#0F4036] sm:text-4xl md:text-6xl">
                   Pick up
                 </h2>
               </div>
-              <div className="rounded-full bg-[#0F4036]/8 px-5 py-2 text-2xl font-semibold text-[#0F4036]">
+              <div className="rounded-full bg-[#0F4036]/8 px-4 py-2 text-xl font-semibold text-[#0F4036] sm:px-5 sm:text-2xl">
                 {orders.ready.length}
               </div>
             </div>
 
             {orders.ready.length ? (
-              <div className="grid grid-cols-2 gap-4 p-5 md:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 p-4 sm:gap-4 sm:p-5 md:grid-cols-3 xl:grid-cols-4">
                 {orders.ready.map((order) => (
                   <div
                     key={order.id}
-                    className="grid aspect-[1.18/1] place-items-center rounded-[26px] border border-[#0F4036]/10 bg-[#0F4036] text-white shadow-[0_18px_50px_rgba(15,64,54,0.18)]"
+                    className="grid aspect-[1.18/1] min-h-[118px] place-items-center rounded-[20px] border border-[#0F4036]/10 bg-[#0F4036] text-white shadow-[0_18px_50px_rgba(15,64,54,0.18)] sm:rounded-[26px]"
                   >
                     <div className="text-center">
-                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#F3D39B]">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#F3D39B] sm:text-xs sm:tracking-[0.18em]">
                         Order
                       </div>
-                      <div className="mt-1 text-5xl font-semibold tracking-normal md:text-7xl">
+                      <div className="mt-1 max-w-[9ch] break-words text-4xl font-semibold leading-none tracking-normal sm:text-5xl md:text-6xl xl:text-7xl">
                         {order.orderNumber}
                       </div>
                     </div>
@@ -4735,12 +4775,12 @@ function OrdersUpDisplay() {
                 ))}
               </div>
             ) : (
-              <div className="grid min-h-[390px] place-items-center p-5 text-center">
+              <div className="grid min-h-[260px] place-items-center p-5 text-center sm:min-h-[340px] lg:min-h-[390px]">
                 <div>
-                  <div className="text-5xl font-semibold tracking-normal text-[#0F4036] md:text-7xl">
+                  <div className="text-4xl font-semibold tracking-normal text-[#0F4036] sm:text-5xl md:text-7xl">
                     Making drinks
                   </div>
-                  <p className="mt-4 text-xl font-medium text-[#6A614F]">
+                  <p className="mt-4 text-lg font-medium text-[#6A614F] sm:text-xl">
                     Ready order numbers will show here.
                   </p>
                 </div>
@@ -4748,12 +4788,12 @@ function OrdersUpDisplay() {
             )}
           </section>
 
-          <section className="overflow-hidden rounded-[30px] border border-[#0F4036]/10 bg-white shadow-[0_24px_70px_rgba(15,64,54,0.12)]">
-            <div className="border-b border-[#0F4036]/10 bg-[#FFFDF8] px-5 py-5">
-              <div className="text-sm font-semibold uppercase tracking-[0.22em] text-[#8B5A1D]">
+          <section className="overflow-hidden rounded-[22px] border border-[#0F4036]/10 bg-white shadow-[0_24px_70px_rgba(15,64,54,0.12)] sm:rounded-[30px]">
+            <div className="border-b border-[#0F4036]/10 bg-[#FFFDF8] px-4 py-4 sm:px-5 sm:py-5">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8B5A1D] sm:text-sm sm:tracking-[0.22em]">
                 Recently picked up
               </div>
-              <h2 className="mt-1 text-3xl font-semibold tracking-normal text-[#0F4036] md:text-5xl">
+              <h2 className="mt-1 text-2xl font-semibold tracking-normal text-[#0F4036] sm:text-3xl md:text-5xl">
                 Completed
               </h2>
             </div>
@@ -4762,10 +4802,10 @@ function OrdersUpDisplay() {
                 orders.recentlyCompleted.map((order) => (
                   <div
                     key={order.id}
-                    className="flex items-center justify-between px-5 py-4"
+                    className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-4"
                   >
-                    <span className="text-lg font-medium text-[#2D261C]">Order {order.orderNumber}</span>
-                    <span className="rounded-full bg-[#0F4036]/8 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[#0F4036]">
+                    <span className="min-w-0 text-base font-medium text-[#2D261C] sm:text-lg">Order {order.orderNumber}</span>
+                    <span className="shrink-0 rounded-full bg-[#0F4036]/8 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#0F4036] sm:text-xs">
                       Picked up
                     </span>
                   </div>
