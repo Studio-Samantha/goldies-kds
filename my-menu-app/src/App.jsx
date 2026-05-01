@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.7.7";
+const APP_VERSION = "v1.7.8";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -24,8 +24,18 @@ const SETTINGS_HELP_TEXT =
 const DINING_OPTIONS = ["For here", "To go", "Pickup", "Delivery", "Drive thru"];
 const RELEASE_NOTES = [
   {
-    version: "v1.7.7",
+    version: "v1.7.8",
     date: "Current build",
+    summary: "Added an owner reports example to the case study.",
+    items: [
+      "The Goldie's case study now shows an example Drink Revenue Dashboard.",
+      "The example highlights drink revenue, peak hour, average drinks, 2+ drink order rate, hourly volume, drink mix, and report exports.",
+      "This helps explain why the Owner Portal belongs in the higher DrinkFlow KDS tier.",
+    ],
+  },
+  {
+    version: "v1.7.7",
+    date: "Previous build",
     summary: "Renamed the active-ticket mode and cleaned up full screen.",
     items: [
       "The active-ticket mode is called Focus Board so staff can quickly switch into the three-column rush layout.",
