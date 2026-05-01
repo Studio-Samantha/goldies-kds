@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.7.5";
+const APP_VERSION = "v1.7.6";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -24,8 +24,19 @@ const SETTINGS_HELP_TEXT =
 const DINING_OPTIONS = ["For here", "To go", "Pickup", "Delivery", "Drive thru"];
 const RELEASE_NOTES = [
   {
-    version: "v1.7.5",
+    version: "v1.7.6",
     date: "Current build",
+    summary: "Added a focused active-ticket board.",
+    items: [
+      "The main KDS board now shows New Tickets, Making, and Ready only.",
+      "The redundant Completed column was removed from the active board.",
+      "A Focus Board toggle near the Kitchen Display title hides the extra dashboard sections so staff can see only active ticket columns during a rush.",
+      "The dashboard keeps completed history and extra stats available outside focus mode.",
+    ],
+  },
+  {
+    version: "v1.7.5",
+    date: "Previous build",
     summary: "Added customer-facing display boards.",
     items: [
       "The dashboard now has quick buttons for a branded menu board and a customer orders-up display.",
@@ -1349,7 +1360,7 @@ function getTrainingLookupResults(tickets, dateValue) {
 const STATUS_COLUMNS = [
   {
     key: "new",
-    label: "New",
+    label: "New Tickets",
     accent: "border-t-[#0F4036]",
     badge: "bg-[#0F4036]/10 text-[#0F4036]",
   },
@@ -1364,12 +1375,6 @@ const STATUS_COLUMNS = [
     label: "Ready",
     accent: "border-t-[#2C5F52]",
     badge: "bg-[#2C5F52]/12 text-[#2C5F52]",
-  },
-  {
-    key: "completed",
-    label: "Completed",
-    accent: "border-t-[#111111]",
-    badge: "bg-[#EEE0C5] text-[#111111]",
   },
 ];
 
@@ -4922,6 +4927,7 @@ export default function GoldiesKDS() {
   const [showTodayCount, setShowTodayCount] = useState(false);
   const [showCompletedToday, setShowCompletedToday] = useState(false);
   const [showOrdersByDay, setShowOrdersByDay] = useState(false);
+  const [showFocusBoard, setShowFocusBoard] = useState(false);
   const [showDiningOnTickets, setShowDiningOnTickets] = useState(true);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showOwnerLogin, setShowOwnerLogin] = useState(false);
@@ -5404,7 +5410,10 @@ export default function GoldiesKDS() {
     ? "Training mode"
     : connectionStatus;
   const activeTickets = displayedTickets.filter(
-    (ticket) => ticket.status !== "done" && hasDrinkItems(ticket)
+    (ticket) =>
+      ticket.status !== "done" &&
+      ticket.status !== "completed" &&
+      hasDrinkItems(ticket)
   );
   const hasOpenTickets = activeTickets.length > 0;
 
@@ -5736,6 +5745,20 @@ export default function GoldiesKDS() {
               <p className="text-[#6A614F] mt-1 text-sm md:text-base">
                 {isDemoRoute ? "Fake demo orders" : "Live Square orders"}
               </p>
+
+              <div className="mt-3 inline-flex rounded-2xl border border-[#CA862B]/18 bg-white/75 p-1 shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => setShowFocusBoard((current) => !current)}
+                  className={`rounded-xl px-4 py-2 text-sm font-black transition ${
+                    showFocusBoard
+                      ? "bg-[#0F4036] text-white"
+                      : "bg-transparent text-[#0F4036] hover:bg-[#EEE0C5]/55"
+                  }`}
+                >
+                  {showFocusBoard ? "Show Full Dashboard" : "Focus Board"}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -5904,7 +5927,8 @@ export default function GoldiesKDS() {
         </div>
       </header>
 
-      <main className="p-3 md:p-4 space-y-4 max-w-[1900px] mx-auto">
+      <main className={`p-3 md:p-4 space-y-4 mx-auto ${showFocusBoard ? "max-w-none" : "max-w-[1900px]"}`}>
+        {!showFocusBoard && (
         <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
           <div className="rounded-2xl bg-[rgba(255,253,248,0.88)] border border-white/70 p-3 shadow-[0_16px_40px_rgba(15,64,54,0.08)] backdrop-blur-sm">
             <div className="flex items-start justify-between gap-3">
@@ -5999,6 +6023,7 @@ export default function GoldiesKDS() {
             }
           />
         </section>
+        )}
 
         {lastError && (
           <div className="rounded-xl bg-red-50 border border-red-100 text-red-900 px-4 py-3 font-medium">
@@ -6012,6 +6037,7 @@ export default function GoldiesKDS() {
           </div>
         )}
 
+        {!showFocusBoard && (
         <section className="space-y-2">
           <div className="flex items-center justify-between gap-3 rounded-2xl bg-[rgba(255,253,248,0.9)] border border-white/70 px-4 py-3 shadow-sm backdrop-blur-sm">
             <div>
@@ -6036,7 +6062,9 @@ export default function GoldiesKDS() {
             />
           )}
         </section>
+        )}
 
+        {!showFocusBoard && (
         <div className="flex justify-end">
           <button
             type="button"
@@ -6046,17 +6074,22 @@ export default function GoldiesKDS() {
             {showStats ? "Hide Stats" : "View Stats"}
           </button>
         </div>
+        )}
 
-        {showStats && <DrinkStats reports={displayedDrinkReports} />}
+        {!showFocusBoard && showStats && <DrinkStats reports={displayedDrinkReports} />}
 
-        <section className="grid grid-cols-1 xl:grid-cols-4 gap-3">
+        <section className={`grid grid-cols-1 gap-3 ${
+          showFocusBoard ? "xl:grid-cols-3" : "xl:grid-cols-3"
+        }`}>
           {STATUS_COLUMNS.map((column) => (
             <section
               key={column.key}
               className={`rounded-2xl bg-[rgba(255,253,248,0.9)] border border-white/70 border-t-4 ${column.accent} p-3 shadow-[0_16px_40px_rgba(15,64,54,0.08)] flex flex-col backdrop-blur-sm ${
-                hasOpenTickets
-                  ? "xl:h-[calc(100vh-300px)] xl:min-h-[380px]"
-                  : "xl:h-[220px] xl:min-h-[220px]"
+                showFocusBoard
+                  ? "min-h-[calc(100vh-190px)]"
+                  : hasOpenTickets
+                    ? "xl:min-h-[520px]"
+                    : "xl:min-h-[220px]"
               }`}
             >
               <div className="flex items-center justify-between px-1 py-1.5 mb-2 shrink-0">
@@ -6071,7 +6104,9 @@ export default function GoldiesKDS() {
                 </span>
               </div>
 
-              <div className="space-y-3 xl:overflow-y-auto xl:pr-1">
+              <div className={`space-y-3 ${
+                showFocusBoard ? "" : "xl:pr-1"
+              }`}>
                 {grouped[column.key]?.length ? (
                   grouped[column.key].map((ticket) => (
                     <TicketCard
@@ -6093,6 +6128,7 @@ export default function GoldiesKDS() {
           ))}
         </section>
 
+        {!showFocusBoard && (
         <section className="space-y-2">
           <div className="flex items-center justify-between gap-3 rounded-2xl bg-[rgba(255,253,248,0.9)] border border-white/70 px-4 py-3 shadow-sm backdrop-blur-sm">
             <div>
@@ -6114,7 +6150,9 @@ export default function GoldiesKDS() {
             <CompletedTransactions tickets={displayedCompletedTickets} />
           )}
         </section>
+        )}
 
+        {!showFocusBoard && (
         <OrdersByDayLookup
           defaultDate={defaultLookupDate}
           collapsed={!showOrdersByDay}
@@ -6122,6 +6160,7 @@ export default function GoldiesKDS() {
           trainingMode={isTrainingMode}
           trainingTickets={isTrainingMode ? displayedTickets : []}
         />
+        )}
       </main>
       </div>
 
