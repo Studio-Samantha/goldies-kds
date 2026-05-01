@@ -3865,6 +3865,52 @@ app.get("/api/display/drive-thru", requireKdsAuth, async (_req, res) => {
   }
 });
 
+app.get("/api/display/online-orders", requireKdsAuth, async (_req, res) => {
+  try {
+    const active = await getActiveTickets();
+    const displayStatuses = new Set(["new", "making", "ready"]);
+    const orders = active
+      .filter((ticket) => displayStatuses.has(ticket.status) && ticketHasDrinkItem(ticket))
+      .sort((a, b) => Number(a.createdAt || 0) - Number(b.createdAt || 0))
+      .map((ticket) => ({
+        id: ticket.id,
+        orderNumber: ticket.orderNumber || ticket.id,
+        customerName: ticket.customerName || "",
+        diningOption: ticket.diningOption || "Pickup",
+        status: ticket.status,
+        source: ticket.source || "Square",
+        createdAt: ticket.createdAt || null,
+        updatedAt: ticket.updatedAt || ticket.createdAt || null,
+        items: getDisplayDrinkItems(ticket),
+      }));
+
+    res.json({
+      ok: true,
+      shopName: "Goldie's Coffee & Goods",
+      orders,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("Error fetching online orders display:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/display/volume", requireKdsAuth, async (_req, res) => {
+  try {
+    const report = await getOwnerDrinkRevenueReport("today");
+    res.json({
+      ok: true,
+      shopName: "Goldie's Coffee & Goods",
+      report,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("Error fetching volume display:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post("/api/square-sync", requireKdsAuth, async (req, res) => {
   try {
     const squareOrders = await fetchSquareOrders();

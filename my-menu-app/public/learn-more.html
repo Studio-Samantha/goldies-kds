@@ -252,17 +252,62 @@
         z-index: 1;
       }
       .hero-product-frame {
+        width: 100%;
+        margin: 0 auto;
         overflow: hidden;
         border: 1px solid rgba(255, 255, 255, 0.18);
         border-radius: 8px;
         background: rgba(255, 255, 255, 0.08);
         box-shadow: 0 34px 100px rgba(0, 0, 0, 0.34);
+        transition: max-width 180ms ease, border-radius 180ms ease, padding 180ms ease;
       }
       .hero-product-frame img {
         display: block;
         width: 100%;
         aspect-ratio: 16 / 10;
         object-fit: cover;
+        transition: aspect-ratio 180ms ease, object-position 180ms ease;
+      }
+      .hero-product-frame.device-ipad {
+        max-width: 620px;
+        padding: 10px;
+        border-radius: 22px;
+        background: #111;
+      }
+      .hero-product-frame.device-ipad img {
+        border-radius: 14px;
+      }
+      .hero-product-frame.device-phone {
+        max-width: 310px;
+        padding: 10px;
+        border-radius: 30px;
+        background: #111;
+      }
+      .hero-product-frame.device-phone img {
+        aspect-ratio: 9 / 16;
+        border-radius: 22px;
+        object-position: 58% center;
+      }
+      .hero-product-frame.device-monitor {
+        max-width: 680px;
+        padding: 8px 8px 18px;
+        border-radius: 12px;
+        background: #15130f;
+      }
+      .hero-product-frame.device-monitor img {
+        aspect-ratio: 16 / 9;
+        border-radius: 6px;
+      }
+      .hero-product-frame.device-tv {
+        max-width: 760px;
+        padding: 7px;
+        border-radius: 8px;
+        background: #0b0a08;
+      }
+      .hero-product-frame.device-tv img {
+        aspect-ratio: 16 / 8.5;
+        border-radius: 4px;
+        object-position: center;
       }
       .hero-product-caption {
         display: flex;
@@ -270,14 +315,22 @@
         gap: 8px;
         margin-top: 12px;
       }
-      .hero-product-caption span {
+      .hero-product-caption button {
         border: 1px solid rgba(255, 255, 255, 0.18);
         border-radius: 999px;
         background: rgba(255, 255, 255, 0.1);
         color: rgba(255, 255, 255, 0.84);
+        cursor: pointer;
         padding: 7px 11px;
+        font: inherit;
         font-size: 12px;
         font-weight: 850;
+        transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
+      }
+      .hero-product-caption button.active {
+        border-color: rgba(255, 255, 255, 0.72);
+        background: #fff;
+        color: var(--green);
       }
       .screen-note {
         margin-top: 14px;
@@ -1797,8 +1850,13 @@
         .hero-product {
           order: -1;
         }
-        .hero-product-frame img {
+        .hero-product-frame img,
+        .hero-product-frame.device-monitor img,
+        .hero-product-frame.device-tv img {
           aspect-ratio: 4 / 3;
+        }
+        .hero-product-frame.device-phone img {
+          aspect-ratio: 9 / 16;
         }
         h1 {
           font-size: 40px;
@@ -1963,16 +2021,20 @@
           </div>
         </div>
         <div class="hero-product" aria-label="DrinkFlow KDS product visual">
-          <div class="hero-product-frame">
-            <img src="/drinkflow-ipad-kds.png" alt="DrinkFlow KDS running on an iPad at a coffee shop counter" />
+          <div class="hero-product-frame device-ipad" id="hero-device-frame">
+            <img
+              id="hero-device-image"
+              src="/drinkflow-ipad-kds.png"
+              alt="DrinkFlow KDS running on an iPad at a coffee shop counter"
+            />
           </div>
           <div class="hero-product-caption" aria-label="Supported screens">
-            <span>iPad</span>
-            <span>Phone</span>
-            <span>Monitor</span>
-            <span>TV display</span>
+            <button class="active" type="button" data-device="ipad">iPad</button>
+            <button type="button" data-device="phone">Phone</button>
+            <button type="button" data-device="monitor">Monitor</button>
+            <button type="button" data-device="tv">TV display</button>
           </div>
-          <p class="screen-note">
+          <p class="screen-note" id="hero-device-note">
             Runs in a browser on screens the shop already has: touch screens for control, TVs or monitors for visibility.
           </p>
         </div>
@@ -2858,6 +2920,49 @@
     <script>
       const leadForm = document.getElementById("lead-form");
       const leadStatus = document.getElementById("lead-status");
+      const heroDeviceFrame = document.getElementById("hero-device-frame");
+      const heroDeviceImage = document.getElementById("hero-device-image");
+      const heroDeviceNote = document.getElementById("hero-device-note");
+      const heroDevices = {
+        ipad: {
+          image: "/drinkflow-ipad-kds.png",
+          alt: "DrinkFlow KDS running on an iPad at a coffee shop counter",
+          note: "Use an iPad near the bar when staff need fast touch controls for moving tickets.",
+        },
+        phone: {
+          image: "/drinkflow-ipad-kds.png",
+          alt: "DrinkFlow KDS running on a phone for quick counter checks",
+          note: "Use a phone for quick checks, owner review, or a tiny counter setup when space is tight.",
+        },
+        monitor: {
+          image: "/drinkflow-screen-setup.png",
+          alt: "DrinkFlow KDS running on a monitor at a drink counter",
+          note: "Use a monitor for a shared back-counter board while staff control tickets from another device.",
+        },
+        tv: {
+          image: "/drinkflow-screen-setup.png",
+          alt: "DrinkFlow KDS running on a TV display for the whole team",
+          note: "Use a TV as the big readable board, then move tickets from an iPad, phone, mouse, or remote.",
+        },
+      };
+
+      document.querySelectorAll("[data-device]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const device = button.dataset.device;
+          const option = heroDevices[device];
+          if (!option || !heroDeviceFrame || !heroDeviceImage || !heroDeviceNote) return;
+
+          document.querySelectorAll("[data-device]").forEach((toggle) => {
+            toggle.classList.toggle("active", toggle === button);
+          });
+
+          heroDeviceFrame.className = `hero-product-frame device-${device}`;
+          heroDeviceImage.src = option.image;
+          heroDeviceImage.alt = option.alt;
+          heroDeviceNote.textContent = option.note;
+        });
+      });
+
       const pricingPlans = {
         lite: {
           monthly: {

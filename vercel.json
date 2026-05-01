@@ -44,6 +44,22 @@
       "destination": "/index.html"
     },
     {
+      "source": "/volume-board",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/drink-volume",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/online-orders",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/online-order-board",
+      "destination": "/index.html"
+    },
+    {
       "source": "/case-study/goldies",
       "destination": "/case-study-goldies.html"
     },

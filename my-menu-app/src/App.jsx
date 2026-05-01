@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.8.2";
+const APP_VERSION = "v1.8.3";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -24,8 +24,19 @@ const SETTINGS_HELP_TEXT =
 const DINING_OPTIONS = ["For here", "To go", "Pickup", "Delivery", "Drive thru"];
 const RELEASE_NOTES = [
   {
-    version: "v1.8.2",
+    version: "v1.8.3",
     date: "Current build",
+    summary: "Added service-window guidance and a volume display.",
+    items: [
+      "Owner Reports now reads Today Snapshot against Goldie's 7 AM-3 PM Central service window.",
+      "Before opening, during service, and after close now get different owner guidance.",
+      "Today pacing now mentions how far through the service window the shop is.",
+      "Displays now includes a Volume Board with hourly order volume, drink mix, average drinks, and 2+ drink rate.",
+    ],
+  },
+  {
+    version: "v1.8.2",
+    date: "Previous build",
     summary: "Added a drive-thru display path.",
     items: [
       "The dashboard now has a Displays menu with Menu Board, Orders Up, and Drive Thru links.",
@@ -3410,6 +3421,72 @@ function getOwnerRangeLabel(rangeKey) {
   );
 }
 
+const SHOP_TIME_ZONE = "America/Chicago";
+const SHOP_OPEN_HOUR = 7;
+const SHOP_CLOSE_HOUR = 15;
+
+function getShopTimeParts(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: SHOP_TIME_ZONE,
+    hour: "numeric",
+    minute: "numeric",
+    hour12: false,
+  }).formatToParts(date);
+  const hour = Number(parts.find((part) => part.type === "hour")?.value || 0);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value || 0);
+
+  return { hour, minute, minutes: hour * 60 + minute };
+}
+
+function getTodayServiceWindowRead(now = new Date()) {
+  const { minutes } = getShopTimeParts(now);
+  const openMinute = SHOP_OPEN_HOUR * 60;
+  const closeMinute = SHOP_CLOSE_HOUR * 60;
+  const serviceMinutes = closeMinute - openMinute;
+
+  if (minutes < openMinute) {
+    return {
+      phase: "before-open",
+      label: "Before open",
+      pace: "Goldie's opens at 7 AM Central and closes at 3 PM Central.",
+      action: "Use this as a pre-service check: confirm Square is syncing, then watch the first real rush after 7 AM.",
+    };
+  }
+
+  if (minutes >= closeMinute) {
+    return {
+      phase: "after-close",
+      label: "After close",
+      pace: "Goldie's service window has closed for the day: 7 AM-3 PM Central.",
+      action: "Treat today as a closed-day read now. Use the numbers for review, restock notes, and tomorrow's prep instead of live staffing moves.",
+    };
+  }
+
+  const elapsed = minutes - openMinute;
+  const remaining = closeMinute - minutes;
+  const progress = Math.max(0, Math.min(100, Math.round((elapsed / serviceMinutes) * 100)));
+  const elapsedHours = Math.floor(elapsed / 60);
+  const elapsedMinutes = elapsed % 60;
+  const remainingHours = Math.floor(remaining / 60);
+  const remainingMinutes = remaining % 60;
+  const elapsedLabel =
+    elapsedHours > 0
+      ? `${elapsedHours}h ${elapsedMinutes}m`
+      : `${elapsedMinutes}m`;
+  const remainingLabel =
+    remainingHours > 0
+      ? `${remainingHours}h ${remainingMinutes}m`
+      : `${remainingMinutes}m`;
+
+  return {
+    phase: "open",
+    label: "Open now",
+    progress,
+    pace: `Goldie's is ${progress}% through its 7 AM-3 PM Central service window, with ${elapsedLabel} served and about ${remainingLabel} left.`,
+    action: "Use this as a live service read. Compare the current pace to the time left before changing prep, staffing, or specials.",
+  };
+}
+
 const OWNER_SNAPSHOT_COPY = {
   today: {
     eyebrow: "Today Snapshot",
@@ -4547,6 +4624,8 @@ function getDisplayRoute() {
   if (path === "/goldies-menu" || path === "/menu-board") return "menu";
   if (path === "/orders-up" || path === "/customer-orders") return "orders";
   if (path === "/drive-thru" || path === "/drive-thru-board") return "drive-thru";
+  if (path === "/volume-board" || path === "/drink-volume") return "volume";
+  if (path === "/online-orders" || path === "/online-order-board") return "online-orders";
   return "";
 }
 
@@ -4670,15 +4749,111 @@ function DisplayStatus({ error }) {
 function DisplayBackButton() {
   const { isFullscreen } = useFullscreenMode();
   if (isFullscreen) return null;
+  const demoMode = isDemoTrainingRoute();
 
   return (
     <a
-      href="/"
+      href={demoMode ? "/?demo=training" : "/"}
       className="fixed bottom-3 right-3 z-30 rounded-full border border-white/24 bg-[#0F4036]/90 px-3 py-2 text-xs font-semibold text-white shadow-[0_16px_44px_rgba(15,64,54,0.22)] backdrop-blur-md transition hover:bg-[#0b352d] sm:right-4 sm:top-4 sm:bottom-auto sm:px-4 sm:text-sm"
     >
       Back to KDS
     </a>
   );
+}
+
+function getDisplayHref(path, demoMode = false) {
+  return demoMode ? `${path}?demo=training` : path;
+}
+
+function getDemoDisplayTickets() {
+  return createTrainingTickets().sort((a, b) => a.createdAt - b.createdAt);
+}
+
+function ticketToCustomerDisplayOrder(ticket) {
+  return {
+    id: ticket.id,
+    orderNumber: ticket.orderNumber || ticket.id,
+    customerName: ticket.customerName || "",
+    diningOption: ticket.diningOption || "Order",
+    status: ticket.status,
+    createdAt: ticket.createdAt || null,
+    updatedAt: ticket.completedAt || ticket.createdAt || null,
+    items: getDrinkItems(ticket).map((item) => ({
+      name: item.name || "Drink",
+      qty: Number(item.qty || 1) || 1,
+      modifiers: Array.isArray(item.modifiers) ? item.modifiers.filter(Boolean) : [],
+      note: item.note || "",
+    })),
+  };
+}
+
+function getDemoOrdersUpDisplay() {
+  const displayTickets = getDemoDisplayTickets().filter(hasDrinkItems);
+  return {
+    ready: displayTickets
+      .filter((ticket) => ticket.status === "ready")
+      .map(ticketToCustomerDisplayOrder),
+    recentlyCompleted: displayTickets
+      .filter((ticket) => ticket.status === "completed" || ticket.status === "done")
+      .map(ticketToCustomerDisplayOrder),
+  };
+}
+
+function getDemoDriveThruDisplay() {
+  return getDemoDisplayTickets()
+    .filter((ticket) => {
+      const option = String(ticket.diningOption || "").toLowerCase();
+      return (
+        ["new", "making", "ready"].includes(ticket.status) &&
+        hasDrinkItems(ticket) &&
+        (option.includes("pickup") || option.includes("drive"))
+      );
+    })
+    .map(ticketToCustomerDisplayOrder);
+}
+
+function getDemoOnlineOrdersDisplay() {
+  return getDemoDisplayTickets()
+    .filter((ticket) => {
+      const option = String(ticket.diningOption || "").toLowerCase();
+      return (
+        ["new", "making", "ready"].includes(ticket.status) &&
+        hasDrinkItems(ticket) &&
+        (option.includes("pickup") || option.includes("drive") || option.includes("to go"))
+      );
+    })
+    .map((ticket) => ({
+      ...ticketToCustomerDisplayOrder(ticket),
+      source: "Online Pickup Beta",
+    }));
+}
+
+function getDemoMenuDisplay() {
+  const groups = new Map();
+  const samplePrices = {
+    Coffee: "$5.75",
+    "Not Coffee": "$6.25",
+    Smoothies: "$7.00",
+  };
+
+  for (const ticket of getDemoDisplayTickets()) {
+    for (const item of getDrinkItems(ticket)) {
+      const category = getBeverageCategory(item.name) || "Drinks";
+      if (!groups.has(category)) groups.set(category, new Set());
+      groups.get(category).add(item.name);
+    }
+  }
+
+  return Array.from(groups.entries()).map(([label, names]) => ({
+    key: label,
+    label,
+    items: Array.from(names)
+      .sort((a, b) => a.localeCompare(b))
+      .map((name) => ({
+        name,
+        price: samplePrices[label] || "Ask",
+      })),
+  }));
 }
 
 function FullscreenButton({ darkMode = false }) {
@@ -4729,6 +4904,7 @@ function DisplayThemeButton({ themeMode, onToggle, darkMode = false }) {
 
 function MenuBoardDisplay() {
   const { themeMode, isDark, toggleTheme } = useDisplayTheme();
+  const demoMode = isDemoTrainingRoute();
   const [menu, setMenu] = useState([]);
   const [updatedAt, setUpdatedAt] = useState("");
   const [loading, setLoading] = useState(true);
@@ -4738,6 +4914,14 @@ function MenuBoardDisplay() {
     let mounted = true;
 
     async function refreshMenu() {
+      if (demoMode) {
+        setMenu(getDemoMenuDisplay());
+        setUpdatedAt(new Date().toISOString());
+        setError("");
+        setLoading(false);
+        return;
+      }
+
       try {
         const response = await fetch(apiUrl("/api/display/menu"), {
           credentials: "include",
@@ -4770,7 +4954,7 @@ function MenuBoardDisplay() {
       mounted = false;
       clearInterval(interval);
     };
-  }, []);
+  }, [demoMode]);
 
   const fallbackMenu = ["Coffee", "Not Coffee", "Smoothies"].map((label) => ({
     label,
@@ -4797,15 +4981,19 @@ function MenuBoardDisplay() {
         <header className="overflow-hidden rounded-[20px] border border-[#0F4036]/14 bg-[#0F4036] text-white shadow-[0_20px_60px_rgba(15,64,54,0.18)] sm:rounded-[26px]">
           <div className="grid gap-3 p-3 sm:grid-cols-[auto_1fr] sm:items-center sm:p-4 md:grid-cols-[auto_1fr_auto] md:gap-4 md:p-5">
             <div className="grid h-14 w-14 place-items-center rounded-[16px] bg-white shadow-[0_14px_36px_rgba(0,0,0,0.16)] sm:h-16 sm:w-16 sm:rounded-[18px] md:h-20 md:w-20 md:rounded-[22px]">
-              <img
-                src={LOGO_URL}
-                alt="Goldie's Coffee & Goods"
-                className="max-h-10 max-w-10 object-contain sm:max-h-12 sm:max-w-12 md:max-h-14 md:max-w-14"
-              />
+              {demoMode ? (
+                <DemoBrandMark size="sm" />
+              ) : (
+                <img
+                  src={LOGO_URL}
+                  alt="Goldie's Coffee & Goods"
+                  className="max-h-10 max-w-10 object-contain sm:max-h-12 sm:max-w-12 md:max-h-14 md:max-w-14"
+                />
+              )}
             </div>
             <div>
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F3D39B] sm:text-xs sm:tracking-[0.24em]">
-                Goldie's Coffee & Goods
+                {demoMode ? "DF Demo Cafe" : "Goldie's Coffee & Goods"}
               </div>
               <h1 className="mt-1 text-3xl font-semibold tracking-normal sm:text-4xl md:text-6xl">
                 Drink Menu
@@ -4909,6 +5097,7 @@ function CustomerOrderDetails({ order, darkMode = false, compact = false }) {
 
 function OrdersUpDisplay() {
   const { themeMode, isDark, toggleTheme } = useDisplayTheme();
+  const demoMode = isDemoTrainingRoute();
   const [orders, setOrders] = useState({ ready: [], recentlyCompleted: [] });
   const [updatedAt, setUpdatedAt] = useState("");
   const [loading, setLoading] = useState(true);
@@ -4918,6 +5107,14 @@ function OrdersUpDisplay() {
     let mounted = true;
 
     async function refreshOrders() {
+      if (demoMode) {
+        setOrders(getDemoOrdersUpDisplay());
+        setUpdatedAt(new Date().toISOString());
+        setError("");
+        setLoading(false);
+        return;
+      }
+
       try {
         const response = await fetch(apiUrl("/api/display/orders-up"), {
           credentials: "include",
@@ -4953,7 +5150,7 @@ function OrdersUpDisplay() {
       mounted = false;
       clearInterval(interval);
     };
-  }, []);
+  }, [demoMode]);
   const cardClass = isDark
     ? "border-white/12 bg-[#082622] shadow-[0_24px_70px_rgba(0,0,0,0.22)]"
     : "border-[#0F4036]/10 bg-white shadow-[0_24px_70px_rgba(15,64,54,0.12)]";
@@ -4975,15 +5172,19 @@ function OrdersUpDisplay() {
         <header className="overflow-hidden rounded-[20px] border border-[#0F4036]/14 bg-[#0F4036] text-white shadow-[0_20px_60px_rgba(15,64,54,0.18)] sm:rounded-[26px]">
           <div className="grid gap-3 p-3 sm:grid-cols-[auto_1fr] sm:items-center sm:p-4 md:grid-cols-[auto_1fr_auto] md:gap-4 md:p-5">
             <div className="grid h-14 w-14 place-items-center rounded-[16px] bg-white shadow-[0_14px_36px_rgba(0,0,0,0.16)] sm:h-16 sm:w-16 sm:rounded-[18px] md:h-20 md:w-20 md:rounded-[22px]">
-              <img
-                src={LOGO_URL}
-                alt="Goldie's Coffee & Goods"
-                className="max-h-10 max-w-10 object-contain sm:max-h-12 sm:max-w-12 md:max-h-14 md:max-w-14"
-              />
+              {demoMode ? (
+                <DemoBrandMark size="sm" />
+              ) : (
+                <img
+                  src={LOGO_URL}
+                  alt="Goldie's Coffee & Goods"
+                  className="max-h-10 max-w-10 object-contain sm:max-h-12 sm:max-w-12 md:max-h-14 md:max-w-14"
+                />
+              )}
             </div>
             <div>
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F3D39B] sm:text-xs sm:tracking-[0.24em]">
-                Goldie's Coffee & Goods
+                {demoMode ? "DF Demo Cafe" : "Goldie's Coffee & Goods"}
               </div>
               <h1 className="mt-1 text-3xl font-semibold tracking-normal sm:text-4xl md:text-6xl">
                 Orders Up
@@ -5105,6 +5306,7 @@ function getDriveThruStatusCopy(status) {
 
 function DriveThruDisplay() {
   const { themeMode, isDark, toggleTheme } = useDisplayTheme();
+  const demoMode = isDemoTrainingRoute();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -5113,6 +5315,13 @@ function DriveThruDisplay() {
     let mounted = true;
 
     async function refreshDriveThru() {
+      if (demoMode) {
+        setOrders(getDemoDriveThruDisplay());
+        setError("");
+        setLoading(false);
+        return;
+      }
+
       try {
         const response = await fetch(apiUrl("/api/display/drive-thru"), {
           credentials: "include",
@@ -5144,7 +5353,7 @@ function DriveThruDisplay() {
       mounted = false;
       clearInterval(interval);
     };
-  }, []);
+  }, [demoMode]);
 
   const cardClass = isDark
     ? "border-white/12 bg-[#082622] shadow-[0_24px_70px_rgba(0,0,0,0.22)]"
@@ -5161,15 +5370,19 @@ function DriveThruDisplay() {
         <header className="overflow-hidden rounded-[20px] border border-[#0F4036]/14 bg-[#0F4036] text-white shadow-[0_20px_60px_rgba(15,64,54,0.18)] sm:rounded-[26px]">
           <div className="grid gap-3 p-3 sm:grid-cols-[auto_1fr_auto] sm:items-center sm:p-4 md:gap-4 md:p-5">
             <div className="grid h-14 w-14 place-items-center rounded-[16px] bg-white shadow-[0_14px_36px_rgba(0,0,0,0.16)] sm:h-16 sm:w-16 sm:rounded-[18px] md:h-20 md:w-20 md:rounded-[22px]">
-              <img
-                src={LOGO_URL}
-                alt="Goldie's Coffee & Goods"
-                className="max-h-10 max-w-10 object-contain sm:max-h-12 sm:max-w-12 md:max-h-14 md:max-w-14"
-              />
+              {demoMode ? (
+                <DemoBrandMark size="sm" />
+              ) : (
+                <img
+                  src={LOGO_URL}
+                  alt="Goldie's Coffee & Goods"
+                  className="max-h-10 max-w-10 object-contain sm:max-h-12 sm:max-w-12 md:max-h-14 md:max-w-14"
+                />
+              )}
             </div>
             <div>
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F3D39B] sm:text-xs sm:tracking-[0.24em]">
-                Pickup & Drive Thru
+                {demoMode ? "DF Demo Cafe" : "Pickup & Drive Thru"}
               </div>
               <h1 className="mt-1 text-3xl font-semibold tracking-normal sm:text-4xl md:text-6xl">
                 Order Board
@@ -5241,11 +5454,470 @@ function DriveThruDisplay() {
   );
 }
 
+function VolumeBoardChart({ hourlyOrders = [], darkMode = false }) {
+  const serviceHours = Array.from({ length: SHOP_CLOSE_HOUR - SHOP_OPEN_HOUR }, (_value, index) => {
+    const hour = SHOP_OPEN_HOUR + index;
+    return hourlyOrders.find((item) => Number(item.hour) === hour) || {
+      hour,
+      orderCount: 0,
+      units: 0,
+    };
+  });
+  const maxOrders = Math.max(
+    1,
+    ...serviceHours.map((item) => Number(item.orderCount || 0))
+  );
+  const chartWidth = 760;
+  const chartHeight = 280;
+  const padding = { top: 28, right: 22, bottom: 54, left: 42 };
+  const plotWidth = chartWidth - padding.left - padding.right;
+  const plotHeight = chartHeight - padding.top - padding.bottom;
+  const points = serviceHours.map((item, index) => {
+    const divisor = Math.max(serviceHours.length - 1, 1);
+    const x = padding.left + (plotWidth / divisor) * index;
+    const y =
+      padding.top +
+      plotHeight -
+      (Number(item.orderCount || 0) / maxOrders) * plotHeight;
+
+    return { ...item, x, y };
+  });
+  const linePath = points
+    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
+    .join(" ");
+  const areaPath = `${linePath} L ${padding.left + plotWidth} ${padding.top + plotHeight} L ${padding.left} ${padding.top + plotHeight} Z`;
+  const peak = serviceHours
+    .slice()
+    .sort((a, b) => Number(b.orderCount || 0) - Number(a.orderCount || 0))[0];
+  const axisClass = darkMode ? "fill-[#FFF7EA]/72" : "fill-[#6A614F]";
+  const gridStroke = darkMode ? "#FFF7EA" : "#0F4036";
+
+  return (
+    <svg
+      viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+      role="img"
+      aria-label="Hourly drink order volume from 7 AM to 3 PM"
+      className="h-full min-h-[260px] w-full"
+    >
+      {[0, 0.5, 1].map((tick) => {
+        const y = padding.top + plotHeight - tick * plotHeight;
+        return (
+          <g key={tick}>
+            <line
+              x1={padding.left}
+              x2={padding.left + plotWidth}
+              y1={y}
+              y2={y}
+              stroke={gridStroke}
+              strokeOpacity="0.1"
+            />
+            <text
+              x={padding.left - 10}
+              y={y + 4}
+              textAnchor="end"
+              className={`${axisClass} text-[12px] font-bold`}
+            >
+              {Math.round(maxOrders * tick)}
+            </text>
+          </g>
+        );
+      })}
+
+      <path d={areaPath} fill="#CA862B" opacity={darkMode ? "0.22" : "0.14"} />
+      <path
+        d={linePath}
+        fill="none"
+        stroke="#CA862B"
+        strokeWidth="7"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+
+      {points.map((point) => {
+        const isPeak = Number(peak?.hour) === Number(point.hour) && Number(point.orderCount || 0) > 0;
+        return (
+          <g key={point.hour}>
+            <circle
+              cx={point.x}
+              cy={point.y}
+              r={isPeak ? 9 : 6}
+              fill={isPeak ? "#0F4036" : "#CA862B"}
+              stroke={darkMode ? "#FFF7EA" : "#FFFDF8"}
+              strokeWidth="3"
+            />
+            <text
+              x={point.x}
+              y={chartHeight - 18}
+              textAnchor="middle"
+              className={`${axisClass} text-[13px] font-black`}
+            >
+              {new Date(2024, 0, 1, point.hour).toLocaleTimeString([], {
+                hour: "numeric",
+              })}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function VolumeBoardDisplay() {
+  const { themeMode, isDark, toggleTheme } = useDisplayTheme();
+  const demoMode = isDemoTrainingRoute();
+  const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [updatedAt, setUpdatedAt] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function refreshVolume() {
+      if (demoMode) {
+        setReport(buildDemoOwnerReport(getDemoDisplayTickets(), "today"));
+        setUpdatedAt(new Date().toISOString());
+        setError("");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(apiUrl("/api/display/volume"), {
+          credentials: "include",
+        });
+
+        if (response.status === 401) {
+          throw new Error("Sign in to the KDS on this device first.");
+        }
+        if (!response.ok) {
+          throw new Error(`Volume board unavailable: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (!mounted) return;
+        setReport(data.report || null);
+        setUpdatedAt(data.updatedAt || "");
+        setError("");
+      } catch (displayError) {
+        if (!mounted) return;
+        setError(displayError.message || "Volume board unavailable");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    refreshVolume();
+    const interval = setInterval(refreshVolume, 60000);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [demoMode]);
+
+  const serviceRead = getTodayServiceWindowRead();
+  const orderCount = Number(report?.orderCount || 0);
+  const totalUnits = Number(report?.totalUnits || 0);
+  const averageDrinks = orderCount ? (totalUnits / orderCount).toFixed(1) : "0.0";
+  const categories = (report?.totalsByCategory || []).filter((item) => Number(item.units || 0) > 0);
+  const totalCategoryUnits = categories.reduce((sum, item) => sum + Number(item.units || 0), 0);
+  const sortedCategories = categories
+    .slice()
+    .sort((a, b) => Number(b.units || 0) - Number(a.units || 0));
+  const hourlyStats = getHourlyVolumeStats(
+    (report?.hourlyOrders || []).filter(
+      (item) => Number(item.hour) >= SHOP_OPEN_HOUR && Number(item.hour) < SHOP_CLOSE_HOUR
+    )
+  );
+  const cardClass = isDark
+    ? "border-white/12 bg-[#082622] text-[#FFF7EA] shadow-[0_24px_70px_rgba(0,0,0,0.22)]"
+    : "border-[#0F4036]/10 bg-white text-[#111111] shadow-[0_24px_70px_rgba(15,64,54,0.12)]";
+  const headingClass = isDark ? "text-[#FFF7EA]" : "text-[#0F4036]";
+  const mutedClass = isDark ? "text-[#FFF7EA]/68" : "text-[#6A614F]";
+  const panelClass = isDark ? "border-white/10 bg-white/8" : "border-[#0F4036]/10 bg-[#FFFDF8]";
+
+  return (
+    <DisplayBackground accent="green" darkMode={isDark}>
+      <DisplayBackButton />
+      <FullscreenButton darkMode={isDark} />
+      <DisplayThemeButton themeMode={themeMode} onToggle={toggleTheme} darkMode={isDark} />
+      <div className="mx-auto flex min-h-[calc(100vh-32px)] max-w-[1500px] flex-col gap-3 sm:min-h-[calc(100vh-44px)] md:gap-4">
+        <header className="overflow-hidden rounded-[20px] border border-[#0F4036]/14 bg-[#0F4036] text-white shadow-[0_20px_60px_rgba(15,64,54,0.18)] sm:rounded-[26px]">
+          <div className="grid gap-3 p-3 sm:grid-cols-[auto_1fr_auto] sm:items-center sm:p-4 md:gap-4 md:p-5">
+            <div className="grid h-14 w-14 place-items-center rounded-[16px] bg-white shadow-[0_14px_36px_rgba(0,0,0,0.16)] sm:h-16 sm:w-16 sm:rounded-[18px] md:h-20 md:w-20 md:rounded-[22px]">
+              {demoMode ? (
+                <DemoBrandMark size="sm" />
+              ) : (
+                <img
+                  src={LOGO_URL}
+                  alt="Goldie's Coffee & Goods"
+                  className="max-h-10 max-w-10 object-contain sm:max-h-12 sm:max-w-12 md:max-h-14 md:max-w-14"
+                />
+              )}
+            </div>
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F3D39B] sm:text-xs sm:tracking-[0.24em]">
+                7 AM-3 PM Central
+              </div>
+              <h1 className="mt-1 text-3xl font-semibold tracking-normal sm:text-4xl md:text-6xl">
+                Volume Board
+              </h1>
+            </div>
+            <div className="hidden justify-self-end rounded-full border border-white/16 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/82 md:block">
+              {serviceRead.label}
+            </div>
+          </div>
+        </header>
+        <DisplayStatus error={error} />
+
+        <main className="grid flex-1 grid-cols-1 gap-3 xl:grid-cols-[1.25fr_0.75fr]">
+          <section className={`rounded-[18px] border p-3 sm:rounded-[24px] sm:p-5 ${cardClass}`}>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8B5A1D] sm:text-xs sm:tracking-[0.2em]">
+                  Hourly order volume
+                </div>
+                <h2 className={`mt-1 text-2xl font-semibold tracking-normal sm:text-4xl ${headingClass}`}>
+                  Today&apos;s rush curve
+                </h2>
+                <p className={`mt-2 max-w-3xl text-sm font-medium sm:text-base ${mutedClass}`}>
+                  {serviceRead.pace}
+                </p>
+              </div>
+              <div className={`rounded-2xl border px-3 py-2 text-sm font-semibold ${panelClass}`}>
+                {updatedAt ? `Updated ${new Date(updatedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : loading ? "Loading" : "Live"}
+              </div>
+            </div>
+            <div className="mt-3 min-h-[280px]">
+              <VolumeBoardChart hourlyOrders={report?.hourlyOrders || []} darkMode={isDark} />
+            </div>
+          </section>
+
+          <section className="grid gap-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className={`rounded-[18px] border p-4 sm:rounded-[22px] ${cardClass}`}>
+                <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${mutedClass}`}>Drink orders</span>
+                <strong className={`mt-2 block text-4xl font-semibold leading-none ${headingClass}`}>{orderCount}</strong>
+              </div>
+              <div className={`rounded-[18px] border p-4 sm:rounded-[22px] ${cardClass}`}>
+                <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${mutedClass}`}>Avg drinks</span>
+                <strong className={`mt-2 block text-4xl font-semibold leading-none ${headingClass}`}>{averageDrinks}</strong>
+              </div>
+              <div className={`rounded-[18px] border p-4 sm:rounded-[22px] ${cardClass}`}>
+                <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${mutedClass}`}>2+ drink rate</span>
+                <strong className={`mt-2 block text-4xl font-semibold leading-none ${headingClass}`}>{Number(report?.multiDrinkOrderRate || 0)}%</strong>
+              </div>
+              <div className={`rounded-[18px] border p-4 sm:rounded-[22px] ${cardClass}`}>
+                <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${mutedClass}`}>Peak hour</span>
+                <strong className={`mt-2 block text-2xl font-semibold leading-none ${headingClass}`}>
+                  {hourlyStats.peak ? formatHourRange(hourlyStats.peak.hour) : "Collecting"}
+                </strong>
+              </div>
+            </div>
+
+            <div className={`rounded-[18px] border p-4 sm:rounded-[22px] ${cardClass}`}>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8B5A1D]">
+                Drink mix
+              </div>
+              <h2 className={`mt-1 text-2xl font-semibold tracking-normal ${headingClass}`}>
+                Category share
+              </h2>
+              <div className="mt-4 grid gap-3">
+                {sortedCategories.length ? (
+                  sortedCategories.map((category) => {
+                    const share = totalCategoryUnits
+                      ? Math.round((Number(category.units || 0) / totalCategoryUnits) * 100)
+                      : 0;
+                    return (
+                      <div key={category.category}>
+                        <div className="flex items-center justify-between gap-3 text-sm font-semibold">
+                          <span className={headingClass}>{category.category}</span>
+                          <span className={mutedClass}>{category.units} units · {share}%</span>
+                        </div>
+                        <div className={`mt-2 h-3 overflow-hidden rounded-full ${isDark ? "bg-white/10" : "bg-[#0F4036]/8"}`}>
+                          <div className="h-full rounded-full bg-[#CA862B]" style={{ width: `${share}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className={`rounded-2xl border border-dashed border-[#CA862B]/24 p-5 text-base font-semibold ${panelClass}`}>
+                    Drink mix will appear after today&apos;s drink orders sync.
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </DisplayBackground>
+  );
+}
+
+function OnlineOrdersDisplay() {
+  const { themeMode, isDark, toggleTheme } = useDisplayTheme();
+  const demoMode = isDemoTrainingRoute();
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [updatedAt, setUpdatedAt] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function refreshOnlineOrders() {
+      if (demoMode) {
+        setOrders(getDemoOnlineOrdersDisplay());
+        setUpdatedAt(new Date().toISOString());
+        setError("");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(apiUrl("/api/display/online-orders"), {
+          credentials: "include",
+        });
+
+        if (response.status === 401) {
+          throw new Error("Sign in to the KDS on this device first.");
+        }
+        if (!response.ok) {
+          throw new Error(`Online order board unavailable: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (!mounted) return;
+        setOrders(data.orders || []);
+        setUpdatedAt(data.updatedAt || "");
+        setError("");
+      } catch (displayError) {
+        if (!mounted) return;
+        setError(displayError.message || "Online order board unavailable");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    refreshOnlineOrders();
+    const interval = setInterval(refreshOnlineOrders, 5000);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [demoMode]);
+
+  const groupedOrders = ["new", "making", "ready"].map((status) => ({
+    status,
+    label: status === "new" ? "Received" : status === "making" ? "Making" : "Ready",
+    orders: orders.filter((order) => order.status === status),
+  }));
+  const cardClass = isDark
+    ? "border-white/12 bg-[#082622] shadow-[0_24px_70px_rgba(0,0,0,0.22)]"
+    : "border-[#0F4036]/10 bg-white shadow-[0_24px_70px_rgba(15,64,54,0.12)]";
+  const headingClass = isDark ? "text-[#FFF7EA]" : "text-[#0F4036]";
+  const mutedClass = isDark ? "text-[#FFF7EA]/68" : "text-[#6A614F]";
+  const headerClass = isDark ? "border-white/10 bg-white/8" : "border-[#0F4036]/10 bg-[#FFFDF8]";
+
+  return (
+    <DisplayBackground accent="green" darkMode={isDark}>
+      <DisplayBackButton />
+      <FullscreenButton darkMode={isDark} />
+      <DisplayThemeButton themeMode={themeMode} onToggle={toggleTheme} darkMode={isDark} />
+      <div className="mx-auto flex min-h-[calc(100vh-32px)] max-w-[1500px] flex-col gap-3 sm:min-h-[calc(100vh-44px)] md:gap-4">
+        <header className="overflow-hidden rounded-[20px] border border-[#0F4036]/14 bg-[#0F4036] text-white shadow-[0_20px_60px_rgba(15,64,54,0.18)] sm:rounded-[26px]">
+          <div className="grid gap-3 p-3 sm:grid-cols-[auto_1fr_auto] sm:items-center sm:p-4 md:gap-4 md:p-5">
+            <div className="grid h-14 w-14 place-items-center rounded-[16px] bg-white shadow-[0_14px_36px_rgba(0,0,0,0.16)] sm:h-16 sm:w-16 sm:rounded-[18px] md:h-20 md:w-20 md:rounded-[22px]">
+              {demoMode ? (
+                <DemoBrandMark size="sm" />
+              ) : (
+                <img
+                  src={LOGO_URL}
+                  alt="Goldie's Coffee & Goods"
+                  className="max-h-10 max-w-10 object-contain sm:max-h-12 sm:max-w-12 md:max-h-14 md:max-w-14"
+                />
+              )}
+            </div>
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F3D39B] sm:text-xs sm:tracking-[0.24em]">
+                {demoMode ? "DF Demo Cafe" : "Online Pickup Beta"}
+              </div>
+              <h1 className="mt-1 text-3xl font-semibold tracking-normal sm:text-4xl md:text-6xl">
+                Online Orders
+              </h1>
+            </div>
+            <div className="hidden justify-self-end rounded-full border border-white/16 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/82 md:block">
+              Drinks only
+            </div>
+          </div>
+        </header>
+        <DisplayStatus error={error} />
+
+        <main className="grid flex-1 grid-cols-1 gap-3 lg:grid-cols-3">
+          {groupedOrders.map((group) => (
+            <section key={group.status} className={`overflow-hidden rounded-[18px] border sm:rounded-[24px] ${cardClass}`}>
+              <div className={`flex items-center justify-between gap-3 border-b px-3 py-3 sm:px-4 sm:py-4 ${headerClass}`}>
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8B5A1D]">
+                    Online pickup
+                  </div>
+                  <h2 className={`mt-1 text-2xl font-semibold tracking-normal sm:text-4xl ${headingClass}`}>
+                    {group.label}
+                  </h2>
+                </div>
+                <div className={`rounded-full px-3 py-1.5 text-lg font-semibold ${isDark ? "bg-white/10 text-[#FFF7EA]" : "bg-[#0F4036]/8 text-[#0F4036]"}`}>
+                  {group.orders.length}
+                </div>
+              </div>
+              <div className="grid gap-2.5 p-3 sm:p-4">
+                {group.orders.length ? (
+                  group.orders.map((order) => (
+                    <div key={order.id} className={`rounded-[16px] border p-3 ${isDark ? "border-white/10 bg-white/8" : "border-[#0F4036]/10 bg-[#FFFDF8]"}`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className={`text-2xl font-semibold leading-none ${headingClass}`}>
+                            Order {order.orderNumber}
+                          </div>
+                          {order.customerName ? (
+                            <div className={`mt-1 text-base font-semibold ${mutedClass}`}>{order.customerName}</div>
+                          ) : null}
+                        </div>
+                        <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${isDark ? "bg-[#CA862B]/18 text-[#F3D39B]" : "bg-[#CA862B]/10 text-[#8B5A1D]"}`}>
+                          {order.diningOption || "Pickup"}
+                        </span>
+                      </div>
+                      <div className="mt-3">
+                        <CustomerOrderDetails order={order} darkMode={isDark} compact />
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className={`rounded-2xl border border-dashed border-[#CA862B]/24 p-5 text-base font-semibold ${isDark ? "bg-white/8 text-[#FFF7EA]/72" : "bg-[#FFFDF8] text-[#6A614F]"}`}>
+                    {loading ? "Checking online orders" : "No online pickup drinks here."}
+                  </div>
+                )}
+              </div>
+            </section>
+          ))}
+        </main>
+
+        <p className={`text-center text-xs font-semibold ${mutedClass}`}>
+          {updatedAt ? `Updated ${new Date(updatedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : "Online ordering beta board"}
+        </p>
+      </div>
+    </DisplayBackground>
+  );
+}
+
 export default function GoldiesKDS() {
   const displayRoute = getDisplayRoute();
   if (displayRoute === "menu") return <MenuBoardDisplay />;
   if (displayRoute === "orders") return <OrdersUpDisplay />;
   if (displayRoute === "drive-thru") return <DriveThruDisplay />;
+  if (displayRoute === "volume") return <VolumeBoardDisplay />;
+  if (displayRoute === "online-orders") return <OnlineOrdersDisplay />;
 
   const {
     isFullscreen: isDashboardFullscreen,
@@ -6247,22 +6919,34 @@ export default function GoldiesKDS() {
                 {showDisplaysMenu && (
                   <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-[#CA862B]/22 bg-white p-1.5 shadow-[0_18px_45px_rgba(15,64,54,0.16)]">
                     <a
-                      href="/goldies-menu"
+                      href={getDisplayHref("/goldies-menu", isDemoRoute)}
                       className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
                     >
                       Menu Board
                     </a>
                     <a
-                      href="/orders-up"
+                      href={getDisplayHref("/orders-up", isDemoRoute)}
                       className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
                     >
                       Orders Up
                     </a>
                     <a
-                      href="/drive-thru"
+                      href={getDisplayHref("/drive-thru", isDemoRoute)}
                       className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
                     >
                       Drive Thru
+                    </a>
+                    <a
+                      href={getDisplayHref("/volume-board", isDemoRoute)}
+                      className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
+                    >
+                      Volume Board
+                    </a>
+                    <a
+                      href={getDisplayHref("/online-orders", isDemoRoute)}
+                      className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
+                    >
+                      Online Orders
                     </a>
                   </div>
                 )}
