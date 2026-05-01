@@ -6215,11 +6215,24 @@ const ONLINE_ORDERING_BETA_MENU = [
 
 function OnlineOrderingBetaPage() {
   const demoMode = isDemoTrainingRoute();
-  const ordered = typeof window !== "undefined" && window.location.search.includes("ordered=1");
+  const searchParams =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search)
+      : new URLSearchParams();
+  const ordered = searchParams.has("ordered");
+  const testerName = (
+    searchParams.get("name") ||
+    searchParams.get("customer") ||
+    searchParams.get("tester") ||
+    ""
+  )
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 80);
   const [menuGroups, setMenuGroups] = useState(ONLINE_ORDERING_BETA_MENU);
   const [menuSource, setMenuSource] = useState("static");
   const [cart, setCart] = useState([]);
-  const [customerName, setCustomerName] = useState("");
+  const [customerName, setCustomerName] = useState(testerName);
   const [pickupMode, setPickupMode] = useState("asap");
   const [scheduledPickupTime, setScheduledPickupTime] = useState("");
   const [readyQuote, setReadyQuote] = useState(null);
