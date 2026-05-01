@@ -28,7 +28,7 @@ const RELEASE_NOTES = [
     date: "Current build",
     summary: "Renamed the active-ticket mode and cleaned up full screen.",
     items: [
-      "The active-ticket mode is now Rush View, which better matches how the shop uses it during busy service.",
+      "The active-ticket mode is called Focus Board so staff can quickly switch into the three-column rush layout.",
       "Full screen mode now keeps extra display controls out of the way and shows a small X to exit.",
       "The main KDS board still uses New Tickets, Making, and Ready as the active workflow.",
       "Marketing visuals were refreshed to match the current three-column app layout.",
@@ -41,7 +41,7 @@ const RELEASE_NOTES = [
     items: [
       "The main KDS board now shows New Tickets, Making, and Ready only.",
       "The redundant Completed column was removed from the active board.",
-      "A Rush View toggle near the Kitchen Display title hides the extra dashboard sections so staff can see only active ticket columns during a rush.",
+      "A Focus Board toggle near the Kitchen Display title hides the extra dashboard sections so staff can see only active ticket columns during a rush.",
       "The dashboard keeps completed history and extra stats available outside focus mode.",
     ],
   },
@@ -5811,7 +5811,7 @@ export default function GoldiesKDS() {
                       : "bg-transparent text-[#0F4036] hover:bg-[#EEE0C5]/55"
                   }`}
                 >
-                  {showFocusBoard ? "Full Dashboard" : "Rush View"}
+                  {showFocusBoard ? "Full Dashboard" : "Focus Board"}
                 </button>
               </div>
               )}
