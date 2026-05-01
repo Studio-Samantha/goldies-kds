@@ -6213,6 +6213,45 @@ const ONLINE_ORDERING_BETA_MENU = [
   },
 ];
 
+function getOnlineOrderItemDescription(item = {}) {
+  if (item.description) return item.description;
+
+  const name = String(item.name || "drink").toLowerCase();
+  if (name.includes("cappuccino")) return "A classic espresso drink with a soft, foamy finish.";
+  if (name.includes("latte")) return "Smooth espresso with steamed milk, ready for the flavor or milk option you like.";
+  if (name.includes("americano")) return "Espresso with hot water for a clean, simple coffee profile.";
+  if (name.includes("cold brew")) return "Cold coffee with a smooth finish for an easy pickup drink.";
+  if (name.includes("london fog")) return "A cozy tea latte style drink with soft vanilla-forward comfort.";
+  if (name.includes("chai")) return "Spiced, warm, and comforting with room for milk or flavor choices.";
+  if (name.includes("matcha")) return "Green tea latte style drink with a creamy, earthy finish.";
+  if (name.includes("smoothie")) return "A blended fruit-forward drink for a quick, cold pickup.";
+
+  return "A Goldie's drink option prepared for pickup. Choose any available options, then send it through Square checkout.";
+}
+
+function getOnlineOrderVisualStyle(item = {}) {
+  const text = `${item.category || ""} ${item.name || ""}`.toLowerCase();
+  if (text.includes("smoothie") || text.includes("banana") || text.includes("green")) {
+    return {
+      background:
+        "radial-gradient(circle at 22% 18%, rgba(255,255,255,0.72), transparent 26%), linear-gradient(135deg, #E9F0D5, #7FA36C 48%, #0F4036)",
+      label: "Cold blend",
+    };
+  }
+  if (text.includes("matcha") || text.includes("tea") || text.includes("chai") || text.includes("fog")) {
+    return {
+      background:
+        "radial-gradient(circle at 25% 18%, rgba(255,255,255,0.74), transparent 25%), linear-gradient(135deg, #FFF7EA, #D6B983 48%, #0F4036)",
+      label: "Tea bar",
+    };
+  }
+  return {
+    background:
+      "radial-gradient(circle at 24% 18%, rgba(255,255,255,0.78), transparent 26%), linear-gradient(135deg, #FFF7EA, #CA862B 50%, #0F4036)",
+    label: "Coffee bar",
+  };
+}
+
 function OnlineOrderingBetaPage() {
   const demoMode = isDemoTrainingRoute();
   const searchParams =
@@ -6238,6 +6277,7 @@ function OnlineOrderingBetaPage() {
   const [pickupMode, setPickupMode] = useState("asap");
   const [scheduledPickupTime, setScheduledPickupTime] = useState("");
   const [readyQuote, setReadyQuote] = useState(null);
+  const [detailItem, setDetailItem] = useState(null);
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [orderError, setOrderError] = useState("");
@@ -6513,10 +6553,8 @@ function OnlineOrderingBetaPage() {
                 </div>
                 <div className="mt-3 grid gap-3 md:grid-cols-2">
                   {group.items.map((item) => (
-                    <button
+                    <div
                       key={item.id}
-                      type="button"
-                      onClick={() => addItem(item, group.category)}
                       className="group rounded-2xl border border-[#CA862B]/16 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:bg-[#EEE0C5]/45 hover:shadow-md"
                     >
                       <span className="flex items-center justify-between gap-2">
@@ -6528,13 +6566,28 @@ function OnlineOrderingBetaPage() {
                             </span>
                           ) : null}
                         </span>
-                        <span className="rounded-full bg-[#0F4036]/8 px-2 py-1 text-xs font-black text-[#0F4036] group-hover:bg-[#0F4036] group-hover:text-white">Add</span>
+                        <button
+                          type="button"
+                          onClick={() => setDetailItem({ ...item, category: group.category })}
+                          className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[#CA862B]/20 bg-[#FFFDF8] text-xs font-black text-[#0F4036] transition hover:bg-[#EEE0C5]"
+                          aria-label={`More about ${item.name}`}
+                          title={`More about ${item.name}`}
+                        >
+                          i
+                        </button>
                       </span>
                       <span className="mt-1 block text-sm font-semibold text-[#6A614F]">
                         {item.price}
                         {menuSource === "square" ? " · Square menu" : ""}
                       </span>
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => addItem(item, group.category)}
+                        className="mt-3 w-full rounded-xl bg-[#0F4036] px-3 py-2 text-sm font-black text-white transition hover:bg-[#0b352d]"
+                      >
+                        Add to order
+                      </button>
+                    </div>
                   ))}
                 </div>
               </article>
@@ -6687,6 +6740,88 @@ function OnlineOrderingBetaPage() {
           </aside>
         </main>
       </div>
+
+      {detailItem ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/45 p-4 backdrop-blur-sm">
+          <div className="absolute inset-0" onClick={() => setDetailItem(null)} />
+          <div className="relative w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/70 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.24)]">
+            <div
+              className="relative min-h-64 overflow-hidden p-5 text-white"
+              style={{ background: getOnlineOrderVisualStyle(detailItem).background }}
+            >
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 opacity-12"
+                style={{
+                  backgroundImage: `url(${LOGO_DARK_URL})`,
+                  backgroundRepeat: "repeat",
+                  backgroundSize: "180px auto",
+                  transform: "rotate(-8deg) scale(1.12)",
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setDetailItem(null)}
+                className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/90 text-lg font-black text-[#0F4036] shadow-sm"
+                aria-label="Close item details"
+              >
+                x
+              </button>
+              <div className="relative flex min-h-52 flex-col justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="grid h-16 w-16 place-items-center rounded-2xl bg-white shadow-lg">
+                    <img src={LOGO_URL} alt="Goldie's Coffee & Goods" className="max-h-12 max-w-12 object-contain" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-black uppercase tracking-[0.18em] text-white/75">
+                      Goldie&apos;s {getOnlineOrderVisualStyle(detailItem).label}
+                    </div>
+                    <h2 className="mt-1 text-4xl font-black leading-none">
+                      {detailItem.name}
+                    </h2>
+                    {detailItem.variationName ? (
+                      <div className="mt-2 text-sm font-black text-white/82">
+                        {detailItem.variationName}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="mt-5 inline-flex w-fit rounded-full bg-white/92 px-4 py-2 text-sm font-black text-[#0F4036]">
+                  {detailItem.price}
+                </div>
+              </div>
+            </div>
+            <div className="grid gap-4 p-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+              <div>
+                <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
+                  Drink details
+                </div>
+                <p className="mt-2 text-base font-semibold leading-7 text-[#4E4637]">
+                  {getOnlineOrderItemDescription(detailItem)}
+                </p>
+                {(detailItem.modifierGroups || []).length ? (
+                  <div className="mt-3 text-sm font-bold text-[#6A614F]">
+                    Options available after adding: {(detailItem.modifierGroups || [])
+                      .map((group) => group.name)
+                      .slice(0, 3)
+                      .join(", ")}
+                  </div>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  addItem(detailItem, detailItem.category);
+                  setDetailItem(null);
+                }}
+                className="rounded-2xl bg-[#0F4036] px-5 py-3 text-sm font-black text-white transition hover:bg-[#0b352d]"
+              >
+                Add to order
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -400,6 +400,7 @@ function buildStaticOnlineOrderingMenu() {
       priceCents: item.priceCents,
       variationId: "",
       variationName: "",
+      description: "",
       modifierGroups: [],
       source: "static",
     });
@@ -500,6 +501,7 @@ async function getSquareOnlineOrderingMenu() {
         priceCents,
         variationId: variation.id,
         variationName: variationData.name && variationData.name !== "Regular" ? variationData.name : "",
+        description: itemData.description || "",
         modifierGroups,
         source: "square",
       });
