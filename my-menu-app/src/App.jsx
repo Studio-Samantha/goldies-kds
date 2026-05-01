@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.7.6";
+const APP_VERSION = "v1.7.7";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -24,13 +24,24 @@ const SETTINGS_HELP_TEXT =
 const DINING_OPTIONS = ["For here", "To go", "Pickup", "Delivery", "Drive thru"];
 const RELEASE_NOTES = [
   {
-    version: "v1.7.6",
+    version: "v1.7.7",
     date: "Current build",
+    summary: "Renamed the active-ticket mode and cleaned up full screen.",
+    items: [
+      "The active-ticket mode is now Rush View, which better matches how the shop uses it during busy service.",
+      "Full screen mode now keeps extra display controls out of the way and shows a small X to exit.",
+      "The main KDS board still uses New Tickets, Making, and Ready as the active workflow.",
+      "Marketing visuals were refreshed to match the current three-column app layout.",
+    ],
+  },
+  {
+    version: "v1.7.6",
+    date: "Previous build",
     summary: "Added a focused active-ticket board.",
     items: [
       "The main KDS board now shows New Tickets, Making, and Ready only.",
       "The redundant Completed column was removed from the active board.",
-      "A Focus Board toggle near the Kitchen Display title hides the extra dashboard sections so staff can see only active ticket columns during a rush.",
+      "A Rush View toggle near the Kitchen Display title hides the extra dashboard sections so staff can see only active ticket columns during a rush.",
       "The dashboard keeps completed history and extra stats available outside focus mode.",
     ],
   },
@@ -141,7 +152,7 @@ const RELEASE_NOTES = [
     date: "Previous build",
     summary: "Kept food-only tickets out of the drink KDS columns.",
     items: [
-      "The live New, Making, Ready, and Completed columns now only show tickets with drink items.",
+      "The live ticket workflow now only shows orders with drink items.",
       "Food-only Square orders no longer sit in the active drink workflow.",
     ],
   },
@@ -969,7 +980,7 @@ function PitchPage({ open, onBack }) {
               {[
                 {
                   title: "Live board",
-                  text: "New, Making, Ready, Completed, and Done stay visible during the rush.",
+                  text: "New Tickets, Making, and Ready keep the active rush easy to read.",
                 },
                 {
                   title: "Drink counts",
@@ -4454,6 +4465,39 @@ function useDisplayTheme() {
   };
 }
 
+function useFullscreenMode() {
+  const [isFullscreen, setIsFullscreen] = useState(() =>
+    typeof document !== "undefined" ? Boolean(document.fullscreenElement) : false
+  );
+  const [fullscreenMessage, setFullscreenMessage] = useState("");
+
+  useEffect(() => {
+    if (typeof document === "undefined") return undefined;
+
+    function handleFullscreenChange() {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    }
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await document.documentElement.requestFullscreen();
+      }
+      setFullscreenMessage("");
+    } catch {
+      setFullscreenMessage("Use your browser menu if full screen is blocked.");
+    }
+  }
+
+  return { isFullscreen, fullscreenMessage, toggleFullscreen };
+}
+
 function DisplayBackground({ children, accent = "gold", darkMode = false }) {
   const isGreen = accent === "green";
   const backgroundImage = darkMode
@@ -4532,6 +4576,9 @@ function DisplayStatus({ loading, error, updatedAt, darkMode = false }) {
 }
 
 function DisplayBackButton() {
+  const { isFullscreen } = useFullscreenMode();
+  if (isFullscreen) return null;
+
   return (
     <a
       href="/"
@@ -4543,38 +4590,28 @@ function DisplayBackButton() {
 }
 
 function FullscreenButton({ darkMode = false }) {
-  const [message, setMessage] = useState("");
+  const { isFullscreen, fullscreenMessage, toggleFullscreen } = useFullscreenMode();
   const buttonClass = darkMode
     ? "border-white/20 bg-white/12 text-[#FFF7EA] hover:bg-white/18"
     : "border-white/24 bg-[#0F4036]/90 text-white hover:bg-[#0b352d]";
 
-  async function handleFullscreen() {
-    try {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen();
-        setMessage("");
-        return;
-      }
-
-      await document.documentElement.requestFullscreen();
-      setMessage("");
-    } catch {
-      setMessage("Use your browser menu if full screen is blocked.");
-    }
-  }
-
   return (
-    <div className="fixed bottom-3 left-3 z-30 sm:left-auto sm:right-32 sm:top-4 sm:bottom-auto">
+    <div className={isFullscreen ? "fixed right-3 top-3 z-30 sm:right-4 sm:top-4" : "fixed bottom-3 left-3 z-30 sm:left-auto sm:right-32 sm:top-4 sm:bottom-auto"}>
       <button
         type="button"
-        onClick={handleFullscreen}
-        className={`rounded-full border px-3 py-2 text-xs font-semibold shadow-[0_16px_44px_rgba(15,64,54,0.22)] backdrop-blur-md transition sm:px-4 sm:text-sm ${buttonClass}`}
+        onClick={toggleFullscreen}
+        aria-label={isFullscreen ? "Exit full screen" : "Enter full screen"}
+        className={`rounded-full border text-xs font-semibold shadow-[0_16px_44px_rgba(15,64,54,0.22)] backdrop-blur-md transition ${
+          isFullscreen
+            ? "grid h-10 w-10 place-items-center px-0 py-0 text-lg leading-none sm:h-11 sm:w-11"
+            : "px-3 py-2 sm:px-4 sm:text-sm"
+        } ${buttonClass}`}
       >
-        Full screen
+        {isFullscreen ? "X" : "Full screen"}
       </button>
-      {message && (
+      {fullscreenMessage && !isFullscreen && (
         <div className="mt-2 max-w-[190px] rounded-2xl bg-white/92 px-3 py-2 text-xs font-semibold text-[#0F4036] shadow-lg">
-          {message}
+          {fullscreenMessage}
         </div>
       )}
     </div>
@@ -4582,6 +4619,9 @@ function FullscreenButton({ darkMode = false }) {
 }
 
 function DisplayThemeButton({ themeMode, onToggle, darkMode = false }) {
+  const { isFullscreen } = useFullscreenMode();
+  if (isFullscreen) return null;
+
   const buttonClass = darkMode
     ? "border-white/20 bg-white/12 text-[#FFF7EA] hover:bg-white/18"
     : "border-white/24 bg-[#0F4036]/90 text-white hover:bg-[#0b352d]";
@@ -4905,6 +4945,11 @@ export default function GoldiesKDS() {
   if (displayRoute === "menu") return <MenuBoardDisplay />;
   if (displayRoute === "orders") return <OrdersUpDisplay />;
 
+  const {
+    isFullscreen: isDashboardFullscreen,
+    fullscreenMessage: dashboardFullscreenMessage,
+    toggleFullscreen: toggleDashboardFullscreen,
+  } = useFullscreenMode();
   const isDemoRoute = isDemoTrainingRoute();
   const [themeMode, setThemeMode] = useState(getSavedThemeMode);
   const [isTrainingMode, setIsTrainingMode] = useState(getSavedTrainingMode);
@@ -5552,15 +5597,7 @@ export default function GoldiesKDS() {
   }
 
   async function handleDashboardFullscreen() {
-    try {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen();
-      } else {
-        await document.documentElement.requestFullscreen();
-      }
-    } catch (error) {
-      setLastError("Full screen was blocked by the browser. Try the browser menu.");
-    }
+    await toggleDashboardFullscreen();
   }
 
   async function handlePasswordChange({
@@ -5731,6 +5768,23 @@ export default function GoldiesKDS() {
           darkMode={themeMode === "dark"}
           demoMode={isDemoRoute}
         />
+        {isDashboardFullscreen && (
+          <div className="fixed right-3 top-3 z-40 sm:right-4 sm:top-4">
+            <button
+              type="button"
+              onClick={handleDashboardFullscreen}
+              aria-label="Exit full screen"
+              className="grid h-10 w-10 place-items-center rounded-full border border-white/24 bg-[#0F4036]/90 text-lg font-black leading-none text-white shadow-[0_16px_44px_rgba(15,64,54,0.22)] backdrop-blur-md transition hover:bg-[#0b352d] sm:h-11 sm:w-11"
+            >
+              X
+            </button>
+            {dashboardFullscreenMessage && (
+              <div className="mt-2 max-w-[190px] rounded-2xl bg-white/92 px-3 py-2 text-xs font-semibold text-[#0F4036] shadow-lg">
+                {dashboardFullscreenMessage}
+              </div>
+            )}
+          </div>
+        )}
       <div className="relative z-10">
       <header className="border-b border-white/70 bg-[rgba(255,253,248,0.9)] backdrop-blur-xl px-4 md:px-6 py-4 shadow-[0_12px_30px_rgba(15,64,54,0.06)]">
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
@@ -5746,6 +5800,7 @@ export default function GoldiesKDS() {
                 {isDemoRoute ? "Fake demo orders" : "Live Square orders"}
               </p>
 
+              {!isDashboardFullscreen && (
               <div className="mt-3 inline-flex rounded-2xl border border-[#CA862B]/18 bg-white/75 p-1 shadow-sm">
                 <button
                   type="button"
@@ -5756,9 +5811,10 @@ export default function GoldiesKDS() {
                       : "bg-transparent text-[#0F4036] hover:bg-[#EEE0C5]/55"
                   }`}
                 >
-                  {showFocusBoard ? "Show Full Dashboard" : "Focus Board"}
+                  {showFocusBoard ? "Full Dashboard" : "Rush View"}
                 </button>
               </div>
+              )}
             </div>
           </div>
 
@@ -5789,6 +5845,7 @@ export default function GoldiesKDS() {
               </div>
             </div>
 
+            {!isDashboardFullscreen && (
             <div className="flex flex-wrap gap-2 justify-start xl:justify-end">
               {isDemoRoute && (
                 <a
@@ -5917,6 +5974,7 @@ export default function GoldiesKDS() {
                 Sign out
               </button>
             </div>
+            )}
 
             {signedInEmployee && (
               <div className="rounded-full border border-[#CA862B]/18 bg-white/80 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-[#0F4036] shadow-sm">

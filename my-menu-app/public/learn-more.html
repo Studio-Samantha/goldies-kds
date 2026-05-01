@@ -222,7 +222,7 @@
       .hero-stats {
         display: grid;
         gap: 10px;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         max-width: 640px;
         margin-top: 28px;
       }
@@ -294,7 +294,7 @@
         max-width: 1180px;
         margin: 0 auto;
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 1px;
         overflow: hidden;
         border: 1px solid var(--line);
@@ -946,7 +946,7 @@
         line-height: 1.35;
       }
       .lite-screen .lane-grid {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
       }
       .lite-screen .lane {
         min-height: 230px;
@@ -1723,7 +1723,7 @@
           <article class="card feature">
             <div class="icon">02</div>
             <h3>Counter flow</h3>
-            <p>New, Making, Ready, Completed, and Done give staff a simple rhythm during rushes.</p>
+            <p>New Tickets, Making, and Ready keep the active rush focused. Rush View removes extra dashboard noise when the line is moving, while the full dashboard keeps stats and history available when staff need the extra context.</p>
           </article>
           <article class="card feature">
             <div class="icon">03</div>
@@ -1749,7 +1749,7 @@
           <div class="setup-notes">
             <div class="setup-note">
               <strong>Kitchen display</strong>
-              <span>Large readable columns for New, Making, Ready, and Completed orders.</span>
+              <span>Large readable columns for New Tickets, Making, and Ready orders, with Rush View for busy service.</span>
             </div>
             <div class="setup-note">
               <strong>Customer-facing options</strong>
@@ -1933,7 +1933,7 @@
             <div class="screen-body">
               <div class="lane-grid">
                 <div class="lane">
-                  <div class="lane-head">New</div>
+                  <div class="lane-head">New Tickets</div>
                   <div class="ticket"><strong>#R90W <em>8:12</em></strong><span>1 Americano<br />1 Iced Latte<br />1 Blueberry Muffin</span></div>
                   <div class="ticket"><strong>#M18J <em>8:15</em></strong><span>2 Honey Lattes<br />1 Matcha</span></div>
                 </div>
@@ -2112,7 +2112,7 @@
               <summary>What&apos;s included</summary>
               <ul>
                 <li>DrinkFlow-branded board</li>
-                <li>Live New, Making, Ready, and Completed columns</li>
+                <li>Live New Tickets, Making, and Ready columns</li>
                 <li>Oldest tickets first</li>
                 <li>Password protected access</li>
                 <li>One Square&reg; location</li>
@@ -2131,7 +2131,8 @@
               <summary>What&apos;s included</summary>
               <ul>
                 <li>Regular KDS dashboard experience</li>
-                <li>Live New, Making, Ready, Completed, and Done columns</li>
+                <li>Live New Tickets, Making, and Ready active board</li>
+                <li>Full dashboard toggle for counts, stats, and completed history</li>
                 <li>Settings and dashboard tools, without Owner Portal</li>
                 <li>Basic setup support</li>
                 <li>Phone, iPad, monitor, or TV browser display</li>
@@ -2256,14 +2257,14 @@
             </div>
             <div class="screen-body">
               <div class="lite-toolbar" aria-label="Lite included tools">
-                <div class="lite-tool"><strong>Live board</strong><span>New, Making, Ready, Completed</span></div>
+                <div class="lite-tool"><strong>Live board</strong><span>New Tickets, Making, Ready</span></div>
                 <div class="lite-tool"><strong>Settings</strong><span>Theme, labels, support, training</span></div>
                 <div class="lite-tool"><strong>Actions</strong><span>Start, Ready, Done, Reopen</span></div>
                 <div class="lite-tool"><strong>No portal</strong><span>Reports reserved for KDS</span></div>
               </div>
               <div class="lane-grid">
                 <div class="lane">
-                  <div class="lane-head">New</div>
+                  <div class="lane-head">New Tickets</div>
                   <div class="ticket">
                     <strong>#104 <em>8:04</em></strong><span>1 Latte<br />1 Chai</span>
                     <div class="ticket-actions"><button class="primary-action" type="button">Start</button></div>
@@ -2285,13 +2286,6 @@
                   <div class="ticket">
                     <strong>#102 <em>8:00</em></strong><span>1 Americano</span>
                     <div class="ticket-actions"><button type="button">Back</button><button class="primary-action" type="button">Done</button></div>
-                  </div>
-                </div>
-                <div class="lane">
-                  <div class="lane-head">Completed</div>
-                  <div class="ticket">
-                    <strong>#101 <em>7:58</em></strong><span>2 Iced Lattes</span>
-                    <div class="ticket-actions"><button type="button">Reopen</button></div>
                   </div>
                 </div>
               </div>
