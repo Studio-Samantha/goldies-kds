@@ -1854,6 +1854,12 @@ function normalizeTicket(ticket) {
     isOnlineOrder:
       Boolean(ticket.isOnlineOrder || ticket.is_online_order) ||
       String(ticket.source || "").toLowerCase().includes("online"),
+    pickupDueTime:
+      ticket.pickupDueTime ||
+      ticket.pickup_due_time ||
+      ticket.rawOrder?.pickupDueTime ||
+      ticket.raw_order?.pickupDueTime ||
+      "",
     status: ticket.status || "new",
     items: (ticket.items || []).map((item) => ({
       name: item.name || "Unnamed item",
@@ -2115,6 +2121,11 @@ function TicketCard({
                   Online order
                 </span>
               )}
+              {isOnlineOrder && ticket.pickupDueTime && (
+                <span className="rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-xs font-black text-red-800">
+                  Due {ticket.pickupDueTime}
+                </span>
+              )}
             </div>
           ) : ticket.customerName ? (
             <div className="mt-2 rounded-xl border border-[#0F4036]/14 bg-[#0F4036]/6 px-3 py-2">
@@ -2155,6 +2166,17 @@ function TicketCard({
                 : "bg-[#CA862B]/10 text-[#6A614F]"
             }`}>
               {isOnlineOrder ? "Online order" : ticket.source}
+            </div>
+          )}
+
+          {!compact && isOnlineOrder && ticket.pickupDueTime && (
+            <div className="mt-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2">
+              <div className="text-xs font-black uppercase tracking-wide text-red-700">
+                Customer was told
+              </div>
+              <div className="mt-1 text-lg font-black text-red-900">
+                Ready by {ticket.pickupDueTime}
+              </div>
             </div>
           )}
 
@@ -4969,6 +4991,9 @@ function ticketToCustomerDisplayOrder(ticket) {
     orderNumber: ticket.orderNumber || ticket.id,
     customerName: ticket.customerName || "",
     diningOption: ticket.diningOption || "Order",
+    source: ticket.source || "Square",
+    isOnlineOrder: isOnlineTicket(ticket),
+    pickupDueTime: ticket.pickupDueTime || "",
     status: ticket.status,
     createdAt: ticket.createdAt || null,
     updatedAt: ticket.completedAt || ticket.createdAt || null,

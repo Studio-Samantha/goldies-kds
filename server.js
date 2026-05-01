@@ -1816,6 +1816,37 @@ function getSquareOrderSourceLabel(order = {}) {
   return sourceName || "Square Register";
 }
 
+function getSquarePickupDueTime(order = {}) {
+  const fulfillment = order.fulfillments?.[0] || {};
+  const pickupDetails = fulfillment.pickupDetails || fulfillment.pickup_details || {};
+  const metadataPickup = order.metadata?.pickup_time || order.metadata?.pickupTime || "";
+  const rawPickup =
+    pickupDetails.pickupAt ||
+    pickupDetails.pickup_at ||
+    pickupDetails.readyAt ||
+    pickupDetails.ready_at ||
+    metadataPickup ||
+    "";
+  const note = String(pickupDetails.note || "");
+  const noteMatch = note.match(/Requested pickup:\s*([^|]+)/i);
+  const rawValue = String(rawPickup || noteMatch?.[1] || "").trim();
+
+  if (!rawValue) return "";
+  if (rawValue.startsWith("ASAP - estimated ")) return rawValue.replace("ASAP - estimated ", "");
+  if (rawValue.startsWith("ASAP")) return rawValue;
+
+  const dateValue = new Date(rawValue);
+  if (!Number.isNaN(dateValue.getTime())) {
+    return dateValue.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: "America/Chicago",
+    });
+  }
+
+  return rawValue;
+}
+
 function getDiningOption(order) {
   const fulfillment = order.fulfillments?.[0] || {};
   const type = String(fulfillment.type || "").toUpperCase();
@@ -2051,6 +2082,7 @@ async function normalizeSquareOrder(order, payment = null) {
     employeeName: await getSquareEmployeeName(order, payment),
     createdAt: new Date(order.createdAt || Date.now()).getTime(),
     source: getSquareOrderSourceLabel(order),
+    pickupDueTime: getSquarePickupDueTime(order),
     status: "new",
     diningOption: getDiningOption(order),
     items,
@@ -2074,6 +2106,7 @@ function ticketFromDb(order, items = []) {
     createdAt: new Date(order.created_at).getTime(),
     completedAt: order.updated_at ? new Date(order.updated_at).getTime() : null,
     source: order.source || getSquareOrderSourceLabel(order.raw_order || {}),
+    pickupDueTime: getSquarePickupDueTime(order.raw_order || {}),
     status: sanitizeStatus(order.status),
     diningOption: storedDiningOption || rawDiningOption || "",
     items: items.map((item) => ({
@@ -2125,6 +2158,10 @@ async function upsertTicket(ticket, rawOrder = null) {
               existingOrder?.raw_order?.employeeName ||
               rawOrder.employeeName ||
               null,
+            pickupDueTime:
+              ticket.pickupDueTime ||
+              existingOrder?.raw_order?.pickupDueTime ||
+              getSquarePickupDueTime(rawOrder),
           })
         : existingOrder?.raw_order || null,
       updated_at: existingOrder?.updated_at || new Date().toISOString(),
