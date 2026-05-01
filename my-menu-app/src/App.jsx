@@ -4430,22 +4430,45 @@ function getDisplayRoute() {
   return "";
 }
 
-function DisplayBackground({ children, accent = "gold" }) {
+function useDisplayTheme() {
+  const [themeMode, setThemeMode] = useState(getSavedThemeMode);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, themeMode);
+    } catch {
+      // ignore storage failures
+    }
+  }, [themeMode]);
+
+  return {
+    themeMode,
+    isDark: themeMode === "dark",
+    toggleTheme: () =>
+      setThemeMode((current) => (current === "dark" ? "light" : "dark")),
+  };
+}
+
+function DisplayBackground({ children, accent = "gold", darkMode = false }) {
   const isGreen = accent === "green";
-  const backgroundImage = isGreen
-    ? "radial-gradient(circle at 20% 12%, rgba(15,64,54,0.22), transparent 30%), radial-gradient(circle at 82% 8%, rgba(202,134,43,0.26), transparent 30%), linear-gradient(135deg, #FFFDF8 0%, #F4E8D1 46%, #EEE0C5 100%)"
-    : "radial-gradient(circle at 12% 8%, rgba(202,134,43,0.2), transparent 28%), radial-gradient(circle at 86% 4%, rgba(15,64,54,0.2), transparent 32%), linear-gradient(135deg, #FFFDF8 0%, #F8F1E5 48%, #E7EEE9 100%)";
+  const backgroundImage = darkMode
+    ? "radial-gradient(circle at 12% 8%, rgba(202,134,43,0.22), transparent 28%), radial-gradient(circle at 86% 4%, rgba(255,253,248,0.1), transparent 32%), linear-gradient(135deg, #041c19 0%, #0F4036 48%, #1F160F 100%)"
+    : isGreen
+      ? "radial-gradient(circle at 20% 12%, rgba(15,64,54,0.22), transparent 30%), radial-gradient(circle at 82% 8%, rgba(202,134,43,0.26), transparent 30%), linear-gradient(135deg, #FFFDF8 0%, #F4E8D1 46%, #EEE0C5 100%)"
+      : "radial-gradient(circle at 12% 8%, rgba(202,134,43,0.2), transparent 28%), radial-gradient(circle at 86% 4%, rgba(15,64,54,0.2), transparent 32%), linear-gradient(135deg, #FFFDF8 0%, #F8F1E5 48%, #E7EEE9 100%)";
 
   return (
     <div
-      className="min-h-screen bg-[#FFFDF8] text-[#111111] px-3 py-4 sm:px-4 sm:py-5 md:px-8 md:py-7 overflow-hidden"
+      className={`min-h-screen px-3 py-4 sm:px-4 sm:py-5 md:px-8 md:py-7 overflow-hidden ${
+        darkMode ? "bg-[#041c19] text-[#FFF7EA]" : "bg-[#FFFDF8] text-[#111111]"
+      }`}
       style={{ backgroundImage }}
     >
       <div
         aria-hidden="true"
         className="fixed inset-0 pointer-events-none opacity-[0.035]"
         style={{
-          backgroundImage: `url(${LOGO_URL})`,
+          backgroundImage: `url(${darkMode ? LOGO_DARK_URL : LOGO_URL})`,
           backgroundSize: "180px",
           backgroundRepeat: "repeat",
           transform: "rotate(-8deg) scale(1.08)",
@@ -4479,14 +4502,18 @@ function DisplayHeader({ eyebrow, title, subtitle }) {
   );
 }
 
-function DisplayStatus({ loading, error, updatedAt }) {
+function DisplayStatus({ loading, error, updatedAt, darkMode = false }) {
+  const pillClass = darkMode
+    ? "border-white/14 bg-white/10 text-[#FFF7EA]"
+    : "border-[#CA862B]/18 bg-white/76 text-[#6A614F]";
+
   return (
-    <div className="mt-4 flex flex-wrap items-center gap-2 text-[11px] font-black uppercase tracking-[0.14em] text-[#6A614F] sm:mt-5 sm:gap-3 sm:text-sm sm:tracking-[0.16em]">
-      <span className="rounded-full border border-[#CA862B]/18 bg-white/76 px-3 py-2 shadow-sm sm:px-4">
+    <div className="mt-4 flex flex-wrap items-center gap-2 text-[11px] font-black uppercase tracking-[0.14em] sm:mt-5 sm:gap-3 sm:text-sm sm:tracking-[0.16em]">
+      <span className={`rounded-full border px-3 py-2 shadow-sm sm:px-4 ${pillClass}`}>
         {loading ? "Refreshing" : "Live display"}
       </span>
       {updatedAt && (
-        <span className="rounded-full border border-[#CA862B]/18 bg-white/76 px-3 py-2 shadow-sm sm:px-4">
+        <span className={`rounded-full border px-3 py-2 shadow-sm sm:px-4 ${pillClass}`}>
           Updated {new Date(updatedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
         </span>
       )}
@@ -4510,8 +4537,11 @@ function DisplayBackButton() {
   );
 }
 
-function FullscreenButton() {
+function FullscreenButton({ darkMode = false }) {
   const [message, setMessage] = useState("");
+  const buttonClass = darkMode
+    ? "border-white/20 bg-white/12 text-[#FFF7EA] hover:bg-white/18"
+    : "border-white/24 bg-[#0F4036]/90 text-white hover:bg-[#0b352d]";
 
   async function handleFullscreen() {
     try {
@@ -4533,7 +4563,7 @@ function FullscreenButton() {
       <button
         type="button"
         onClick={handleFullscreen}
-        className="rounded-full border border-white/24 bg-[#0F4036]/90 px-3 py-2 text-xs font-semibold text-white shadow-[0_16px_44px_rgba(15,64,54,0.22)] backdrop-blur-md transition hover:bg-[#0b352d] sm:px-4 sm:text-sm"
+        className={`rounded-full border px-3 py-2 text-xs font-semibold shadow-[0_16px_44px_rgba(15,64,54,0.22)] backdrop-blur-md transition sm:px-4 sm:text-sm ${buttonClass}`}
       >
         Full screen
       </button>
@@ -4546,7 +4576,24 @@ function FullscreenButton() {
   );
 }
 
+function DisplayThemeButton({ themeMode, onToggle, darkMode = false }) {
+  const buttonClass = darkMode
+    ? "border-white/20 bg-white/12 text-[#FFF7EA] hover:bg-white/18"
+    : "border-white/24 bg-[#0F4036]/90 text-white hover:bg-[#0b352d]";
+
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={`fixed bottom-3 left-1/2 z-30 -translate-x-1/2 rounded-full border px-3 py-2 text-xs font-semibold shadow-[0_16px_44px_rgba(15,64,54,0.22)] backdrop-blur-md transition sm:left-auto sm:right-[15.25rem] sm:top-4 sm:bottom-auto sm:translate-x-0 sm:px-4 sm:text-sm ${buttonClass}`}
+    >
+      {themeMode === "dark" ? "Light mode" : "Dark mode"}
+    </button>
+  );
+}
+
 function MenuBoardDisplay() {
+  const { themeMode, isDark, toggleTheme } = useDisplayTheme();
   const [menu, setMenu] = useState([]);
   const [updatedAt, setUpdatedAt] = useState("");
   const [loading, setLoading] = useState(true);
@@ -4594,11 +4641,23 @@ function MenuBoardDisplay() {
     label,
     items: [],
   }));
+  const cardClass = isDark
+    ? "border-white/12 bg-[#082622] shadow-[0_24px_70px_rgba(0,0,0,0.22)]"
+    : "border-[#0F4036]/10 bg-white shadow-[0_24px_70px_rgba(15,64,54,0.12)]";
+  const cardHeaderClass = isDark
+    ? "border-white/10 bg-white/8"
+    : "border-[#0F4036]/10 bg-[#FFFDF8]";
+  const headingClass = isDark ? "text-[#FFF7EA]" : "text-[#0F4036]";
+  const itemClass = isDark ? "text-[#FFF7EA]" : "text-[#2D261C]";
+  const priceClass = isDark
+    ? "bg-[#CA862B]/18 text-[#F3D39B]"
+    : "bg-[#0F4036]/8 text-[#0F4036]";
 
   return (
-    <DisplayBackground>
+    <DisplayBackground darkMode={isDark}>
       <DisplayBackButton />
-      <FullscreenButton />
+      <FullscreenButton darkMode={isDark} />
+      <DisplayThemeButton themeMode={themeMode} onToggle={toggleTheme} darkMode={isDark} />
       <div className="mx-auto flex min-h-[calc(100vh-40px)] max-w-[1500px] flex-col gap-4 sm:min-h-[calc(100vh-56px)] sm:gap-6 md:gap-8">
         <header className="overflow-hidden rounded-[24px] border border-[#0F4036]/14 bg-[#0F4036] text-white shadow-[0_28px_90px_rgba(15,64,54,0.22)] sm:rounded-[34px]">
           <div className="grid gap-4 p-4 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-5 sm:p-5 md:grid-cols-[auto_1fr_auto] md:gap-6 md:p-7">
@@ -4622,36 +4681,36 @@ function MenuBoardDisplay() {
             </div>
           </div>
         </header>
-        <DisplayStatus loading={loading} error={error} updatedAt={updatedAt} />
+        <DisplayStatus loading={loading} error={error} updatedAt={updatedAt} darkMode={isDark} />
 
         <main className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-5">
           {(menu.length ? menu : fallbackMenu).map((category) => (
             <section
               key={category.key || category.label}
-              className="flex min-h-0 flex-col overflow-hidden rounded-[22px] border border-[#0F4036]/10 bg-white shadow-[0_24px_70px_rgba(15,64,54,0.12)] sm:rounded-[30px] lg:min-h-[420px]"
+              className={`flex min-h-0 flex-col overflow-hidden rounded-[22px] border sm:rounded-[30px] lg:min-h-[420px] ${cardClass}`}
             >
-              <div className="border-b border-[#0F4036]/10 bg-[#FFFDF8] px-4 py-4 sm:px-5 sm:py-5">
-                <h2 className="text-2xl font-semibold tracking-normal text-[#0F4036] sm:text-3xl md:text-5xl">
+              <div className={`border-b px-4 py-4 sm:px-5 sm:py-5 ${cardHeaderClass}`}>
+                <h2 className={`text-2xl font-semibold tracking-normal sm:text-3xl md:text-5xl ${headingClass}`}>
                   {category.label}
                 </h2>
               </div>
-              <div className="grid gap-0 divide-y divide-[#0F4036]/8">
+              <div className={`grid gap-0 divide-y ${isDark ? "divide-white/10" : "divide-[#0F4036]/8"}`}>
                 {category.items?.length ? (
                   category.items.map((item) => (
                     <div
                       key={item.name}
                       className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 px-4 py-3 sm:gap-4 sm:px-5 sm:py-4"
                     >
-                      <span className="min-w-0 text-lg font-medium leading-tight tracking-normal text-[#2D261C] sm:text-xl md:text-2xl">
+                      <span className={`min-w-0 text-lg font-medium leading-tight tracking-normal sm:text-xl md:text-2xl ${itemClass}`}>
                         {item.name}
                       </span>
-                      <span className="rounded-full bg-[#0F4036]/8 px-2.5 py-1 text-base font-semibold text-[#0F4036] sm:px-3 sm:text-lg md:text-xl">
+                      <span className={`rounded-full px-2.5 py-1 text-base font-semibold sm:px-3 sm:text-lg md:text-xl ${priceClass}`}>
                         {item.price || "Ask"}
                       </span>
                     </div>
                   ))
                 ) : (
-                  <div className="m-5 rounded-2xl border border-dashed border-[#CA862B]/24 bg-[#FFFDF8] p-6 text-lg font-semibold text-[#6A614F]">
+                  <div className={`m-5 rounded-2xl border border-dashed border-[#CA862B]/24 p-6 text-lg font-semibold ${isDark ? "bg-white/8 text-[#FFF7EA]/72" : "bg-[#FFFDF8] text-[#6A614F]"}`}>
                     Menu loading
                   </div>
                 )}
@@ -4665,6 +4724,7 @@ function MenuBoardDisplay() {
 }
 
 function OrdersUpDisplay() {
+  const { themeMode, isDark, toggleTheme } = useDisplayTheme();
   const [orders, setOrders] = useState({ ready: [], recentlyCompleted: [] });
   const [updatedAt, setUpdatedAt] = useState("");
   const [loading, setLoading] = useState(true);
@@ -4710,11 +4770,23 @@ function OrdersUpDisplay() {
       clearInterval(interval);
     };
   }, []);
+  const cardClass = isDark
+    ? "border-white/12 bg-[#082622] shadow-[0_24px_70px_rgba(0,0,0,0.22)]"
+    : "border-[#0F4036]/10 bg-white shadow-[0_24px_70px_rgba(15,64,54,0.12)]";
+  const cardHeaderClass = isDark
+    ? "border-white/10 bg-white/8"
+    : "border-[#0F4036]/10 bg-[#FFFDF8]";
+  const headingClass = isDark ? "text-[#FFF7EA]" : "text-[#0F4036]";
+  const mutedClass = isDark ? "text-[#FFF7EA]/68" : "text-[#6A614F]";
+  const readyTileClass = isDark
+    ? "border-[#CA862B]/22 bg-[#FFF7EA] text-[#0F4036]"
+    : "border-[#0F4036]/10 bg-[#0F4036] text-white";
 
   return (
-    <DisplayBackground accent="green">
+    <DisplayBackground accent="green" darkMode={isDark}>
       <DisplayBackButton />
-      <FullscreenButton />
+      <FullscreenButton darkMode={isDark} />
+      <DisplayThemeButton themeMode={themeMode} onToggle={toggleTheme} darkMode={isDark} />
       <div className="mx-auto flex min-h-[calc(100vh-40px)] max-w-[1500px] flex-col gap-4 sm:min-h-[calc(100vh-56px)] sm:gap-6 md:gap-8">
         <header className="overflow-hidden rounded-[24px] border border-[#0F4036]/14 bg-[#0F4036] text-white shadow-[0_28px_90px_rgba(15,64,54,0.22)] sm:rounded-[34px]">
           <div className="grid gap-4 p-4 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-5 sm:p-5 md:grid-cols-[auto_1fr_auto] md:gap-6 md:p-7">
@@ -4738,20 +4810,20 @@ function OrdersUpDisplay() {
             </div>
           </div>
         </header>
-        <DisplayStatus loading={loading} error={error} updatedAt={updatedAt} />
+        <DisplayStatus loading={loading} error={error} updatedAt={updatedAt} darkMode={isDark} />
 
         <main className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1.35fr_0.65fr] lg:gap-5">
-          <section className="overflow-hidden rounded-[22px] border border-[#0F4036]/10 bg-white shadow-[0_24px_70px_rgba(15,64,54,0.12)] sm:rounded-[30px]">
-            <div className="flex items-end justify-between gap-3 border-b border-[#0F4036]/10 bg-[#FFFDF8] px-4 py-4 sm:gap-4 sm:px-5 sm:py-5">
+          <section className={`overflow-hidden rounded-[22px] border sm:rounded-[30px] ${cardClass}`}>
+            <div className={`flex items-end justify-between gap-3 border-b px-4 py-4 sm:gap-4 sm:px-5 sm:py-5 ${cardHeaderClass}`}>
               <div>
                 <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8B5A1D] sm:text-sm sm:tracking-[0.22em]">
                   Ready now
                 </div>
-                <h2 className="mt-1 text-3xl font-semibold tracking-normal text-[#0F4036] sm:text-4xl md:text-6xl">
+                <h2 className={`mt-1 text-3xl font-semibold tracking-normal sm:text-4xl md:text-6xl ${headingClass}`}>
                   Pick up
                 </h2>
               </div>
-              <div className="rounded-full bg-[#0F4036]/8 px-4 py-2 text-xl font-semibold text-[#0F4036] sm:px-5 sm:text-2xl">
+              <div className={`rounded-full px-4 py-2 text-xl font-semibold sm:px-5 sm:text-2xl ${isDark ? "bg-white/10 text-[#FFF7EA]" : "bg-[#0F4036]/8 text-[#0F4036]"}`}>
                 {orders.ready.length}
               </div>
             </div>
@@ -4761,10 +4833,10 @@ function OrdersUpDisplay() {
                 {orders.ready.map((order) => (
                   <div
                     key={order.id}
-                    className="grid aspect-[1.18/1] min-h-[118px] place-items-center rounded-[20px] border border-[#0F4036]/10 bg-[#0F4036] text-white shadow-[0_18px_50px_rgba(15,64,54,0.18)] sm:rounded-[26px]"
+                    className={`grid aspect-[1.18/1] min-h-[118px] place-items-center rounded-[20px] border shadow-[0_18px_50px_rgba(15,64,54,0.18)] sm:rounded-[26px] ${readyTileClass}`}
                   >
                     <div className="text-center">
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#F3D39B] sm:text-xs sm:tracking-[0.18em]">
+                      <div className={`text-[10px] font-semibold uppercase tracking-[0.16em] sm:text-xs sm:tracking-[0.18em] ${isDark ? "text-[#8B5A1D]" : "text-[#F3D39B]"}`}>
                         Order
                       </div>
                       <div className="mt-1 max-w-[9ch] break-words text-4xl font-semibold leading-none tracking-normal sm:text-5xl md:text-6xl xl:text-7xl">
@@ -4777,10 +4849,10 @@ function OrdersUpDisplay() {
             ) : (
               <div className="grid min-h-[260px] place-items-center p-5 text-center sm:min-h-[340px] lg:min-h-[390px]">
                 <div>
-                  <div className="text-4xl font-semibold tracking-normal text-[#0F4036] sm:text-5xl md:text-7xl">
+                  <div className={`text-4xl font-semibold tracking-normal sm:text-5xl md:text-7xl ${headingClass}`}>
                     Making drinks
                   </div>
-                  <p className="mt-4 text-lg font-medium text-[#6A614F] sm:text-xl">
+                  <p className={`mt-4 text-lg font-medium sm:text-xl ${mutedClass}`}>
                     Ready order numbers will show here.
                   </p>
                 </div>
@@ -4788,30 +4860,30 @@ function OrdersUpDisplay() {
             )}
           </section>
 
-          <section className="overflow-hidden rounded-[22px] border border-[#0F4036]/10 bg-white shadow-[0_24px_70px_rgba(15,64,54,0.12)] sm:rounded-[30px]">
-            <div className="border-b border-[#0F4036]/10 bg-[#FFFDF8] px-4 py-4 sm:px-5 sm:py-5">
+          <section className={`overflow-hidden rounded-[22px] border sm:rounded-[30px] ${cardClass}`}>
+            <div className={`border-b px-4 py-4 sm:px-5 sm:py-5 ${cardHeaderClass}`}>
               <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8B5A1D] sm:text-sm sm:tracking-[0.22em]">
                 Recently picked up
               </div>
-              <h2 className="mt-1 text-2xl font-semibold tracking-normal text-[#0F4036] sm:text-3xl md:text-5xl">
+              <h2 className={`mt-1 text-2xl font-semibold tracking-normal sm:text-3xl md:text-5xl ${headingClass}`}>
                 Completed
               </h2>
             </div>
-            <div className="grid gap-0 divide-y divide-[#0F4036]/8">
+            <div className={`grid gap-0 divide-y ${isDark ? "divide-white/10" : "divide-[#0F4036]/8"}`}>
               {orders.recentlyCompleted.length ? (
                 orders.recentlyCompleted.map((order) => (
                   <div
                     key={order.id}
                     className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-4"
                   >
-                    <span className="min-w-0 text-base font-medium text-[#2D261C] sm:text-lg">Order {order.orderNumber}</span>
-                    <span className="shrink-0 rounded-full bg-[#0F4036]/8 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#0F4036] sm:text-xs">
+                    <span className={`min-w-0 text-base font-medium sm:text-lg ${isDark ? "text-[#FFF7EA]" : "text-[#2D261C]"}`}>Order {order.orderNumber}</span>
+                    <span className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] sm:text-xs ${isDark ? "bg-[#CA862B]/18 text-[#F3D39B]" : "bg-[#0F4036]/8 text-[#0F4036]"}`}>
                       Picked up
                     </span>
                   </div>
                 ))
               ) : (
-                <div className="m-5 rounded-2xl border border-dashed border-[#CA862B]/24 bg-[#FFFDF8] p-6 text-lg font-semibold text-[#6A614F]">
+                <div className={`m-5 rounded-2xl border border-dashed border-[#CA862B]/24 p-6 text-lg font-semibold ${isDark ? "bg-white/8 text-[#FFF7EA]/72" : "bg-[#FFFDF8] text-[#6A614F]"}`}>
                   Completed orders will appear here briefly.
                 </div>
               )}
@@ -5470,6 +5542,18 @@ export default function GoldiesKDS() {
       });
   }
 
+  async function handleDashboardFullscreen() {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await document.documentElement.requestFullscreen();
+      }
+    } catch (error) {
+      setLastError("Full screen was blocked by the browser. Try the browser menu.");
+    }
+  }
+
   async function handlePasswordChange({
     currentPassword,
     newPassword,
@@ -5793,6 +5877,14 @@ export default function GoldiesKDS() {
               >
                 Orders Up
               </a>
+
+              <button
+                type="button"
+                onClick={handleDashboardFullscreen}
+                className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
+              >
+                Full Screen
+              </button>
 
               <button
                 type="button"
