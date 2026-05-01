@@ -29,7 +29,7 @@ const DAILY_UPDATE_NOTICE = {
   message:
     "Online Ordering Beta is now wired for a real drink pickup test. Build a drink order, pay through Square Checkout, and the paid order can flow back into the KDS.",
   note:
-    "Online pickup tickets now get a red pending-order alert on the dashboard. Also new: Volume Board, Drive Thru display, Menu Board, Orders Up display, Focus Board, and cleaner owner reporting tools.",
+    "Online pickup tickets now get a red pending-order alert on the dashboard. Orders Up now shows drinks being made and ready, and the dashboard has Customer insights for quick customer/menu notes.",
 };
 const RELEASE_NOTES = [
   {
@@ -41,6 +41,9 @@ const RELEASE_NOTES = [
       "The beta order page sends selected drinks to Square Checkout so a paid test order can flow back into the KDS.",
       "New online pickup tickets now show a red pending-order alert with placed time and drink details.",
       "Orders Up now labels Online versus In person orders.",
+      "Orders Up now shows drinks currently being made, not just orders that are ready.",
+      "The dashboard now has a Customer insights note area for small customer/menu requests.",
+      "The Online Ordering Beta can read Square catalog drink options and estimate ASAP pickup time from queue depth.",
       "The ordering beta keeps menu prices controlled by the backend instead of trusting browser-entered prices.",
       "The sign-in update message now tells owners what changed in the KDS before they start service.",
     ],
@@ -2684,6 +2687,120 @@ function DailyDrinkCount({ drinkCounts, orderCount }) {
   );
 }
 
+function CustomerInsightsPanel() {
+  const [customerName, setCustomerName] = useState("");
+  const [drinkName, setDrinkName] = useState("");
+  const [note, setNote] = useState("");
+  const [insights, setInsights] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState("");
+
+  async function refreshInsights() {
+    try {
+      const response = await fetch(apiUrl("/api/customer-insights"), {
+        credentials: "include",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.ok) setInsights(data.insights || []);
+    } catch {
+      // Insight history is helpful, but the dashboard should not fail if it is unavailable.
+    }
+  }
+
+  useEffect(() => {
+    refreshInsights();
+  }, []);
+
+  async function saveInsight(event) {
+    event.preventDefault();
+    if (!note.trim() || saving) return;
+
+    setSaving(true);
+    setStatus("");
+
+    try {
+      const response = await fetch(apiUrl("/api/customer-insights"), {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerName, drinkName, note }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Insight could not be saved.");
+
+      setCustomerName("");
+      setDrinkName("");
+      setNote("");
+      setStatus("Saved customer insight.");
+      await refreshInsights();
+    } catch (error) {
+      setStatus(error.message || "Insight could not be saved.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="rounded-2xl border border-white/70 bg-[rgba(255,253,248,0.92)] p-4 shadow-sm">
+      <div className="flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h2 className="text-xl font-black text-[#0F4036]">Customer insights</h2>
+          <p className="text-sm font-semibold text-[#6A614F]">
+            Save small customer requests and menu clues for owner reports.
+          </p>
+        </div>
+        {status ? <div className="text-sm font-black text-[#0F4036]">{status}</div> : null}
+      </div>
+
+      <form onSubmit={saveInsight} className="mt-3 grid gap-2 md:grid-cols-[160px_180px_minmax(0,1fr)_auto]">
+        <input
+          value={customerName}
+          onChange={(event) => setCustomerName(event.target.value)}
+          placeholder="Customer name"
+          className="rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-bold outline-none focus:border-[#CA862B]"
+        />
+        <input
+          value={drinkName}
+          onChange={(event) => setDrinkName(event.target.value)}
+          placeholder="Drink"
+          className="rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-bold outline-none focus:border-[#CA862B]"
+        />
+        <input
+          value={note}
+          onChange={(event) => setNote(event.target.value)}
+          placeholder="Example: asked for lavender in a London Fog"
+          className="rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-bold outline-none focus:border-[#CA862B]"
+        />
+        <button
+          type="submit"
+          disabled={!note.trim() || saving}
+          className={`rounded-xl px-4 py-2 text-sm font-black text-white ${
+            note.trim() && !saving ? "bg-[#0F4036]" : "bg-neutral-300"
+          }`}
+        >
+          {saving ? "Saving" : "Save"}
+        </button>
+      </form>
+
+      {insights.length ? (
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+          {insights.slice(0, 6).map((insight) => (
+            <div key={insight.id} className="min-w-[220px] rounded-xl border border-[#CA862B]/14 bg-white px-3 py-2">
+              <div className="text-xs font-black uppercase tracking-[0.12em] text-[#8B5A1D]">
+                {insight.customer_name || "Customer note"}
+              </div>
+              <div className="mt-1 text-sm font-bold text-[#111111]">{insight.note}</div>
+              {insight.drink_name ? (
+                <div className="mt-1 text-xs font-semibold text-[#6A614F]">{insight.drink_name}</div>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 function DemoBrandMark({ size = "md" }) {
   const dimensions = size === "lg" ? "h-28 w-56" : "h-16 w-36";
 
@@ -4867,6 +4984,9 @@ function ticketToCustomerDisplayOrder(ticket) {
 function getDemoOrdersUpDisplay() {
   const displayTickets = getDemoDisplayTickets().filter(hasDrinkItems);
   return {
+    making: displayTickets
+      .filter((ticket) => ticket.status === "making")
+      .map((ticket) => ({ ...ticketToCustomerDisplayOrder(ticket), status: "Being made" })),
     ready: displayTickets
       .filter((ticket) => ticket.status === "ready")
       .map(ticketToCustomerDisplayOrder),
@@ -5186,7 +5306,7 @@ function CustomerOrderDetails({ order, darkMode = false, compact = false }) {
 function OrdersUpDisplay() {
   const { themeMode, isDark, toggleTheme } = useDisplayTheme();
   const demoMode = isDemoTrainingRoute();
-  const [orders, setOrders] = useState({ ready: [], recentlyCompleted: [] });
+  const [orders, setOrders] = useState({ making: [], ready: [], recentlyCompleted: [] });
   const [updatedAt, setUpdatedAt] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -5218,6 +5338,7 @@ function OrdersUpDisplay() {
         const data = await response.json();
         if (!mounted) return;
         setOrders({
+          making: data.making || [],
           ready: data.ready || [],
           recentlyCompleted: data.recentlyCompleted || [],
         });
@@ -5285,7 +5406,47 @@ function OrdersUpDisplay() {
         </header>
         <DisplayStatus loading={loading} error={error} updatedAt={updatedAt} darkMode={isDark} />
 
-        <main className="grid flex-1 grid-cols-1 gap-3 lg:grid-cols-[1.35fr_0.65fr] lg:gap-4">
+        <main className="grid flex-1 grid-cols-1 gap-3 xl:grid-cols-[0.9fr_1.1fr_0.65fr] lg:gap-4">
+          <section className={`overflow-hidden rounded-[18px] border sm:rounded-[24px] ${cardClass}`}>
+            <div className={`flex items-end justify-between gap-3 border-b px-3 py-3 sm:px-4 sm:py-4 ${cardHeaderClass}`}>
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8B5A1D] sm:text-xs sm:tracking-[0.2em]">
+                  Being made
+                </div>
+                <h2 className={`mt-1 text-3xl font-semibold tracking-normal sm:text-4xl md:text-5xl ${headingClass}`}>
+                  At the bar
+                </h2>
+              </div>
+              <div className={`rounded-full px-3 py-1.5 text-lg font-semibold sm:px-4 sm:text-xl ${isDark ? "bg-white/10 text-[#FFF7EA]" : "bg-[#CA862B]/12 text-[#8B5A1D]"}`}>
+                {orders.making.length}
+              </div>
+            </div>
+
+            {orders.making.length ? (
+              <div className="grid grid-cols-1 gap-2.5 p-3 sm:grid-cols-2 xl:grid-cols-1">
+                {orders.making.map((order) => (
+                  <div
+                    key={order.id}
+                    className={`rounded-[16px] border p-3 sm:rounded-[20px] ${isDark ? "border-[#CA862B]/22 bg-white/8 text-[#FFF7EA]" : "border-[#CA862B]/18 bg-[#FFFDF8] text-[#111111]"}`}
+                  >
+                    <CustomerOrderDetails order={order} darkMode={isDark} />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid min-h-[180px] place-items-center p-4 text-center">
+                <div>
+                  <div className={`text-2xl font-semibold tracking-normal sm:text-3xl ${headingClass}`}>
+                    No drinks at the bar
+                  </div>
+                  <p className={`mt-2 text-base font-medium ${mutedClass}`}>
+                    Orders move here once staff starts them.
+                  </p>
+                </div>
+              </div>
+            )}
+          </section>
+
           <section className={`overflow-hidden rounded-[18px] border sm:rounded-[24px] ${cardClass}`}>
             <div className={`flex items-end justify-between gap-3 border-b px-3 py-3 sm:px-4 sm:py-4 ${cardHeaderClass}`}>
               <div>
@@ -6030,17 +6191,105 @@ const ONLINE_ORDERING_BETA_MENU = [
 function OnlineOrderingBetaPage() {
   const demoMode = isDemoTrainingRoute();
   const ordered = typeof window !== "undefined" && window.location.search.includes("ordered=1");
+  const [menuGroups, setMenuGroups] = useState(ONLINE_ORDERING_BETA_MENU);
+  const [menuSource, setMenuSource] = useState("static");
   const [cart, setCart] = useState([]);
   const [customerName, setCustomerName] = useState("");
-  const [pickupTime, setPickupTime] = useState("");
+  const [pickupMode, setPickupMode] = useState("asap");
+  const [scheduledPickupTime, setScheduledPickupTime] = useState("");
+  const [readyQuote, setReadyQuote] = useState(null);
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [orderError, setOrderError] = useState("");
   const cartTotalCents = cart.reduce((sum, item) => {
-    const price = Number.parseFloat(String(item.price || "").replace(/[^0-9.]/g, ""));
-    return sum + Math.round((Number.isFinite(price) ? price : 0) * 100) * item.qty;
+    const baseCents =
+      Number(item.priceCents || 0) ||
+      Math.round(
+        (Number.parseFloat(String(item.price || "").replace(/[^0-9.]/g, "")) || 0) * 100
+      );
+    const modifierCents = (item.modifierGroups || []).reduce(
+      (sum, group) =>
+        sum +
+        (group.options || [])
+          .filter((option) => (item.modifierIds || []).includes(option.id))
+          .reduce((optionSum, option) => optionSum + Number(option.priceCents || 0), 0),
+      0
+    );
+    return sum + (baseCents + modifierCents) * item.qty;
   }, 0);
   const cartItemCount = cart.reduce((sum, item) => sum + item.qty, 0);
+  const pickupSlots = useMemo(() => {
+    const slots = [];
+    const now = new Date();
+    const first = new Date(now.getTime() + 15 * 60000);
+    first.setMinutes(Math.ceil(first.getMinutes() / 15) * 15, 0, 0);
+
+    for (let index = 0; index < 16; index += 1) {
+      const slot = new Date(first.getTime() + index * 15 * 60000);
+      slots.push({
+        value: slot.toISOString(),
+        label: slot.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+      });
+    }
+
+    return slots;
+  }, []);
+  const pickupTime =
+    pickupMode === "scheduled"
+      ? scheduledPickupTime
+      : readyQuote?.readyTimeLabel
+        ? `ASAP - estimated ${readyQuote.readyTimeLabel}`
+        : "ASAP";
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function fetchMenu() {
+      try {
+        const response = await fetch(apiUrl("/api/beta/online-order/menu"));
+        const data = await response.json().catch(() => ({}));
+        if (!mounted || !response.ok || !Array.isArray(data.categories)) return;
+        setMenuGroups(data.categories.length ? data.categories : ONLINE_ORDERING_BETA_MENU);
+        setMenuSource(data.source || "static");
+      } catch {
+        if (mounted) setMenuSource("static");
+      }
+    }
+
+    fetchMenu();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function fetchReadyQuote() {
+      if (!cartItemCount) {
+        setReadyQuote(null);
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          apiUrl(`/api/beta/online-order/quote?items=${cartItemCount}`)
+        );
+        const data = await response.json().catch(() => ({}));
+        if (!mounted || !response.ok) return;
+        setReadyQuote(data);
+      } catch {
+        if (mounted) setReadyQuote(null);
+      }
+    }
+
+    fetchReadyQuote();
+    const interval = setInterval(fetchReadyQuote, 15000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [cartItemCount]);
 
   function addItem(item, category) {
     setCart((current) => {
@@ -6051,7 +6300,7 @@ function OnlineOrderingBetaPage() {
         );
       }
 
-      return [...current, { ...item, category, qty: 1 }];
+      return [...current, { ...item, category, qty: 1, modifierIds: [] }];
     });
   }
 
@@ -6062,6 +6311,19 @@ function OnlineOrderingBetaPage() {
           entry.id === id ? { ...entry, qty: Math.max(0, entry.qty + delta) } : entry
         )
         .filter((entry) => entry.qty > 0)
+    );
+  }
+
+  function toggleModifier(itemId, modifierId) {
+    setCart((current) =>
+      current.map((entry) => {
+        if (entry.id !== itemId) return entry;
+        const currentIds = entry.modifierIds || [];
+        const nextIds = currentIds.includes(modifierId)
+          ? currentIds.filter((id) => id !== modifierId)
+          : [...currentIds, modifierId];
+        return { ...entry, modifierIds: nextIds };
+      })
     );
   }
 
@@ -6080,7 +6342,12 @@ function OnlineOrderingBetaPage() {
           customerName,
           pickupTime,
           notes,
-          items: cart.map((item) => ({ id: item.id, qty: item.qty })),
+          items: cart.map((item) => ({
+            id: item.id,
+            variationId: item.variationId,
+            qty: item.qty,
+            modifierIds: item.modifierIds || [],
+          })),
         }),
       });
       const data = await response.json().catch(() => ({}));
@@ -6102,10 +6369,11 @@ function OnlineOrderingBetaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#EEE0C5] text-[#111111]">
+    <div className="min-h-screen bg-[#F6EFE1] text-[#111111]">
       <div className="relative overflow-hidden bg-[#0F4036] text-white">
         <div className="absolute inset-0 opacity-15" style={{ backgroundImage: `url(${LOGO_DARK_URL})`, backgroundSize: "220px auto", backgroundRepeat: "repeat", transform: "rotate(-8deg) scale(1.1)" }} />
-        <div className="relative mx-auto grid max-w-6xl gap-6 px-4 py-6 md:grid-cols-[minmax(0,1fr)_420px] md:items-center md:py-10">
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#F6EFE1] to-transparent" />
+        <div className="relative mx-auto grid max-w-6xl gap-6 px-4 py-6 md:grid-cols-[minmax(0,1fr)_430px] md:items-center md:py-10">
           <div>
             <a
               href={demoMode ? "/?demo=training" : "/"}
@@ -6132,10 +6400,37 @@ function OnlineOrderingBetaPage() {
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-1">
-            <div className="overflow-hidden rounded-3xl border border-white/14 bg-white/10 p-3 shadow-[0_30px_90px_rgba(0,0,0,0.28)] backdrop-blur">
-              <img src="/goldies-login-screenshot.png" alt="Goldie's branded ordering preview" className="h-60 w-full rounded-2xl object-cover object-top" />
+            <div className="rounded-[2rem] border border-white/20 bg-[rgba(255,253,248,0.96)] p-4 text-[#111111] shadow-[0_30px_90px_rgba(0,0,0,0.28)]">
+              <div className="flex items-center justify-between gap-3 border-b border-[#CA862B]/16 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#0F4036] text-sm font-black text-white">
+                    GO
+                  </div>
+                  <div>
+                    <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">Pickup order</div>
+                    <div className="text-lg font-black text-[#0F4036]">Ready-time estimate</div>
+                  </div>
+                </div>
+                <span className="rounded-full bg-[#CA862B]/12 px-3 py-1 text-xs font-black text-[#8B5A1D]">
+                  Beta
+                </span>
+              </div>
+              <div className="mt-4 grid gap-2">
+                <div className="rounded-2xl border border-[#CA862B]/16 bg-white p-3">
+                  <div className="text-sm font-black text-[#111111]">1x Latte</div>
+                  <div className="text-xs font-semibold text-[#6A614F]">Oat milk · Vanilla</div>
+                </div>
+                <div className="rounded-2xl border border-[#CA862B]/16 bg-white p-3">
+                  <div className="text-sm font-black text-[#111111]">1x London Fog</div>
+                  <div className="text-xs font-semibold text-[#6A614F]">Honey · Pickup name added</div>
+                </div>
+              </div>
+              <div className="mt-4 rounded-2xl bg-[#0F4036] p-4 text-white">
+                <div className="text-xs font-black uppercase tracking-[0.18em] text-[#F3D39B]">Estimated pickup</div>
+                <div className="mt-1 text-3xl font-black">ASAP + queue</div>
+              </div>
             </div>
-            <div className="rounded-3xl border border-white/14 bg-[rgba(255,253,248,0.95)] p-4 text-[#0F4036] shadow-[0_30px_90px_rgba(0,0,0,0.18)]">
+            <div className="rounded-[2rem] border border-white/14 bg-[rgba(255,253,248,0.95)] p-4 text-[#0F4036] shadow-[0_30px_90px_rgba(0,0,0,0.18)]">
               <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">Pickup flow</div>
               <div className="mt-2 grid grid-cols-3 gap-2 text-center">
                 {["Choose", "Pay", "Pickup"].map((step) => (
@@ -6155,29 +6450,39 @@ function OnlineOrderingBetaPage() {
           </div>
         ) : null}
 
-        <main className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
-          <section className="grid gap-3 md:grid-cols-3">
-            {ONLINE_ORDERING_BETA_MENU.map((group) => (
-              <article key={group.category} className="rounded-3xl border border-white/70 bg-[rgba(255,253,248,0.95)] p-4 shadow-[0_18px_48px_rgba(15,64,54,0.08)]">
+        <main className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_390px]">
+          <section className="space-y-5">
+            {menuGroups.map((group) => (
+              <article key={group.category} className="rounded-[2rem] border border-white/70 bg-[rgba(255,253,248,0.96)] p-4 shadow-[0_18px_48px_rgba(15,64,54,0.08)]">
                 <div className="flex items-end justify-between gap-3">
                   <h2 className="text-2xl font-black text-[#0F4036]">{group.category}</h2>
                   <span className="rounded-full bg-[#CA862B]/10 px-2.5 py-1 text-xs font-black text-[#8B5A1D]">
                     {group.items.length}
                   </span>
                 </div>
-                <div className="mt-3 grid gap-2">
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
                   {group.items.map((item) => (
                     <button
                       key={item.id}
                       type="button"
                       onClick={() => addItem(item, group.category)}
-                      className="group rounded-2xl border border-[#CA862B]/16 bg-white p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:bg-[#EEE0C5]/45 hover:shadow-md"
+                      className="group rounded-2xl border border-[#CA862B]/16 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:bg-[#EEE0C5]/45 hover:shadow-md"
                     >
                       <span className="flex items-center justify-between gap-2">
-                        <span className="block text-base font-black text-[#111111]">{item.name}</span>
+                        <span className="block text-base font-black text-[#111111]">
+                          {item.name}
+                          {item.variationName ? (
+                            <span className="block text-xs font-bold text-[#6A614F]">
+                              {item.variationName}
+                            </span>
+                          ) : null}
+                        </span>
                         <span className="rounded-full bg-[#0F4036]/8 px-2 py-1 text-xs font-black text-[#0F4036] group-hover:bg-[#0F4036] group-hover:text-white">Add</span>
                       </span>
-                      <span className="mt-1 block text-sm font-semibold text-[#6A614F]">{item.price}</span>
+                      <span className="mt-1 block text-sm font-semibold text-[#6A614F]">
+                        {item.price}
+                        {menuSource === "square" ? " · Square menu" : ""}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -6185,7 +6490,7 @@ function OnlineOrderingBetaPage() {
             ))}
           </section>
 
-          <aside className="rounded-3xl border border-white/70 bg-[rgba(255,253,248,0.97)] p-4 shadow-[0_24px_70px_rgba(15,64,54,0.12)] lg:sticky lg:top-4 lg:self-start">
+          <aside className="rounded-[2rem] border border-white/70 bg-[rgba(255,253,248,0.98)] p-4 shadow-[0_24px_70px_rgba(15,64,54,0.12)] lg:sticky lg:top-4 lg:self-start">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">Your pickup</div>
@@ -6202,7 +6507,14 @@ function OnlineOrderingBetaPage() {
                   <div key={item.id} className="rounded-2xl border border-[#CA862B]/16 bg-white p-3">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <div className="font-black text-[#111111]">{item.name}</div>
+                        <div className="font-black text-[#111111]">
+                          {item.name}
+                          {item.variationName ? (
+                            <span className="block text-xs font-bold text-[#6A614F]">
+                              {item.variationName}
+                            </span>
+                          ) : null}
+                        </div>
                         <div className="text-sm font-semibold text-[#6A614F]">{item.price}</div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -6211,6 +6523,37 @@ function OnlineOrderingBetaPage() {
                         <button type="button" onClick={() => updateQty(item.id, 1)} className="grid h-8 w-8 place-items-center rounded-full border border-[#CA862B]/22 bg-white font-black text-[#0F4036]">+</button>
                       </div>
                     </div>
+                    {(item.modifierGroups || []).length ? (
+                      <div className="mt-3 space-y-3 border-t border-[#CA862B]/12 pt-3">
+                        {item.modifierGroups.map((group) => (
+                          <div key={`${item.id}-${group.id}`}>
+                            <div className="text-xs font-black uppercase tracking-[0.12em] text-[#8B5A1D]">
+                              {group.name}
+                            </div>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {(group.options || []).map((option) => {
+                                const checked = (item.modifierIds || []).includes(option.id);
+                                return (
+                                  <button
+                                    key={option.id}
+                                    type="button"
+                                    onClick={() => toggleModifier(item.id, option.id)}
+                                    className={`rounded-full border px-3 py-1.5 text-xs font-black transition ${
+                                      checked
+                                        ? "border-[#0F4036] bg-[#0F4036] text-white"
+                                        : "border-[#CA862B]/20 bg-[#FFFDF8] text-[#0F4036] hover:bg-[#EEE0C5]/45"
+                                    }`}
+                                  >
+                                    {option.name}
+                                    {option.priceCents ? ` +${option.price}` : ""}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 ))
               ) : (
@@ -6226,8 +6569,34 @@ function OnlineOrderingBetaPage() {
             </label>
             <label className="mt-3 block">
               <span className="text-sm font-black text-[#0F4036]">Pickup time</span>
-              <input value={pickupTime} onChange={(event) => setPickupTime(event.target.value)} placeholder="Example: 7:45 AM" className="mt-2 w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15" />
+              <select
+                value={pickupMode === "scheduled" ? scheduledPickupTime : "asap"}
+                onChange={(event) => {
+                  if (event.target.value === "asap") {
+                    setPickupMode("asap");
+                    setScheduledPickupTime("");
+                  } else {
+                    setPickupMode("scheduled");
+                    setScheduledPickupTime(event.target.value);
+                  }
+                }}
+                className="mt-2 w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15"
+              >
+                <option value="asap">
+                  ASAP{readyQuote?.readyTimeLabel ? ` - estimated ${readyQuote.readyTimeLabel}` : ""}
+                </option>
+                {pickupSlots.map((slot) => (
+                  <option key={slot.value} value={slot.value}>
+                    Schedule for {slot.label}
+                  </option>
+                ))}
+              </select>
             </label>
+            {pickupMode === "asap" && readyQuote ? (
+              <div className="mt-2 rounded-2xl border border-[#0F4036]/12 bg-[#0F4036]/6 px-4 py-3 text-sm font-bold leading-6 text-[#0F4036]">
+                Estimated ready around {readyQuote.readyTimeLabel}. Based on {readyQuote.drinksAhead} drinks ahead and {readyQuote.averageLabel} average drink time.
+              </div>
+            ) : null}
             <label className="mt-3 block">
               <span className="text-sm font-black text-[#0F4036]">Notes or flavor request</span>
               <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Example: London Fog with lavender if available" rows="4" className="mt-2 w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15" />
@@ -7528,6 +7897,8 @@ export default function GoldiesKDS() {
             )}
           </section>
         )}
+
+        {!showFocusBoard && <CustomerInsightsPanel />}
 
         {!showFocusBoard && (
         <section className="space-y-2">

@@ -121,6 +121,22 @@ alter table public.kds_owner_snapshots
 alter table public.kds_owner_snapshots
   add column if not exists multi_drink_order_rate numeric not null default 0;
 
+create table if not exists public.kds_customer_insights (
+  id bigserial primary key,
+  customer_name text not null default '',
+  drink_name text not null default '',
+  note text not null,
+  source_order_id text,
+  created_by text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists kds_customer_insights_created_at_idx
+  on public.kds_customer_insights(created_at desc);
+
+create index if not exists kds_customer_insights_customer_name_idx
+  on public.kds_customer_insights(customer_name);
+
 create table if not exists public.drinkflow_leads (
   id bigserial primary key,
   email text not null unique,

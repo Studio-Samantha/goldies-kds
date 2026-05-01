@@ -1025,6 +1025,66 @@
         font-size: 13px;
         line-height: 1.5;
       }
+      .today-snapshot {
+        margin-top: 14px;
+        border: 1px solid rgba(202, 134, 43, 0.2);
+        border-radius: 8px;
+        background:
+          radial-gradient(circle at 95% 0%, rgba(202, 134, 43, 0.16), transparent 34%),
+          #fff;
+        padding: 18px;
+      }
+      .today-snapshot-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: start;
+        border-bottom: 1px solid rgba(202, 134, 43, 0.16);
+        padding-bottom: 12px;
+      }
+      .today-snapshot h3 {
+        margin: 4px 0 0;
+        color: var(--green);
+        font-size: clamp(22px, 3vw, 32px);
+      }
+      .snapshot-phase {
+        border-radius: 999px;
+        background: rgba(15, 64, 54, 0.1);
+        color: var(--green);
+        padding: 8px 10px;
+        font-size: 11px;
+        font-weight: 950;
+        text-transform: uppercase;
+      }
+      .snapshot-read {
+        margin: 14px 0 0;
+        color: #2d261c;
+        font-size: 15px;
+        line-height: 1.6;
+      }
+      .snapshot-cards {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .snapshot-card {
+        border: 1px solid rgba(15, 64, 54, 0.1);
+        border-radius: 8px;
+        background: rgba(246, 239, 225, 0.58);
+        padding: 12px;
+      }
+      .snapshot-card strong {
+        display: block;
+        color: var(--green);
+      }
+      .snapshot-card span {
+        display: block;
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
       .screen {
         overflow: hidden;
         border: 1px solid rgba(15, 64, 54, 0.18);
@@ -2388,8 +2448,7 @@
         <p class="eyebrow">Owner insight layer</p>
         <h2>The numbers behind the rush, without the spreadsheet cleanup.</h2>
         <p class="section-copy">
-          Square&reg; KDS is broad restaurant software. DrinkFlow sits beside it as the drink-shop view:
-          cleaner beverage numbers, useful reports, and less spreadsheet cleanup.
+          DrinkFlow keeps beverage numbers separate from retail noise, then turns the rush into owner-ready clues.
         </p>
         <div class="grid features">
           <article class="card feature">
@@ -2432,8 +2491,7 @@
               owner access, support links, optional employee logins, and the tools the team needs on day one.
             </p>
             <p class="section-copy">
-              Goldie&apos;s uses warm shop colors and a repeated logo watermark. Another shop might use
-              a full-photo background, a subtle pattern, different labels, or a simpler staff sign-in.
+              Another shop might use a full-photo background, a subtle pattern, different labels, or a simpler staff sign-in.
             </p>
           </div>
           <div class="customer-shot">
@@ -2622,6 +2680,34 @@
               <div class="portal-advice">
                 <strong>Report value</strong>
                 <span>Download the month as CSV, Excel, or a branded PDF with charts and notes.</span>
+              </div>
+            </div>
+            <div class="today-snapshot" aria-label="Example Today Snapshot">
+              <div class="today-snapshot-head">
+                <div>
+                  <p class="eyebrow">Today Snapshot</p>
+                  <h3>What needs attention during service?</h3>
+                </div>
+                <span class="snapshot-phase">Open now</span>
+              </div>
+              <p class="snapshot-read">
+                The shop is 62% through its 7 AM-3 PM service window. Today looks steady:
+                31 drink orders, 44 drink units, and $487 in drink revenue before tax.
+                Average drink order value is healthy, and 34% of single orders contain 2 or more drinks.
+              </p>
+              <div class="snapshot-cards">
+                <div class="snapshot-card">
+                  <strong>Demand mix</strong>
+                  <span>Espresso is leading, but tea and smoothies are still visible.</span>
+                </div>
+                <div class="snapshot-card">
+                  <strong>Money signal</strong>
+                  <span>The morning rush is strong enough to protect speed before pushing add-ons.</span>
+                </div>
+                <div class="snapshot-card">
+                  <strong>Owner action</strong>
+                  <span>Restock milks and cups before the next rush, then review notes after close.</span>
+                </div>
               </div>
             </div>
           </div>
@@ -3154,6 +3240,7 @@
           <div class="footer-links" aria-label="Footer links">
             <a href="/drinkflow-kds">DrinkFlow</a>
             <a href="/case-study/goldies">Case study</a>
+            <a href="/goldies-menu">Customer dashboards</a>
             <a href="/?demo=training">Open demo</a>
             <a href="/policy.html">Policy</a>
             <a href="/policy.html#data-use">Data use</a>

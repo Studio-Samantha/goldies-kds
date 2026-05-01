@@ -57,6 +57,12 @@ const SESSION_MAX_AGE_MS = 1000 * 60 * 60 * 12;
 const KDS_PASSWORD_SETTING_KEY = "kds_password";
 const OWNER_PASSWORD_SETTING_KEY = "owner_password";
 const SQUARE_API_VERSION = process.env.SQUARE_API_VERSION || "2025-04-16";
+const ONLINE_ORDERING_CATEGORY_NAMES = (
+  process.env.ONLINE_ORDERING_CATEGORY_NAMES || "Coffee,Not Coffee,Smoothies"
+)
+  .split(",")
+  .map((name) => name.trim().toLowerCase())
+  .filter(Boolean);
 const ONLINE_ORDERING_BETA_MENU = [
   { id: "latte", name: "Latte", category: "Coffee", priceCents: 575 },
   { id: "americano", name: "Americano", category: "Coffee", priceCents: 425 },
@@ -231,23 +237,222 @@ function cleanOrderText(value, maxLength = 240) {
     .slice(0, maxLength);
 }
 
-function buildOnlineOrderingBetaLineItems(rawItems) {
+async function fetchSquareCatalogObjects(types) {
+  const objects = [];
+  let cursor = "";
+
+  do {
+    const params = new URLSearchParams({ types: types.join(",") });
+    if (cursor) params.set("cursor", cursor);
+
+    const response = await fetch(`${getSquareRestBaseUrl()}/v2/catalog/list?${params}`, {
+      headers: {
+        Authorization: `Bearer ${SQUARE_ACCESS_TOKEN}`,
+        "Square-Version": SQUARE_API_VERSION,
+      },
+    });
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(payload?.errors?.[0]?.detail || payload?.errors?.[0]?.code || "Square catalog unavailable.");
+    }
+
+    objects.push(...(payload.objects || []));
+    cursor = payload.cursor || "";
+  } while (cursor);
+
+  return objects;
+}
+
+function isCatalogObjectPresentAtLocation(data = {}) {
+  if (data.present_at_all_locations) return true;
+  const locationIds = data.present_at_location_ids || [];
+  return !locationIds.length || locationIds.includes(SQUARE_LOCATION_ID);
+}
+
+function formatCatalogMoney(cents) {
+  return formatMoney(Number(cents || 0));
+}
+
+function buildStaticOnlineOrderingMenu() {
+  const grouped = new Map();
+  for (const item of ONLINE_ORDERING_BETA_MENU) {
+    if (!grouped.has(item.category)) grouped.set(item.category, []);
+    grouped.get(item.category).push({
+      id: item.id,
+      name: item.name,
+      category: item.category,
+      price: formatCatalogMoney(item.priceCents),
+      priceCents: item.priceCents,
+      variationId: "",
+      variationName: "",
+      modifierGroups: [],
+      source: "static",
+    });
+  }
+
+  return Array.from(grouped, ([category, items]) => ({ category, items }));
+}
+
+async function getSquareOnlineOrderingMenu() {
+  const objects = await fetchSquareCatalogObjects([
+    "ITEM",
+    "ITEM_VARIATION",
+    "MODIFIER",
+    "MODIFIER_LIST",
+    "CATEGORY",
+  ]);
+  const byId = new Map(objects.map((object) => [object.id, object]));
+  const categoriesById = new Map(
+    objects
+      .filter((object) => object.type === "CATEGORY")
+      .map((object) => [object.id, object.category_data?.name || ""])
+  );
+  const modifierListsById = new Map(
+    objects
+      .filter((object) => object.type === "MODIFIER_LIST")
+      .map((object) => [object.id, object])
+  );
+  const groups = new Map();
+
+  for (const object of objects) {
+    if (object.type !== "ITEM" || object.is_deleted) continue;
+
+    const itemData = object.item_data || {};
+    if (!isCatalogObjectPresentAtLocation(itemData)) continue;
+
+    const categoryId =
+      itemData.reporting_category?.id ||
+      itemData.category_id ||
+      itemData.categories?.[0]?.id ||
+      "";
+    const categoryName = categoriesById.get(categoryId) || itemData.category_name || "Drinks";
+    const categoryAllowed = ONLINE_ORDERING_CATEGORY_NAMES.includes(categoryName.toLowerCase());
+    const staticNameAllowed = ONLINE_ORDERING_BETA_MENU_BY_ID.has(
+      String(itemData.name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+    );
+
+    if (ONLINE_ORDERING_CATEGORY_NAMES.length && !categoryAllowed && !staticNameAllowed) {
+      continue;
+    }
+
+    const modifierGroups = (itemData.modifier_list_info || [])
+      .map((info) => {
+        const list = modifierListsById.get(info.modifier_list_id);
+        const listData = list?.modifier_list_data || {};
+        const options = (listData.modifiers || [])
+          .map((modifierRef) => byId.get(modifierRef.id) || modifierRef)
+          .filter((modifier) => modifier && !modifier.is_deleted)
+          .map((modifier) => {
+            const modifierData = modifier.modifier_data || {};
+            return {
+              id: modifier.id,
+              name: modifierData.name || "Modifier",
+              price: formatCatalogMoney(modifierData.price_money?.amount || 0),
+              priceCents: Number(modifierData.price_money?.amount || 0),
+            };
+          });
+
+        return {
+          id: info.modifier_list_id,
+          name: listData.name || "Options",
+          minSelected: Number(info.min_selected_modifiers || 0),
+          maxSelected: Number(info.max_selected_modifiers || 0),
+          options,
+        };
+      })
+      .filter((group) => group.options.length);
+
+    const variations = (itemData.variations || [])
+      .map((variationRef) => byId.get(variationRef.id) || variationRef)
+      .filter((variation) => {
+        const variationData = variation?.item_variation_data || {};
+        return variation && !variation.is_deleted && isCatalogObjectPresentAtLocation(variationData);
+      });
+
+    for (const variation of variations) {
+      const variationData = variation.item_variation_data || {};
+      const priceCents = Number(variationData.price_money?.amount || 0);
+      if (!priceCents) continue;
+
+      if (!groups.has(categoryName)) groups.set(categoryName, []);
+      groups.get(categoryName).push({
+        id: variation.id,
+        name: itemData.name || variationData.name || "Drink",
+        category: categoryName,
+        price: formatCatalogMoney(priceCents),
+        priceCents,
+        variationId: variation.id,
+        variationName: variationData.name && variationData.name !== "Regular" ? variationData.name : "",
+        modifierGroups,
+        source: "square",
+      });
+    }
+  }
+
+  const menu = Array.from(groups, ([category, items]) => ({
+    category,
+    items: items.sort((a, b) => a.name.localeCompare(b.name)),
+  })).sort((a, b) => a.category.localeCompare(b.category));
+
+  return menu.length ? menu : buildStaticOnlineOrderingMenu();
+}
+
+function flattenOnlineOrderingMenu(menu) {
+  const map = new Map();
+  for (const group of menu || []) {
+    for (const item of group.items || []) {
+      map.set(item.id, item);
+      if (item.variationId) map.set(item.variationId, item);
+    }
+  }
+  return map;
+}
+
+async function buildOnlineOrderingBetaLineItems(rawItems) {
   if (!Array.isArray(rawItems)) return [];
+  const menu = await getSquareOnlineOrderingMenu().catch((error) => {
+    console.error("Square catalog menu unavailable, using static beta menu:", error.message);
+    return buildStaticOnlineOrderingMenu();
+  });
+  const menuById = flattenOnlineOrderingMenu(menu);
 
   return rawItems
     .map((rawItem) => {
-      const menuItem = ONLINE_ORDERING_BETA_MENU_BY_ID.get(String(rawItem?.id || ""));
+      const rawId = String(rawItem?.variationId || rawItem?.id || "");
+      const menuItem = menuById.get(rawId);
       const quantity = Math.min(10, Math.max(0, Number.parseInt(rawItem?.qty, 10) || 0));
       if (!menuItem || quantity <= 0) return null;
+      const selectedModifierIds = Array.isArray(rawItem?.modifierIds)
+        ? rawItem.modifierIds.map((id) => String(id))
+        : [];
+      const allowedModifierIds = new Set(
+        (menuItem.modifierGroups || []).flatMap((group) =>
+          (group.options || []).map((option) => option.id)
+        )
+      );
+      const modifiers = selectedModifierIds
+        .filter((id) => allowedModifierIds.has(id))
+        .slice(0, 12)
+        .map((catalogObjectId) => ({ catalog_object_id: catalogObjectId }));
+      const lineItem = menuItem.variationId
+        ? {
+            catalog_object_id: menuItem.variationId,
+            quantity: String(quantity),
+          }
+        : {
+            name: menuItem.name,
+            quantity: String(quantity),
+            base_price_money: {
+              amount: menuItem.priceCents,
+              currency: "USD",
+            },
+          };
 
       return {
-        name: menuItem.name,
-        quantity: String(quantity),
-        base_price_money: {
-          amount: menuItem.priceCents,
-          currency: "USD",
-        },
-        note: menuItem.category,
+        ...lineItem,
+        modifiers,
+        note: [menuItem.category, cleanOrderText(rawItem?.note, 120)].filter(Boolean).join(" | "),
       };
     })
     .filter(Boolean)
@@ -622,6 +827,21 @@ async function getCustomerOrdersUp() {
   const completed = await getCompletedTicketsToday().catch(() => []);
   const recentCompletedCutoff = Date.now() - 15 * 60 * 1000;
 
+  const making = active
+    .filter((ticket) => ticket.status === "making" && ticketHasDrinkItem(ticket))
+    .sort((a, b) => Number(a.createdAt || 0) - Number(b.createdAt || 0))
+    .map((ticket) => ({
+      id: ticket.id,
+      orderNumber: ticket.orderNumber || ticket.id,
+      customerName: ticket.customerName || "",
+      diningOption: ticket.diningOption || "Pickup",
+      source: ticket.source || "Square",
+      isOnlineOrder: isOnlineOrderTicket(ticket),
+      items: getDisplayDrinkItems(ticket),
+      status: "Being made",
+      startedAt: ticket.updatedAt || ticket.createdAt || null,
+    }));
+
   const ready = active
     .filter((ticket) => ticket.status === "ready" && ticketHasDrinkItem(ticket))
     .sort((a, b) => Number(a.createdAt || 0) - Number(b.createdAt || 0))
@@ -661,7 +881,7 @@ async function getCustomerOrdersUp() {
       completedAt: ticket.completedAt || ticket.updatedAt || null,
     }));
 
-  return { ready, recentlyCompleted, updatedAt: new Date().toISOString() };
+  return { making, ready, recentlyCompleted, updatedAt: new Date().toISOString() };
 }
 
 function isOnlineOrderTicket(ticket = {}) {
@@ -833,6 +1053,17 @@ function snapshotsTableMissing(error) {
     error?.code === "PGRST205" ||
     message.includes("kds_owner_snapshots") ||
     message.includes("Could not find the table")
+  );
+}
+
+function customerInsightsTableMissing(error) {
+  const message = String(error?.message || "").toLowerCase();
+  return (
+    error?.code === "42P01" ||
+    error?.code === "PGRST205" ||
+    message.includes("kds_customer_insights") ||
+    message.includes("could not find the table") ||
+    message.includes("schema cache")
   );
 }
 
@@ -3889,6 +4120,74 @@ app.get("/api/tickets/completed", requireKdsAuth, async (req, res) => {
   }
 });
 
+app.get("/api/customer-insights", requireKdsAuth, async (_req, res) => {
+  try {
+    if (!supabase) return res.json({ insights: [] });
+
+    const { data, error } = await supabase
+      .from("kds_customer_insights")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(12);
+
+    if (error) throw error;
+    res.json({ insights: data || [] });
+  } catch (error) {
+    if (customerInsightsTableMissing(error)) {
+      return res.json({
+        insights: [],
+        warning:
+          "Customer insights table is not installed in Supabase yet. Run the latest supabase-schema.sql.",
+      });
+    }
+
+    console.error("Error fetching customer insights:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/customer-insights", requireKdsAuth, async (req, res) => {
+  try {
+    const customerName = cleanOrderText(req.body?.customerName, 120);
+    const note = cleanOrderText(req.body?.note, 1000);
+    const drinkName = cleanOrderText(req.body?.drinkName, 160);
+    const sourceOrderId = cleanOrderText(req.body?.sourceOrderId, 120);
+
+    if (!note) return res.status(400).json({ error: "Insight note is required." });
+
+    const insight = {
+      customer_name: customerName,
+      note,
+      drink_name: drinkName,
+      source_order_id: sourceOrderId,
+      created_by: req.kdsSession?.employeeName || "",
+    };
+
+    if (!supabase) {
+      return res.json({ ok: true, insight: { id: `local-${Date.now()}`, ...insight } });
+    }
+
+    const { data, error } = await supabase
+      .from("kds_customer_insights")
+      .insert(insight)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json({ ok: true, insight: data });
+  } catch (error) {
+    if (customerInsightsTableMissing(error)) {
+      return res.status(503).json({
+        error:
+          "Customer insights table is not installed in Supabase yet. Run the latest supabase-schema.sql.",
+      });
+    }
+
+    console.error("Error saving customer insight:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get("/api/tickets/search", requireKdsAuth, async (req, res) => {
   try {
     const query = req.query.q || "";
@@ -4000,12 +4299,91 @@ app.get("/api/display/online-orders", requireKdsAuth, async (_req, res) => {
   }
 });
 
+app.get("/api/beta/online-order/menu", async (_req, res) => {
+  try {
+    const menu = await getSquareOnlineOrderingMenu();
+    res.json({
+      ok: true,
+      source: menu.some((group) => group.items?.some((item) => item.source === "square"))
+        ? "square"
+        : "static",
+      categories: menu,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("Error fetching online ordering beta menu:", error);
+    res.json({
+      ok: true,
+      source: "static",
+      categories: buildStaticOnlineOrderingMenu(),
+      updatedAt: new Date().toISOString(),
+      warning: error.message,
+    });
+  }
+});
+
+app.get("/api/beta/online-order/quote", async (req, res) => {
+  try {
+    const cartUnits = Math.min(20, Math.max(1, Number.parseInt(req.query.items, 10) || 1));
+    const active = await getActiveTickets();
+    const queueTickets = active.filter(
+      (ticket) => ["new", "making"].includes(ticket.status) && ticketHasDrinkItem(ticket)
+    );
+    const drinksAhead = queueTickets.reduce(
+      (sum, ticket) =>
+        sum +
+        getDisplayDrinkItems(ticket).reduce(
+          (itemSum, item) => itemSum + (Number(item.qty) || 1),
+          0
+        ),
+      0
+    );
+    const makingReport = await getDrinkMakingTimeReport("today").catch(() => ({
+      averageSeconds: 0,
+      label: "Collecting",
+      sampleSize: 0,
+    }));
+    const averageSeconds = Math.max(120, Number(makingReport.averageSeconds || 0) || 210);
+    const estimatedMinutes = Math.max(
+      8,
+      Math.ceil(((drinksAhead + cartUnits) * averageSeconds) / 60) + 3
+    );
+    const readyAt = new Date(Date.now() + estimatedMinutes * 60000);
+
+    res.json({
+      ok: true,
+      queueTickets: queueTickets.length,
+      drinksAhead,
+      cartUnits,
+      averageSeconds,
+      averageLabel: makingReport.label || formatDurationSeconds(averageSeconds),
+      estimatedMinutes,
+      readyAt: readyAt.toISOString(),
+      readyTimeLabel: readyAt.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        timeZone: "America/Chicago",
+      }),
+    });
+  } catch (error) {
+    console.error("Error estimating online order ready time:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post("/api/beta/online-order/checkout", async (req, res) => {
   try {
     const customerName = cleanOrderText(req.body?.customerName, 80);
-    const pickupTime = cleanOrderText(req.body?.pickupTime, 80);
+    const rawPickupTime = cleanOrderText(req.body?.pickupTime, 120);
+    const pickupTime = rawPickupTime.startsWith("20")
+      ? new Date(rawPickupTime).toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+          timeZone: "America/Chicago",
+        })
+      : rawPickupTime;
     const notes = cleanOrderText(req.body?.notes, 300);
-    const lineItems = buildOnlineOrderingBetaLineItems(req.body?.items);
+    const lineItems = await buildOnlineOrderingBetaLineItems(req.body?.items);
 
     if (!customerName) {
       return res.status(400).json({ error: "Pickup name is required." });
@@ -4038,6 +4416,10 @@ app.post("/api/beta/online-order/checkout", async (req, res) => {
             location_id: SQUARE_LOCATION_ID,
             source: {
               name: "DrinkFlow Online Beta",
+            },
+            pricing_options: {
+              auto_apply_taxes: true,
+              auto_apply_discounts: true,
             },
             line_items: lineItems,
             fulfillments: [
