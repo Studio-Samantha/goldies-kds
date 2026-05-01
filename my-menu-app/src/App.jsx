@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.7.10";
+const APP_VERSION = "v1.8.0";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -24,8 +24,20 @@ const SETTINGS_HELP_TEXT =
 const DINING_OPTIONS = ["For here", "To go", "Pickup", "Delivery", "Drive thru"];
 const RELEASE_NOTES = [
   {
-    version: "v1.7.10",
+    version: "v1.8.0",
     date: "Current build",
+    summary: "Made Focus Board denser for busy service.",
+    items: [
+      "The Drink Menu board now uses smaller headers, tighter spacing, and denser menu rows so more fits on an iPad.",
+      "Orders Up now uses more compact pickup cards and smaller display headers.",
+      "Focus Board now shows compact drink-first ticket cards so staff can see more orders before scrolling.",
+      "Non-drink items are collapsed into a small hidden-items note on Focus Board while the full dashboard keeps the complete ticket detail.",
+      "The Learn More and case study pages got a lighter copy pass so the public wording feels less stiff.",
+    ],
+  },
+  {
+    version: "v1.7.10",
+    date: "Previous build",
     summary: "Clarified monthly and annual pricing.",
     items: [
       "The Learn More page now shows DrinkFlow KDS as $6.99/month or $60/year.",
@@ -104,8 +116,8 @@ const RELEASE_NOTES = [
     date: "Previous build",
     summary: "Added the POS-flexible marketing message.",
     items: [
-      "The Learn More page now explains that DrinkFlow is built first for Square and designed to grow with Shopify, Clover, Lightspeed, and other POS workflows by request.",
-      "The FAQ now clarifies that new POS connectors must be scoped around accessible order data, APIs, or webhooks.",
+      "The Learn More page now explains that DrinkFlow is built first for Square, with Shopify, Clover, Lightspeed, and other POS workflows as possible future paths.",
+      "The FAQ now says new POS connectors depend on accessible order data, APIs, or webhooks.",
       "The marketing page keeps the promise honest while showing the product can grow beyond the first Square-connected shop.",
     ],
   },
@@ -792,7 +804,7 @@ function WebServicesReminderDialog({ open, onClose }) {
             <p className="mt-2 text-sm leading-6 text-[#2D261C]">
               Custom websites, branded ordering pages, launch pages, logo
               support, and small design updates for Square shops that want a
-              polished online presence.
+              cleaner online presence.
             </p>
           </div>
 
@@ -1002,7 +1014,7 @@ function PitchPage({ open, onBack }) {
             </h1>
             <p className="mt-3 max-w-2xl text-lg leading-8 text-[#2D261C]">
               Custom Square® tools for coffee shops, smoothie shops, and drink
-              counters that need a polished display, simple staff workflows,
+              counters that need a clean display, simple staff workflows,
               and useful owner reporting.
             </p>
 
@@ -1926,11 +1938,16 @@ function TicketCard({
   onNameChange,
   onDiningOptionChange,
   showDiningOption,
+  compact = false,
 }) {
   const [nameValue, setNameValue] = useState(ticket.customerName || "");
   const orderTime = formatOrderTime(ticket.createdAt);
   const timeClass = getTimeClass(ticket.createdAt);
-  const visibleItems = getVisibleItems(ticket);
+  const drinkItems = getDrinkItems(ticket);
+  const visibleItems = compact ? drinkItems : getVisibleItems(ticket);
+  const hiddenItemCount = compact
+    ? Math.max((ticket.items || []).length - drinkItems.length, 0)
+    : 0;
   const ticketHasDrinks = hasDrinkItems(ticket);
   const previousStatus = getPreviousStatus(ticket.status);
   const hasSpecificDiningOption =
@@ -1998,14 +2015,29 @@ function TicketCard({
   }
 
   return (
-    <article className="rounded-2xl bg-[#FFFDF8] border border-[#CA862B]/18 p-3 shadow-[0_10px_24px_rgba(15,64,54,0.05)] space-y-3">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="text-2xl font-black tracking-tight leading-none text-[#0F4036]">
+    <article className={`rounded-2xl bg-[#FFFDF8] border border-[#CA862B]/18 shadow-[0_10px_24px_rgba(15,64,54,0.05)] ${
+      compact ? "p-2.5 space-y-2" : "p-3 space-y-3"
+    }`}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className={`${compact ? "text-xl" : "text-2xl"} font-black tracking-tight leading-none text-[#0F4036]`}>
             #{ticket.orderNumber}
           </div>
 
-          {ticket.customerName ? (
+          {compact ? (
+            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+              {ticket.customerName && (
+                <span className="rounded-lg border border-[#0F4036]/12 bg-[#0F4036]/6 px-2 py-1 text-xs font-black text-[#111111]">
+                  {ticket.customerName}
+                </span>
+              )}
+              {showDiningOption && hasSpecificDiningOption && (
+                <span className="rounded-lg border border-[#CA862B]/18 bg-[#CA862B]/10 px-2 py-1 text-xs font-black text-[#8B5A1D]">
+                  {ticket.diningOption}
+                </span>
+              )}
+            </div>
+          ) : ticket.customerName ? (
             <div className="mt-2 rounded-xl border border-[#0F4036]/14 bg-[#0F4036]/6 px-3 py-2">
               <div className="text-xs font-black uppercase tracking-wide text-[#0F4036]">
                 Name from Square
@@ -2037,17 +2069,19 @@ function TicketCard({
             </label>
           )}
 
+          {!compact && (
           <div className="text-sm text-[#6A614F] mt-1">
             {ticket.source}
           </div>
+          )}
 
-          {ticket.employeeName && (
+          {!compact && ticket.employeeName && (
             <div className="mt-1 text-sm font-semibold text-[#111111]">
               Taken by {ticket.employeeName}
             </div>
           )}
 
-          {showDiningOption && (
+          {!compact && showDiningOption && (
             <label className="mt-2 block">
               <span className="text-xs font-black uppercase tracking-wide text-[#0F4036]/70">
                 Service
@@ -2070,26 +2104,24 @@ function TicketCard({
           )}
         </div>
 
-        <div
-          className={`rounded-xl px-3 py-2 text-sm font-black border ${timeClass}`}
-        >
+        <div className={`rounded-xl border font-black ${compact ? "px-2 py-1 text-xs" : "px-3 py-2 text-sm"} ${timeClass}`}>
           {orderTime}
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className={compact ? "space-y-1.5" : "space-y-2"}>
         {visibleItems.length > 0 ? (
           visibleItems.map((item, idx) => (
             <div
               key={`${ticket.id}-${idx}`}
-              className="border-t border-[#CA862B]/12 pt-2 first:border-t-0 first:pt-0"
+              className={`${compact ? "rounded-xl bg-white/70 px-2 py-1.5" : "border-t border-[#CA862B]/12 pt-2 first:border-t-0 first:pt-0"}`}
             >
-              <div className="flex gap-2 text-base font-bold leading-tight">
+              <div className={`flex gap-2 font-bold leading-tight ${compact ? "text-sm" : "text-base"}`}>
                 <span className="text-[#6A614F]">{item.qty}×</span>
                 <span className="text-[#111111]">{item.name}</span>
               </div>
 
-              {item.modifiers.length > 0 && (
+              {item.modifiers.length > 0 && !compact && (
                 <ul className="mt-1 ml-7 list-disc text-sm text-[#4E4637] space-y-0.5">
                   {item.modifiers.map((mod) => (
                     <li key={mod}>{mod}</li>
@@ -2097,33 +2129,51 @@ function TicketCard({
                 </ul>
               )}
 
-              {item.note && (
+              {item.modifiers.length > 0 && compact && (
+                <div className="mt-0.5 text-xs font-medium leading-snug text-[#4E4637]">
+                  {item.modifiers.join(", ")}
+                </div>
+              )}
+
+              {item.note && !compact && (
                 <div className="mt-2 rounded-xl bg-[#CA862B]/10 border border-[#CA862B]/18 px-3 py-2 text-sm font-medium text-[#8B5A1D]">
+                  Note: {item.note}
+                </div>
+              )}
+
+              {item.note && compact && (
+                <div className="mt-0.5 text-xs font-semibold leading-snug text-[#8B5A1D]">
                   Note: {item.note}
                 </div>
               )}
             </div>
           ))
         ) : (
-          <div className="rounded-2xl border border-dashed border-[#CA862B]/22 bg-white/70 p-4 text-sm text-[#6A614F]">
+          <div className={`${compact ? "rounded-xl p-2 text-xs" : "rounded-2xl p-4 text-sm"} border border-dashed border-[#CA862B]/22 bg-white/70 text-[#6A614F]`}>
             No items to show.
+          </div>
+        )}
+
+        {hiddenItemCount > 0 && (
+          <div className="rounded-lg border border-[#CA862B]/14 bg-[#EEE0C5]/50 px-2 py-1 text-xs font-black text-[#6A614F]">
+            {hiddenItemCount} non-drink item{hiddenItemCount === 1 ? "" : "s"} hidden on Focus Board
           </div>
         )}
       </div>
 
       {actions.length > 0 && (
-        <div className="grid grid-cols-1 gap-2 pt-1">
+        <div className={`grid grid-cols-1 gap-1.5 ${compact ? "" : "pt-1"}`}>
           {actions.map((action) => (
             <button
               key={action.label}
               onClick={() => onStatusChange(ticket.id, action.status)}
-              className={`rounded-xl px-4 py-2.5 font-black transition shadow-sm ${action.className}`}
+              className={`rounded-xl font-black transition shadow-sm ${compact ? "px-3 py-2 text-sm" : "px-4 py-2.5"} ${action.className}`}
             >
               {action.label}
             </button>
           ))}
 
-          {previousStatus && (
+          {previousStatus && !compact && (
             <button
               onClick={() => onStatusChange(ticket.id, previousStatus)}
               className="rounded-xl px-4 py-2 font-black transition bg-white border border-[#CA862B]/24 text-[#0F4036] hover:bg-[#EEE0C5]/45"
@@ -4538,7 +4588,7 @@ function DisplayBackground({ children, accent = "gold", darkMode = false }) {
 
   return (
     <div
-      className={`min-h-screen px-3 py-4 sm:px-4 sm:py-5 md:px-8 md:py-7 overflow-hidden ${
+      className={`min-h-screen px-3 py-3 sm:px-4 sm:py-4 md:px-5 md:py-5 overflow-hidden ${
         darkMode ? "bg-[#041c19] text-[#FFF7EA]" : "bg-[#FFFDF8] text-[#111111]"
       }`}
       style={{ backgroundImage }}
@@ -4733,39 +4783,39 @@ function MenuBoardDisplay() {
       <DisplayBackButton />
       <FullscreenButton darkMode={isDark} />
       <DisplayThemeButton themeMode={themeMode} onToggle={toggleTheme} darkMode={isDark} />
-      <div className="mx-auto flex min-h-[calc(100vh-40px)] max-w-[1500px] flex-col gap-4 sm:min-h-[calc(100vh-56px)] sm:gap-6 md:gap-8">
-        <header className="overflow-hidden rounded-[24px] border border-[#0F4036]/14 bg-[#0F4036] text-white shadow-[0_28px_90px_rgba(15,64,54,0.22)] sm:rounded-[34px]">
-          <div className="grid gap-4 p-4 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-5 sm:p-5 md:grid-cols-[auto_1fr_auto] md:gap-6 md:p-7">
-            <div className="grid h-16 w-16 place-items-center rounded-[20px] bg-white shadow-[0_18px_50px_rgba(0,0,0,0.18)] sm:h-20 sm:w-20 sm:rounded-[24px] md:h-24 md:w-24 md:rounded-[28px]">
+      <div className="mx-auto flex min-h-[calc(100vh-32px)] max-w-[1500px] flex-col gap-3 sm:min-h-[calc(100vh-44px)] md:gap-4">
+        <header className="overflow-hidden rounded-[20px] border border-[#0F4036]/14 bg-[#0F4036] text-white shadow-[0_20px_60px_rgba(15,64,54,0.18)] sm:rounded-[26px]">
+          <div className="grid gap-3 p-3 sm:grid-cols-[auto_1fr] sm:items-center sm:p-4 md:grid-cols-[auto_1fr_auto] md:gap-4 md:p-5">
+            <div className="grid h-14 w-14 place-items-center rounded-[16px] bg-white shadow-[0_14px_36px_rgba(0,0,0,0.16)] sm:h-16 sm:w-16 sm:rounded-[18px] md:h-20 md:w-20 md:rounded-[22px]">
               <img
                 src={LOGO_URL}
                 alt="Goldie's Coffee & Goods"
-                className="max-h-11 max-w-11 object-contain sm:max-h-14 sm:max-w-14 md:max-h-16 md:max-w-16"
+                className="max-h-10 max-w-10 object-contain sm:max-h-12 sm:max-w-12 md:max-h-14 md:max-w-14"
               />
             </div>
             <div>
-              <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#F3D39B] sm:text-xs sm:tracking-[0.3em]">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F3D39B] sm:text-xs sm:tracking-[0.24em]">
                 Goldie's Coffee & Goods
               </div>
-              <h1 className="mt-1 text-4xl font-semibold tracking-normal sm:mt-2 sm:text-5xl md:text-7xl">
+              <h1 className="mt-1 text-3xl font-semibold tracking-normal sm:text-4xl md:text-6xl">
                 Drink Menu
               </h1>
             </div>
-            <div className="hidden rounded-full border border-white/16 bg-white/10 px-5 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-white/82 md:block">
+            <div className="hidden rounded-full border border-white/16 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/82 md:block">
               Fresh today
             </div>
           </div>
         </header>
         <DisplayStatus loading={loading} error={error} updatedAt={updatedAt} darkMode={isDark} />
 
-        <main className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-5">
+        <main className="grid flex-1 grid-cols-1 gap-3 lg:grid-cols-3 lg:gap-4">
           {(menu.length ? menu : fallbackMenu).map((category) => (
             <section
               key={category.key || category.label}
-              className={`flex min-h-0 flex-col overflow-hidden rounded-[22px] border sm:rounded-[30px] lg:min-h-[420px] ${cardClass}`}
+              className={`flex min-h-0 flex-col overflow-hidden rounded-[18px] border sm:rounded-[24px] lg:min-h-[360px] ${cardClass}`}
             >
-              <div className={`border-b px-4 py-4 sm:px-5 sm:py-5 ${cardHeaderClass}`}>
-                <h2 className={`text-2xl font-semibold tracking-normal sm:text-3xl md:text-5xl ${headingClass}`}>
+              <div className={`border-b px-3 py-3 sm:px-4 sm:py-4 ${cardHeaderClass}`}>
+                <h2 className={`text-2xl font-semibold tracking-normal md:text-4xl ${headingClass}`}>
                   {category.label}
                 </h2>
               </div>
@@ -4774,12 +4824,12 @@ function MenuBoardDisplay() {
                   category.items.map((item) => (
                     <div
                       key={item.name}
-                      className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 px-4 py-3 sm:gap-4 sm:px-5 sm:py-4"
+                      className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 px-3 py-2.5 sm:px-4 sm:py-3"
                     >
-                      <span className={`min-w-0 text-lg font-medium leading-tight tracking-normal sm:text-xl md:text-2xl ${itemClass}`}>
+                      <span className={`min-w-0 text-base font-medium leading-tight tracking-normal sm:text-lg md:text-xl ${itemClass}`}>
                         {item.name}
                       </span>
-                      <span className={`rounded-full px-2.5 py-1 text-base font-semibold sm:px-3 sm:text-lg md:text-xl ${priceClass}`}>
+                      <span className={`rounded-full px-2.5 py-1 text-sm font-semibold sm:text-base md:text-lg ${priceClass}`}>
                         {item.price || "Ask"}
                       </span>
                     </div>
@@ -4806,32 +4856,32 @@ function CustomerOrderDetails({ order, darkMode = false, compact = false }) {
   return (
     <div className="min-w-0">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <strong className={`text-xl font-semibold leading-none tracking-normal sm:text-2xl ${nameClass}`}>
+        <strong className={`text-lg font-semibold leading-none tracking-normal sm:text-xl ${nameClass}`}>
           Order {order.orderNumber}
         </strong>
         {order.customerName ? (
-          <span className={`min-w-0 text-base font-medium sm:text-lg ${detailClass}`}>
+          <span className={`min-w-0 text-sm font-medium sm:text-base ${detailClass}`}>
             {order.customerName}
           </span>
         ) : null}
       </div>
-      <div className={`mt-3 grid gap-2 ${compact ? "" : "sm:grid-cols-2"}`}>
+      <div className={`mt-2 grid gap-1.5 ${compact ? "" : "sm:grid-cols-2"}`}>
         {items.length ? (
           items.map((item, index) => (
             <div
               key={`${order.id}-${item.name}-${index}`}
-              className={`rounded-2xl border px-3 py-2 ${
+              className={`rounded-xl border px-2.5 py-2 ${
                 darkMode
                   ? "border-white/10 bg-white/8"
                   : "border-[#0F4036]/10 bg-[#FFFDF8]"
               }`}
             >
-              <div className={`text-base font-semibold leading-tight ${nameClass}`}>
+              <div className={`text-sm font-semibold leading-tight sm:text-base ${nameClass}`}>
                 {item.qty > 1 ? `${item.qty}x ` : ""}
                 {item.name}
               </div>
               {(item.modifiers?.length || item.note) ? (
-                <div className={`mt-1 text-sm font-medium leading-snug ${detailClass}`}>
+                <div className={`mt-1 text-xs font-medium leading-snug sm:text-sm ${detailClass}`}>
                   {[...(item.modifiers || []), item.note].filter(Boolean).join(", ")}
                 </div>
               ) : null}
@@ -4911,65 +4961,65 @@ function OrdersUpDisplay() {
       <DisplayBackButton />
       <FullscreenButton darkMode={isDark} />
       <DisplayThemeButton themeMode={themeMode} onToggle={toggleTheme} darkMode={isDark} />
-      <div className="mx-auto flex min-h-[calc(100vh-40px)] max-w-[1500px] flex-col gap-4 sm:min-h-[calc(100vh-56px)] sm:gap-6 md:gap-8">
-        <header className="overflow-hidden rounded-[24px] border border-[#0F4036]/14 bg-[#0F4036] text-white shadow-[0_28px_90px_rgba(15,64,54,0.22)] sm:rounded-[34px]">
-          <div className="grid gap-4 p-4 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-5 sm:p-5 md:grid-cols-[auto_1fr_auto] md:gap-6 md:p-7">
-            <div className="grid h-16 w-16 place-items-center rounded-[20px] bg-white shadow-[0_18px_50px_rgba(0,0,0,0.18)] sm:h-20 sm:w-20 sm:rounded-[24px] md:h-24 md:w-24 md:rounded-[28px]">
+      <div className="mx-auto flex min-h-[calc(100vh-32px)] max-w-[1500px] flex-col gap-3 sm:min-h-[calc(100vh-44px)] md:gap-4">
+        <header className="overflow-hidden rounded-[20px] border border-[#0F4036]/14 bg-[#0F4036] text-white shadow-[0_20px_60px_rgba(15,64,54,0.18)] sm:rounded-[26px]">
+          <div className="grid gap-3 p-3 sm:grid-cols-[auto_1fr] sm:items-center sm:p-4 md:grid-cols-[auto_1fr_auto] md:gap-4 md:p-5">
+            <div className="grid h-14 w-14 place-items-center rounded-[16px] bg-white shadow-[0_14px_36px_rgba(0,0,0,0.16)] sm:h-16 sm:w-16 sm:rounded-[18px] md:h-20 md:w-20 md:rounded-[22px]">
               <img
                 src={LOGO_URL}
                 alt="Goldie's Coffee & Goods"
-                className="max-h-11 max-w-11 object-contain sm:max-h-14 sm:max-w-14 md:max-h-16 md:max-w-16"
+                className="max-h-10 max-w-10 object-contain sm:max-h-12 sm:max-w-12 md:max-h-14 md:max-w-14"
               />
             </div>
             <div>
-              <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#F3D39B] sm:text-xs sm:tracking-[0.3em]">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F3D39B] sm:text-xs sm:tracking-[0.24em]">
                 Goldie's Coffee & Goods
               </div>
-              <h1 className="mt-1 text-4xl font-semibold tracking-normal sm:mt-2 sm:text-5xl md:text-7xl">
+              <h1 className="mt-1 text-3xl font-semibold tracking-normal sm:text-4xl md:text-6xl">
                 Orders Up
               </h1>
             </div>
-            <div className="hidden rounded-full border border-white/16 bg-white/10 px-5 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-white/82 md:block">
+            <div className="hidden rounded-full border border-white/16 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/82 md:block">
               Pickup counter
             </div>
           </div>
         </header>
         <DisplayStatus loading={loading} error={error} updatedAt={updatedAt} darkMode={isDark} />
 
-        <main className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1.35fr_0.65fr] lg:gap-5">
-          <section className={`overflow-hidden rounded-[22px] border sm:rounded-[30px] ${cardClass}`}>
-            <div className={`flex items-end justify-between gap-3 border-b px-4 py-4 sm:gap-4 sm:px-5 sm:py-5 ${cardHeaderClass}`}>
+        <main className="grid flex-1 grid-cols-1 gap-3 lg:grid-cols-[1.35fr_0.65fr] lg:gap-4">
+          <section className={`overflow-hidden rounded-[18px] border sm:rounded-[24px] ${cardClass}`}>
+            <div className={`flex items-end justify-between gap-3 border-b px-3 py-3 sm:px-4 sm:py-4 ${cardHeaderClass}`}>
               <div>
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8B5A1D] sm:text-sm sm:tracking-[0.22em]">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8B5A1D] sm:text-xs sm:tracking-[0.2em]">
                   Ready now
                 </div>
-                <h2 className={`mt-1 text-3xl font-semibold tracking-normal sm:text-4xl md:text-6xl ${headingClass}`}>
+                <h2 className={`mt-1 text-3xl font-semibold tracking-normal sm:text-4xl md:text-5xl ${headingClass}`}>
                   Pick up
                 </h2>
               </div>
-              <div className={`rounded-full px-4 py-2 text-xl font-semibold sm:px-5 sm:text-2xl ${isDark ? "bg-white/10 text-[#FFF7EA]" : "bg-[#0F4036]/8 text-[#0F4036]"}`}>
+              <div className={`rounded-full px-3 py-1.5 text-lg font-semibold sm:px-4 sm:text-xl ${isDark ? "bg-white/10 text-[#FFF7EA]" : "bg-[#0F4036]/8 text-[#0F4036]"}`}>
                 {orders.ready.length}
               </div>
             </div>
 
             {orders.ready.length ? (
-              <div className="grid grid-cols-1 gap-3 p-4 sm:gap-4 sm:p-5 xl:grid-cols-2">
+              <div className="grid grid-cols-1 gap-2.5 p-3 sm:grid-cols-2 sm:p-4 xl:grid-cols-3">
                 {orders.ready.map((order) => (
                   <div
                     key={order.id}
-                    className={`rounded-[20px] border p-4 shadow-[0_18px_50px_rgba(15,64,54,0.14)] sm:rounded-[26px] sm:p-5 ${readyTileClass}`}
+                    className={`rounded-[16px] border p-3 shadow-[0_14px_34px_rgba(15,64,54,0.12)] sm:rounded-[20px] ${readyTileClass}`}
                   >
                     <CustomerOrderDetails order={order} darkMode={isDark} />
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="grid min-h-[260px] place-items-center p-5 text-center sm:min-h-[340px] lg:min-h-[390px]">
+              <div className="grid min-h-[220px] place-items-center p-4 text-center sm:min-h-[280px] lg:min-h-[320px]">
                 <div>
-                  <div className={`text-4xl font-semibold tracking-normal sm:text-5xl md:text-7xl ${headingClass}`}>
+                  <div className={`text-3xl font-semibold tracking-normal sm:text-4xl md:text-6xl ${headingClass}`}>
                     Making drinks
                   </div>
-                  <p className={`mt-4 text-lg font-medium sm:text-xl ${mutedClass}`}>
+                  <p className={`mt-3 text-base font-medium sm:text-lg ${mutedClass}`}>
                     Ready order numbers will show here.
                   </p>
                 </div>
@@ -4977,12 +5027,12 @@ function OrdersUpDisplay() {
             )}
           </section>
 
-          <section className={`overflow-hidden rounded-[22px] border sm:rounded-[30px] ${cardClass}`}>
-            <div className={`border-b px-4 py-4 sm:px-5 sm:py-5 ${cardHeaderClass}`}>
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8B5A1D] sm:text-sm sm:tracking-[0.22em]">
+          <section className={`overflow-hidden rounded-[18px] border sm:rounded-[24px] ${cardClass}`}>
+            <div className={`border-b px-3 py-3 sm:px-4 sm:py-4 ${cardHeaderClass}`}>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8B5A1D] sm:text-xs sm:tracking-[0.2em]">
                 Recently picked up
               </div>
-              <h2 className={`mt-1 text-2xl font-semibold tracking-normal sm:text-3xl md:text-5xl ${headingClass}`}>
+              <h2 className={`mt-1 text-2xl font-semibold tracking-normal sm:text-3xl md:text-4xl ${headingClass}`}>
                 Completed
               </h2>
             </div>
@@ -4991,7 +5041,7 @@ function OrdersUpDisplay() {
                 orders.recentlyCompleted.map((order) => (
                   <div
                     key={order.id}
-                    className="grid gap-3 px-4 py-3 sm:px-5 sm:py-4"
+                    className="grid gap-2 px-3 py-2.5 sm:px-4 sm:py-3"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <CustomerOrderDetails order={order} darkMode={isDark} compact />
@@ -6218,13 +6268,15 @@ export default function GoldiesKDS() {
               key={column.key}
               className={`rounded-2xl bg-[rgba(255,253,248,0.9)] border border-white/70 border-t-4 ${column.accent} p-3 shadow-[0_16px_40px_rgba(15,64,54,0.08)] flex flex-col backdrop-blur-sm ${
                 showFocusBoard
-                  ? "min-h-[calc(100vh-190px)]"
+                  ? "min-h-[calc(100vh-170px)] max-h-[calc(100vh-150px)]"
                   : hasOpenTickets
                     ? "xl:min-h-[520px]"
                     : "xl:min-h-[220px]"
               }`}
             >
-              <div className="flex items-center justify-between px-1 py-1.5 mb-2 shrink-0">
+              <div className={`flex items-center justify-between px-1 py-1.5 mb-2 shrink-0 ${
+                showFocusBoard ? "sticky top-0 z-10 rounded-xl bg-[#FFFDF8]/95 backdrop-blur" : ""
+              }`}>
                 <h2 className="text-lg xl:text-xl font-black text-[#111111]">
                   {column.label}
                 </h2>
@@ -6236,8 +6288,8 @@ export default function GoldiesKDS() {
                 </span>
               </div>
 
-              <div className={`space-y-3 ${
-                showFocusBoard ? "" : "xl:pr-1"
+              <div className={`min-h-0 ${
+                showFocusBoard ? "space-y-2 overflow-y-auto pr-1" : "space-y-3 xl:pr-1"
               }`}>
                 {grouped[column.key]?.length ? (
                   grouped[column.key].map((ticket) => (
@@ -6248,6 +6300,7 @@ export default function GoldiesKDS() {
                       onNameChange={handleNameChange}
                       onDiningOptionChange={handleDiningOptionChange}
                       showDiningOption={showDiningOnTickets}
+                      compact={showFocusBoard}
                     />
                   ))
                 ) : (
