@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.8.0";
+const APP_VERSION = "v1.8.1";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -20,12 +20,23 @@ const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-29";
 const WEB_SERVICES_REMINDER_DATE = "2026-05-02";
 const SETTINGS_HELP_TEXT =
-  "Settings holds the app tools you may need: theme, password change, support, and release notes.";
+  "Settings has the app tools: theme, password change, support, and release notes.";
 const DINING_OPTIONS = ["For here", "To go", "Pickup", "Delivery", "Drive thru"];
 const RELEASE_NOTES = [
   {
-    version: "v1.8.0",
+    version: "v1.8.1",
     date: "Current build",
+    summary: "Cleaned up wording across the app.",
+    items: [
+      "App labels, public pages, survey wording, policy copy, and release notes got a consistency pass.",
+      "Demo and training labels now use calmer, more consistent language.",
+      "Menu Board and Orders Up now hide the full-screen X and the normal Live Display/Updated status strip while running cleanly.",
+      "Pricing and source-code wording now line up better across the public pages.",
+    ],
+  },
+  {
+    version: "v1.8.0",
+    date: "Previous build",
     summary: "Made Focus Board denser for busy service.",
     items: [
       "The Drink Menu board now uses smaller headers, tighter spacing, and denser menu rows so more fits on an iPad.",
@@ -62,7 +73,7 @@ const RELEASE_NOTES = [
     items: [
       "The Goldie's case study now shows an example Drink Revenue Dashboard.",
       "The example highlights drink revenue, peak hour, average drinks, 2+ drink order rate, hourly volume, drink mix, and report exports.",
-      "This helps explain why the Owner Portal belongs in the higher DrinkFlow KDS tier.",
+      "This helps show why the Owner Portal belongs in the full DrinkFlow KDS plan.",
     ],
   },
   {
@@ -231,7 +242,7 @@ const RELEASE_NOTES = [
     items: [
       "Owner Reports now has a Change Owner Password button.",
       "Changed owner passwords are stored securely as salted hashes.",
-      "The generic owner password can be reset later if Blake or Claire forget it.",
+      "The owner password can be reset later if an owner forgets it.",
     ],
   },
   {
@@ -793,8 +804,8 @@ function WebServicesReminderDialog({ open, onClose }) {
 
         <div className="px-5 py-5 space-y-5 text-[#2D261C]">
           <p className="text-base leading-7">
-            Keep me in mind if you guys ever decide you need a website or any
-            design services - Sammy.
+            Keep me in mind if you ever decide you need a website or any
+            design help - Sammy.
           </p>
 
           <div className="rounded-2xl border border-[#CA862B]/14 bg-white px-4 py-4 shadow-sm">
@@ -843,7 +854,7 @@ function OwnerReportsNoticeDialog({ open, onClose, onOpenOwnerLogin }) {
         <div className="space-y-4 px-5 py-5 text-[#2D261C]">
           <p className="text-base leading-7">
             Owner Reports can download CSV, Excel, or branded PDF reports. The dashboard also has
-            new Menu Board and Orders Up buttons for customer-facing displays.
+            Menu Board and Orders Up buttons for customer-facing displays.
           </p>
           <div className="rounded-2xl border border-[#CA862B]/18 bg-white px-4 py-3">
             <div className="text-sm font-black text-[#0F4036]">
@@ -4631,26 +4642,14 @@ function DisplayHeader({ eyebrow, title, subtitle }) {
   );
 }
 
-function DisplayStatus({ loading, error, updatedAt, darkMode = false }) {
-  const pillClass = darkMode
-    ? "border-white/14 bg-white/10 text-[#FFF7EA]"
-    : "border-[#CA862B]/18 bg-white/76 text-[#6A614F]";
+function DisplayStatus({ error }) {
+  if (!error) return null;
 
   return (
     <div className="mt-4 flex flex-wrap items-center gap-2 text-[11px] font-black uppercase tracking-[0.14em] sm:mt-5 sm:gap-3 sm:text-sm sm:tracking-[0.16em]">
-      <span className={`rounded-full border px-3 py-2 shadow-sm sm:px-4 ${pillClass}`}>
-        {loading ? "Refreshing" : "Live display"}
+      <span className="rounded-full border border-red-200 bg-red-50 px-3 py-2 text-red-900 shadow-sm sm:px-4">
+        {error}
       </span>
-      {updatedAt && (
-        <span className={`rounded-full border px-3 py-2 shadow-sm sm:px-4 ${pillClass}`}>
-          Updated {new Date(updatedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
-        </span>
-      )}
-      {error && (
-        <span className="rounded-full border border-red-200 bg-red-50 px-3 py-2 text-red-900 shadow-sm sm:px-4">
-          {error}
-        </span>
-      )}
     </div>
   );
 }
@@ -4671,25 +4670,23 @@ function DisplayBackButton() {
 
 function FullscreenButton({ darkMode = false }) {
   const { isFullscreen, fullscreenMessage, toggleFullscreen } = useFullscreenMode();
+  if (isFullscreen) return null;
+
   const buttonClass = darkMode
     ? "border-white/20 bg-white/12 text-[#FFF7EA] hover:bg-white/18"
     : "border-white/24 bg-[#0F4036]/90 text-white hover:bg-[#0b352d]";
 
   return (
-    <div className={isFullscreen ? "fixed right-3 top-3 z-30 sm:right-4 sm:top-4" : "fixed bottom-3 left-3 z-30 sm:left-auto sm:right-32 sm:top-4 sm:bottom-auto"}>
+    <div className="fixed bottom-3 left-3 z-30 sm:left-auto sm:right-32 sm:top-4 sm:bottom-auto">
       <button
         type="button"
         onClick={toggleFullscreen}
-        aria-label={isFullscreen ? "Exit full screen" : "Enter full screen"}
-        className={`rounded-full border text-xs font-semibold shadow-[0_16px_44px_rgba(15,64,54,0.22)] backdrop-blur-md transition ${
-          isFullscreen
-            ? "grid h-10 w-10 place-items-center px-0 py-0 text-lg leading-none sm:h-11 sm:w-11"
-            : "px-3 py-2 sm:px-4 sm:text-sm"
-        } ${buttonClass}`}
+        aria-label="Enter full screen"
+        className={`rounded-full border px-3 py-2 text-xs font-semibold shadow-[0_16px_44px_rgba(15,64,54,0.22)] backdrop-blur-md transition sm:px-4 sm:text-sm ${buttonClass}`}
       >
-        {isFullscreen ? "X" : "Full screen"}
+        Full screen
       </button>
-      {fullscreenMessage && !isFullscreen && (
+      {fullscreenMessage && (
         <div className="mt-2 max-w-[190px] rounded-2xl bg-white/92 px-3 py-2 text-xs font-semibold text-[#0F4036] shadow-lg">
           {fullscreenMessage}
         </div>
@@ -5921,7 +5918,7 @@ export default function GoldiesKDS() {
               </h1>
 
               <p className="text-[#6A614F] mt-1 text-sm md:text-base">
-                {isDemoRoute ? "Fake demo orders" : "Live Square orders"}
+                {isDemoRoute ? "Demo orders" : "Live Square orders"}
               </p>
 
               {!isDashboardFullscreen && (
@@ -6122,7 +6119,7 @@ export default function GoldiesKDS() {
                   {isTrainingMode ? "Training" : "Live"}
                 </div>
                 <div className="text-sm text-[#6A614F] mt-1">
-                  {isTrainingMode ? "Fake demo data" : "Production"}
+                  {isTrainingMode ? "Demo data" : "Production"}
                 </div>
               </div>
 
@@ -6131,11 +6128,11 @@ export default function GoldiesKDS() {
                 onClick={() =>
                   setModeHelp({
                     title: "Training mode",
-                    body: "Training mode swaps in fake practice orders and sample counts. It does not change live Square data.",
+                    body: "Training mode swaps in practice orders and sample counts. It does not change live Square data.",
                   })
                 }
-                title="Training mode swaps in fake orders and counts so staff can practice without changing live Square data."
-                aria-label="Training mode swaps in fake orders and counts so staff can practice without changing live Square data."
+                title="Training mode swaps in practice orders and counts so staff can practice without changing live Square data."
+                aria-label="Training mode swaps in practice orders and counts so staff can practice without changing live Square data."
                 className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#CA862B]/20 bg-white text-xs font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
               >
                 ?
