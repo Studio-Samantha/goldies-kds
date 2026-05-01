@@ -227,7 +227,9 @@ function getOnlineOrderingReturnUrl(req) {
   const envOrigin = process.env.FRONTEND_ORIGIN || getFirstCorsOrigin();
   const requestOrigin = String(req.get("origin") || "").trim();
   const origin = envOrigin || (requestOrigin.startsWith("http") ? requestOrigin : "") || "https://goldieskds.com";
-  return `${origin.replace(/\/+$/, "")}/online-ordering-beta?ordered=1`;
+  const source = cleanLeadText(req.body?.source, 40);
+  const returnPath = source === "self_order_kiosk" ? "/self-order-kiosk" : "/online-ordering-beta";
+  return `${origin.replace(/\/+$/, "")}${returnPath}?ordered=1`;
 }
 
 function getSquareRestBaseUrl() {
@@ -408,25 +410,135 @@ function isTemperatureModifierGroup(group = {}) {
   return /\bhot\b/.test(text) && /\b(iced|ice)\b/.test(text);
 }
 
+function isSizeModifierGroup(group = {}) {
+  const text = normalizeCatalogLabel(
+    `${group.name || ""} ${(group.options || []).map((option) => option.name).join(" ")}`
+  );
+  return /\b(size|oz|ounce|ounces|small|large|medium)\b/.test(text);
+}
+
+function getOnlineOrderingDrinkRule(itemName = "") {
+  const text = normalizeCatalogLabel(itemName);
+  if (
+    text === "espresso" ||
+    text.startsWith("espresso ") ||
+    text.includes("gibraltar") ||
+    text.includes("pour over")
+  ) {
+    return { online: false, reason: "For here only" };
+  }
+
+  if (text.includes("americano") || text === "latte" || text.startsWith("latte ")) {
+    return { online: true, temperature: "choice" };
+  }
+
+  if (
+    text.includes("drip refill") ||
+    text.includes("flat white") ||
+    text.includes("cappuccino") ||
+    text === "drip" ||
+    text.startsWith("drip ")
+  ) {
+    return { online: true, temperature: "hot" };
+  }
+
+  return { online: true, temperature: "optional" };
+}
+
+function buildVirtualTemperatureGroup(variationId, mode = "choice") {
+  const options =
+    mode === "hot"
+      ? [
+          {
+            id: `virtual-temperature-${variationId}-hot`,
+            name: "Hot",
+            price: "$0.00",
+            priceCents: 0,
+            virtual: true,
+          },
+        ]
+      : [
+          {
+            id: `virtual-temperature-${variationId}-hot`,
+            name: "Hot",
+            price: "$0.00",
+            priceCents: 0,
+            virtual: true,
+          },
+          {
+            id: `virtual-temperature-${variationId}-iced`,
+            name: "Iced",
+            price: "$0.00",
+            priceCents: 0,
+            virtual: true,
+          },
+        ];
+
+  return {
+    id: `virtual-temperature-${variationId}`,
+    name: "Temperature",
+    role: "temperature",
+    required: true,
+    virtual: true,
+    minSelected: 1,
+    maxSelected: 1,
+    selectionType: "single",
+    options,
+  };
+}
+
 function filterModifierGroupsForVariation(modifierGroups, itemName, variationName) {
   const variationSize = getCatalogSizeToken(`${itemName} ${variationName}`);
+  const drinkRule = getOnlineOrderingDrinkRule(itemName);
+  let hasTemperatureGroup = false;
 
-  return (modifierGroups || [])
+  const groups = (modifierGroups || [])
     .filter((group) => {
       const groupSize = getCatalogSizeToken(group.name);
       return !groupSize || !variationSize || groupSize === variationSize;
     })
     .map((group) => {
       const temperatureGroup = isTemperatureModifierGroup(group);
+      const sizeGroup = isSizeModifierGroup(group);
+      const role = temperatureGroup ? "temperature" : sizeGroup ? "size" : "addition";
+      let options = group.options || [];
+      if (temperatureGroup) {
+        hasTemperatureGroup = true;
+        if (drinkRule.temperature === "hot") {
+          options = options.filter((option) => /\bhot\b/.test(normalizeCatalogLabel(option.name)));
+        }
+      }
+
       return {
         ...group,
-        required: Number(group.minSelected || 0) > 0 || temperatureGroup,
-        minSelected: temperatureGroup ? Math.max(1, Number(group.minSelected || 0)) : group.minSelected,
-        maxSelected: temperatureGroup ? 1 : group.maxSelected,
+        role,
+        options,
+        required:
+          Number(group.minSelected || 0) > 0 ||
+          (temperatureGroup && ["choice", "hot"].includes(drinkRule.temperature)),
+        minSelected:
+          temperatureGroup && ["choice", "hot"].includes(drinkRule.temperature)
+            ? Math.max(1, Number(group.minSelected || 0))
+            : group.minSelected,
+        maxSelected: temperatureGroup || sizeGroup ? 1 : group.maxSelected,
         selectionType:
-          temperatureGroup || Number(group.maxSelected || 0) === 1 ? "single" : "multiple",
+          temperatureGroup || sizeGroup || Number(group.maxSelected || 0) === 1
+            ? "single"
+            : "multiple",
       };
-    });
+    })
+    .filter((group) => group.options.length);
+
+  if (["choice", "hot"].includes(drinkRule.temperature) && !hasTemperatureGroup) {
+    groups.unshift(
+      buildVirtualTemperatureGroup(
+        `${itemName}-${variationName}`.replace(/[^a-z0-9]+/gi, "-"),
+        drinkRule.temperature
+      )
+    );
+  }
+
+  return groups;
 }
 
 function buildStaticOnlineOrderingMenu() {
@@ -491,6 +603,9 @@ async function getSquareOnlineOrderingMenu() {
     if (ONLINE_ORDERING_CATEGORY_NAMES.length && !categoryAllowed && !staticNameAllowed) {
       continue;
     }
+
+    const itemRule = getOnlineOrderingDrinkRule(itemData.name || "");
+    if (!itemRule.online) continue;
 
     const modifierGroups = (itemData.modifier_list_info || [])
       .map((info) => {
@@ -594,6 +709,7 @@ async function buildOnlineOrderingBetaLineItems(rawItems) {
         ? rawItem.modifierIds.map((id) => String(id))
         : [];
       const modifiers = [];
+      const choiceNotes = [];
       for (const group of menuItem.modifierGroups || []) {
         const allowedGroupIds = new Set((group.options || []).map((option) => option.id));
         const selectedInGroup = selectedModifierIds.filter((id) => allowedGroupIds.has(id));
@@ -606,9 +722,27 @@ async function buildOnlineOrderingBetaLineItems(rawItems) {
           Number(group.maxSelected || 0) > 0
             ? selectedInGroup.slice(0, Number(group.maxSelected || 0))
             : selectedInGroup;
-        modifiers.push(
-          ...cappedSelection.map((catalogObjectId) => ({ catalog_object_id: catalogObjectId }))
+        const selectedOptions = (group.options || []).filter((option) =>
+          cappedSelection.includes(option.id)
         );
+        modifiers.push(
+          ...selectedOptions
+            .filter((option) => !option.virtual)
+            .map((option) => ({ catalog_object_id: option.id }))
+        );
+        if (selectedOptions.some((option) => option.virtual)) {
+          choiceNotes.push(
+            `${group.role === "temperature" ? "Temperature" : group.name}: ${selectedOptions
+              .map((option) => option.name)
+              .join(", ")}`
+          );
+        } else if ((group.role === "temperature" || group.role === "size") && selectedOptions.length) {
+          choiceNotes.push(
+            `${group.role === "temperature" ? "Temperature" : "Size"}: ${selectedOptions
+              .map((option) => option.name)
+              .join(", ")}`
+          );
+        }
       }
       const lineItem = menuItem.variationId
         ? {
@@ -627,7 +761,9 @@ async function buildOnlineOrderingBetaLineItems(rawItems) {
       return {
         ...lineItem,
         modifiers,
-        note: [menuItem.category, cleanOrderText(rawItem?.note, 120)].filter(Boolean).join(" | "),
+        note: [menuItem.category, ...choiceNotes, cleanOrderText(rawItem?.note, 120)]
+          .filter(Boolean)
+          .join(" | "),
       };
     })
     .filter(Boolean)

@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.9.0";
+const APP_VERSION = "v1.9.1";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -27,14 +27,26 @@ const DAILY_UPDATE_NOTICE = {
   eyebrow: "KDS update",
   title: "What changed today",
   message:
-    "Online Ordering Beta is now wired for a real drink pickup test. Build a drink order, pay through Square Checkout, and the paid order can flow back into the KDS.",
+    "Online Ordering Beta now has cleaner drink rules and the first Self Order Kiosk path.",
   note:
-    "Online pickup tickets now get a red pending-order alert on the dashboard. Orders Up now shows drinks being made and ready, and the dashboard has Customer insights for quick customer/menu notes.",
+    "For-here-only drinks stay off online ordering, hot or iced choices are separated from drink additions, and the kiosk beta uses the same order engine for future in-shop ordering.",
 };
 const RELEASE_NOTES = [
   {
-    version: "v1.9.0",
+    version: "v1.9.1",
     date: "Current build",
+    summary: "Cleaned up drink choices and added a kiosk beta path.",
+    items: [
+      "Online Ordering Beta now removes for-here-only espresso, gibraltar, and pour over drinks.",
+      "Americano and latte now require a hot or iced choice when ordered online.",
+      "Hot-only drinks such as drip, drip refill, flat white, and cappuccino stay hot in the online flow.",
+      "Temperature and size choices are shown separately from drink additions in the cart.",
+      "A Self Order Kiosk beta route now uses the same menu and checkout flow as online ordering.",
+    ],
+  },
+  {
+    version: "v1.9.0",
+    date: "Previous build",
     summary: "Added the first real online ordering beta path.",
     items: [
       "Owner Reports now links to a customer-facing Online Ordering Beta where testers can build a drink pickup order.",
@@ -1243,6 +1255,12 @@ function isOnlineOrderingBetaRoute() {
   if (typeof window === "undefined") return false;
   const path = window.location.pathname.replace(/\/+$/, "");
   return path === "/online-ordering-beta" || path === "/order-beta";
+}
+
+function isSelfOrderKioskRoute() {
+  if (typeof window === "undefined") return false;
+  const path = window.location.pathname.replace(/\/+$/, "");
+  return path === "/self-order-kiosk" || path === "/kiosk";
 }
 
 function getLocalDayBounds(date = new Date()) {
@@ -4373,6 +4391,12 @@ function OwnerReportsView({
                 >
                   Online Orders Beta
                 </a>
+                <a
+                  href={`/self-order-kiosk${demoQuery}`}
+                  className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                >
+                  Self Order Kiosk
+                </a>
               </div>
             </div>
           </div>
@@ -6252,7 +6276,7 @@ function getOnlineOrderVisualStyle(item = {}) {
   };
 }
 
-function OnlineOrderingBetaPage() {
+function OnlineOrderingBetaPage({ kioskMode = false }) {
   const demoMode = isDemoTrainingRoute();
   const searchParams =
     typeof window !== "undefined"
@@ -6369,7 +6393,16 @@ function OnlineOrderingBetaPage() {
         );
       }
 
-      return [...current, { ...item, category, qty: 1, modifierIds: [] }];
+      const defaultModifierIds = (item.modifierGroups || [])
+        .filter(
+          (group) =>
+            group.required &&
+            group.selectionType === "single" &&
+            (group.options || []).length === 1
+        )
+        .map((group) => group.options[0].id);
+
+      return [...current, { ...item, category, qty: 1, modifierIds: defaultModifierIds }];
     });
   }
 
@@ -6439,6 +6472,7 @@ function OnlineOrderingBetaPage() {
           customerName,
           pickupTime,
           notes,
+          source: kioskMode ? "self_order_kiosk" : "online_ordering_beta",
           items: cart.map((item) => ({
             id: item.id,
             variationId: item.variationId,
@@ -6483,16 +6517,24 @@ function OnlineOrderingBetaPage() {
                 {demoMode ? <DemoBrandMark size="sm" /> : <img src={LOGO_URL} alt="Goldie's Coffee & Goods" className="max-h-16 max-w-16 object-contain" />}
               </div>
               <div>
-                <div className="text-xs font-black uppercase tracking-[0.24em] text-[#F3D39B]">Online ordering beta</div>
-                <h1 className="mt-2 text-4xl font-black leading-none md:text-6xl">Goldie&apos;s drinks, ordered ahead.</h1>
+                <div className="text-xs font-black uppercase tracking-[0.24em] text-[#F3D39B]">
+                  {kioskMode ? "Self order kiosk beta" : "Online ordering beta"}
+                </div>
+                <h1 className="mt-2 text-4xl font-black leading-none md:text-6xl">
+                  {kioskMode ? "Order at the counter, without the line." : "Goldie's drinks, ordered ahead."}
+                </h1>
               </div>
             </div>
             <p className="mt-5 max-w-2xl text-lg font-semibold leading-8 text-white/78">
-              Choose your drink, add a pickup name, and pay through Square checkout. This test is drinks-only while the pickup workflow is being proven live.
+              {kioskMode
+                ? "Choose a drink from the shop kiosk, add a pickup name, and pay through Square checkout. This beta uses the same drink rules as online ordering."
+                : "Choose your drink, add a pickup name, and pay through Square checkout. This test is drinks-only while the pickup workflow is being proven live."}
             </p>
             <div className="mt-5 flex flex-wrap gap-2 text-xs font-black uppercase tracking-[0.16em] text-[#F3D39B]">
               <span className="rounded-full border border-white/16 bg-white/10 px-3 py-2">Mon-Fri 7-3 · Sat 8-1</span>
-              <span className="rounded-full border border-white/16 bg-white/10 px-3 py-2">Pickup test</span>
+              <span className="rounded-full border border-white/16 bg-white/10 px-3 py-2">
+                {kioskMode ? "In-shop kiosk test" : "Pickup test"}
+              </span>
               <span className="rounded-full border border-white/16 bg-white/10 px-3 py-2">Square checkout</span>
             </div>
             {orderingHours && !orderingHours.accepting ? (
@@ -6509,7 +6551,9 @@ function OnlineOrderingBetaPage() {
                     GO
                   </div>
                   <div>
-                    <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">Pickup order</div>
+                    <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
+                      {kioskMode ? "Kiosk order" : "Pickup order"}
+                    </div>
                     <div className="text-lg font-black text-[#0F4036]">Ready-time estimate</div>
                   </div>
                 </div>
@@ -6640,49 +6684,63 @@ function OnlineOrderingBetaPage() {
                     </div>
                     {(item.modifierGroups || []).length ? (
                       <div className="mt-3 space-y-3 border-t border-[#CA862B]/12 pt-3">
-                        {item.modifierGroups.map((group) => (
-                          <div key={`${item.id}-${group.id}`}>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <div className="text-xs font-black uppercase tracking-[0.12em] text-[#8B5A1D]">
-                                {group.name}
+                        {item.modifierGroups.map((group) => {
+                          const groupLabel =
+                            group.role === "temperature"
+                              ? "Temperature"
+                              : group.role === "size"
+                                ? "Size"
+                                : "Drink additions";
+
+                          return (
+                            <div key={`${item.id}-${group.id}`}>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <div className="text-xs font-black uppercase tracking-[0.12em] text-[#8B5A1D]">
+                                  {groupLabel}
+                                </div>
+                                {group.name && group.name !== groupLabel ? (
+                                  <span className="text-xs font-bold text-[#6A614F]">
+                                    {group.name}
+                                  </span>
+                                ) : null}
+                                <span className="rounded-full bg-[#CA862B]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.1em] text-[#8B5A1D]">
+                                  {group.required
+                                    ? "Required"
+                                    : group.selectionType === "single"
+                                      ? "Choose one"
+                                      : "Choose any"}
+                                </span>
                               </div>
-                              <span className="rounded-full bg-[#CA862B]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.1em] text-[#8B5A1D]">
-                                {group.required
-                                  ? "Required"
-                                  : group.selectionType === "single"
-                                    ? "Choose one"
-                                    : "Choose any"}
-                              </span>
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {(group.options || []).map((option) => {
+                                  const checked = (item.modifierIds || []).includes(option.id);
+                                  return (
+                                    <button
+                                      key={option.id}
+                                      type="button"
+                                      onClick={() =>
+                                        toggleModifier(
+                                          item.id,
+                                          group.id,
+                                          option.id,
+                                          group.selectionType
+                                        )
+                                      }
+                                      className={`rounded-full border px-3 py-1.5 text-xs font-black transition ${
+                                        checked
+                                          ? "border-[#0F4036] bg-[#0F4036] text-white"
+                                          : "border-[#CA862B]/20 bg-[#FFFDF8] text-[#0F4036] hover:bg-[#EEE0C5]/45"
+                                      }`}
+                                    >
+                                      {option.name}
+                                      {option.priceCents ? ` +${option.price}` : ""}
+                                    </button>
+                                  );
+                                })}
+                              </div>
                             </div>
-                            <div className="mt-2 flex flex-wrap gap-2">
-                              {(group.options || []).map((option) => {
-                                const checked = (item.modifierIds || []).includes(option.id);
-                                return (
-                                  <button
-                                    key={option.id}
-                                    type="button"
-                                    onClick={() =>
-                                      toggleModifier(
-                                        item.id,
-                                        group.id,
-                                        option.id,
-                                        group.selectionType
-                                      )
-                                    }
-                                    className={`rounded-full border px-3 py-1.5 text-xs font-black transition ${
-                                      checked
-                                        ? "border-[#0F4036] bg-[#0F4036] text-white"
-                                        : "border-[#CA862B]/20 bg-[#FFFDF8] text-[#0F4036] hover:bg-[#EEE0C5]/45"
-                                    }`}
-                                  >
-                                    {option.name}
-                                    {option.priceCents ? ` +${option.price}` : ""}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : null}
                   </div>
@@ -6843,6 +6901,7 @@ function OnlineOrderingBetaPage() {
 
 export default function GoldiesKDS() {
   if (isOnlineOrderingBetaRoute()) return <OnlineOrderingBetaPage />;
+  if (isSelfOrderKioskRoute()) return <OnlineOrderingBetaPage kioskMode />;
 
   const displayRoute = getDisplayRoute();
   if (displayRoute === "menu") return <MenuBoardDisplay />;
@@ -7906,6 +7965,12 @@ export default function GoldiesKDS() {
                       className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
                     >
                       Online Orders
+                    </a>
+                    <a
+                      href={getDisplayHref("/self-order-kiosk", isDemoRoute)}
+                      className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
+                    >
+                      Self Order Kiosk
                     </a>
                   </div>
                 )}
