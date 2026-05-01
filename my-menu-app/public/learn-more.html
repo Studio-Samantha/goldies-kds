@@ -921,6 +921,30 @@
       .lite-screen .screen-bar {
         background: #12100c;
       }
+      .lite-toolbar {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .lite-tool {
+        border: 1px solid rgba(15, 64, 54, 0.12);
+        border-radius: 8px;
+        background: rgba(255, 253, 248, 0.92);
+        padding: 9px;
+      }
+      .lite-tool strong {
+        display: block;
+        color: var(--green);
+        font-size: 13px;
+      }
+      .lite-tool span {
+        display: block;
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.35;
+      }
       .lite-screen .lane-grid {
         grid-template-columns: repeat(4, minmax(0, 1fr));
       }
@@ -1533,6 +1557,9 @@
           grid-template-columns: 1fr;
         }
         .lite-screen .lane-grid {
+          grid-template-columns: 1fr;
+        }
+        .lite-toolbar {
           grid-template-columns: 1fr;
         }
         .lane {
@@ -2225,8 +2252,15 @@
             <div class="screen-bar">
               <span class="screen-logo">DF</span>
               <strong>DrinkFlow Lite</strong>
+              <span>Password protected hosted board</span>
             </div>
             <div class="screen-body">
+              <div class="lite-toolbar" aria-label="Lite included tools">
+                <div class="lite-tool"><strong>Live board</strong><span>New, Making, Ready, Completed</span></div>
+                <div class="lite-tool"><strong>Settings</strong><span>Theme, labels, support, training</span></div>
+                <div class="lite-tool"><strong>Actions</strong><span>Start, Ready, Done, Reopen</span></div>
+                <div class="lite-tool"><strong>No portal</strong><span>Reports reserved for KDS</span></div>
+              </div>
               <div class="lane-grid">
                 <div class="lane">
                   <div class="lane-head">New</div>
