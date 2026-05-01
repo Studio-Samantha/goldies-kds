@@ -6339,11 +6339,24 @@ function OnlineOrderingBetaPage() {
     );
   }
 
-  function toggleModifier(itemId, modifierId) {
+  function toggleModifier(itemId, groupId, modifierId, selectionType = "multiple") {
     setCart((current) =>
       current.map((entry) => {
         if (entry.id !== itemId) return entry;
         const currentIds = entry.modifierIds || [];
+        const group = (entry.modifierGroups || []).find((modifierGroup) => modifierGroup.id === groupId);
+        const groupOptionIds = new Set((group?.options || []).map((option) => option.id));
+
+        if (selectionType === "single") {
+          const withoutGroup = currentIds.filter((id) => !groupOptionIds.has(id));
+          return {
+            ...entry,
+            modifierIds: currentIds.includes(modifierId)
+              ? withoutGroup
+              : [...withoutGroup, modifierId],
+          };
+        }
+
         const nextIds = currentIds.includes(modifierId)
           ? currentIds.filter((id) => id !== modifierId)
           : [...currentIds, modifierId];
@@ -6552,8 +6565,13 @@ function OnlineOrderingBetaPage() {
                       <div className="mt-3 space-y-3 border-t border-[#CA862B]/12 pt-3">
                         {item.modifierGroups.map((group) => (
                           <div key={`${item.id}-${group.id}`}>
-                            <div className="text-xs font-black uppercase tracking-[0.12em] text-[#8B5A1D]">
-                              {group.name}
+                            <div className="flex flex-wrap items-center gap-2">
+                              <div className="text-xs font-black uppercase tracking-[0.12em] text-[#8B5A1D]">
+                                {group.name}
+                              </div>
+                              <span className="rounded-full bg-[#CA862B]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.1em] text-[#8B5A1D]">
+                                {group.selectionType === "single" ? "Choose one" : "Choose any"}
+                              </span>
                             </div>
                             <div className="mt-2 flex flex-wrap gap-2">
                               {(group.options || []).map((option) => {
@@ -6562,7 +6580,14 @@ function OnlineOrderingBetaPage() {
                                   <button
                                     key={option.id}
                                     type="button"
-                                    onClick={() => toggleModifier(item.id, option.id)}
+                                    onClick={() =>
+                                      toggleModifier(
+                                        item.id,
+                                        group.id,
+                                        option.id,
+                                        group.selectionType
+                                      )
+                                    }
                                     className={`rounded-full border px-3 py-1.5 text-xs font-black transition ${
                                       checked
                                         ? "border-[#0F4036] bg-[#0F4036] text-white"

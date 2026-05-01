@@ -358,6 +358,8 @@ async function getSquareOnlineOrderingMenu() {
           name: listData.name || "Options",
           minSelected: Number(info.min_selected_modifiers || 0),
           maxSelected: Number(info.max_selected_modifiers || 0),
+          selectionType:
+            Number(info.max_selected_modifiers || 0) === 1 ? "single" : "multiple",
           options,
         };
       })
@@ -426,15 +428,18 @@ async function buildOnlineOrderingBetaLineItems(rawItems) {
       const selectedModifierIds = Array.isArray(rawItem?.modifierIds)
         ? rawItem.modifierIds.map((id) => String(id))
         : [];
-      const allowedModifierIds = new Set(
-        (menuItem.modifierGroups || []).flatMap((group) =>
-          (group.options || []).map((option) => option.id)
-        )
-      );
-      const modifiers = selectedModifierIds
-        .filter((id) => allowedModifierIds.has(id))
-        .slice(0, 12)
-        .map((catalogObjectId) => ({ catalog_object_id: catalogObjectId }));
+      const modifiers = [];
+      for (const group of menuItem.modifierGroups || []) {
+        const allowedGroupIds = new Set((group.options || []).map((option) => option.id));
+        const selectedInGroup = selectedModifierIds.filter((id) => allowedGroupIds.has(id));
+        const cappedSelection =
+          Number(group.maxSelected || 0) > 0
+            ? selectedInGroup.slice(0, Number(group.maxSelected || 0))
+            : selectedInGroup;
+        modifiers.push(
+          ...cappedSelection.map((catalogObjectId) => ({ catalog_object_id: catalogObjectId }))
+        );
+      }
       const lineItem = menuItem.variationId
         ? {
             catalog_object_id: menuItem.variationId,
