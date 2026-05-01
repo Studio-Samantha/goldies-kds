@@ -668,6 +668,142 @@
         grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
         align-items: start;
       }
+      .portal-screenshot {
+        margin-top: 30px;
+        overflow: hidden;
+        border: 1px solid rgba(15, 64, 54, 0.16);
+        border-radius: 8px;
+        background: #fffdf8;
+        box-shadow: var(--shadow);
+      }
+      .portal-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 18px 20px;
+        background: var(--green);
+        color: #fff;
+      }
+      .portal-title span,
+      .portal-export-row span {
+        display: block;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 11px;
+        font-weight: 950;
+        text-transform: uppercase;
+      }
+      .portal-title strong {
+        display: block;
+        margin-top: 3px;
+        font-size: clamp(22px, 3vw, 34px);
+        line-height: 1.05;
+      }
+      .portal-export-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+      .portal-export-row span {
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        border-radius: 999px;
+        padding: 7px 10px;
+        color: #fff;
+      }
+      .portal-body {
+        padding: clamp(14px, 3vw, 24px);
+      }
+      .portal-metrics {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .portal-metric {
+        border: 1px solid rgba(15, 64, 54, 0.1);
+        border-radius: 8px;
+        background: #fff;
+        padding: 14px;
+      }
+      .portal-metric span {
+        display: block;
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 950;
+        text-transform: uppercase;
+      }
+      .portal-metric strong {
+        display: block;
+        margin-top: 6px;
+        color: var(--green);
+        font-size: clamp(24px, 3vw, 36px);
+        line-height: 1;
+      }
+      .portal-main {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+        gap: 14px;
+        margin-top: 14px;
+      }
+      .portal-panel {
+        border: 1px solid rgba(15, 64, 54, 0.1);
+        border-radius: 8px;
+        background: #fff;
+        padding: 16px;
+      }
+      .portal-panel h3 {
+        margin: 0 0 12px;
+        color: var(--green);
+      }
+      .portal-chart {
+        width: 100%;
+        min-height: 220px;
+        display: block;
+      }
+      .portal-mix-row {
+        display: grid;
+        grid-template-columns: 88px minmax(0, 1fr) 46px;
+        gap: 10px;
+        align-items: center;
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 850;
+      }
+      .portal-track {
+        overflow: hidden;
+        height: 11px;
+        border-radius: 999px;
+        background: rgba(15, 64, 54, 0.09);
+      }
+      .portal-fill {
+        height: 100%;
+        border-radius: inherit;
+        background: var(--gold);
+      }
+      .portal-advice-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .portal-advice {
+        border: 1px solid rgba(202, 134, 43, 0.2);
+        border-radius: 8px;
+        background: rgba(246, 239, 225, 0.68);
+        padding: 14px;
+      }
+      .portal-advice strong {
+        display: block;
+        color: var(--green);
+      }
+      .portal-advice span {
+        display: block;
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
       .screen {
         overflow: hidden;
         border: 1px solid rgba(15, 64, 54, 0.18);
@@ -1691,8 +1827,21 @@
         .proof-inner {
           transform: translateY(-18px);
         }
-        .features, .showcase-grid, .price-grid, .onboarding-grid, .customer-grid, .setup-grid, .comparison-grid, .comparison-savings, .proof-inner, .faq-grid, .support-card-inner, .founder-grid, .founder-points, .case-proof-inner, .lite-demo-grid, .a-la-carte-grid, .theme-grid, .tier-compare-grid {
+        .features, .showcase-grid, .price-grid, .onboarding-grid, .customer-grid, .setup-grid, .comparison-grid, .comparison-savings, .proof-inner, .faq-grid, .support-card-inner, .founder-grid, .founder-points, .case-proof-inner, .lite-demo-grid, .a-la-carte-grid, .theme-grid, .tier-compare-grid, .portal-main, .portal-advice-grid {
           grid-template-columns: 1fr;
+        }
+        .portal-topbar {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+        .portal-export-row {
+          justify-content: flex-start;
+        }
+        .portal-metrics {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .portal-chart {
+          min-height: 180px;
         }
         .setup-photo img {
           min-height: 280px;
@@ -2077,7 +2226,92 @@
     <section class="section showcase" id="reports">
       <div class="section-inner">
         <p class="eyebrow">Live board and owner portal</p>
-        <h2>The counter gets the board. The owner gets the story.</h2>
+        <h2>The owner portal is where the day starts making sense.</h2>
+        <p class="section-copy">
+          The KDS helps the team move tickets. The Owner Portal helps the shop read the rush:
+          drink revenue, hourly order volume, average drinks per order, 2+ drink rate,
+          category mix, plain-language guidance, and exports for the month.
+        </p>
+
+        <div class="portal-screenshot" aria-label="Example DrinkFlow KDS owner portal dashboard screenshot">
+          <div class="portal-topbar">
+            <div class="portal-title">
+              <span>Owner Portal</span>
+              <strong>Drink Revenue Dashboard</strong>
+            </div>
+            <div class="portal-export-row" aria-label="Download formats">
+              <span>CSV</span>
+              <span>Excel</span>
+              <span>Branded PDF</span>
+            </div>
+          </div>
+          <div class="portal-body">
+            <div class="portal-metrics">
+              <div class="portal-metric"><span>Drink revenue</span><strong>$487</strong></div>
+              <div class="portal-metric"><span>Peak hour</span><strong>9 AM</strong></div>
+              <div class="portal-metric"><span>Avg drinks</span><strong>1.8</strong></div>
+              <div class="portal-metric"><span>2+ drinks</span><strong>34%</strong></div>
+              <div class="portal-metric"><span>Top group</span><strong>Espresso</strong></div>
+            </div>
+            <div class="portal-main">
+              <div class="portal-panel">
+                <h3>Hourly order volume</h3>
+                <svg class="portal-chart" viewBox="0 0 620 250" role="img" aria-label="Example hourly order volume from 7 AM to 2 PM">
+                  <line x1="38" y1="200" x2="588" y2="200" stroke="#e8dbc3" stroke-width="2" />
+                  <line x1="38" y1="148" x2="588" y2="148" stroke="#f0e8d8" stroke-width="1" />
+                  <line x1="38" y1="96" x2="588" y2="96" stroke="#f0e8d8" stroke-width="1" />
+                  <line x1="38" y1="44" x2="588" y2="44" stroke="#f0e8d8" stroke-width="1" />
+                  <polygon points="38,188 116,162 194,98 272,48 350,76 428,124 506,146 584,108 584,200 38,200" fill="rgba(202,134,43,0.14)" />
+                  <polyline points="38,188 116,162 194,98 272,48 350,76 428,124 506,146 584,108" fill="none" stroke="#ca862b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+                  <circle cx="272" cy="48" r="9" fill="#0f4036" />
+                  <text x="38" y="230" fill="#665f52" font-size="14" font-weight="800">7A</text>
+                  <text x="185" y="230" fill="#665f52" font-size="14" font-weight="800">9A</text>
+                  <text x="250" y="34" fill="#0f4036" font-size="14" font-weight="900">Peak</text>
+                  <text x="414" y="230" fill="#665f52" font-size="14" font-weight="800">12P</text>
+                  <text x="558" y="230" fill="#665f52" font-size="14" font-weight="800">2P</text>
+                </svg>
+              </div>
+              <div class="portal-panel">
+                <h3>Drink mix</h3>
+                <div class="portal-mix-row">
+                  <span>Espresso</span>
+                  <div class="portal-track"><div class="portal-fill" style="width: 58%"></div></div>
+                  <span>58%</span>
+                </div>
+                <div class="portal-mix-row">
+                  <span>Tea</span>
+                  <div class="portal-track"><div class="portal-fill" style="width: 26%"></div></div>
+                  <span>26%</span>
+                </div>
+                <div class="portal-mix-row">
+                  <span>Smoothies</span>
+                  <div class="portal-track"><div class="portal-fill" style="width: 16%"></div></div>
+                  <span>16%</span>
+                </div>
+                <div class="portal-mix-row">
+                  <span>Retail</span>
+                  <div class="portal-track"><div class="portal-fill" style="width: 0%"></div></div>
+                  <span>Filtered</span>
+                </div>
+              </div>
+            </div>
+            <div class="portal-advice-grid">
+              <div class="portal-advice">
+                <strong>Money signal</strong>
+                <span>Espresso is carrying the morning. Keep the bar stocked before the 9 AM climb.</span>
+              </div>
+              <div class="portal-advice">
+                <strong>Owner action</strong>
+                <span>Prep cold cups and milk early, then keep handoff clear while multi-drink orders are high.</span>
+              </div>
+              <div class="portal-advice">
+                <strong>Report value</strong>
+                <span>Download the month as CSV, Excel, or a branded PDF with charts and notes.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="grid showcase-grid">
           <div class="screen" aria-label="Example KDS board">
             <div class="screen-bar">
@@ -2104,45 +2338,24 @@
           </div>
 
           <aside class="card owner-card">
-            <p class="eyebrow">Owner portal example</p>
-            <h3 class="mini-title">Drink Revenue</h3>
-            <p class="mini-copy">Example categories shown. The drink groups can match each shop.</p>
-            <div class="owner-metrics">
-              <div class="metric"><span>Revenue</span><strong>$487</strong></div>
-              <div class="metric"><span>Peak hour</span><strong>9 AM</strong></div>
-              <div class="metric"><span>Top group</span><strong>Espresso</strong></div>
-              <div class="metric"><span>Avg drinks</span><strong>1.8</strong></div>
-              <div class="metric"><span>2+ drinks</span><strong>27%</strong></div>
-              <div class="metric"><span>Exports</span><strong>PDF</strong></div>
-            </div>
-            <div class="bars" aria-label="Example hourly order volume line graph">
-              <svg class="volume-chart" viewBox="0 0 420 150" role="img" aria-label="Hourly orders plotted from 6 AM to 1 PM">
-                <line x1="24" y1="118" x2="396" y2="118" stroke="#e9d8b7" stroke-width="2" />
-                <line x1="24" y1="82" x2="396" y2="82" stroke="#f0e6d2" stroke-width="1" />
-                <line x1="24" y1="46" x2="396" y2="46" stroke="#f0e6d2" stroke-width="1" />
-                <polyline points="24,110 76,96 128,58 180,28 232,46 284,84 336,98 388,72" fill="none" stroke="#ca862b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
-                <polygon points="24,110 76,96 128,58 180,28 232,46 284,84 336,98 388,72 388,118 24,118" fill="rgba(202,134,43,0.14)" />
-                <circle cx="180" cy="28" r="7" fill="#0f4036" />
-                <text x="24" y="140" fill="#665f52" font-size="11" font-weight="700">6A</text>
-                <text x="119" y="140" fill="#665f52" font-size="11" font-weight="700">8A</text>
-                <text x="171" y="20" fill="#0f4036" font-size="12" font-weight="900">Peak</text>
-                <text x="277" y="140" fill="#665f52" font-size="11" font-weight="700">11A</text>
-                <text x="374" y="140" fill="#665f52" font-size="11" font-weight="700">1P</text>
-              </svg>
-            </div>
+            <p class="eyebrow">What the Owner Portal does</p>
+            <h3 class="mini-title">Turns order flow into decisions.</h3>
             <div class="advice-list">
               <div class="advice">
-                <strong>Staffing and bar flow</strong>
-                <span>9 AM is carrying the day. Stage cold cups and milk early, then keep one person near handoff.</span>
+                <strong>Separates drinks from retail</strong>
+                <span>Drink analytics can ignore merch, packaged coffee, gifts, and other non-drink items.</span>
               </div>
               <div class="advice">
-                <strong>Ticket behavior</strong>
-                <span>The average order contains 1.8 drinks, and 27% of individual drink orders contain 2 or more drinks.</span>
+                <strong>Shows the rush by hour</strong>
+                <span>The line graph makes high-volume and low-volume windows easy to spot.</span>
+              </div>
+              <div class="advice">
+                <strong>Gives plain-language guidance</strong>
+                <span>Each time period can have its own money signal and owner action, instead of repeated generic advice.</span>
               </div>
             </div>
             <p class="mini-copy">
-              Owners can export CSV, Excel, or a branded PDF with the shop logo, hourly volume,
-              category mix, and notes from the selected report.
+              Example categories are placeholders. Drink groups, labels, and report periods can match each shop.
             </p>
           </aside>
         </div>
@@ -2636,7 +2849,7 @@
           <div class="footer-fine">
             Built by an artist and former USAF analyst. Practical, affordable, supported after launch.
             <br />
-            Square&reg;, Supabase&reg;, Render&reg;, and Vercel&reg; are trademarks of their respective owners.
+            DrinkFlow KDS&trade; is a Studio Samantha brand. Square&reg;, Supabase&reg;, Render&reg;, and Vercel&reg; are trademarks of their respective owners.
             This product is independent and not affiliated with or endorsed by those companies.
           </div>
         </div>
