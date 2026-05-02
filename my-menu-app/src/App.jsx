@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.9.2";
+const APP_VERSION = "v1.9.3";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -27,14 +27,24 @@ const DAILY_UPDATE_NOTICE = {
   eyebrow: "KDS update",
   title: "What changed today",
   message:
-    "Online Ordering Beta and the first Self Order Kiosk path are cleaner now.",
+    "Online Ordering Beta now separates customer choices more cleanly.",
   note:
-    "For-here-only drinks stay off customer ordering, hot/iced and size choices are separated from drink additions, Online Orders only shows online pickup orders, and Orders Up labels Online versus In person.",
+    "Temperature and size choices sit outside Drink additions, duplicate add-ons are cleaned up, Online Orders only shows online pickup orders, and Orders Up labels Online versus In person.",
 };
 const RELEASE_NOTES = [
   {
-    version: "v1.9.2",
+    version: "v1.9.3",
     date: "Current build",
+    summary: "Cleaned up online order option groups.",
+    items: [
+      "Americano and similar drinks now show Temperature and Size as separate required sections.",
+      "Drink additions now stays focused on actual add-ons like flavors, milk, cold foam, and extra shots.",
+      "Duplicate add-on names from overlapping Square modifier lists are collapsed for a cleaner customer order flow.",
+    ],
+  },
+  {
+    version: "v1.9.2",
+    date: "Previous build",
     summary: "Tightened customer ordering and display routing.",
     items: [
       "Self Order Kiosk now has a direct app route.",
@@ -6705,7 +6715,7 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
                                 <div className="text-xs font-black uppercase tracking-[0.12em] text-[#8B5A1D]">
                                   {groupLabel}
                                 </div>
-                                {group.name && group.name !== groupLabel ? (
+                                {group.role === "addition" && group.name && group.name !== groupLabel ? (
                                   <span className="text-xs font-bold text-[#6A614F]">
                                     {group.name}
                                   </span>

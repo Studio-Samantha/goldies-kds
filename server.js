@@ -505,6 +505,42 @@ function buildVirtualTemperatureGroup(variationId, mode = "choice") {
   };
 }
 
+function mergeOnlineModifierGroups(groups = []) {
+  const merged = [];
+  const additionOptionsByName = new Map();
+  let additionGroup = null;
+
+  for (const group of groups) {
+    if (group.role !== "addition") {
+      merged.push(group);
+      continue;
+    }
+
+    if (!additionGroup) {
+      additionGroup = {
+        ...group,
+        id: `${group.id}-combined`,
+        name: "Drink additions",
+        options: [],
+        required: false,
+        minSelected: 0,
+        maxSelected: 0,
+        selectionType: "multiple",
+      };
+      merged.push(additionGroup);
+    }
+
+    for (const option of group.options || []) {
+      const key = normalizeCatalogLabel(option.name);
+      if (additionOptionsByName.has(key)) continue;
+      additionOptionsByName.set(key, true);
+      additionGroup.options.push(option);
+    }
+  }
+
+  return merged.filter((group) => group.options?.length);
+}
+
 function filterModifierGroupsForVariation(modifierGroups, itemName, variationName) {
   const variationSize = getCatalogSizeToken(`${itemName} ${variationName}`);
   const drinkRule = getOnlineOrderingDrinkRule(itemName);
@@ -592,7 +628,7 @@ function filterModifierGroupsForVariation(modifierGroups, itemName, variationNam
     );
   }
 
-  return groups;
+  return mergeOnlineModifierGroups(groups);
 }
 
 function buildStaticOnlineOrderingMenu() {
