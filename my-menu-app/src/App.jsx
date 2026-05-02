@@ -2952,6 +2952,260 @@ function CustomerInsightsPanel() {
   );
 }
 
+function buildCustomerInsightsAnalysis(insights = []) {
+  const normalized = insights.map((insight) => ({
+    ...insight,
+    searchText: [
+      insight.customer_name,
+      insight.drink_name,
+      insight.note,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase(),
+  }));
+
+  const namedCustomers = normalized.filter((insight) =>
+    String(insight.customer_name || "").trim()
+  ).length;
+  const drinkMentions = normalized.filter((insight) =>
+    String(insight.drink_name || "").trim()
+  ).length;
+
+  const themes = [
+    {
+      title: "Things customers ask for",
+      match: /(add|want|asked|request|lavender|decaf|syrup|flavor|option|special)/i,
+      empty: "No repeated asks yet.",
+    },
+    {
+      title: "Recipe or prep reminders",
+      match: /(recipe|how to|make|prep|foam|blend|steep|shot|milk|ice|procedure|sop)/i,
+      empty: "No prep reminders saved yet.",
+    },
+    {
+      title: "Regulars to remember",
+      match: /(regular|always|usual|favorite|likes|name|customer|again)/i,
+      empty: "No regular details saved yet.",
+    },
+    {
+      title: "Things to fix",
+      match: /(wrong|slow|confusing|missed|forgot|out|stock|waste|refund|problem|issue)/i,
+      empty: "Nothing has been flagged here yet.",
+    },
+  ].map((theme) => {
+    const matches = normalized.filter((insight) => theme.match.test(insight.searchText));
+    return {
+      ...theme,
+      count: matches.length,
+      examples: matches.slice(0, 2),
+    };
+  });
+
+  const topDrinkCounts = new Map();
+  normalized.forEach((insight) => {
+    const drink = String(insight.drink_name || "").trim();
+    if (!drink) return;
+    topDrinkCounts.set(drink, (topDrinkCounts.get(drink) || 0) + 1);
+  });
+  const topDrinks = [...topDrinkCounts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, 3)
+    .map(([drink, count]) => ({ drink, count }));
+
+  const actionTheme = themes.find((theme) => theme.count > 0);
+  const ownerRead = insights.length
+    ? actionTheme
+      ? `Most of the saved notes are about ${actionTheme.title.toLowerCase()}. Read those first when you have a quiet minute.`
+      : "There are notes saved, but no clear pattern yet. Keep adding them through a few more rushes."
+    : "No customer notes have been saved yet. Once staff add notes, this area will help summarize them.";
+
+  return {
+    total: insights.length,
+    namedCustomers,
+    drinkMentions,
+    topDrinks,
+    themes,
+    ownerRead,
+  };
+}
+
+function CustomerInsightsHistory() {
+  const [insights, setInsights] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [warning, setWarning] = useState("");
+  const analysis = buildCustomerInsightsAnalysis(insights);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadInsights() {
+      try {
+        setLoading(true);
+        setWarning("");
+        const response = await fetch(apiUrl("/api/customer-insights"), {
+          credentials: "include",
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data.error || `Customer insights unavailable: ${response.status}`);
+        }
+
+        if (!mounted) return;
+        setInsights(data.insights || []);
+        setWarning(data.warning || "");
+      } catch (error) {
+        if (mounted) setWarning(error.message || "Customer insights unavailable.");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    loadInsights();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  return (
+    <section className="rounded-3xl border border-white/70 bg-[rgba(255,253,248,0.92)] p-4 shadow-sm">
+      <div className="flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
+        <div>
+          <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
+            Customer insights
+          </div>
+          <h2 className="mt-1 text-2xl font-black text-[#0F4036]">
+            Notes from the counter
+          </h2>
+          <p className="mt-1 text-sm font-semibold text-[#6A614F]">
+            Small customer requests, menu clues, and regular details saved by the team.
+          </p>
+        </div>
+        <span className="rounded-full border border-[#CA862B]/18 bg-white px-3 py-1 text-xs font-black uppercase tracking-[0.14em] text-[#0F4036]">
+          {insights.length} saved
+        </span>
+      </div>
+
+      {warning ? (
+        <div className="mt-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-red-900">
+          {warning}
+        </div>
+      ) : null}
+
+      {loading ? (
+        <div className="mt-3 rounded-2xl border border-dashed border-[#CA862B]/22 bg-white/70 p-5 text-center text-sm font-semibold text-[#6A614F]">
+          Loading customer insights
+        </div>
+      ) : insights.length ? (
+        <>
+          <div className="mt-3 rounded-2xl border border-[#CA862B]/14 bg-white px-4 py-3 shadow-sm">
+            <div className="text-xs font-black uppercase tracking-[0.16em] text-[#8B5A1D]">
+              Quick read
+            </div>
+            <p className="mt-2 text-sm font-bold leading-6 text-[#111111]">
+              {analysis.ownerRead}
+            </p>
+            <div className="mt-3 grid gap-2 md:grid-cols-3">
+              <div className="rounded-xl bg-[#EEE0C5]/35 px-3 py-2">
+                <div className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
+                  Notes with names
+                </div>
+                <div className="mt-1 text-2xl font-black text-[#0F4036]">
+                  {analysis.namedCustomers}
+                </div>
+              </div>
+              <div className="rounded-xl bg-[#EEE0C5]/35 px-3 py-2">
+                <div className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
+                  Notes tied to drinks
+                </div>
+                <div className="mt-1 text-2xl font-black text-[#0F4036]">
+                  {analysis.drinkMentions}
+                </div>
+              </div>
+              <div className="rounded-xl bg-[#EEE0C5]/35 px-3 py-2">
+                <div className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
+                  Most mentioned drink
+                </div>
+                <div className="mt-1 text-sm font-black text-[#0F4036]">
+                  {analysis.topDrinks[0]
+                    ? `${analysis.topDrinks[0].drink} (${analysis.topDrinks[0].count})`
+                    : "No drink names yet"}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+            {analysis.themes.map((theme) => (
+              <article
+                key={theme.title}
+                className="rounded-2xl border border-[#CA862B]/14 bg-white px-4 py-3 shadow-sm"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-sm font-black text-[#0F4036]">{theme.title}</h3>
+                  <span className="rounded-full bg-[#EEE0C5]/55 px-2.5 py-1 text-xs font-black text-[#0F4036]">
+                    {theme.count}
+                  </span>
+                </div>
+                {theme.examples.length ? (
+                  <div className="mt-2 space-y-2">
+                    {theme.examples.map((insight) => (
+                      <p
+                        key={`${theme.title}-${insight.id}`}
+                        className="rounded-xl bg-[#FFFDF8] px-3 py-2 text-xs font-bold leading-5 text-[#4E4637]"
+                      >
+                        {insight.note}
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-xs font-semibold leading-5 text-[#6A614F]">
+                    {theme.empty}
+                  </p>
+                )}
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+            {insights.map((insight) => (
+              <article
+                key={insight.id}
+                className="rounded-2xl border border-[#CA862B]/14 bg-white px-4 py-3 shadow-sm"
+              >
+                <div className="text-xs font-black uppercase tracking-[0.12em] text-[#8B5A1D]">
+                  {insight.customer_name || "Customer note"}
+                </div>
+                <div className="mt-1 text-sm font-black leading-5 text-[#111111]">
+                  {insight.note}
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold text-[#6A614F]">
+                  {insight.drink_name ? (
+                    <span className="rounded-full bg-[#EEE0C5]/55 px-2.5 py-1">
+                      {insight.drink_name}
+                    </span>
+                  ) : null}
+                  {insight.created_by ? (
+                    <span className="rounded-full bg-[#EEE0C5]/55 px-2.5 py-1">
+                      Saved by {insight.created_by}
+                    </span>
+                  ) : null}
+                </div>
+              </article>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div className="mt-3 rounded-2xl border border-dashed border-[#CA862B]/22 bg-white/70 p-5 text-center text-sm font-semibold text-[#6A614F]">
+          No customer insights saved yet.
+        </div>
+      )}
+    </section>
+  );
+}
+
 function DemoBrandMark({ size = "md" }) {
   const dimensions = size === "lg" ? "h-28 w-56" : "h-16 w-36";
 
@@ -4593,6 +4847,8 @@ function OwnerReportsView({
             </>
           )}
         </section>
+
+        {!demoMode && <CustomerInsightsHistory />}
       </div>
 
       <PasswordSettingsDialog

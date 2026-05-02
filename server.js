@@ -1889,6 +1889,24 @@ function requireOwnerAuth(req, res, next) {
   return next();
 }
 
+function requireKdsOrOwnerAuth(req, res, next) {
+  const cookies = parseCookies(req.headers.cookie || "");
+  const kdsSession = getSessionFromToken(cookies[SESSION_COOKIE_NAME]);
+  const ownerSession = getSessionFromToken(cookies[OWNER_SESSION_COOKIE_NAME]);
+
+  if (kdsSession) {
+    req.kdsSession = kdsSession;
+    return next();
+  }
+
+  if (ownerSession?.role === "owner") {
+    req.ownerSession = ownerSession;
+    return next();
+  }
+
+  return res.status(401).json({ error: "Login required" });
+}
+
 function addTicket(ticket) {
   const alreadyExists = tickets.some((existing) => existing.id === ticket.id);
 
@@ -4750,7 +4768,7 @@ app.get("/api/tickets/completed", requireKdsAuth, async (req, res) => {
   }
 });
 
-app.get("/api/customer-insights", requireKdsAuth, async (_req, res) => {
+app.get("/api/customer-insights", requireKdsOrOwnerAuth, async (_req, res) => {
   try {
     if (!supabase) return res.json({ insights: [] });
 
