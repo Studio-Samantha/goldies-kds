@@ -3516,6 +3516,31 @@ async function getOwnerDrinkRevenueReport(range = "today") {
   return buildOwnerDrinkRevenueReport(orders || [], start, end);
 }
 
+async function getOwnerDrinkRevenueReportForDay(dateString = getLocalDateKey()) {
+  const range = getDayRange(dateString);
+  if (!range) {
+    const error = new Error("Invalid date");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!supabase) {
+    return buildOwnerDrinkRevenueReport([], range.start, range.end);
+  }
+
+  await syncRecentSquareOrders();
+
+  const { data: orders, error } = await supabase
+    .from("kds_orders")
+    .select("square_order_id, created_at, raw_order")
+    .gte("created_at", range.start.toISOString())
+    .lte("created_at", range.end.toISOString());
+
+  if (error) throw error;
+
+  return buildOwnerDrinkRevenueReport(orders || [], range.start, range.end);
+}
+
 function normalizeSnapshotPayload(body = {}, ownerName = "Owner") {
   const report = body.report || {};
   const advice = Array.isArray(body.advice) ? body.advice : [];
@@ -5162,18 +5187,20 @@ app.post("/api/beta/online-order/checkout", async (req, res) => {
   }
 });
 
-app.get("/api/display/volume", requireKdsAuth, async (_req, res) => {
+app.get("/api/display/volume", requireKdsAuth, async (req, res) => {
   try {
-    const report = await getOwnerDrinkRevenueReport("today");
+    const selectedDate = normalizeName(req.query.date || getLocalDateKey());
+    const report = await getOwnerDrinkRevenueReportForDay(selectedDate);
     res.json({
       ok: true,
       shopName: "Goldie's Coffee & Goods",
+      selectedDate,
       report,
       updatedAt: new Date().toISOString(),
     });
   } catch (error) {
     console.error("Error fetching volume display:", error);
-    res.status(500).json({ error: error.message });
+    res.status(error.statusCode || 500).json({ error: error.message });
   }
 });
 

@@ -3994,6 +3994,28 @@ function getOwnerRangeLabel(rangeKey) {
 const SHOP_TIME_ZONE = "America/Chicago";
 const SHOP_OPEN_HOUR = 7;
 const SHOP_CLOSE_HOUR = 15;
+const DEFAULT_SHOP_HOURS = {
+  openHour: 7,
+  closeHour: 15,
+  label: "7 AM-3 PM",
+};
+const SHOP_HOURS_BY_DAY = {
+  6: {
+    openHour: 8,
+    closeHour: 13,
+    label: "8 AM-1 PM",
+  },
+};
+
+function getShopHoursForDate(dateInput = new Date()) {
+  const date = dateInput instanceof Date ? dateInput : new Date(`${dateInput}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return DEFAULT_SHOP_HOURS;
+  return SHOP_HOURS_BY_DAY[date.getDay()] || DEFAULT_SHOP_HOURS;
+}
+
+function getShopHoursFromReport(report, selectedDate = getTodayDateKey()) {
+  return report?.shopHours || getShopHoursForDate(selectedDate);
+}
 
 function getShopTimeParts(date = new Date()) {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -4008,18 +4030,33 @@ function getShopTimeParts(date = new Date()) {
   return { hour, minute, minutes: hour * 60 + minute };
 }
 
-function getTodayServiceWindowRead(now = new Date()) {
+function getServiceWindowRead(now = new Date(), shopHours = DEFAULT_SHOP_HOURS, selectedDate = getTodayDateKey()) {
+  const todayKey = getTodayDateKey();
+  const isToday = selectedDate === todayKey;
+  const openHour = Number(shopHours.openHour ?? DEFAULT_SHOP_HOURS.openHour);
+  const closeHour = Number(shopHours.closeHour ?? DEFAULT_SHOP_HOURS.closeHour);
+  const label = shopHours.label || DEFAULT_SHOP_HOURS.label;
+
+  if (!isToday) {
+    return {
+      phase: "past-day",
+      label: "Past day",
+      pace: `This view is showing ${selectedDate}, using Goldie's ${label} Central service window.`,
+      action: "Use this as a day review instead of a live staffing read.",
+    };
+  }
+
   const { minutes } = getShopTimeParts(now);
-  const openMinute = SHOP_OPEN_HOUR * 60;
-  const closeMinute = SHOP_CLOSE_HOUR * 60;
+  const openMinute = openHour * 60;
+  const closeMinute = closeHour * 60;
   const serviceMinutes = closeMinute - openMinute;
 
   if (minutes < openMinute) {
     return {
       phase: "before-open",
       label: "Before open",
-      pace: "Goldie's opens at 7 AM Central and closes at 3 PM Central.",
-      action: "Use this as a pre-service check: confirm Square is syncing, then watch the first real rush after 7 AM.",
+      pace: `Goldie's opens at ${label.split("-")[0]} Central and closes at ${label.split("-")[1]} Central today.`,
+      action: "Use this as a pre-service check: confirm Square is syncing, then watch the first real rush after open.",
     };
   }
 
@@ -4027,7 +4064,7 @@ function getTodayServiceWindowRead(now = new Date()) {
     return {
       phase: "after-close",
       label: "After close",
-      pace: "Goldie's service window has closed for the day: 7 AM-3 PM Central.",
+      pace: `Goldie's service window has closed for the day: ${label} Central.`,
       action: "Treat today as a closed-day read now. Use the numbers for review, restock notes, and tomorrow's prep instead of live staffing moves.",
     };
   }
@@ -4052,9 +4089,13 @@ function getTodayServiceWindowRead(now = new Date()) {
     phase: "open",
     label: "Open now",
     progress,
-    pace: `Goldie's is ${progress}% through its 7 AM-3 PM Central service window, with ${elapsedLabel} served and about ${remainingLabel} left.`,
+    pace: `Goldie's is ${progress}% through its ${label} Central service window, with ${elapsedLabel} served and about ${remainingLabel} left.`,
     action: "Use this as a live service read. Compare the current pace to the time left before changing prep, staffing, or specials.",
   };
+}
+
+function getTodayServiceWindowRead(now = new Date()) {
+  return getServiceWindowRead(now, getShopHoursForDate(getTodayDateKey()), getTodayDateKey());
 }
 
 const OWNER_SNAPSHOT_COPY = {
@@ -6163,9 +6204,11 @@ function DriveThruDisplay() {
   );
 }
 
-function VolumeBoardChart({ hourlyOrders = [], darkMode = false }) {
-  const serviceHours = Array.from({ length: SHOP_CLOSE_HOUR - SHOP_OPEN_HOUR }, (_value, index) => {
-    const hour = SHOP_OPEN_HOUR + index;
+function VolumeBoardChart({ hourlyOrders = [], darkMode = false, shopHours = DEFAULT_SHOP_HOURS }) {
+  const openHour = Number(shopHours.openHour ?? SHOP_OPEN_HOUR);
+  const closeHour = Number(shopHours.closeHour ?? SHOP_CLOSE_HOUR);
+  const serviceHours = Array.from({ length: Math.max(closeHour - openHour, 1) }, (_value, index) => {
+    const hour = openHour + index;
     return hourlyOrders.find((item) => Number(item.hour) === hour) || {
       hour,
       orderCount: 0,
@@ -6205,7 +6248,7 @@ function VolumeBoardChart({ hourlyOrders = [], darkMode = false }) {
     <svg
       viewBox={`0 0 ${chartWidth} ${chartHeight}`}
       role="img"
-      aria-label="Hourly drink order volume from 7 AM to 3 PM"
+      aria-label={`Hourly drink order volume from ${shopHours.label || "open to close"}`}
       className="h-full min-h-[260px] w-full"
     >
       {[0, 0.5, 1].map((tick) => {
@@ -6274,6 +6317,7 @@ function VolumeBoardChart({ hourlyOrders = [], darkMode = false }) {
 function VolumeBoardDisplay() {
   const { themeMode, isDark, toggleTheme } = useDisplayTheme();
   const demoMode = isDemoTrainingRoute();
+  const [selectedDate, setSelectedDate] = useState(() => getTodayDateKey());
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -6284,7 +6328,11 @@ function VolumeBoardDisplay() {
 
     async function refreshVolume() {
       if (demoMode) {
-        setReport(buildDemoOwnerReport(getDemoDisplayTickets(), "today"));
+        const demoReport = buildDemoOwnerReport(getDemoDisplayTickets(), "today");
+        setReport({
+          ...demoReport,
+          shopHours: getShopHoursForDate(selectedDate),
+        });
         setUpdatedAt(new Date().toISOString());
         setError("");
         setLoading(false);
@@ -6292,7 +6340,7 @@ function VolumeBoardDisplay() {
       }
 
       try {
-        const response = await fetch(apiUrl("/api/display/volume"), {
+        const response = await fetch(apiUrl(`/api/display/volume?date=${encodeURIComponent(selectedDate)}`), {
           credentials: "include",
         });
 
@@ -6323,9 +6371,10 @@ function VolumeBoardDisplay() {
       mounted = false;
       clearInterval(interval);
     };
-  }, [demoMode]);
+  }, [demoMode, selectedDate]);
 
-  const serviceRead = getTodayServiceWindowRead();
+  const shopHours = getShopHoursFromReport(report, selectedDate);
+  const serviceRead = getServiceWindowRead(new Date(), shopHours, selectedDate);
   const orderCount = Number(report?.orderCount || 0);
   const totalUnits = Number(report?.totalUnits || 0);
   const averageDrinks = orderCount ? (totalUnits / orderCount).toFixed(1) : "0.0";
@@ -6336,7 +6385,7 @@ function VolumeBoardDisplay() {
     .sort((a, b) => Number(b.units || 0) - Number(a.units || 0));
   const hourlyStats = getHourlyVolumeStats(
     (report?.hourlyOrders || []).filter(
-      (item) => Number(item.hour) >= SHOP_OPEN_HOUR && Number(item.hour) < SHOP_CLOSE_HOUR
+      (item) => Number(item.hour) >= Number(shopHours.openHour) && Number(item.hour) < Number(shopHours.closeHour)
     )
   );
   const cardClass = isDark
@@ -6367,14 +6416,26 @@ function VolumeBoardDisplay() {
             </div>
             <div>
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F3D39B] sm:text-xs sm:tracking-[0.24em]">
-                7 AM-3 PM Central
+                {shopHours.label} Central
               </div>
               <h1 className="mt-1 text-3xl font-semibold tracking-normal sm:text-4xl md:text-6xl">
                 Volume Board
               </h1>
             </div>
-            <div className="hidden justify-self-end rounded-full border border-white/16 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/82 md:block">
-              {serviceRead.label}
+            <div className="justify-self-start rounded-2xl border border-white/16 bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white/82 md:justify-self-end">
+              <label className="sr-only" htmlFor="volume-board-date">Volume Board date</label>
+              <input
+                id="volume-board-date"
+                type="date"
+                value={selectedDate}
+                max={getTodayDateKey()}
+                onChange={(event) => {
+                  setLoading(true);
+                  setSelectedDate(event.target.value || getTodayDateKey());
+                }}
+                className="rounded-xl border border-white/18 bg-white/95 px-3 py-2 text-sm font-black text-[#0F4036] outline-none"
+              />
+              <span className="ml-2 hidden md:inline">{serviceRead.label}</span>
             </div>
           </div>
         </header>
@@ -6399,7 +6460,11 @@ function VolumeBoardDisplay() {
               </div>
             </div>
             <div className="mt-3 min-h-[280px]">
-              <VolumeBoardChart hourlyOrders={report?.hourlyOrders || []} darkMode={isDark} />
+              <VolumeBoardChart
+                hourlyOrders={report?.hourlyOrders || []}
+                darkMode={isDark}
+                shopHours={shopHours}
+              />
             </div>
           </section>
 
