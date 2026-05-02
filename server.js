@@ -935,6 +935,7 @@ let tickets = [
 
 const COFFEE_DRINKS = new Set([
   "Americano",
+  "Decaf (Americano)",
   "Cappuccino",
   "Cold Brew",
   "Drip",
@@ -1357,6 +1358,35 @@ function appendStatusEvent(rawOrder, status, at) {
         at,
       },
     ],
+  });
+}
+
+function getCompletedItemKeys(rawOrder) {
+  if (!rawOrder || typeof rawOrder !== "object") return [];
+  if (!Array.isArray(rawOrder.kdsCompletedItemKeys)) return [];
+
+  return rawOrder.kdsCompletedItemKeys.map((itemKey) => String(itemKey));
+}
+
+function setCompletedItemKey(rawOrder, itemKey, done) {
+  const base =
+    rawOrder && typeof rawOrder === "object" && !Array.isArray(rawOrder)
+      ? rawOrder
+      : {};
+  const normalizedKey = String(itemKey || "").trim();
+  const existing = new Set(getCompletedItemKeys(base));
+
+  if (normalizedKey) {
+    if (done) {
+      existing.add(normalizedKey);
+    } else {
+      existing.delete(normalizedKey);
+    }
+  }
+
+  return toJsonSafe({
+    ...base,
+    kdsCompletedItemKeys: Array.from(existing),
   });
 }
 
@@ -1883,6 +1913,24 @@ function updateLocalTicketStatus(id, status) {
   );
 }
 
+function updateLocalTicketItemDone(id, itemKey, done) {
+  const normalizedKey = String(itemKey || "").trim();
+
+  tickets = tickets.map((ticket) =>
+    ticket.id === id
+      ? {
+          ...ticket,
+          items: (ticket.items || []).map((item, index) => {
+            const candidateKey = String(item.id || index);
+            return candidateKey === normalizedKey
+              ? { ...item, done: Boolean(done) }
+              : item;
+          }),
+        }
+      : ticket
+  );
+}
+
 function updateLocalTicketName(id, customerName) {
   tickets = tickets.map((ticket) =>
     ticket.id === id ? { ...ticket, customerName } : ticket
@@ -2325,6 +2373,47 @@ function getSquareCustomerNameFromFields(order) {
   return String(rawName).trim();
 }
 
+function parseCustomerNameFromNotes(items = []) {
+  const noteText = (items || [])
+    .map((item) => item.note || item.notes || "")
+    .filter(Boolean)
+    .join(" ");
+  const match =
+    noteText.match(/\b(?:name|customer|cust)\s*[:\-]\s*([a-z][a-z\s'.-]{1,40})/i) ||
+    noteText.match(/\bfor\s+([a-z][a-z\s'.-]{1,40})/i);
+
+  if (match) {
+    return match[1]
+      .replace(/\s+(pickup|pick up|order|scheduled|at|for)\b.*$/i, "")
+      .trim()
+      .replace(/\s+/g, " ");
+  }
+
+  const ignoredStarts =
+    /^(to go|togo|for here|pickup|pick up|delivery|drive|hot|iced|ice|no |extra |add |sub |oat|almond|soy|whole|skim|decaf|regular|light|less|more)\b/i;
+  const candidates = (items || [])
+    .flatMap((item) => String(item.note || item.notes || "").split(/[,;|\n]|\s+-\s+/))
+    .map((candidate) =>
+      candidate
+        .replace(/^(name|customer|cust)\s*[:\-]\s*/i, "")
+        .replace(/\b(pickup|pick up|order|scheduled|at\s+\d.*|to go|for here)\b.*$/i, "")
+        .trim()
+        .replace(/\s+/g, " ")
+    )
+    .filter(Boolean);
+
+  return (
+    candidates.find((candidate) => {
+      if (ignoredStarts.test(candidate)) return false;
+      if (!/^[a-z][a-z'.-]*(\s+[a-z][a-z'.-]*){0,2}$/i.test(candidate)) {
+        return false;
+      }
+
+      return candidate.length >= 2 && candidate.length <= 40;
+    }) || ""
+  );
+}
+
 async function getSquareTeamMemberName(teamMemberId) {
   const normalizedId = String(teamMemberId || "").trim();
   if (!normalizedId) return "";
@@ -2479,7 +2568,7 @@ async function normalizeSquareOrder(order, payment = null) {
   return {
     id: order.id,
     orderNumber: order.orderNumber || order.id.slice(-4),
-    customerName: await getSquareCustomerName(order),
+    customerName: (await getSquareCustomerName(order)) || parseCustomerNameFromNotes(items),
     employeeName: await getSquareEmployeeName(order, payment),
     createdAt: new Date(order.createdAt || Date.now()).getTime(),
     source: getSquareOrderSourceLabel(order),
@@ -2492,6 +2581,8 @@ async function normalizeSquareOrder(order, payment = null) {
 
 function ticketFromDb(order, items = []) {
   const rawDiningOption = getDiningOption(order.raw_order || {});
+  const completedItemKeys = new Set(getCompletedItemKeys(order.raw_order));
+  const customerName = order.customer_name || parseCustomerNameFromNotes(items);
   const storedDiningOption =
     order.dining_option &&
     order.dining_option !== "Order" &&
@@ -2502,7 +2593,7 @@ function ticketFromDb(order, items = []) {
   return {
     id: order.square_order_id,
     orderNumber: order.order_number || order.square_order_id.slice(-4),
-    customerName: order.customer_name || "",
+    customerName,
     employeeName: order.employee_name || order.raw_order?.employeeName || "",
     createdAt: new Date(order.created_at).getTime(),
     completedAt: order.updated_at ? new Date(order.updated_at).getTime() : null,
@@ -2517,6 +2608,7 @@ function ticketFromDb(order, items = []) {
       modifiers: Array.isArray(item.modifiers) ? item.modifiers : [],
       note: item.note || "",
       category: getItemDrinkCategory(item),
+      done: completedItemKeys.has(String(item.square_line_item_uid || item.id)),
     })),
   };
 }
@@ -2553,6 +2645,10 @@ async function upsertTicket(ticket, rawOrder = null) {
             kdsStatusEvents:
               existingOrder?.raw_order?.kdsStatusEvents ||
               rawOrder.kdsStatusEvents ||
+              [],
+            kdsCompletedItemKeys:
+              existingOrder?.raw_order?.kdsCompletedItemKeys ||
+              rawOrder.kdsCompletedItemKeys ||
               [],
             employeeName:
               ticket.employeeName ||
@@ -2698,6 +2794,52 @@ async function setTicketStatus(id, status) {
   }
 
   return sanitizedStatus;
+}
+
+async function setTicketItemDone(id, itemKey, done) {
+  const normalizedKey = String(itemKey || "").trim();
+  if (!normalizedKey) {
+    const badRequestError = new Error("Missing item key");
+    badRequestError.statusCode = 400;
+    throw badRequestError;
+  }
+
+  if (!supabase) {
+    updateLocalTicketItemDone(id, normalizedKey, done);
+    return Boolean(done);
+  }
+
+  const { data: existingOrder, error: existingError } = await supabase
+    .from("kds_orders")
+    .select("square_order_id, raw_order")
+    .eq("square_order_id", id)
+    .maybeSingle();
+
+  if (existingError) throw existingError;
+  if (!existingOrder) {
+    const missingError = new Error(`Ticket ${id} was not found`);
+    missingError.statusCode = 404;
+    throw missingError;
+  }
+
+  const { data, error } = await supabase
+    .from("kds_orders")
+    .update({
+      raw_order: setCompletedItemKey(existingOrder.raw_order, normalizedKey, done),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("square_order_id", id)
+    .select("square_order_id")
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) {
+    const missingError = new Error(`Ticket ${id} was not found`);
+    missingError.statusCode = 404;
+    throw missingError;
+  }
+
+  return Boolean(done);
 }
 
 async function setTicketName(id, customerName) {
@@ -2930,6 +3072,34 @@ function getRangeEnd(range) {
   end.setDate(now.getDate() - 1);
   end.setHours(23, 59, 59, 999);
   return end;
+}
+
+const DEFAULT_SHOP_HOURS = {
+  openHour: 7,
+  closeHour: 15,
+  label: "7 AM-3 PM",
+};
+
+const SHOP_HOURS_BY_DAY = {
+  6: {
+    openHour: 8,
+    closeHour: 13,
+    label: "8 AM-1 PM",
+  },
+};
+
+function getShopHoursForDate(dateInput = new Date()) {
+  const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
+  if (Number.isNaN(date.getTime())) return DEFAULT_SHOP_HOURS;
+
+  return SHOP_HOURS_BY_DAY[date.getDay()] || DEFAULT_SHOP_HOURS;
+}
+
+function isHourWithinShopHours(hour, shopHours = DEFAULT_SHOP_HOURS) {
+  const openHour = Number(shopHours.openHour ?? DEFAULT_SHOP_HOURS.openHour);
+  const closeHour = Number(shopHours.closeHour ?? DEFAULT_SHOP_HOURS.closeHour);
+
+  return Number(hour) >= openHour && Number(hour) < closeHour;
 }
 
 function getDayRange(dateString) {
@@ -3194,6 +3364,7 @@ function buildDrinkReport(reportTickets, start, end = new Date()) {
 }
 
 function buildOwnerDrinkRevenueReport(orders = [], start, end) {
+  const shopHours = getShopHoursForDate(start);
   const categories = {
     Coffee: { category: "Coffee", revenueCents: 0, taxCents: 0, totalCents: 0, units: 0 },
     "Not Coffee": { category: "Not Coffee", revenueCents: 0, taxCents: 0, totalCents: 0, units: 0 },
@@ -3301,6 +3472,7 @@ function buildOwnerDrinkRevenueReport(orders = [], start, end) {
     ),
     totalsByCategory,
     hourlyOrders,
+    shopHours,
   };
 }
 
@@ -3332,7 +3504,12 @@ function normalizeSnapshotPayload(body = {}, ownerName = "Owner") {
   const rangeLabel = normalizeName(body.rangeLabel || rangeKey);
   const snapshotDate = normalizeName(body.snapshotDate || getLocalDateKey());
   const hourly = Array.isArray(report.hourlyOrders) ? report.hourlyOrders : [];
-  const activeHours = hourly.filter((item) => Number(item.orderCount || 0) > 0);
+  const shopHours = report.shopHours || getShopHoursForDate(report.startAt || snapshotDate);
+  const activeHours = hourly.filter(
+    (item) =>
+      isHourWithinShopHours(item.hour, shopHours) &&
+      Number(item.orderCount || 0) > 0
+  );
   const peak = activeHours
     .slice()
     .sort((a, b) => Number(b.orderCount || 0) - Number(a.orderCount || 0))[0];
@@ -3571,8 +3748,11 @@ function writeOwnerDrinkReportPdf(res, report = {}, range = "today") {
     "public",
     "goldies-logo-owner.png"
   );
+  const shopHours = report.shopHours || getShopHoursForDate(report.startAt || new Date());
   const activeHours = (report.hourlyOrders || []).filter(
-    (item) => Number(item.orderCount || 0) > 0
+    (item) =>
+      isHourWithinShopHours(item.hour, shopHours) &&
+      Number(item.orderCount || 0) > 0
   );
   const peakHour = activeHours
     .slice()
@@ -4276,6 +4456,17 @@ app.get("/api/owner/reports/drink-revenue", requireOwnerAuth, async (req, res) =
     });
   } catch (error) {
     console.error("Error fetching owner drink revenue report:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/owner/reports/drink-making-time", requireOwnerAuth, async (req, res) => {
+  try {
+    const report = await getDrinkMakingTimeReport("today");
+
+    res.json(report);
+  } catch (error) {
+    console.error("Error fetching owner drink making time report:", error);
     res.status(500).json({ error: error.message });
   }
 });

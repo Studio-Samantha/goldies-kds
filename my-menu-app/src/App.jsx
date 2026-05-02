@@ -10,15 +10,12 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.9.3";
+const APP_VERSION = "v1.9.4";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
-const WEB_SERVICES_REMINDER_HIDE_KEY =
-  "goldies-kds-hidden-web-services-reminder";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-29";
-const WEB_SERVICES_REMINDER_DATE = "2026-05-02";
 const SETTINGS_HELP_TEXT =
   "Settings has the app tools: theme, password change, support, and release notes.";
 const DINING_OPTIONS = ["For here", "To go", "Pickup", "Delivery", "Drive thru"];
@@ -33,8 +30,18 @@ const DAILY_UPDATE_NOTICE = {
 };
 const RELEASE_NOTES = [
   {
-    version: "v1.9.3",
+    version: "v1.9.4",
     date: "Current build",
+    summary: "Improved live display names and always-on display behavior.",
+    items: [
+      "KDS and Orders Up now use a customer name from item notes when Square does not provide a customer name.",
+      "Customer-facing display boards request Chrome screen wake lock while open so full-screen boards can stay on.",
+      "Saturday owner stats use Goldie's 8 AM-1 PM service window.",
+    ],
+  },
+  {
+    version: "v1.9.3",
+    date: "Previous build",
     summary: "Cleaned up online order option groups.",
     items: [
       "Americano and similar drinks now show Temperature and Size as separate required sections.",
@@ -1526,12 +1533,6 @@ const STATUS_COLUMNS = [
     accent: "border-t-[#CA862B]",
     badge: "bg-[#CA862B]/15 text-[#8B5A1D]",
   },
-  {
-    key: "ready",
-    label: "Ready",
-    accent: "border-t-[#2C5F52]",
-    badge: "bg-[#2C5F52]/12 text-[#2C5F52]",
-  },
 ];
 
 const REPORT_RANGES = [
@@ -1767,6 +1768,47 @@ function getVisibleItems(ticket) {
   return ticket.items;
 }
 
+function parseCustomerNameFromNotes(items = []) {
+  const noteText = (items || [])
+    .map((item) => item.note)
+    .filter(Boolean)
+    .join(" ");
+  const match =
+    noteText.match(/\b(?:name|customer|cust)\s*[:\-]\s*([a-z][a-z\s'.-]{1,40})/i) ||
+    noteText.match(/\bfor\s+([a-z][a-z\s'.-]{1,40})/i);
+
+  if (match) {
+    return match[1]
+      .replace(/\s+(pickup|pick up|order|scheduled|at|for)\b.*$/i, "")
+      .trim()
+      .replace(/\s+/g, " ");
+  }
+
+  const ignoredStarts =
+    /^(to go|togo|for here|pickup|pick up|delivery|drive|hot|iced|ice|no |extra |add |sub |oat|almond|soy|whole|skim|decaf|regular|light|less|more)\b/i;
+  const candidates = (items || [])
+    .flatMap((item) => String(item.note || "").split(/[,;|\n]|\s+-\s+/))
+    .map((candidate) =>
+      candidate
+        .replace(/^(name|customer|cust)\s*[:\-]\s*/i, "")
+        .replace(/\b(pickup|pick up|order|scheduled|at\s+\d.*|to go|for here)\b.*$/i, "")
+        .trim()
+        .replace(/\s+/g, " ")
+    )
+    .filter(Boolean);
+
+  return (
+    candidates.find((candidate) => {
+      if (ignoredStarts.test(candidate)) return false;
+      if (!/^[a-z][a-z'.-]*(\s+[a-z][a-z'.-]*){0,2}$/i.test(candidate)) {
+        return false;
+      }
+
+      return candidate.length >= 2 && candidate.length <= 40;
+    }) || ""
+  );
+}
+
 function getPreviousStatus(status) {
   if (status === "making") return "new";
   if (status === "ready") return "making";
@@ -1857,6 +1899,14 @@ function getDailyDrinkCounts(tickets) {
 }
 
 function normalizeTicket(ticket) {
+  const items = (ticket.items || []).map((item, index) => ({
+    id: item.id || item.itemId || item.square_line_item_uid || String(index),
+    name: item.name || "Unnamed item",
+    qty: item.qty || item.quantity || 1,
+    modifiers: item.modifiers || [],
+    note: item.note || "",
+    done: Boolean(item.done || item.completed || item.completed_item),
+  }));
   const normalized = {
     id: ticket.id || ticket.order_id || crypto.randomUUID(),
     orderNumber:
@@ -1869,6 +1919,7 @@ function normalizeTicket(ticket) {
       ticket.customer_name ||
       ticket.recipientName ||
       ticket.recipient_name ||
+      parseCustomerNameFromNotes(items) ||
       "",
     employeeName:
       ticket.employeeName ||
@@ -1901,12 +1952,7 @@ function normalizeTicket(ticket) {
       ticket.raw_order?.pickupDueTime ||
       "",
     status: ticket.status || "new",
-    items: (ticket.items || []).map((item) => ({
-      name: item.name || "Unnamed item",
-      qty: item.qty || item.quantity || 1,
-      modifiers: item.modifiers || [],
-      note: item.note || "",
-    })),
+    items,
   };
 
   return {
@@ -2064,6 +2110,7 @@ function TicketCard({
   const timeClass = getTimeClass(ticket.createdAt);
   const drinkItems = getDrinkItems(ticket);
   const visibleItems = compact ? drinkItems : getVisibleItems(ticket);
+  const displayName = String(ticket.customerName || "").trim();
   const hiddenItemCount = compact
     ? Math.max((ticket.items || []).length - drinkItems.length, 0)
     : 0;
@@ -2141,14 +2188,14 @@ function TicketCard({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className={`${compact ? "text-xl" : "text-2xl"} font-black tracking-tight leading-none text-[#0F4036]`}>
-            #{ticket.orderNumber}
+            {displayName || `#${ticket.orderNumber}`}
           </div>
 
           {compact ? (
             <div className="mt-1 flex flex-wrap items-center gap-1.5">
-              {ticket.customerName && (
+              {displayName && (
                 <span className="rounded-lg border border-[#0F4036]/12 bg-[#0F4036]/6 px-2 py-1 text-xs font-black text-[#111111]">
-                  {ticket.customerName}
+                  #{ticket.orderNumber}
                 </span>
               )}
               {showDiningOption && hasSpecificDiningOption && (
@@ -2167,13 +2214,13 @@ function TicketCard({
                 </span>
               )}
             </div>
-          ) : ticket.customerName ? (
+          ) : displayName ? (
             <div className="mt-2 rounded-xl border border-[#0F4036]/14 bg-[#0F4036]/6 px-3 py-2">
               <div className="text-xs font-black uppercase tracking-wide text-[#0F4036]">
-                Name from Square
+                Order
               </div>
               <div className="mt-1 text-sm font-black text-[#111111]">
-                {ticket.customerName}
+                #{ticket.orderNumber}
               </div>
             </div>
           ) : (
@@ -4943,7 +4990,56 @@ function useFullscreenMode() {
   return { isFullscreen, fullscreenMessage, toggleFullscreen };
 }
 
+function useScreenWakeLock(enabled = true) {
+  useEffect(() => {
+    if (!enabled) return undefined;
+    if (typeof navigator === "undefined" || !("wakeLock" in navigator)) {
+      return undefined;
+    }
+
+    let wakeLock = null;
+    let cancelled = false;
+
+    async function requestWakeLock() {
+      if (document.visibilityState !== "visible") return;
+
+      try {
+        wakeLock = await navigator.wakeLock.request("screen");
+        if (cancelled) {
+          await wakeLock.release().catch(() => {});
+          return;
+        }
+
+        wakeLock.addEventListener("release", () => {
+          if (!cancelled && document.visibilityState === "visible") {
+            requestWakeLock();
+          }
+        });
+      } catch {
+        // Chrome may require a user gesture. Retry on the next tap.
+      }
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") requestWakeLock();
+    }
+
+    requestWakeLock();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pointerdown", requestWakeLock);
+
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pointerdown", requestWakeLock);
+      if (wakeLock) wakeLock.release().catch(() => {});
+    };
+  }, [enabled]);
+}
+
 function DisplayBackground({ children, accent = "gold", darkMode = false }) {
+  useScreenWakeLock(true);
+
   const isGreen = accent === "green";
   const backgroundImage = darkMode
     ? "radial-gradient(circle at 12% 8%, rgba(202,134,43,0.22), transparent 28%), radial-gradient(circle at 86% 4%, rgba(255,253,248,0.1), transparent 32%), linear-gradient(135deg, #041c19 0%, #0F4036 48%, #1F160F 100%)"
@@ -5318,11 +5414,11 @@ function CustomerOrderDetails({ order, darkMode = false, compact = false }) {
     <div className="min-w-0">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <strong className={`text-lg font-semibold leading-none tracking-normal sm:text-xl ${nameClass}`}>
-          Order {order.orderNumber}
+          {order.customerName || `Order ${order.orderNumber}`}
         </strong>
         {order.customerName ? (
           <span className={`min-w-0 text-sm font-medium sm:text-base ${detailClass}`}>
-            {order.customerName}
+            Order {order.orderNumber}
           </span>
         ) : null}
         <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${
@@ -5725,11 +5821,11 @@ function DriveThruDisplay() {
                         {statusCopy.helper}
                       </div>
                       <h2 className={`mt-1 text-3xl font-semibold leading-none tracking-normal sm:text-4xl ${headingClass}`}>
-                        Order {order.orderNumber}
+                        {order.customerName || `Order ${order.orderNumber}`}
                       </h2>
                       {order.customerName ? (
                         <div className={`mt-2 text-lg font-semibold ${mutedClass}`}>
-                          {order.customerName}
+                          Order {order.orderNumber}
                         </div>
                       ) : null}
                     </div>
@@ -6193,10 +6289,10 @@ function OnlineOrdersDisplay() {
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <div className={`text-2xl font-semibold leading-none ${headingClass}`}>
-                            Order {order.orderNumber}
+                            {order.customerName || `Order ${order.orderNumber}`}
                           </div>
                           {order.customerName ? (
-                            <div className={`mt-1 text-base font-semibold ${mutedClass}`}>{order.customerName}</div>
+                            <div className={`mt-1 text-base font-semibold ${mutedClass}`}>Order {order.orderNumber}</div>
                           ) : null}
                         </div>
                         <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${isDark ? "bg-[#CA862B]/18 text-[#F3D39B]" : "bg-[#CA862B]/10 text-[#8B5A1D]"}`}>
@@ -6980,15 +7076,6 @@ export default function GoldiesKDS() {
       return "";
     }
   });
-  const [hideWebServicesReminder, setHideWebServicesReminder] = useState(() => {
-    if (typeof window === "undefined") return false;
-
-    try {
-      return window.localStorage.getItem(WEB_SERVICES_REMINDER_HIDE_KEY) === "true";
-    } catch {
-      return false;
-    }
-  });
   const [hideOwnerReportsNotice, setHideOwnerReportsNotice] = useState(() => {
     if (typeof window === "undefined") return false;
 
@@ -7043,11 +7130,6 @@ export default function GoldiesKDS() {
       (!scheduledCelebration && hiddenCelebrationKey !== dailyUpdateKey));
   const loginCelebration = scheduledCelebration || DAILY_UPDATE_NOTICE;
   const loginCelebrationKey = scheduledCelebration ? scheduledCelebrationKey : dailyUpdateKey;
-  const isWebServicesReminderDay = getTodayDateKey() === WEB_SERVICES_REMINDER_DATE;
-  const showWebServicesReminder =
-    authStatus === "authenticated" &&
-    isWebServicesReminderDay &&
-    !hideWebServicesReminder;
   const showOwnerReportsNotice =
     authStatus === "login" &&
     !hideOwnerReportsNotice &&
@@ -7152,20 +7234,6 @@ export default function GoldiesKDS() {
       // ignore storage failures
     }
   }, [hiddenCelebrationKey]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    try {
-      if (hideWebServicesReminder) {
-        window.localStorage.setItem(WEB_SERVICES_REMINDER_HIDE_KEY, "true");
-      } else {
-        window.localStorage.removeItem(WEB_SERVICES_REMINDER_HIDE_KEY);
-      }
-    } catch {
-      // ignore storage failures
-    }
-  }, [hideWebServicesReminder]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -7670,7 +7738,6 @@ export default function GoldiesKDS() {
     resetDashboardViews();
     setAuthStatus("login");
     setSignedInEmployee("");
-    setHideWebServicesReminder(false);
   }
 
   let content;
@@ -8239,7 +8306,7 @@ export default function GoldiesKDS() {
         {!showFocusBoard && showStats && <DrinkStats reports={displayedDrinkReports} />}
 
         <section className={`grid grid-cols-1 gap-3 ${
-          showFocusBoard ? "xl:grid-cols-3" : "xl:grid-cols-3"
+          showFocusBoard ? "xl:grid-cols-2" : "xl:grid-cols-2"
         }`}>
           {STATUS_COLUMNS.map((column) => (
             <section
@@ -8386,10 +8453,6 @@ export default function GoldiesKDS() {
           }}
         />
       )}
-      <WebServicesReminderDialog
-        open={showWebServicesReminder}
-        onClose={() => setHideWebServicesReminder(true)}
-      />
     </>
   );
 }
