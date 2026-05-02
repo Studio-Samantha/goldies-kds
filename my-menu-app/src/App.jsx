@@ -37,6 +37,7 @@ const RELEASE_NOTES = [
       "KDS and Orders Up now use a customer name from item notes when Square does not provide a customer name.",
       "Customer-facing display boards request Chrome screen wake lock while open so full-screen boards can stay on.",
       "Saturday owner stats use Goldie's 8 AM-1 PM service window.",
+      "Making tickets can now check off individual drinks and move to Ready once all drinks are finished.",
     ],
   },
   {
@@ -1778,6 +1779,15 @@ function getVisibleItems(ticket) {
   return ticket.items;
 }
 
+function getItemKey(item, index) {
+  return String(item?.id || item?.itemId || item?.square_line_item_uid || index);
+}
+
+function areAllDrinkItemsDone(items = []) {
+  const drinkItems = (items || []).filter((item) => isDrinkItem(item.name));
+  return drinkItems.length > 0 && drinkItems.every((item) => Boolean(item.done));
+}
+
 function parseCustomerNameFromNotes(items = []) {
   const noteText = (items || [])
     .map((item) => item.note)
@@ -2110,6 +2120,7 @@ function createTrainingTickets() {
 function TicketCard({
   ticket,
   onStatusChange,
+  onItemDoneChange,
   onNameChange,
   onDiningOptionChange,
   showDiningOption,
@@ -2130,6 +2141,7 @@ function TicketCard({
     ticket.diningOption &&
     !["Unspecified", "Order"].includes(ticket.diningOption);
   const isOnlineOrder = isOnlineTicket(ticket);
+  const canCheckOffDrinks = ticket.status === "making";
 
   let actions = [];
 
@@ -2153,14 +2165,6 @@ function TicketCard({
         label: "Start",
         status: "making",
         className: "bg-[#0F4036] text-white hover:bg-[#0b352d]",
-      },
-    ];
-  } else if (ticket.status === "making") {
-    actions = [
-      {
-        label: "Ready",
-        status: "ready",
-        className: "bg-[#CA862B] text-white hover:bg-[#b17420]",
       },
     ];
   } else if (ticket.status === "ready") {
@@ -2313,15 +2317,40 @@ function TicketCard({
 
       <div className={compact ? "space-y-1.5" : "space-y-2"}>
         {visibleItems.length > 0 ? (
-          visibleItems.map((item, idx) => (
-            <div
-              key={`${ticket.id}-${idx}`}
-              className={`${compact ? "rounded-xl bg-white/70 px-2 py-1.5" : "border-t border-[#CA862B]/12 pt-2 first:border-t-0 first:pt-0"}`}
-            >
-              <div className={`flex gap-2 font-bold leading-tight ${compact ? "text-sm" : "text-base"}`}>
-                <span className="text-[#6A614F]">{item.qty}×</span>
-                <span className="text-[#111111]">{item.name}</span>
-              </div>
+          visibleItems.map((item, idx) => {
+            const itemKey = getItemKey(item, idx);
+            const isDrink = isDrinkItem(item.name);
+            const isDone = Boolean(item.done);
+
+            return (
+              <div
+                key={`${ticket.id}-${itemKey}`}
+                className={`${compact ? "rounded-xl px-2 py-1.5" : "border-t border-[#CA862B]/12 pt-2 first:border-t-0 first:pt-0"} ${
+                  isDone ? "bg-[#0F4036]/8 opacity-75" : "bg-white/70"
+                }`}
+              >
+                <div className={`flex items-start gap-2 font-bold leading-tight ${compact ? "text-sm" : "text-base"}`}>
+                  {canCheckOffDrinks && isDrink && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onItemDoneChange(ticket.id, itemKey, !isDone)
+                      }
+                      aria-label={`${isDone ? "Mark not done" : "Mark done"} ${item.name}`}
+                      className={`mt-[-1px] inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-sm font-black transition ${
+                        isDone
+                          ? "border-[#0F4036] bg-[#0F4036] text-white"
+                          : "border-[#CA862B]/30 bg-white text-[#CA862B] hover:bg-[#EEE0C5]/60"
+                      }`}
+                    >
+                      {isDone ? "✓" : ""}
+                    </button>
+                  )}
+                  <span className="text-[#6A614F]">{item.qty}×</span>
+                  <span className={`${isDone ? "text-[#0F4036] line-through decoration-2" : "text-[#111111]"}`}>
+                    {item.name}
+                  </span>
+                </div>
 
               {item.modifiers.length > 0 && !compact && (
                 <ul className="mt-1 ml-7 list-disc text-sm text-[#4E4637] space-y-0.5">
@@ -2348,8 +2377,9 @@ function TicketCard({
                   Note: {item.note}
                 </div>
               )}
-            </div>
-          ))
+              </div>
+            );
+          })
         ) : (
           <div className={`${compact ? "rounded-xl p-2 text-xs" : "rounded-2xl p-4 text-sm"} border border-dashed border-[#CA862B]/22 bg-white/70 text-[#6A614F]`}>
             No items to show.
@@ -7609,6 +7639,66 @@ export default function GoldiesKDS() {
       });
   }
 
+  function handleItemDoneChange(id, itemKey, done) {
+    function updateTicketItems(ticket) {
+      if (ticket.id !== id) return ticket;
+
+      const nextItems = (ticket.items || []).map((item, index) =>
+        getItemKey(item, index) === itemKey ? { ...item, done } : item
+      );
+
+      return {
+        ...ticket,
+        items: nextItems,
+        status:
+          ticket.status === "making" && areAllDrinkItemsDone(nextItems)
+            ? "ready"
+            : ticket.status,
+      };
+    }
+
+    if (isTrainingMode) {
+      setTrainingTickets((current) => current.map(updateTicketItems));
+      return;
+    }
+
+    let shouldMoveReady = false;
+
+    setTickets((current) =>
+      current.map((ticket) => {
+        const nextTicket = updateTicketItems(ticket);
+        if (ticket.id === id && ticket.status !== nextTicket.status) {
+          shouldMoveReady = true;
+        }
+        return nextTicket;
+      })
+    );
+
+    fetch(apiUrl(`/api/tickets/${id}/items/${encodeURIComponent(itemKey)}/done`), {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ done }),
+    })
+      .then((response) => {
+        if (response.status === 401) {
+          setAuthStatus("login");
+          throw new Error("Login required");
+        }
+
+        if (!response.ok) {
+          throw new Error(`Item update failed: ${response.status}`);
+        }
+
+        if (shouldMoveReady) {
+          handleStatusChange(id, "ready");
+        }
+      })
+      .catch((error) => {
+        setLastError(`Drink checkoff failed: ${error.message}`);
+      });
+  }
+
   function handleNameChange(id, customerName) {
     if (isTrainingMode) {
       setTrainingTickets((current) =>
@@ -8352,6 +8442,7 @@ export default function GoldiesKDS() {
                       key={ticket.id}
                       ticket={ticket}
                       onStatusChange={handleStatusChange}
+                      onItemDoneChange={handleItemDoneChange}
                       onNameChange={handleNameChange}
                       onDiningOptionChange={handleDiningOptionChange}
                       showDiningOption={showDiningOnTickets}

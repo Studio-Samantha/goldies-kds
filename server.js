@@ -5293,6 +5293,19 @@ app.patch("/api/tickets/:id/status", requireKdsAuth, async (req, res) => {
   }
 });
 
+app.patch("/api/tickets/:id/items/:itemKey/done", requireKdsAuth, async (req, res) => {
+  try {
+    const { id, itemKey } = req.params;
+    const done = req.body?.done !== false;
+    const updatedDone = await setTicketItemDone(id, itemKey, done);
+
+    res.json({ ok: true, id, itemKey, done: updatedDone });
+  } catch (error) {
+    console.error("Error updating ticket item done state:", error);
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+});
+
 app.patch("/api/tickets/:id/name", requireKdsAuth, async (req, res) => {
   try {
     const { id } = req.params;
