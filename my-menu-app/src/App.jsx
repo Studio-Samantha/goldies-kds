@@ -1777,6 +1777,21 @@ function hasDrinkItems(ticket) {
   return getDrinkItems(ticket).length > 0;
 }
 
+function getOrderLookupStatusLabel(ticket) {
+  const itemCount = Array.isArray(ticket?.items) ? ticket.items.length : 0;
+  if (itemCount > 0 && !hasDrinkItems(ticket)) return "Retail items only";
+
+  const statusLabels = {
+    new: "New",
+    making: "Making",
+    ready: "Ready",
+    completed: "Completed",
+    done: "Done",
+  };
+
+  return statusLabels[ticket?.status] || ticket?.status || "Unknown";
+}
+
 function getVisibleItems(ticket) {
   return ticket.items;
 }
@@ -3869,8 +3884,8 @@ function OrdersByDayLookup({
                             {ticket.customerName || "—"}
                           </td>
                           <td className="px-3 py-2">
-                            <span className="rounded-full bg-[#EEE0C5]/75 border border-[#CA862B]/18 px-2.5 py-1 text-xs font-black uppercase text-[#111111]">
-                              {ticket.status}
+                            <span className="rounded-full bg-[#EEE0C5]/75 border border-[#CA862B]/18 px-2.5 py-1 text-xs font-black text-[#111111]">
+                              {getOrderLookupStatusLabel(ticket)}
                             </span>
                           </td>
                           <td className="px-3 py-2 font-bold text-[#111111]">
