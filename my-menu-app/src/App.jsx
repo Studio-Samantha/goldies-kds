@@ -1533,7 +1533,17 @@ const STATUS_COLUMNS = [
     accent: "border-t-[#CA862B]",
     badge: "bg-[#CA862B]/15 text-[#8B5A1D]",
   },
+  {
+    key: "ready",
+    label: "Ready",
+    accent: "border-t-[#2C5F52]",
+    badge: "bg-[#2C5F52]/12 text-[#2C5F52]",
+  },
 ];
+
+const FOCUS_STATUS_COLUMNS = STATUS_COLUMNS.filter((column) =>
+  ["new", "making"].includes(column.key)
+);
 
 const REPORT_RANGES = [
   { key: "today", label: "Today" },
@@ -8306,9 +8316,9 @@ export default function GoldiesKDS() {
         {!showFocusBoard && showStats && <DrinkStats reports={displayedDrinkReports} />}
 
         <section className={`grid grid-cols-1 gap-3 ${
-          showFocusBoard ? "xl:grid-cols-2" : "xl:grid-cols-2"
+          showFocusBoard ? "xl:grid-cols-2" : "xl:grid-cols-3"
         }`}>
-          {STATUS_COLUMNS.map((column) => (
+          {(showFocusBoard ? FOCUS_STATUS_COLUMNS : STATUS_COLUMNS).map((column) => (
             <section
               key={column.key}
               className={`rounded-2xl bg-[rgba(255,253,248,0.9)] border border-white/70 border-t-4 ${column.accent} p-3 shadow-[0_16px_40px_rgba(15,64,54,0.08)] flex flex-col backdrop-blur-sm ${
