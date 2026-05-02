@@ -66,6 +66,7 @@ const ONLINE_ORDERING_CATEGORY_NAMES = (
 const ONLINE_ORDERING_BETA_MENU = [
   { id: "latte", name: "Latte", category: "Coffee", priceCents: 575 },
   { id: "americano", name: "Americano", category: "Coffee", priceCents: 425 },
+  { id: "decaf-americano", name: "Decaf (Americano)", category: "Coffee", priceCents: 425 },
   { id: "cold-brew", name: "Cold Brew", category: "Coffee", priceCents: 550 },
   { id: "cappuccino", name: "Cappuccino", category: "Coffee", priceCents: 525 },
   { id: "london-fog", name: "London Fog", category: "Not Coffee", priceCents: 575 },

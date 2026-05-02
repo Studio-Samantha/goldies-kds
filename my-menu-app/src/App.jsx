@@ -1557,6 +1557,7 @@ const REPORT_RANGES = [
 
 const DRINK_MENU_ITEMS = new Set([
   "Americano",
+  "Decaf (Americano)",
   "Cappuccino",
   "Cold Brew",
   "Drip",
@@ -1670,6 +1671,7 @@ function getBeverageCategory(itemName = "") {
   if (
     [
       "Americano",
+      "Decaf (Americano)",
       "Cappuccino",
       "Cold Brew",
       "Drip",
@@ -6368,6 +6370,7 @@ const ONLINE_ORDERING_BETA_MENU = [
     items: [
       { id: "latte", name: "Latte", price: "$5.75" },
       { id: "americano", name: "Americano", price: "$4.25" },
+      { id: "decaf-americano", name: "Decaf (Americano)", price: "$4.25" },
       { id: "cold-brew", name: "Cold Brew", price: "$5.50" },
       { id: "cappuccino", name: "Cappuccino", price: "$5.25" },
     ],
