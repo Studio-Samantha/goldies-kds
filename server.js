@@ -54,9 +54,16 @@ const SQUARE_HEALTH_ALERT_COOLDOWN_MS = 15 * 60 * 1000;
 const READY_AUTO_COMPLETE_MS = 2 * 60 * 1000;
 const SESSION_COOKIE_NAME = "goldies_kds_session";
 const OWNER_SESSION_COOKIE_NAME = "goldies_owner_session";
+const DEVELOPER_SESSION_COOKIE_NAME = "studio_samantha_developer_session";
 const SESSION_MAX_AGE_MS = 1000 * 60 * 60 * 12;
 const KDS_PASSWORD_SETTING_KEY = "kds_password";
 const OWNER_PASSWORD_SETTING_KEY = "owner_password";
+const DEVELOPER_USERNAME = process.env.DEVELOPER_USERNAME || "StudioSamantha";
+const DEVELOPER_PASSWORD_HASH =
+  process.env.DEVELOPER_PASSWORD_HASH ||
+  "1495452a693a8a1659c6ed4449554ded95522b7e0bfe429629d99949fec7d170ea058f6d067a1742ad81ffb0ae232e52602576fc96afe854a85ad7123a49fe5e";
+const DEVELOPER_PASSWORD_SALT =
+  process.env.DEVELOPER_PASSWORD_SALT || "a8a44832a6f84faf004f993d58de828c";
 const SQUARE_API_VERSION = process.env.SQUARE_API_VERSION || "2025-04-16";
 const ONLINE_ORDERING_CATEGORY_NAMES = (
   process.env.ONLINE_ORDERING_CATEGORY_NAMES || "Coffee,Not Coffee,Smoothies"
@@ -915,6 +922,8 @@ let ownerPasswordState = {
   passwordSalt: null,
   plaintextPassword: String(OWNER_PASSWORD),
 };
+let localDeveloperNotes = [];
+let localAccessLogs = [];
 let tickets = [
   {
     id: "local-101",
@@ -1628,6 +1637,16 @@ function createOwnerSessionToken(ownerName = "Owner") {
   return `${payload}.${signSession(payload)}`;
 }
 
+function createDeveloperSessionToken(username = DEVELOPER_USERNAME) {
+  const expiresAt = Date.now() + SESSION_MAX_AGE_MS;
+  const payload = encodeSessionPayload({
+    expiresAt,
+    username: normalizeName(username) || DEVELOPER_USERNAME,
+    role: "developer",
+  });
+  return `${payload}.${signSession(payload)}`;
+}
+
 function getSessionFromToken(token) {
   if (!token) return false;
 
@@ -1651,6 +1670,7 @@ function getSessionFromToken(token) {
     expiresAt: parsed.expiresAt,
     employeeName: normalizeName(parsed.employeeName || ""),
     ownerName: normalizeName(parsed.ownerName || ""),
+    username: normalizeName(parsed.username || ""),
     role: parsed.role || "staff",
   };
 }
@@ -1939,6 +1959,15 @@ function isOwnerPasswordMatch(password) {
   );
 }
 
+function isDeveloperLoginMatch(username, password) {
+  const normalizedUsername = normalizeName(username);
+  const expectedUsername = normalizeName(DEVELOPER_USERNAME);
+
+  if (!normalizedUsername || normalizedUsername !== expectedUsername) return false;
+
+  return verifyPassword(password, DEVELOPER_PASSWORD_SALT, DEVELOPER_PASSWORD_HASH);
+}
+
 function requireKdsAuth(req, res, next) {
   if (!isKdsLoginConfigured()) {
     return res.status(503).json({
@@ -1954,6 +1983,18 @@ function requireKdsAuth(req, res, next) {
   }
 
   req.kdsSession = session;
+  return next();
+}
+
+function requireDeveloperAuth(req, res, next) {
+  const cookies = parseCookies(req.headers.cookie || "");
+  const session = getSessionFromToken(cookies[DEVELOPER_SESSION_COOKIE_NAME]);
+
+  if (!session || session.role !== "developer") {
+    return res.status(401).json({ error: "Studio Samantha login required" });
+  }
+
+  req.developerSession = session;
   return next();
 }
 
@@ -3940,8 +3981,7 @@ async function buildOwnerReportWorkbook(report = {}, range = "today") {
   return workbook.xlsx.writeBuffer();
 }
 
-function writeOwnerDrinkReportPdf(res, report = {}, range = "today") {
-  const doc = new PDFDocument({ size: "LETTER", margin: 42 });
+function drawOwnerDrinkReportPdf(doc, report = {}, range = "today") {
   const ownerLogoPath = path.join(
     __dirname,
     "my-menu-app",
@@ -3962,13 +4002,6 @@ function writeOwnerDrinkReportPdf(res, report = {}, range = "today") {
     ...activeHours.map((item) => Number(item.orderCount || 0))
   );
 
-  res.setHeader("Content-Type", "application/pdf");
-  res.setHeader(
-    "Content-Disposition",
-    `attachment; filename="goldies-owner-report-${range}.pdf"`
-  );
-
-  doc.pipe(res);
   doc.roundedRect(42, 36, 528, 112, 14).fillAndStroke("#FFFDF8", "#E9D8B7");
   if (fs.existsSync(ownerLogoPath)) {
     doc.image(ownerLogoPath, 58, 54, { width: 150, height: 66, fit: [150, 66] });
@@ -4096,6 +4129,32 @@ function writeOwnerDrinkReportPdf(res, report = {}, range = "today") {
     );
 
   doc.end();
+}
+
+function writeOwnerDrinkReportPdf(res, report = {}, range = "today") {
+  const doc = new PDFDocument({ size: "LETTER", margin: 42 });
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="goldies-owner-report-${range}.pdf"`
+  );
+
+  doc.pipe(res);
+  drawOwnerDrinkReportPdf(doc, report, range);
+}
+
+function buildOwnerDrinkReportPdfBuffer(report = {}, range = "today") {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: "LETTER", margin: 42 });
+    const chunks = [];
+
+    doc.on("data", (chunk) => chunks.push(chunk));
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
+
+    drawOwnerDrinkReportPdf(doc, report, range);
+  });
 }
 
 async function fetchOwnerSnapshotsForMonth(month, ascending = true) {
@@ -4561,6 +4620,148 @@ async function handleSquareAlertTest(req, res) {
 app.get("/api/square-alert-test", requireKdsAuth, handleSquareAlertTest);
 app.post("/api/square-alert-test", requireKdsAuth, handleSquareAlertTest);
 
+const DEVELOPER_NOTE_PROJECTS = new Set([
+  "Studio Samantha",
+  "GoldiesKDS",
+  "DrinkFlowKDS",
+  "Ignite Wonder",
+  "VendorFlow",
+]);
+const DEVELOPER_NOTE_PLACEMENTS = new Set([
+  "Developer diary",
+  "Popup message",
+  "Owner portal",
+  "Case study",
+  "Release notes",
+  "Landing page",
+  "Internal idea",
+]);
+const DEVELOPER_NOTE_VISIBILITY = new Set(["internal", "owner", "public"]);
+
+function normalizeDeveloperNote(body = {}, username = DEVELOPER_USERNAME) {
+  const project = cleanLeadText(body.project, 60) || "Studio Samantha";
+  const placement = cleanLeadText(body.placement, 60) || "Developer diary";
+  const visibility = cleanLeadText(body.visibility, 30) || "internal";
+  const title = cleanLeadText(body.title, 140);
+  const bodyText = cleanLeadText(body.body, 4000);
+  const suggestion = cleanLeadText(body.suggestion, 900);
+  const mood = cleanLeadText(body.mood, 50) || "sparkly";
+  const showUntil = cleanLeadText(body.showUntil, 20);
+
+  return {
+    project: DEVELOPER_NOTE_PROJECTS.has(project) ? project : "Studio Samantha",
+    placement: DEVELOPER_NOTE_PLACEMENTS.has(placement) ? placement : "Developer diary",
+    visibility: DEVELOPER_NOTE_VISIBILITY.has(visibility) ? visibility : "internal",
+    title: title || "Untitled studio note",
+    body: bodyText,
+    suggestion,
+    mood,
+    tags: cleanLeadList(body.tags, 12, 40),
+    show_until: /^\d{4}-\d{2}-\d{2}$/.test(showUntil) ? showUntil : null,
+    created_by: normalizeName(username) || DEVELOPER_USERNAME,
+  };
+}
+
+function developerNotesTableMissing(error) {
+  const message = String(error?.message || "");
+  return (
+    error?.code === "42P01" ||
+    message.includes("developer_notes") ||
+    message.includes("schema cache")
+  );
+}
+
+function sortDeveloperNotes(notes = []) {
+  return [...notes].sort(
+    (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+  );
+}
+
+async function recordAccessLog({
+  actor = "",
+  role = "owner",
+  action = "login",
+  req = null,
+} = {}) {
+  const entry = {
+    actor: normalizeName(actor) || role,
+    role: cleanLeadText(role, 40),
+    action: cleanLeadText(action, 60),
+    ip_address: cleanLeadText(
+      req?.headers?.["x-forwarded-for"]?.split(",")?.[0] || req?.socket?.remoteAddress || "",
+      80
+    ),
+    user_agent: cleanLeadText(req?.headers?.["user-agent"] || "", 300),
+    created_at: new Date().toISOString(),
+  };
+
+  if (!supabase) {
+    localAccessLogs.unshift({ id: `local-${Date.now()}`, ...entry });
+    localAccessLogs = localAccessLogs.slice(0, 200);
+    return entry;
+  }
+
+  const { error } = await supabase.from("kds_access_logs").insert(entry);
+  if (error) throw error;
+  return entry;
+}
+
+function accessLogsTableMissing(error) {
+  const message = String(error?.message || "");
+  return (
+    error?.code === "42P01" ||
+    message.includes("kds_access_logs") ||
+    message.includes("schema cache")
+  );
+}
+
+async function fetchAccessLogs({ role = "owner", limit = 12 } = {}) {
+  const safeLimit = Math.min(Math.max(Number(limit) || 12, 1), 80);
+  const normalizedRole = cleanLeadText(role, 40);
+
+  if (!supabase) {
+    return localAccessLogs
+      .filter((entry) => !normalizedRole || entry.role === normalizedRole)
+      .slice(0, safeLimit);
+  }
+
+  let query = supabase
+    .from("kds_access_logs")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(safeLimit);
+
+  if (normalizedRole) query = query.eq("role", normalizedRole);
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data || [];
+}
+
+async function fetchDeveloperNotes({ project = "", limit = 80 } = {}) {
+  const normalizedProject = cleanLeadText(project, 60);
+  const safeLimit = Math.min(Math.max(Number(limit) || 80, 1), 200);
+
+  if (!supabase) {
+    const filtered = normalizedProject
+      ? localDeveloperNotes.filter((note) => note.project === normalizedProject)
+      : localDeveloperNotes;
+    return sortDeveloperNotes(filtered).slice(0, safeLimit);
+  }
+
+  let query = supabase
+    .from("developer_notes")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(safeLimit);
+
+  if (normalizedProject) query = query.eq("project", normalizedProject);
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data || [];
+}
+
 app.get("/api/session", (req, res) => {
   const cookies = parseCookies(req.headers.cookie || "");
   const session = getSessionFromToken(cookies[SESSION_COOKIE_NAME]);
@@ -4571,6 +4772,118 @@ app.get("/api/session", (req, res) => {
     configured: isKdsLoginConfigured(),
     employeeName: session?.employeeName || "",
   });
+});
+
+app.get("/api/developer/session", (req, res) => {
+  const cookies = parseCookies(req.headers.cookie || "");
+  const session = getSessionFromToken(cookies[DEVELOPER_SESSION_COOKIE_NAME]);
+
+  res.json({
+    authenticated: Boolean(session && session.role === "developer"),
+    username: session?.username || "",
+  });
+});
+
+app.post("/api/developer/login", (req, res) => {
+  const username = normalizeName(req.body?.username || "");
+  const password = req.body?.password;
+
+  if (!isDeveloperLoginMatch(username, password)) {
+    return res.status(401).json({ error: "That studio login did not match." });
+  }
+
+  res.setHeader(
+    "Set-Cookie",
+    `${DEVELOPER_SESSION_COOKIE_NAME}=${encodeURIComponent(createDeveloperSessionToken(username))}; ${getCookieOptions()}`
+  );
+
+  recordAccessLog({
+    actor: username,
+    role: "developer",
+    action: "login",
+    req,
+  }).catch((error) => {
+    if (!accessLogsTableMissing(error)) {
+      console.warn(`WARNING: Unable to record developer login: ${error.message}`);
+    }
+  });
+
+  res.json({ ok: true, username });
+});
+
+app.post("/api/developer/logout", (req, res) => {
+  res.setHeader(
+    "Set-Cookie",
+    `${DEVELOPER_SESSION_COOKIE_NAME}=; ${getCookieOptions(0)}`
+  );
+
+  res.json({ ok: true });
+});
+
+app.get("/api/developer/notes", requireDeveloperAuth, async (req, res) => {
+  try {
+    const notes = await fetchDeveloperNotes({
+      project: req.query.project,
+      limit: req.query.limit,
+    });
+
+    res.json({ notes, storage: supabase ? "supabase" : "memory" });
+  } catch (error) {
+    if (developerNotesTableMissing(error)) {
+      return res.json({
+        notes: [],
+        tableMissing: true,
+        storage: "missing-table",
+        message: "Developer notes table is not installed in Supabase yet.",
+      });
+    }
+
+    console.error("Error fetching developer notes:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/developer/notes", requireDeveloperAuth, async (req, res) => {
+  try {
+    const note = normalizeDeveloperNote(req.body, req.developerSession?.username);
+
+    if (!note.body && !note.suggestion) {
+      return res.status(400).json({
+        error: "Add a diary note, suggestion, or update before saving.",
+      });
+    }
+
+    if (!supabase) {
+      const localNote = {
+        id: `local-${Date.now()}`,
+        ...note,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      localDeveloperNotes.unshift(localNote);
+      return res.json({ ok: true, note: localNote, storage: "memory" });
+    }
+
+    const { data, error } = await supabase
+      .from("developer_notes")
+      .insert(note)
+      .select("*")
+      .single();
+
+    if (error) throw error;
+
+    res.json({ ok: true, note: data, storage: "supabase" });
+  } catch (error) {
+    if (developerNotesTableMissing(error)) {
+      return res.status(503).json({
+        error:
+          "Developer notes table is not installed in Supabase yet. Run the latest supabase-schema.sql.",
+      });
+    }
+
+    console.error("Error saving developer note:", error);
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
 });
 
 app.post("/api/login", (req, res) => {
@@ -4632,6 +4945,17 @@ app.post("/api/owner/login", (req, res) => {
     "Set-Cookie",
     `${OWNER_SESSION_COOKIE_NAME}=${encodeURIComponent(createOwnerSessionToken(ownerName))}; ${getCookieOptions()}`
   );
+
+  recordAccessLog({
+    actor: ownerName,
+    role: "owner",
+    action: "login",
+    req,
+  }).catch((error) => {
+    if (!accessLogsTableMissing(error)) {
+      console.warn(`WARNING: Unable to record owner login: ${error.message}`);
+    }
+  });
 
   res.json({ ok: true, ownerName });
 });
@@ -4717,6 +5041,80 @@ app.get("/api/owner/reports/drink-revenue.pdf", requireOwnerAuth, async (req, re
   } catch (error) {
     console.error("Error downloading owner report PDF:", error);
     res.status(500).send(error.message);
+  }
+});
+
+app.post("/api/owner/reports/drink-revenue/email", requireOwnerAuth, async (req, res) => {
+  try {
+    const email = normalizeLeadEmail(req.body?.email || ALERT_EMAIL_TO);
+    const range = normalizeOwnerReportRange(req.body?.range || "today");
+
+    if (!isValidLeadEmail(email)) {
+      return res.status(400).json({ error: "Enter a valid email address." });
+    }
+
+    if (!hasAlertEmailConfig()) {
+      return res.status(503).json({
+        error: "Report email is not configured on the backend yet.",
+        diagnostics: getAlertEmailConfigDiagnostics(),
+      });
+    }
+
+    const report = await getOwnerDrinkRevenueReport(range);
+    const pdfBuffer = await buildOwnerDrinkReportPdfBuffer(report, range);
+    const rangeLabel = getOwnerRangeLabel(range);
+
+    await getAlertMailer().sendMail({
+      from: ALERT_EMAIL_FROM,
+      to: email,
+      subject: `Goldie's KDS ${rangeLabel} owner report`,
+      text: [
+        `Attached is the Goldie's KDS ${rangeLabel.toLowerCase()} owner report.`,
+        "",
+        "Included:",
+        "- drink revenue",
+        "- drink units",
+        "- hourly volume chart",
+        "- category mix",
+        "- multi-drink order signal",
+        "",
+        "This is a practice report email from the Owner Portal.",
+      ].join("\n"),
+      attachments: [
+        {
+          filename: `goldies-owner-report-${range}.pdf`,
+          content: pdfBuffer,
+          contentType: "application/pdf",
+        },
+      ],
+    });
+
+    res.json({
+      ok: true,
+      message: `Sent ${rangeLabel.toLowerCase()} PDF report to ${email}.`,
+    });
+  } catch (error) {
+    console.error("Error emailing owner report:", error);
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+});
+
+app.get("/api/owner/access-log", requireOwnerAuth, async (req, res) => {
+  try {
+    const logs = await fetchAccessLogs({ role: "owner", limit: req.query.limit || 12 });
+    res.json({ logs, storage: supabase ? "supabase" : "memory" });
+  } catch (error) {
+    if (accessLogsTableMissing(error)) {
+      return res.json({
+        logs: [],
+        tableMissing: true,
+        storage: "missing-table",
+        message: "Access log table is not installed in Supabase yet.",
+      });
+    }
+
+    console.error("Error fetching owner access log:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 

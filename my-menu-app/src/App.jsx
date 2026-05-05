@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.9.5";
+const APP_VERSION = "v1.9.6";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -30,8 +30,22 @@ const DAILY_UPDATE_NOTICE = {
 };
 const RELEASE_NOTES = [
   {
-    version: "v1.9.5",
+    version: "v1.9.6",
     date: "Current build",
+    summary: "Added a Studio Samantha dashboard and owner report email tools.",
+    items: [
+      "A private Studio Samantha dashboard can save developer notes, update ideas, and diary entries.",
+      "Notes can be tagged for GoldiesKDS, DrinkFlowKDS, Studio Samantha, Ignite Wonder, or VendorFlow.",
+      "Notes can be marked for popups, owner portal updates, release notes, case studies, landing pages, or internal ideas.",
+      "The dashboard uses a playful rainbow style so it feels like Studio Samantha instead of a shop operations screen.",
+      "Owner Portal now has a practice end-of-day email field for sending the selected PDF report.",
+      "Dense Owner Portal timing and category details are collapsed by default so the main read is easier to scan.",
+      "Owner Portal now has a collapsed access check showing recent owner logins when the access log table is installed.",
+    ],
+  },
+  {
+    version: "v1.9.5",
+    date: "Previous build",
     summary: "Cleaned up daily notes and pickup communication.",
     items: [
       "Customer insights on the dashboard now behave like daily KDS data and only show notes from today.",
@@ -1299,6 +1313,12 @@ function isDemoTrainingRoute() {
   } catch {
     return false;
   }
+}
+
+function isDeveloperDashboardRoute() {
+  if (typeof window === "undefined") return false;
+  const path = window.location.pathname.replace(/\/+$/, "");
+  return path === "/developer" || path === "/dev" || path === "/studio-dashboard";
 }
 
 function isOnlineOrderingBetaRoute() {
@@ -4651,6 +4671,16 @@ function OwnerReportsView({
   const [snapshotError, setSnapshotError] = useState("");
   const [snapshotSaving, setSnapshotSaving] = useState(false);
   const [reportExportMenuOpen, setReportExportMenuOpen] = useState(false);
+  const [emailReportTo, setEmailReportTo] = useState("");
+  const [emailReportSending, setEmailReportSending] = useState(false);
+  const [emailReportNotice, setEmailReportNotice] = useState("");
+  const [emailReportError, setEmailReportError] = useState("");
+  const [showTimingDetails, setShowTimingDetails] = useState(false);
+  const [showCategoryDetails, setShowCategoryDetails] = useState(false);
+  const [showAccessLog, setShowAccessLog] = useState(false);
+  const [accessLogs, setAccessLogs] = useState([]);
+  const [accessLogError, setAccessLogError] = useState("");
+  const [accessLogLoading, setAccessLogLoading] = useState(false);
   const demoQuery = demoMode ? "?demo=training" : "";
 
   useEffect(() => {
@@ -4744,6 +4774,36 @@ function OwnerReportsView({
     fetchSnapshots(snapshotMonth);
   }, [snapshotMonth, demoMode]);
 
+  useEffect(() => {
+    if (demoMode || !showAccessLog) return;
+
+    async function fetchOwnerAccessLog() {
+      try {
+        setAccessLogLoading(true);
+        setAccessLogError("");
+        const response = await fetch(apiUrl("/api/owner/access-log?limit=12"), {
+          credentials: "include",
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data.error || `Access log unavailable: ${response.status}`);
+        }
+
+        setAccessLogs(data.logs || []);
+        if (data.tableMissing) {
+          setAccessLogError("Access log table is not installed in Supabase yet.");
+        }
+      } catch (logError) {
+        setAccessLogError(logError.message || "Access log unavailable");
+      } finally {
+        setAccessLogLoading(false);
+      }
+    }
+
+    fetchOwnerAccessLog();
+  }, [demoMode, showAccessLog]);
+
   async function handleSaveSnapshot() {
     if (!report) return;
 
@@ -4798,6 +4858,35 @@ function OwnerReportsView({
       credentials: "include",
     }).catch(() => {});
     onClose();
+  }
+
+  async function handleEmailOwnerReport(event) {
+    event.preventDefault();
+    if (demoMode) return;
+
+    setEmailReportSending(true);
+    setEmailReportNotice("");
+    setEmailReportError("");
+
+    try {
+      const response = await fetch(apiUrl("/api/owner/reports/drink-revenue/email"), {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailReportTo, range }),
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || `Report email failed: ${response.status}`);
+      }
+
+      setEmailReportNotice(data.message || "Owner report email sent.");
+    } catch (emailError) {
+      setEmailReportError(emailError.message || "Report email failed");
+    } finally {
+      setEmailReportSending(false);
+    }
   }
 
   async function handleOwnerPasswordChange({
@@ -4986,6 +5075,119 @@ function OwnerReportsView({
             </div>
           </div>
 
+          {!demoMode && (
+            <form
+              onSubmit={handleEmailOwnerReport}
+              className="mb-4 rounded-2xl border border-[#CA862B]/18 bg-white/80 p-3 shadow-sm"
+            >
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
+                    Practice end-of-day email
+                  </div>
+                  <label className="mt-2 block">
+                    <span className="text-sm font-semibold text-[#6A614F]">
+                      Send a pretty PDF report for the selected range.
+                    </span>
+                    <input
+                      type="email"
+                      value={emailReportTo}
+                      onChange={(event) => setEmailReportTo(event.target.value)}
+                      placeholder="owner@email.com"
+                      className="mt-2 w-full rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2.5 text-sm font-bold text-[#111111] outline-none focus:border-[#0F4036]"
+                    />
+                  </label>
+                </div>
+                <button
+                  type="submit"
+                  disabled={emailReportSending || !emailReportTo.trim()}
+                  className="rounded-xl bg-[#0F4036] px-4 py-2.5 text-sm font-black text-white transition hover:bg-[#0b352d] disabled:cursor-not-allowed disabled:bg-neutral-300"
+                >
+                  {emailReportSending ? "Sending..." : "Email PDF"}
+                </button>
+              </div>
+              {emailReportNotice ? (
+                <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-900">
+                  {emailReportNotice}
+                </div>
+              ) : null}
+              {emailReportError ? (
+                <div className="mt-3 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-bold text-red-900">
+                  {emailReportError}
+                </div>
+              ) : null}
+            </form>
+          )}
+
+          {!demoMode && (
+            <section className="mb-4 rounded-2xl border border-[#CA862B]/18 bg-white/80 p-3 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
+                    Owner access check
+                  </div>
+                  <div className="mt-1 text-sm font-semibold leading-6 text-[#6A614F]">
+                    A light security view of who opened the owner portal recently.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAccessLog((current) => !current)}
+                  className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                >
+                  {showAccessLog ? "Hide access log" : "Show access log"}
+                </button>
+              </div>
+
+              {showAccessLog && (
+                <div className="mt-3 rounded-xl border border-[#CA862B]/12 bg-[#FFFDF8] p-3">
+                  {accessLogLoading ? (
+                    <div className="text-sm font-semibold text-[#6A614F]">
+                      Loading recent access...
+                    </div>
+                  ) : accessLogs.length ? (
+                    <div className="space-y-2">
+                      {accessLogs.map((entry) => (
+                        <div
+                          key={entry.id || `${entry.actor}-${entry.created_at}`}
+                          className="flex flex-col gap-1 rounded-lg bg-white px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                        >
+                          <div>
+                            <div className="font-black text-[#111111]">
+                              {entry.actor || "Owner"}
+                            </div>
+                            <div className="text-xs font-bold text-[#6A614F]">
+                              {entry.action || "login"} · {entry.role || "owner"}
+                            </div>
+                          </div>
+                          <div className="text-sm font-black text-[#0F4036]">
+                            {entry.created_at
+                              ? new Date(entry.created_at).toLocaleString([], {
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "numeric",
+                                  minute: "2-digit",
+                                })
+                              : ""}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm font-semibold text-[#6A614F]">
+                      No owner access entries yet.
+                    </div>
+                  )}
+                  {accessLogError ? (
+                    <div className="mt-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-900">
+                      {accessLogError}
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </section>
+          )}
+
           {error && (
             <div className="rounded-2xl bg-red-50 border border-red-100 text-red-900 px-4 py-3 font-medium">
               {error}
@@ -5072,7 +5274,15 @@ function OwnerReportsView({
                       Making to Ready, based on {timingReport?.sampleSize || 0} drink orders timed. Ready orders now clear after two minutes so pickup lag does not make the bar look slower than it was.
                     </p>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowTimingDetails((current) => !current)}
+                    className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                  >
+                    {showTimingDetails ? "Hide timing details" : "Show timing details"}
+                  </button>
                 </div>
+                {showTimingDetails && (
                 <div className="mt-4 grid gap-3 lg:grid-cols-2">
                   <div className="rounded-xl border border-[#0F4036]/8 bg-[#FFFDF8] p-3">
                     <div className="text-xs font-black uppercase tracking-[0.14em] text-[#8B5A1D]">
@@ -5119,6 +5329,7 @@ function OwnerReportsView({
                     </div>
                   </div>
                 </div>
+                )}
               </div>
 
               <div className="mt-4">
@@ -5130,40 +5341,62 @@ function OwnerReportsView({
                 <CoffeeShopAdvice report={report} range={range} />
               </div>
 
-              <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-                {(report?.totalsByCategory || []).map((item) => (
-                  <div
-                    key={item.category}
-                    className="rounded-2xl border border-[#CA862B]/16 bg-white px-4 py-4 shadow-sm"
-                  >
-                    <div className="text-sm font-black text-[#0F4036]">
-                      {item.category}
+              <div className="mt-4 rounded-2xl border border-[#CA862B]/16 bg-white p-4 shadow-sm">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="text-xs font-black uppercase tracking-[0.16em] text-[#8B5A1D]">
+                      Category detail
                     </div>
-                    <div className="mt-2 text-3xl font-black text-[#111111]">
-                      {item.revenue}
-                    </div>
-                    <div className="mt-1 text-sm font-semibold text-[#6A614F]">
-                      Before tax
-                    </div>
-                    <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                      <div className="rounded-xl border border-[#CA862B]/12 bg-[#FFFDF8] px-3 py-2">
-                        <div className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
-                          Tax
-                        </div>
-                        <div className="font-black text-[#111111]">{item.tax}</div>
-                      </div>
-                      <div className="rounded-xl border border-[#CA862B]/12 bg-[#FFFDF8] px-3 py-2">
-                        <div className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
-                          Total
-                        </div>
-                        <div className="font-black text-[#111111]">{item.total}</div>
-                      </div>
-                    </div>
-                    <div className="mt-3 text-sm font-semibold text-[#6A614F]">
-                      {item.units} drink units sold
-                    </div>
+                    <p className="mt-1 text-sm font-semibold text-[#6A614F]">
+                      Collapsed by default so the owner view stays focused.
+                    </p>
                   </div>
-                ))}
+                  <button
+                    type="button"
+                    onClick={() => setShowCategoryDetails((current) => !current)}
+                    className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                  >
+                    {showCategoryDetails ? "Hide category mix" : "Show category mix"}
+                  </button>
+                </div>
+
+                {showCategoryDetails && (
+                  <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+                    {(report?.totalsByCategory || []).map((item) => (
+                      <div
+                        key={item.category}
+                        className="rounded-2xl border border-[#CA862B]/16 bg-white px-4 py-4 shadow-sm"
+                      >
+                        <div className="text-sm font-black text-[#0F4036]">
+                          {item.category}
+                        </div>
+                        <div className="mt-2 text-3xl font-black text-[#111111]">
+                          {item.revenue}
+                        </div>
+                        <div className="mt-1 text-sm font-semibold text-[#6A614F]">
+                          Before tax
+                        </div>
+                        <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                          <div className="rounded-xl border border-[#CA862B]/12 bg-[#FFFDF8] px-3 py-2">
+                            <div className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
+                              Tax
+                            </div>
+                            <div className="font-black text-[#111111]">{item.tax}</div>
+                          </div>
+                          <div className="rounded-xl border border-[#CA862B]/12 bg-[#FFFDF8] px-3 py-2">
+                            <div className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
+                              Total
+                            </div>
+                            <div className="font-black text-[#111111]">{item.total}</div>
+                          </div>
+                        </div>
+                        <div className="mt-3 text-sm font-semibold text-[#6A614F]">
+                          {item.units} drink units sold
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -7719,7 +7952,547 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
   );
 }
 
+const DEVELOPER_PROJECTS = [
+  "Studio Samantha",
+  "GoldiesKDS",
+  "DrinkFlowKDS",
+  "Ignite Wonder",
+  "VendorFlow",
+];
+const DEVELOPER_PLACEMENTS = [
+  "Developer diary",
+  "Popup message",
+  "Owner portal",
+  "Case study",
+  "Release notes",
+  "Landing page",
+  "Internal idea",
+];
+const DEVELOPER_MOODS = ["sparkly", "rainbow", "urgent", "soft launch", "future idea"];
+
+function formatDeveloperNoteDate(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return date.toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function DeveloperDiaryDashboard() {
+  const [sessionStatus, setSessionStatus] = useState("checking");
+  const [username, setUsername] = useState("StudioSamantha");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [notes, setNotes] = useState([]);
+  const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [storage, setStorage] = useState("");
+  const [form, setForm] = useState({
+    project: "Studio Samantha",
+    placement: "Developer diary",
+    visibility: "internal",
+    title: "",
+    body: "",
+    suggestion: "",
+    mood: "sparkly",
+    tags: "",
+    showUntil: "",
+  });
+
+  async function refreshNotes() {
+    try {
+      const response = await fetch(apiUrl("/api/developer/notes?limit=80"), {
+        credentials: "include",
+      });
+
+      if (response.status === 401) {
+        setSessionStatus("login");
+        return;
+      }
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not load diary notes");
+
+      setNotes(data.notes || []);
+      setStorage(data.storage || "");
+      if (data.tableMissing) {
+        setNotice("Supabase needs the developer_notes table. Notes will appear here after the schema is installed.");
+      }
+    } catch (noteError) {
+      setError(noteError.message || "Could not load diary notes");
+    }
+  }
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function checkDeveloperSession() {
+      try {
+        const response = await fetch(apiUrl("/api/developer/session"), {
+          credentials: "include",
+        });
+        const data = await response.json();
+
+        if (!mounted) return;
+
+        if (data.authenticated) {
+          setSessionStatus("authenticated");
+          setUsername(data.username || "StudioSamantha");
+          refreshNotes();
+        } else {
+          setSessionStatus("login");
+        }
+      } catch (sessionError) {
+        if (!mounted) return;
+        setSessionStatus("login");
+        setLoginError(sessionError.message || "Could not check studio login");
+      }
+    }
+
+    checkDeveloperSession();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  async function handleLogin(event) {
+    event.preventDefault();
+    setLoginError("");
+
+    try {
+      const response = await fetch(apiUrl("/api/developer/login"), {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) throw new Error(data.error || "Studio login failed");
+
+      setPassword("");
+      setSessionStatus("authenticated");
+      setUsername(data.username || username || "StudioSamantha");
+      await refreshNotes();
+    } catch (loginFailure) {
+      setLoginError(loginFailure.message || "Studio login failed");
+    }
+  }
+
+  async function handleLogout() {
+    await fetch(apiUrl("/api/developer/logout"), {
+      method: "POST",
+      credentials: "include",
+    }).catch(() => {});
+    setSessionStatus("login");
+    setNotes([]);
+  }
+
+  async function handleSaveNote(event) {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+    setNotice("");
+
+    try {
+      const payload = {
+        ...form,
+        tags: form.tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter(Boolean),
+      };
+      const response = await fetch(apiUrl("/api/developer/notes"), {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) throw new Error(data.error || "Could not save that note");
+
+      setForm((current) => ({
+        ...current,
+        title: "",
+        body: "",
+        suggestion: "",
+        tags: "",
+        showUntil: "",
+      }));
+      setNotice("Saved to the developer diary.");
+      setStorage(data.storage || storage);
+      await refreshNotes();
+    } catch (saveError) {
+      setError(saveError.message || "Could not save that note");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const rainbowText = {
+    fontFamily: "'Brush Script MT', 'Segoe Script', 'Snell Roundhand', cursive",
+  };
+
+  if (sessionStatus === "checking") {
+    return (
+      <div className="min-h-screen bg-[#fff7fb] p-6 text-[#2b2235]">
+        <div className="mx-auto max-w-3xl rounded-[2rem] border-4 border-white bg-white/80 p-8 text-center shadow-2xl">
+          <div className="text-lg font-black">Opening the studio diary...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (sessionStatus === "login") {
+    return (
+      <div className="min-h-screen overflow-hidden bg-[#fff7fb] p-4 text-[#2b2235]">
+        <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(255,112,150,0.35),transparent_26%),radial-gradient(circle_at_82%_12%,rgba(113,206,236,0.36),transparent_24%),radial-gradient(circle_at_50%_82%,rgba(255,210,90,0.42),transparent_30%)]" />
+        <form
+          onSubmit={handleLogin}
+          className="relative mx-auto mt-12 max-w-lg overflow-hidden rounded-[2rem] border-4 border-white bg-white/88 p-6 shadow-[0_28px_90px_rgba(91,58,109,0.22)] backdrop-blur md:mt-24 md:p-8"
+        >
+          <div className="mb-6 flex justify-center gap-2">
+            {["#ff5c8a", "#ffb84d", "#ffe66d", "#58c785", "#5cc8ff", "#a875ff"].map((color) => (
+              <span key={color} className="h-4 w-4 rounded-full" style={{ background: color }} />
+            ))}
+          </div>
+          <p className="text-center text-xs font-black uppercase tracking-[0.22em] text-[#7b5aa6]">
+            Studio Samantha
+          </p>
+          <h1
+            className="mt-2 text-center text-6xl font-black leading-none text-[#ff4f8b] md:text-7xl"
+            style={rainbowText}
+          >
+            Developer Diary
+          </h1>
+          <p className="mx-auto mt-4 max-w-sm text-center text-sm font-semibold leading-6 text-[#66576f]">
+            A private place for updates, ideas, case-study notes, owner portal messages,
+            and little sparks before they become features.
+          </p>
+
+          <div className="mt-7 space-y-4">
+            <label className="block">
+              <span className="text-xs font-black uppercase tracking-[0.16em] text-[#7b5aa6]">
+                User name
+              </span>
+              <input
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                className="mt-2 w-full rounded-2xl border-2 border-[#f3c4df] bg-white px-4 py-3 text-lg font-black outline-none focus:border-[#ff5c8a]"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-black uppercase tracking-[0.16em] text-[#7b5aa6]">
+                Password
+              </span>
+              <input
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                className="mt-2 w-full rounded-2xl border-2 border-[#f3c4df] bg-white px-4 py-3 text-lg font-black outline-none focus:border-[#ff5c8a]"
+              />
+            </label>
+          </div>
+
+          {loginError ? (
+            <div className="mt-4 rounded-2xl border-2 border-[#ff9cb7] bg-[#fff0f5] px-4 py-3 text-sm font-black text-[#9a244f]">
+              {loginError}
+            </div>
+          ) : null}
+
+          <button
+            type="submit"
+            className="mt-6 w-full rounded-2xl bg-gradient-to-r from-[#ff4f8b] via-[#ffb84d] to-[#58c785] px-5 py-4 text-lg font-black text-white shadow-lg transition hover:scale-[1.01]"
+          >
+            Open my diary
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#fff7fb] text-[#2b2235]">
+      <div className="bg-gradient-to-r from-[#ff5c8a] via-[#ffd35a] via-[#79d66f] via-[#63d2ff] to-[#b38cff] px-4 py-3" />
+
+      <header className="border-b-4 border-white bg-white/82 px-4 py-5 shadow-sm backdrop-blur md:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#7b5aa6]">
+              Studio Samantha control room
+            </p>
+            <h1 className="mt-1 text-5xl font-black text-[#ff4f8b] md:text-7xl" style={rainbowText}>
+              Little Developer Diary
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-[#66576f]">
+              Capture the thought once, then decide whether it belongs in Goldie&apos;s,
+              DrinkFlow, the owner portal, a popup, a case study, or the public story.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {storage ? (
+              <span className="rounded-full border-2 border-[#bdebd4] bg-[#effff6] px-3 py-1 text-xs font-black uppercase tracking-[0.14em] text-[#21744f]">
+                {storage}
+              </span>
+            ) : null}
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="rounded-full border-2 border-[#f3c4df] bg-white px-4 py-2 text-sm font-black text-[#7b5aa6] transition hover:bg-[#fff0f7]"
+            >
+              Sign out
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto grid max-w-7xl gap-5 px-4 py-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(360px,0.58fr)] md:px-8">
+        <form
+          onSubmit={handleSaveNote}
+          className="rounded-[2rem] border-4 border-white bg-white p-5 shadow-[0_24px_70px_rgba(91,58,109,0.14)] md:p-6"
+        >
+          <div className="mb-5 flex flex-wrap gap-2">
+            {DEVELOPER_PROJECTS.map((project) => (
+              <button
+                key={project}
+                type="button"
+                onClick={() => setForm((current) => ({ ...current, project }))}
+                className={`rounded-full border-2 px-3 py-2 text-xs font-black transition ${
+                  form.project === project
+                    ? "border-[#ff5c8a] bg-[#ff5c8a] text-white"
+                    : "border-[#f3c4df] bg-[#fff7fb] text-[#7b5aa6] hover:bg-[#fff0f7]"
+                }`}
+              >
+                {project}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="block">
+              <span className="text-xs font-black uppercase tracking-[0.16em] text-[#7b5aa6]">
+                Where should this go?
+              </span>
+              <select
+                value={form.placement}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, placement: event.target.value }))
+                }
+                className="mt-2 w-full rounded-2xl border-2 border-[#f3c4df] bg-white px-4 py-3 font-black outline-none focus:border-[#ff5c8a]"
+              >
+                {DEVELOPER_PLACEMENTS.map((placement) => (
+                  <option key={placement} value={placement}>
+                    {placement}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block">
+              <span className="text-xs font-black uppercase tracking-[0.16em] text-[#7b5aa6]">
+                Visibility
+              </span>
+              <select
+                value={form.visibility}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, visibility: event.target.value }))
+                }
+                className="mt-2 w-full rounded-2xl border-2 border-[#f3c4df] bg-white px-4 py-3 font-black outline-none focus:border-[#ff5c8a]"
+              >
+                <option value="internal">Internal only</option>
+                <option value="owner">Owner-facing</option>
+                <option value="public">Public story</option>
+              </select>
+            </label>
+          </div>
+
+          <label className="mt-4 block">
+            <span className="text-xs font-black uppercase tracking-[0.16em] text-[#7b5aa6]">
+              Tiny headline
+            </span>
+            <input
+              value={form.title}
+              onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
+              placeholder="Ready orders should feel like a handoff, not a parking lot"
+              className="mt-2 w-full rounded-2xl border-2 border-[#f3c4df] bg-white px-4 py-3 text-lg font-black outline-none focus:border-[#ff5c8a]"
+            />
+          </label>
+
+          <label className="mt-4 block">
+            <span className="text-xs font-black uppercase tracking-[0.16em] text-[#7b5aa6]">
+              Diary note
+            </span>
+            <textarea
+              value={form.body}
+              onChange={(event) => setForm((current) => ({ ...current, body: event.target.value }))}
+              placeholder="What did you notice? What changed? What should future-you remember?"
+              rows={8}
+              className="mt-2 w-full resize-y rounded-2xl border-2 border-[#f3c4df] bg-white px-4 py-3 text-base font-semibold leading-7 outline-none focus:border-[#ff5c8a]"
+            />
+          </label>
+
+          <label className="mt-4 block">
+            <span className="text-xs font-black uppercase tracking-[0.16em] text-[#7b5aa6]">
+              Suggestion or next action
+            </span>
+            <textarea
+              value={form.suggestion}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, suggestion: event.target.value }))
+              }
+              placeholder="Turn this into a popup, owner note, case study update, report idea..."
+              rows={3}
+              className="mt-2 w-full resize-y rounded-2xl border-2 border-[#f3c4df] bg-white px-4 py-3 text-base font-semibold leading-7 outline-none focus:border-[#ff5c8a]"
+            />
+          </label>
+
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            <label className="block">
+              <span className="text-xs font-black uppercase tracking-[0.16em] text-[#7b5aa6]">
+                Mood
+              </span>
+              <select
+                value={form.mood}
+                onChange={(event) => setForm((current) => ({ ...current, mood: event.target.value }))}
+                className="mt-2 w-full rounded-2xl border-2 border-[#f3c4df] bg-white px-4 py-3 font-black outline-none focus:border-[#ff5c8a]"
+              >
+                {DEVELOPER_MOODS.map((mood) => (
+                  <option key={mood} value={mood}>
+                    {mood}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-xs font-black uppercase tracking-[0.16em] text-[#7b5aa6]">
+                Tags
+              </span>
+              <input
+                value={form.tags}
+                onChange={(event) => setForm((current) => ({ ...current, tags: event.target.value }))}
+                placeholder="stats, popup, Ragbrai"
+                className="mt-2 w-full rounded-2xl border-2 border-[#f3c4df] bg-white px-4 py-3 font-black outline-none focus:border-[#ff5c8a]"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-black uppercase tracking-[0.16em] text-[#7b5aa6]">
+                Show until
+              </span>
+              <input
+                type="date"
+                value={form.showUntil}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, showUntil: event.target.value }))
+                }
+                className="mt-2 w-full rounded-2xl border-2 border-[#f3c4df] bg-white px-4 py-3 font-black outline-none focus:border-[#ff5c8a]"
+              />
+            </label>
+          </div>
+
+          {notice ? (
+            <div className="mt-4 rounded-2xl border-2 border-[#bdebd4] bg-[#effff6] px-4 py-3 text-sm font-black text-[#21744f]">
+              {notice}
+            </div>
+          ) : null}
+          {error ? (
+            <div className="mt-4 rounded-2xl border-2 border-[#ff9cb7] bg-[#fff0f5] px-4 py-3 text-sm font-black text-[#9a244f]">
+              {error}
+            </div>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={saving}
+            className="mt-5 w-full rounded-2xl bg-gradient-to-r from-[#ff4f8b] via-[#ffb84d] to-[#58c785] px-5 py-4 text-lg font-black text-white shadow-lg transition hover:scale-[1.01] disabled:opacity-60"
+          >
+            {saving ? "Saving..." : "Save this spark"}
+          </button>
+        </form>
+
+        <aside className="space-y-4">
+          <section className="rounded-[2rem] border-4 border-white bg-[#2b2235] p-5 text-white shadow-[0_24px_70px_rgba(91,58,109,0.14)]">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#ffd35a]">
+              How this becomes useful
+            </p>
+            <h2 className="mt-2 text-4xl font-black text-[#ffd35a]" style={rainbowText}>
+              Write once, reuse later
+            </h2>
+            <p className="mt-3 text-sm font-semibold leading-6 text-white/78">
+              These notes can become Goldie&apos;s popups, owner portal language, release notes,
+              DrinkFlow case-study updates, Studio Samantha event copy, or future product ideas.
+            </p>
+          </section>
+
+          <section className="rounded-[2rem] border-4 border-white bg-white p-4 shadow-[0_24px_70px_rgba(91,58,109,0.12)]">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 className="text-xl font-black text-[#2b2235]">Recent diary entries</h2>
+              <button
+                type="button"
+                onClick={refreshNotes}
+                className="rounded-full bg-[#fff0f7] px-3 py-1.5 text-xs font-black text-[#ff4f8b]"
+              >
+                Refresh
+              </button>
+            </div>
+
+            <div className="max-h-[720px] space-y-3 overflow-y-auto pr-1">
+              {notes.length ? (
+                notes.map((note) => (
+                  <article
+                    key={note.id}
+                    className="rounded-3xl border-2 border-[#f3c4df] bg-[#fffafd] p-4"
+                  >
+                    <div className="flex flex-wrap gap-2">
+                      <span className="rounded-full bg-[#ff5c8a] px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-white">
+                        {note.project}
+                      </span>
+                      <span className="rounded-full bg-[#fff1bf] px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-[#7c5812]">
+                        {note.placement}
+                      </span>
+                      <span className="rounded-full bg-[#e8f7ff] px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-[#246d99]">
+                        {note.visibility}
+                      </span>
+                    </div>
+                    <h3 className="mt-3 text-lg font-black text-[#2b2235]">{note.title}</h3>
+                    {note.body ? (
+                      <p className="mt-2 whitespace-pre-wrap text-sm font-semibold leading-6 text-[#66576f]">
+                        {note.body}
+                      </p>
+                    ) : null}
+                    {note.suggestion ? (
+                      <div className="mt-3 rounded-2xl bg-white px-3 py-2 text-sm font-bold text-[#2b2235]">
+                        {note.suggestion}
+                      </div>
+                    ) : null}
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-[#9b86aa]">
+                      <span>{formatDeveloperNoteDate(note.created_at)}</span>
+                      {note.mood ? <span>{note.mood}</span> : null}
+                    </div>
+                  </article>
+                ))
+              ) : (
+                <div className="rounded-3xl border-2 border-dashed border-[#f3c4df] bg-[#fffafd] p-6 text-center text-sm font-black text-[#9b86aa]">
+                  No diary notes yet.
+                </div>
+              )}
+            </div>
+          </section>
+        </aside>
+      </main>
+    </div>
+  );
+}
+
 export default function GoldiesKDS() {
+  if (isDeveloperDashboardRoute()) return <DeveloperDiaryDashboard />;
   if (isOnlineOrderingBetaRoute()) return <OnlineOrderingBetaPage />;
   if (isSelfOrderKioskRoute()) return <OnlineOrderingBetaPage kioskMode />;
 

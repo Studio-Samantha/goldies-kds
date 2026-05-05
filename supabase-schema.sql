@@ -186,3 +186,44 @@ create index if not exists drinkflow_surveys_created_at_idx
 
 create index if not exists drinkflow_surveys_pos_system_idx
   on public.drinkflow_surveys(pos_system);
+
+create table if not exists public.developer_notes (
+  id bigserial primary key,
+  project text not null default 'Studio Samantha',
+  placement text not null default 'Developer diary',
+  visibility text not null default 'internal' check (visibility in ('internal', 'owner', 'public')),
+  title text not null default '',
+  body text not null default '',
+  suggestion text not null default '',
+  mood text not null default 'sparkly',
+  tags jsonb not null default '[]'::jsonb,
+  show_until date,
+  created_by text not null default 'StudioSamantha',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists developer_notes_project_idx
+  on public.developer_notes(project);
+
+create index if not exists developer_notes_placement_idx
+  on public.developer_notes(placement);
+
+create index if not exists developer_notes_created_at_idx
+  on public.developer_notes(created_at desc);
+
+create table if not exists public.kds_access_logs (
+  id bigserial primary key,
+  actor text not null default '',
+  role text not null default 'owner',
+  action text not null default 'login',
+  ip_address text not null default '',
+  user_agent text not null default '',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists kds_access_logs_role_idx
+  on public.kds_access_logs(role);
+
+create index if not exists kds_access_logs_created_at_idx
+  on public.kds_access_logs(created_at desc);
