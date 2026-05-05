@@ -3346,7 +3346,7 @@ function BrandFooter({ className = "" }) {
       <span>Studio Samantha © 2026</span>
       <span className="text-[#CA862B]/70">•</span>
       <a
-        href="/drinkflow-kds"
+        href="https://drinkflowkds.com"
         className="cursor-pointer normal-case tracking-normal text-[#0F4036] transition hover:text-[#CA862B] focus:outline-none focus-visible:text-[#CA862B]"
       >
         Learn more
@@ -8708,7 +8708,7 @@ export default function GoldiesKDS() {
             <div className="flex flex-wrap gap-2 justify-start xl:justify-end">
               {isDemoRoute && (
                 <a
-                  href="/drinkflow-kds"
+                  href="https://drinkflowkds.com"
                   className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
                 >
                   Back to Learn More
