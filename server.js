@@ -1052,9 +1052,20 @@ const squareClient = new Client({
 
 console.log("Square client initialized successfully");
 
-const allowedOrigins = CORS_ORIGIN
-  ? CORS_ORIGIN.split(",").map((origin) => origin.trim()).filter(Boolean)
-  : [];
+const defaultAllowedOrigins = [
+  "https://goldieskds.com",
+  "https://www.goldieskds.com",
+  "https://drinkflowkds.com",
+  "https://www.drinkflowkds.com",
+];
+const allowedOrigins = Array.from(
+  new Set([
+    ...defaultAllowedOrigins,
+    ...(CORS_ORIGIN
+      ? CORS_ORIGIN.split(",").map((origin) => origin.trim()).filter(Boolean)
+      : []),
+  ])
+);
 
 app.use(
   cors({
