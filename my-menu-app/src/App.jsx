@@ -2916,6 +2916,8 @@ function CustomerInsightsPanel() {
 
   useEffect(() => {
     refreshInsights();
+    const interval = setInterval(refreshInsights, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   async function saveInsight(event) {
