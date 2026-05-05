@@ -38,6 +38,16 @@ create index if not exists kds_orders_created_at_idx on public.kds_orders(create
 create index if not exists kds_order_items_order_id_idx on public.kds_order_items(order_id);
 create index if not exists kds_order_items_category_idx on public.kds_order_items(category);
 
+create table if not exists public.kds_menu_availability (
+  item_key text primary key,
+  item_name text not null,
+  available boolean not null default true,
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists kds_menu_availability_available_idx
+  on public.kds_menu_availability(available);
+
 create table if not exists public.kds_settings (
   setting_key text primary key,
   password_hash text not null,
@@ -189,6 +199,7 @@ create index if not exists drinkflow_surveys_pos_system_idx
 
 create table if not exists public.drinkflow_onboarding_requests (
   id bigserial primary key,
+  workspace_slug text not null default '',
   contact_name text not null default '',
   email text not null default '',
   phone text not null default '',
@@ -198,6 +209,7 @@ create table if not exists public.drinkflow_onboarding_requests (
   website text not null default '',
   social_links jsonb not null default '[]'::jsonb,
   pos_system text not null default '',
+  starter_theme text not null default '',
   order_sources jsonb not null default '[]'::jsonb,
   screen_needs jsonb not null default '[]'::jsonb,
   current_pain text not null default '',
@@ -223,6 +235,47 @@ create index if not exists drinkflow_onboarding_requests_status_idx
 
 create index if not exists drinkflow_onboarding_requests_email_idx
   on public.drinkflow_onboarding_requests(email);
+
+alter table public.drinkflow_onboarding_requests
+  add column if not exists starter_theme text not null default '';
+
+alter table public.drinkflow_onboarding_requests
+  add column if not exists workspace_slug text not null default '';
+
+create table if not exists public.drinkflow_workspaces (
+  slug text primary key,
+  shop_name text not null default '',
+  owner_email text not null default '',
+  owner_name text not null default '',
+  status text not null default 'reserved',
+  email_verified boolean not null default false,
+  email_verification_token text not null default '',
+  square_connected boolean not null default false,
+  app_url text not null default '',
+  created_from_ip text not null default '',
+  user_agent text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists drinkflow_workspaces_owner_email_idx
+  on public.drinkflow_workspaces(owner_email);
+
+alter table public.drinkflow_workspaces
+  add column if not exists email_verified boolean not null default false;
+
+alter table public.drinkflow_workspaces
+  add column if not exists email_verification_token text not null default '';
+
+create table if not exists public.drinkflow_square_connections (
+  workspace_slug text primary key references public.drinkflow_workspaces(slug) on delete cascade,
+  merchant_id text not null default '',
+  access_token text not null default '',
+  refresh_token text not null default '',
+  expires_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
 
 create table if not exists public.developer_notes (
   id bigserial primary key,

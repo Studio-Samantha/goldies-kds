@@ -64,6 +64,13 @@ const DEVELOPER_PASSWORD_HASH =
   "1495452a693a8a1659c6ed4449554ded95522b7e0bfe429629d99949fec7d170ea058f6d067a1742ad81ffb0ae232e52602576fc96afe854a85ad7123a49fe5e";
 const DEVELOPER_PASSWORD_SALT =
   process.env.DEVELOPER_PASSWORD_SALT || "a8a44832a6f84faf004f993d58de828c";
+const DRINKFLOW_SQUARE_APPLICATION_ID =
+  process.env.DRINKFLOW_SQUARE_APPLICATION_ID || process.env.SQUARE_APPLICATION_ID || "";
+const DRINKFLOW_SQUARE_APPLICATION_SECRET =
+  process.env.DRINKFLOW_SQUARE_APPLICATION_SECRET || process.env.SQUARE_APPLICATION_SECRET || "";
+const DRINKFLOW_SQUARE_REDIRECT_URL =
+  process.env.DRINKFLOW_SQUARE_REDIRECT_URL ||
+  "https://goldieskds.com/api/drinkflow/square/oauth/callback";
 const SQUARE_API_VERSION = process.env.SQUARE_API_VERSION || "2025-04-16";
 const ONLINE_ORDERING_CATEGORY_NAMES = (
   process.env.ONLINE_ORDERING_CATEGORY_NAMES || "Coffee,Not Coffee,Smoothies"
@@ -222,6 +229,21 @@ function cleanLeadList(value, maxItems = 12, maxItemLength = 80) {
     .map((item) => cleanLeadText(item, maxItemLength))
     .filter(Boolean)
     .slice(0, maxItems);
+}
+
+function normalizeDrinkFlowSlug(value = "") {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-")
+    .slice(0, 48);
+}
+
+function publicWorkspacePayload(workspace = {}) {
+  const { email_verification_token, access_token, refresh_token, ...safeWorkspace } = workspace;
+  return safeWorkspace;
 }
 
 function getFirstCorsOrigin() {
@@ -662,6 +684,7 @@ function buildStaticOnlineOrderingMenu() {
 }
 
 async function getSquareOnlineOrderingMenu() {
+  const unavailableKeys = await getUnavailableMenuKeys();
   const objects = await fetchSquareCatalogObjects([
     "ITEM",
     "ITEM_VARIATION",
@@ -747,6 +770,7 @@ async function getSquareOnlineOrderingMenu() {
       const priceCents = Number(variationData.price_money?.amount || 0);
       if (!priceCents) continue;
       const itemName = itemData.name || variationData.name || "Drink";
+      if (!isMenuItemAvailable({ name: itemName }, unavailableKeys)) continue;
       const variationName =
         variationData.name && variationData.name !== "Regular" ? variationData.name : "";
       const variationModifierGroups = filterModifierGroupsForVariation(
@@ -869,6 +893,153 @@ async function buildOnlineOrderingBetaLineItems(rawItems) {
     .slice(0, 20);
 }
 
+function getOnlineOrderConfirmationText({
+  customerName,
+  pickupTime,
+  lineItems,
+  checkoutUrl,
+  orderId,
+}) {
+  const itemLines = (lineItems || []).map((item) => {
+    const qty = item.quantity || "1";
+    const name = item.name || "Drink";
+    return `- ${qty}x ${name}${item.note ? ` (${item.note})` : ""}`;
+  });
+
+  return [
+    `Hi ${customerName || "there"},`,
+    "",
+    "Thanks for starting a Goldie's pickup order.",
+    pickupTime ? `Requested pickup: ${pickupTime}` : "",
+    orderId ? `Order reference: ${orderId}` : "",
+    "",
+    "Your drinks:",
+    ...(itemLines.length ? itemLines : ["- Drink order"]),
+    "",
+    "Finish payment through Square here:",
+    checkoutUrl,
+    "",
+    "After payment is complete, Goldie's will receive the order in DrinkFlow KDS.",
+  ]
+    .filter((line) => line !== "")
+    .join("\n");
+}
+
+async function reserveDrinkFlowWorkspace({ slug, shopName, ownerEmail, ownerName, req }) {
+  const workspaceSlug = normalizeDrinkFlowSlug(slug || shopName);
+  if (!workspaceSlug || workspaceSlug.length < 3) {
+    const error = new Error("Choose a workspace name with at least 3 letters or numbers.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const reserved = new Set(["www", "api", "admin", "developer", "goldies", "setup", "app"]);
+  if (reserved.has(workspaceSlug)) {
+    const error = new Error("That workspace name is reserved. Try another one.");
+    error.statusCode = 409;
+    throw error;
+  }
+
+  const row = {
+    slug: workspaceSlug,
+    shop_name: cleanLeadText(shopName, 160),
+    owner_email: normalizeLeadEmail(ownerEmail),
+    owner_name: cleanLeadText(ownerName, 120),
+    status: "reserved",
+    email_verified: false,
+    email_verification_token: crypto.randomBytes(24).toString("hex"),
+    square_connected: false,
+    app_url: `https://${workspaceSlug}.drinkflowkds.com`,
+    created_from_ip: cleanLeadText(
+      req?.headers?.["x-forwarded-for"]?.split(",")[0] || req?.socket?.remoteAddress || "",
+      80
+    ),
+    user_agent: cleanLeadText(req?.get("user-agent") || "", 500),
+  };
+
+  if (!supabase) return row;
+
+  const { data: existing, error: existingError } = await supabase
+    .from("drinkflow_workspaces")
+    .select("slug")
+    .eq("slug", workspaceSlug)
+    .maybeSingle();
+
+  if (existingError) throw existingError;
+  if (existing) {
+    const error = new Error("That workspace name is already taken.");
+    error.statusCode = 409;
+    throw error;
+  }
+
+  const { data, error } = await supabase
+    .from("drinkflow_workspaces")
+    .insert(row)
+    .select("slug, shop_name, owner_email, owner_name, status, email_verified, email_verification_token, square_connected, app_url, created_at")
+    .single();
+
+  if (error) throw error;
+  return data || row;
+}
+
+async function sendDrinkFlowVerificationEmail(workspace) {
+  const email = normalizeLeadEmail(workspace?.owner_email);
+  const token = workspace?.email_verification_token;
+  if (!email || !token || !isValidLeadEmail(email)) return false;
+
+  const mailer = getAlertMailer();
+  if (!mailer) return false;
+
+  const verifyUrl = `https://goldieskds.com/api/drinkflow-workspaces/verify-email?token=${encodeURIComponent(token)}`;
+  await mailer.sendMail({
+    from: ALERT_EMAIL_FROM,
+    to: email,
+    subject: "Verify your DrinkFlow beta workspace",
+    text: [
+      `Hi ${workspace.owner_name || "there"},`,
+      "",
+      `Your DrinkFlow beta workspace is reserved: ${workspace.app_url}`,
+      "",
+      "Verify this email before connecting live shop data:",
+      verifyUrl,
+      "",
+      "If you did not request this, you can ignore this email.",
+    ].join("\n"),
+  });
+
+  return true;
+}
+
+async function sendOnlineOrderConfirmationEmail({
+  to,
+  customerName,
+  pickupTime,
+  lineItems,
+  checkoutUrl,
+  orderId,
+}) {
+  const email = normalizeLeadEmail(to);
+  if (!email || !isValidLeadEmail(email)) return false;
+
+  const mailer = getAlertMailer();
+  if (!mailer) return false;
+
+  await mailer.sendMail({
+    from: ALERT_EMAIL_FROM,
+    to: email,
+    subject: "Goldie's pickup order confirmation",
+    text: getOnlineOrderConfirmationText({
+      customerName,
+      pickupTime,
+      lineItems,
+      checkoutUrl,
+      orderId,
+    }),
+  });
+
+  return true;
+}
+
 console.log("Initializing Square client...");
 console.log(`Environment: ${SQUARE_ENVIRONMENT}`);
 console.log(`Location ID: ${SQUARE_LOCATION_ID ? "Set" : "Missing"}`);
@@ -983,6 +1154,7 @@ const GOLDIES_MENU_CATEGORIES = [
   { key: "Smoothies", label: "Smoothies", items: Array.from(SMOOTHIE_DRINKS) },
 ];
 let menuCatalogCache = { fetchedAt: 0, items: [] };
+let localMenuAvailability = [];
 
 function normalizeName(name = "") {
   return String(name).trim();
@@ -1122,6 +1294,73 @@ function buildStaticMenuItems() {
   }));
 }
 
+function normalizeMenuAvailabilityKey(name = "") {
+  return normalizeDrinkText(name);
+}
+
+function isMenuItemAvailable(item = {}, unavailableKeys = new Set()) {
+  return !unavailableKeys.has(normalizeMenuAvailabilityKey(item.name));
+}
+
+async function getMenuAvailabilityRows() {
+  if (!supabase) return localMenuAvailability;
+
+  const { data, error } = await supabase
+    .from("kds_menu_availability")
+    .select("item_key, item_name, available, updated_at")
+    .order("item_name", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching menu availability:", error.message);
+    return [];
+  }
+
+  return data || [];
+}
+
+async function getUnavailableMenuKeys() {
+  const rows = await getMenuAvailabilityRows();
+  return new Set(
+    (rows || [])
+      .filter((row) => row && row.available === false)
+      .map((row) => normalizeMenuAvailabilityKey(row.item_key || row.item_name))
+      .filter(Boolean)
+  );
+}
+
+async function setMenuAvailability(itemName, available) {
+  const cleanName = normalizeName(itemName).slice(0, 160);
+  const itemKey = normalizeMenuAvailabilityKey(cleanName);
+  if (!cleanName || !itemKey) {
+    const error = new Error("Menu item name is required.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const row = {
+    item_key: itemKey,
+    item_name: cleanName,
+    available: Boolean(available),
+    updated_at: new Date().toISOString(),
+  };
+
+  if (!supabase) {
+    const index = localMenuAvailability.findIndex((entry) => entry.item_key === itemKey);
+    if (index >= 0) localMenuAvailability[index] = row;
+    else localMenuAvailability.push(row);
+    return row;
+  }
+
+  const { data, error } = await supabase
+    .from("kds_menu_availability")
+    .upsert(row, { onConflict: "item_key" })
+    .select("item_key, item_name, available, updated_at")
+    .single();
+
+  if (error) throw error;
+  return data || row;
+}
+
 async function fetchSquareMenuCatalogItems() {
   if (!SQUARE_ACCESS_TOKEN) return [];
 
@@ -1172,9 +1411,10 @@ async function getGoldiesMenuBoard() {
   const staticMenu = buildStaticMenuItems();
 
   try {
-    const [catalogItems, recentPrices] = await Promise.all([
+    const [catalogItems, recentPrices, unavailableKeys] = await Promise.all([
       fetchSquareMenuCatalogItems(),
       fetchRecentMenuPrices(),
+      getUnavailableMenuKeys(),
     ]);
     const catalogByName = new Map(
       catalogItems.map((item) => [normalizeDrinkText(item.name), item])
@@ -1182,16 +1422,18 @@ async function getGoldiesMenuBoard() {
 
     return staticMenu.map((category) => ({
       ...category,
-      items: category.items.map((item) => {
-        const catalogItem = catalogByName.get(normalizeDrinkText(item.name));
-        const priceCents =
-          catalogItem?.priceCents || recentPrices.get(normalizeDrinkText(item.name)) || null;
-        return {
-          ...item,
-          priceCents,
-          price: priceCents ? formatCurrency(priceCents) : "Ask",
-        };
-      }),
+      items: category.items
+        .filter((item) => isMenuItemAvailable(item, unavailableKeys))
+        .map((item) => {
+          const catalogItem = catalogByName.get(normalizeDrinkText(item.name));
+          const priceCents =
+            catalogItem?.priceCents || recentPrices.get(normalizeDrinkText(item.name)) || null;
+          return {
+            ...item,
+            priceCents,
+            price: priceCents ? formatCurrency(priceCents) : "Ask",
+          };
+        }),
     }));
   } catch (error) {
     console.error("Error building menu board from Square catalog:", error.message);
@@ -4592,6 +4834,7 @@ function normalizeDrinkFlowOnboardingRequest(body = {}, req = null) {
   return {
     contact_name: cleanLeadText(body.contactName, 120),
     email,
+    workspace_slug: normalizeDrinkFlowSlug(body.workspaceSlug || body.shopName),
     phone: cleanLeadText(body.phone, 80),
     shop_name: cleanLeadText(body.shopName, 140),
     business_type: cleanLeadText(body.businessType, 120),
@@ -4599,6 +4842,7 @@ function normalizeDrinkFlowOnboardingRequest(body = {}, req = null) {
     website: cleanLeadText(body.website, 240),
     social_links: cleanLeadList(body.socialLinks, 8, 180),
     pos_system: cleanLeadText(body.posSystem, 80),
+    starter_theme: cleanLeadText(body.starterTheme, 80),
     order_sources: cleanLeadList(body.orderSources, 10, 100),
     screen_needs: cleanLeadList(body.screenNeeds, 12, 100),
     current_pain: cleanLeadText(body.currentPain, 1200),
@@ -4982,6 +5226,198 @@ app.get("/api/developer/drinkflow-onboarding", requireDeveloperAuth, async (req,
     res.status(500).json({ error: error.message });
   }
 });
+
+app.post("/api/developer/drinkflow-workspaces", requireDeveloperAuth, async (req, res) => {
+  try {
+    const ownerEmail = normalizeLeadEmail(req.body?.ownerEmail || req.body?.email);
+    if (ownerEmail && !isValidLeadEmail(ownerEmail)) {
+      return res.status(400).json({ error: "Enter a valid owner email address." });
+    }
+
+    const workspace = await reserveDrinkFlowWorkspace({
+      slug: req.body?.slug,
+      shopName: req.body?.shopName,
+      ownerEmail,
+      ownerName: req.body?.ownerName,
+      req,
+    });
+
+    sendDrinkFlowVerificationEmail(workspace).catch((mailError) => {
+      console.error("DrinkFlow verification email failed:", mailError.message);
+    });
+
+    res.json({ ok: true, workspace: publicWorkspacePayload(workspace) });
+  } catch (error) {
+    console.error("Error reserving DrinkFlow workspace:", error);
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+});
+
+app.get("/api/drinkflow-workspaces/verify-email", async (req, res) => {
+  try {
+    const token = cleanLeadText(req.query.token, 120);
+    if (!token) return res.status(400).send("Verification token is missing.");
+    if (!supabase) return res.status(503).send("Workspace storage is not configured.");
+
+    const { data, error } = await supabase
+      .from("drinkflow_workspaces")
+      .update({
+        email_verified: true,
+        email_verification_token: "",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("email_verification_token", token)
+      .select("slug")
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return res.status(404).send("Verification link is invalid or already used.");
+
+    res.redirect(`https://drinkflowkds.com/setup.html?email=verified&workspace=${encodeURIComponent(data.slug)}`);
+  } catch (error) {
+    console.error("DrinkFlow email verification error:", error);
+    res.status(500).send("Email verification failed.");
+  }
+});
+
+app.post("/api/drinkflow-workspaces", async (req, res) => {
+  try {
+    const ownerEmail = normalizeLeadEmail(req.body?.ownerEmail || req.body?.email);
+    if (!ownerEmail || !isValidLeadEmail(ownerEmail)) {
+      return res.status(400).json({ error: "Enter a valid email address." });
+    }
+
+    const workspace = await reserveDrinkFlowWorkspace({
+      slug: req.body?.slug,
+      shopName: req.body?.shopName,
+      ownerEmail,
+      ownerName: req.body?.ownerName,
+      req,
+    });
+
+    res.json({ ok: true, workspace: publicWorkspacePayload(workspace) });
+  } catch (error) {
+    console.error("Error creating DrinkFlow workspace:", error);
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+});
+
+app.get("/api/drinkflow/square/oauth/start", (req, res) => {
+  if (!DRINKFLOW_SQUARE_APPLICATION_ID || !DRINKFLOW_SQUARE_APPLICATION_SECRET) {
+    return res.status(503).json({
+      error:
+        "Square OAuth is not configured yet. Add DRINKFLOW_SQUARE_APPLICATION_ID, DRINKFLOW_SQUARE_APPLICATION_SECRET, and DRINKFLOW_SQUARE_REDIRECT_URL in Render.",
+      redirectUrl: DRINKFLOW_SQUARE_REDIRECT_URL,
+    });
+  }
+
+  const slug = normalizeDrinkFlowSlug(req.query.slug || "");
+  if (!slug) return res.status(400).json({ error: "Workspace is required before connecting Square." });
+
+  const state = Buffer.from(
+    JSON.stringify({ slug, nonce: crypto.randomUUID(), createdAt: Date.now() })
+  ).toString("base64url");
+  const params = new URLSearchParams({
+    client_id: DRINKFLOW_SQUARE_APPLICATION_ID,
+    scope: "MERCHANT_PROFILE_READ ORDERS_READ ITEMS_READ PAYMENTS_READ",
+    session: "false",
+    state,
+    redirect_uri: DRINKFLOW_SQUARE_REDIRECT_URL,
+  });
+
+  res.redirect(`${getSquareRestBaseUrl()}/oauth2/authorize?${params.toString()}`);
+});
+
+app.get("/api/developer/square/oauth/start", requireDeveloperAuth, (req, res) => {
+  if (!DRINKFLOW_SQUARE_APPLICATION_ID || !DRINKFLOW_SQUARE_APPLICATION_SECRET) {
+    return res.status(503).json({
+      error:
+        "Square OAuth is not configured yet. Add DRINKFLOW_SQUARE_APPLICATION_ID, DRINKFLOW_SQUARE_APPLICATION_SECRET, and DRINKFLOW_SQUARE_REDIRECT_URL in Render.",
+      redirectUrl: DRINKFLOW_SQUARE_REDIRECT_URL,
+    });
+  }
+
+  const slug = normalizeDrinkFlowSlug(req.query.slug || "studio-samantha");
+  const state = Buffer.from(
+    JSON.stringify({ slug, nonce: crypto.randomUUID(), createdAt: Date.now() })
+  ).toString("base64url");
+  const params = new URLSearchParams({
+    client_id: DRINKFLOW_SQUARE_APPLICATION_ID,
+    scope: "MERCHANT_PROFILE_READ ORDERS_READ ITEMS_READ PAYMENTS_READ",
+    session: "false",
+    state,
+    redirect_uri: DRINKFLOW_SQUARE_REDIRECT_URL,
+  });
+
+  res.redirect(`${getSquareRestBaseUrl()}/oauth2/authorize?${params.toString()}`);
+});
+
+async function handleDrinkFlowSquareOAuthCallback(req, res) {
+  try {
+    const code = cleanLeadText(req.query.code, 500);
+    const state = cleanLeadText(req.query.state, 1000);
+    if (!code) return res.status(400).send("Square did not return an authorization code.");
+    if (!DRINKFLOW_SQUARE_APPLICATION_ID || !DRINKFLOW_SQUARE_APPLICATION_SECRET) {
+      return res.status(503).send("Square OAuth is not configured in Render yet.");
+    }
+
+    const tokenResponse = await fetch(`${getSquareRestBaseUrl()}/oauth2/token`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Square-Version": SQUARE_API_VERSION,
+      },
+      body: JSON.stringify({
+        client_id: DRINKFLOW_SQUARE_APPLICATION_ID,
+        client_secret: DRINKFLOW_SQUARE_APPLICATION_SECRET,
+        code,
+        grant_type: "authorization_code",
+        redirect_uri: DRINKFLOW_SQUARE_REDIRECT_URL,
+      }),
+    });
+    const payload = await tokenResponse.json().catch(() => ({}));
+    if (!tokenResponse.ok) {
+      console.error("Square OAuth token error:", JSON.stringify(payload));
+      return res.status(502).send("Square connection failed. Check the OAuth app settings.");
+    }
+
+    const statePayload = (() => {
+      try {
+        return JSON.parse(Buffer.from(state, "base64url").toString("utf8"));
+      } catch {
+        return {};
+      }
+    })();
+    const slug = normalizeDrinkFlowSlug(statePayload.slug || "studio-samantha");
+
+    if (supabase) {
+      await supabase.from("drinkflow_square_connections").upsert(
+        {
+          workspace_slug: slug,
+          merchant_id: payload.merchant_id || "",
+          access_token: payload.access_token || "",
+          refresh_token: payload.refresh_token || "",
+          expires_at: payload.expires_at || null,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "workspace_slug" }
+      );
+      await supabase
+        .from("drinkflow_workspaces")
+        .update({ square_connected: true, updated_at: new Date().toISOString() })
+        .eq("slug", slug);
+    }
+
+    res.redirect(`https://drinkflowkds.com/setup.html?square=connected&workspace=${encodeURIComponent(slug)}`);
+  } catch (error) {
+    console.error("Square OAuth callback error:", error);
+    res.status(500).send("Square connection failed.");
+  }
+}
+
+app.get("/api/drinkflow/square/oauth/callback", handleDrinkFlowSquareOAuthCallback);
+
+app.get("/api/developer/square/oauth/callback", requireDeveloperAuth, handleDrinkFlowSquareOAuthCallback);
 
 app.post("/api/developer/notes", requireDeveloperAuth, async (req, res) => {
   try {
@@ -5617,6 +6053,58 @@ app.get("/api/display/menu", requireKdsAuth, async (_req, res) => {
   }
 });
 
+app.get("/api/menu/availability", requireOwnerAuth, async (_req, res) => {
+  try {
+    const [categories, availability] = await Promise.all([
+      getGoldiesMenuBoard(),
+      getMenuAvailabilityRows(),
+    ]);
+    const availabilityByKey = new Map(
+      (availability || []).map((row) => [
+        normalizeMenuAvailabilityKey(row.item_key || row.item_name),
+        row,
+      ])
+    );
+
+    const items = [];
+    for (const category of buildStaticMenuItems()) {
+      for (const item of category.items || []) {
+        const itemKey = normalizeMenuAvailabilityKey(item.name);
+        const row = availabilityByKey.get(itemKey);
+        items.push({
+          itemKey,
+          itemName: item.name,
+          category: category.label,
+          available: row ? Boolean(row.available) : true,
+          updatedAt: row?.updated_at || null,
+        });
+      }
+    }
+
+    res.json({
+      ok: true,
+      items,
+      visibleCategories: categories,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("Error fetching menu availability:", error);
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+});
+
+app.patch("/api/menu/availability", requireOwnerAuth, async (req, res) => {
+  try {
+    const itemName = req.body?.itemName;
+    const available = req.body?.available !== false;
+    const row = await setMenuAvailability(itemName, available);
+    res.json({ ok: true, item: row });
+  } catch (error) {
+    console.error("Error updating menu availability:", error);
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+});
+
 app.get("/api/display/orders-up", requireKdsAuth, async (_req, res) => {
   try {
     const display = await getCustomerOrdersUp();
@@ -5776,6 +6264,7 @@ app.post("/api/beta/online-order/checkout", async (req, res) => {
   try {
     const hours = getOnlineOrderingHoursStatus();
     const customerName = cleanOrderText(req.body?.customerName, 80);
+    const customerEmail = normalizeLeadEmail(req.body?.customerEmail || req.body?.email);
     const rawPickupTime = cleanOrderText(req.body?.pickupTime, 120);
     const scheduledPickup = rawPickupTime.startsWith("20");
 
@@ -5805,6 +6294,10 @@ app.post("/api/beta/online-order/checkout", async (req, res) => {
 
     if (!customerName) {
       return res.status(400).json({ error: "Pickup name is required." });
+    }
+
+    if (customerEmail && !isValidLeadEmail(customerEmail)) {
+      return res.status(400).json({ error: "Enter a valid email address." });
     }
 
     if (!lineItems.length) {
@@ -5856,6 +6349,7 @@ app.post("/api/beta/online-order/checkout", async (req, res) => {
             metadata: {
               drinkflow_source: "online_ordering_beta",
               customer_name: customerName,
+              customer_email: customerEmail,
               pickup_time: pickupTime,
             },
           },
@@ -5879,6 +6373,19 @@ app.post("/api/beta/online-order/checkout", async (req, res) => {
     }
 
     const paymentLink = payload.payment_link || {};
+    if (customerEmail && paymentLink.url) {
+      sendOnlineOrderConfirmationEmail({
+        to: customerEmail,
+        customerName,
+        pickupTime,
+        lineItems,
+        checkoutUrl: paymentLink.url,
+        orderId: paymentLink.order_id || "",
+      }).catch((mailError) => {
+        console.error("Online order confirmation email failed:", mailError.message);
+      });
+    }
+
     res.json({
       ok: true,
       checkoutUrl: paymentLink.url,

@@ -1636,6 +1636,13 @@ function getMinutesElapsed(createdAt) {
   return Math.max(0, Math.floor((Date.now() - createdAt) / 60000));
 }
 
+function formatElapsedLabel(timestamp) {
+  const mins = getMinutesElapsed(timestamp);
+  if (mins < 1) return "just now";
+  if (mins === 1) return "1 min";
+  return `${mins} min`;
+}
+
 function formatOrderTime(createdAt) {
   return new Date(createdAt).toLocaleTimeString([], {
     hour: "numeric",
@@ -2021,6 +2028,12 @@ function normalizeTicket(ticket) {
         : ticket.completedAt || ticket.completed_at
           ? new Date(ticket.completedAt || ticket.completed_at).getTime()
           : null,
+    updatedAt:
+      typeof ticket.updatedAt === "number"
+        ? ticket.updatedAt
+        : ticket.updatedAt || ticket.updated_at
+          ? new Date(ticket.updatedAt || ticket.updated_at).getTime()
+          : null,
     createdAt:
       typeof ticket.createdAt === "number"
         ? ticket.createdAt
@@ -2205,6 +2218,16 @@ function TicketCard({
     : 0;
   const ticketHasDrinks = hasDrinkItems(ticket);
   const previousStatus = getPreviousStatus(ticket.status);
+  const stageStartedAt = ticket.updatedAt || ticket.createdAt;
+  const stageElapsedLabel = formatElapsedLabel(stageStartedAt);
+  const stageLabel =
+    ticket.status === "ready"
+      ? `Ready ${stageElapsedLabel} ago`
+      : ticket.status === "making"
+        ? `Making ${stageElapsedLabel}`
+        : ticket.status === "new"
+          ? `Waiting ${stageElapsedLabel}`
+          : null;
   const hasSpecificDiningOption =
     ticket.diningOption &&
     !["Unspecified", "Order"].includes(ticket.diningOption);
@@ -2365,6 +2388,17 @@ function TicketCard({
           {!compact && ticket.employeeName && (
             <div className="mt-1 text-sm font-semibold text-[#111111]">
               Taken by {ticket.employeeName}
+            </div>
+          )}
+
+          {stageLabel && (
+            <div className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-black ${
+              ticket.status === "ready" && getMinutesElapsed(stageStartedAt) >= 1
+                ? "bg-[#CA862B]/16 text-[#8B5A1D]"
+                : "bg-[#0F4036]/8 text-[#0F4036]"
+            }`}>
+              {stageLabel}
+              {ticket.status === "ready" ? " - clears at 2 min" : ""}
             </div>
           )}
 
@@ -3413,7 +3447,7 @@ function BrandFooter({ className = "" }) {
         href="/developer"
         className="cursor-pointer normal-case tracking-normal text-[#0F4036] transition hover:text-[#CA862B] focus:outline-none focus-visible:text-[#CA862B]"
       >
-        Studio
+        Developer Login
       </a>
     </div>
   );
@@ -4699,6 +4733,11 @@ function OwnerReportsView({
   const [accessLogs, setAccessLogs] = useState([]);
   const [accessLogError, setAccessLogError] = useState("");
   const [accessLogLoading, setAccessLogLoading] = useState(false);
+  const [showMenuAvailability, setShowMenuAvailability] = useState(false);
+  const [menuAvailability, setMenuAvailability] = useState([]);
+  const [menuAvailabilityLoading, setMenuAvailabilityLoading] = useState(false);
+  const [menuAvailabilityError, setMenuAvailabilityError] = useState("");
+  const [menuAvailabilityNotice, setMenuAvailabilityNotice] = useState("");
   const demoQuery = demoMode ? "?demo=training" : "";
 
   useEffect(() => {
@@ -4821,6 +4860,61 @@ function OwnerReportsView({
 
     fetchOwnerAccessLog();
   }, [demoMode, showAccessLog]);
+
+  useEffect(() => {
+    if (demoMode || !showMenuAvailability) return;
+
+    async function fetchMenuAvailability() {
+      try {
+        setMenuAvailabilityLoading(true);
+        setMenuAvailabilityError("");
+        const response = await fetch(apiUrl("/api/menu/availability"), {
+          credentials: "include",
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(data.error || `Menu availability unavailable: ${response.status}`);
+        }
+        setMenuAvailability(data.items || []);
+      } catch (availabilityError) {
+        setMenuAvailabilityError(availabilityError.message || "Menu availability unavailable");
+      } finally {
+        setMenuAvailabilityLoading(false);
+      }
+    }
+
+    fetchMenuAvailability();
+  }, [demoMode, showMenuAvailability]);
+
+  async function handleMenuAvailabilityChange(itemName, available) {
+    setMenuAvailability((current) =>
+      current.map((item) =>
+        item.itemName === itemName ? { ...item, available } : item
+      )
+    );
+    setMenuAvailabilityNotice("");
+    setMenuAvailabilityError("");
+
+    try {
+      const response = await fetch(apiUrl("/api/menu/availability"), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ itemName, available }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || `Menu update failed: ${response.status}`);
+      }
+      setMenuAvailabilityNotice(
+        available
+          ? `${itemName} is back on customer menus.`
+          : `${itemName} is hidden from the menu board and online ordering.`
+      );
+    } catch (availabilityError) {
+      setMenuAvailabilityError(availabilityError.message || "Menu update failed");
+    }
+  }
 
   async function handleSaveSnapshot() {
     if (!report) return;
@@ -5244,6 +5338,70 @@ function OwnerReportsView({
               </div>
             </div>
           </div>
+
+          {!demoMode && (
+            <section className="mb-4 rounded-2xl border border-[#CA862B]/18 bg-white/80 p-3 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
+                    Menu availability
+                  </div>
+                  <div className="mt-1 text-sm font-semibold leading-6 text-[#6A614F]">
+                    Hide sold-out drinks from the customer menu board and online ordering.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowMenuAvailability((current) => !current)}
+                  className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                >
+                  {showMenuAvailability ? "Hide toggles" : "Show toggles"}
+                </button>
+              </div>
+
+              {showMenuAvailability && (
+                <div className="mt-3 rounded-xl border border-[#CA862B]/12 bg-[#FFFDF8] p-3">
+                  {menuAvailabilityLoading ? (
+                    <div className="text-sm font-semibold text-[#6A614F]">
+                      Loading menu toggles...
+                    </div>
+                  ) : (
+                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                      {menuAvailability.map((item) => (
+                        <label
+                          key={item.itemKey || item.itemName}
+                          className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2 text-sm font-bold text-[#111111]"
+                        >
+                          <span>
+                            <span className="block">{item.itemName}</span>
+                            <span className="text-xs font-semibold text-[#6A614F]">{item.category}</span>
+                          </span>
+                          <input
+                            type="checkbox"
+                            checked={item.available !== false}
+                            onChange={(event) =>
+                              handleMenuAvailabilityChange(item.itemName, event.target.checked)
+                            }
+                            className="h-5 w-5 accent-[#0F4036]"
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                  {menuAvailabilityNotice ? (
+                    <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-900">
+                      {menuAvailabilityNotice}
+                    </div>
+                  ) : null}
+                  {menuAvailabilityError ? (
+                    <div className="mt-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-900">
+                      {menuAvailabilityError}
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </section>
+          )}
 
           {loading ? (
             <div className="rounded-2xl border border-dashed border-[#CA862B]/22 bg-white/70 p-8 text-center font-semibold text-[#6A614F]">
@@ -7369,6 +7527,7 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
   const [serverPickupSlots, setServerPickupSlots] = useState([]);
   const [cart, setCart] = useState([]);
   const [customerName, setCustomerName] = useState(testerName);
+  const [customerEmail, setCustomerEmail] = useState("");
   const [pickupMode, setPickupMode] = useState("asap");
   const [scheduledPickupTime, setScheduledPickupTime] = useState("");
   const [readyQuote, setReadyQuote] = useState(null);
@@ -7541,6 +7700,7 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
         credentials: "include",
         body: JSON.stringify({
           customerName,
+          customerEmail,
           pickupTime,
           notes,
           source: kioskMode ? "self_order_kiosk" : "online_ordering_beta",
@@ -7826,6 +7986,16 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
             <label className="mt-4 block">
               <span className="text-sm font-black text-[#0F4036]">Pickup name</span>
               <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} className="mt-2 w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15" />
+            </label>
+            <label className="mt-3 block">
+              <span className="text-sm font-black text-[#0F4036]">Email confirmation</span>
+              <input
+                type="email"
+                value={customerEmail}
+                onChange={(event) => setCustomerEmail(event.target.value)}
+                placeholder="you@email.com"
+                className="mt-2 w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 font-bold outline-none focus:border-[#CA862B] focus:ring-4 focus:ring-[#CA862B]/15"
+              />
             </label>
             <label className="mt-3 block">
               <span className="text-sm font-black text-[#0F4036]">Pickup time</span>
@@ -8560,6 +8730,11 @@ function DeveloperDiaryDashboard() {
                         <p>
                           <strong>Shop:</strong>{" "}
                           {[request.business_type, request.location].filter(Boolean).join(" - ")}
+                        </p>
+                      ) : null}
+                      {request.starter_theme ? (
+                        <p>
+                          <strong>Theme:</strong> {request.starter_theme}
                         </p>
                       ) : null}
                       {formatDeveloperList(request.screen_needs) ? (
