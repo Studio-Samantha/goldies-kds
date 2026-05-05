@@ -391,8 +391,8 @@ const RELEASE_NOTES = [
     date: "Previous build",
     summary: "Added average drink making time.",
     items: [
-      "The top dashboard now shows Avg Drink Time for completed drink tickets.",
-      "The backend records KDS status taps to measure making-to-completed time.",
+      "The top dashboard now shows Avg Drink Time for drink orders timed at the bar.",
+      "The backend records KDS status taps to measure Making to Ready time.",
     ],
   },
   {
@@ -4999,7 +4999,7 @@ function OwnerReportsView({
                   Beta tools
                 </div>
                 <div className="mt-1 text-sm font-semibold leading-6 text-[#6A614F]">
-                  Owner-facing test boards for volume and future online ordering.
+                  Owner-facing boards for reviewing volume and optional future ordering tools.
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -8980,7 +8980,7 @@ export default function GoldiesKDS() {
             value={displayedDrinkMakingTime.label}
             detail={
               displayedDrinkMakingTime.sampleSize
-                ? `${displayedDrinkMakingTime.sampleSize} ready samples today`
+                ? `${displayedDrinkMakingTime.sampleSize} drink orders timed today`
                 : "Starts after first ready drink"
             }
             onClick={() => setShowDrinkTimeStats((current) => !current)}
