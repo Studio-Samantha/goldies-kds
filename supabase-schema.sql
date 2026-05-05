@@ -18,6 +18,9 @@ alter table public.kds_orders
 alter table public.kds_orders
   add column if not exists completed_at timestamptz;
 
+alter table public.kds_orders
+  add column if not exists updated_at timestamptz not null default now();
+
 create table if not exists public.kds_order_items (
   id bigserial primary key,
   order_id text not null references public.kds_orders(square_order_id) on delete cascade,

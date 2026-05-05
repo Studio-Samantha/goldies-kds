@@ -51,6 +51,7 @@ const VALID_DINING_OPTIONS = new Set([
 const SQUARE_SYNC_INTERVAL_MS = 30 * 1000;
 const SQUARE_HEALTH_CHECK_INTERVAL_MS = 30 * 1000;
 const SQUARE_HEALTH_ALERT_COOLDOWN_MS = 15 * 60 * 1000;
+const READY_AUTO_COMPLETE_MS = 2 * 60 * 1000;
 const SESSION_COOKIE_NAME = "goldies_kds_session";
 const OWNER_SESSION_COOKIE_NAME = "goldies_owner_session";
 const SESSION_MAX_AGE_MS = 1000 * 60 * 60 * 12;
@@ -1404,6 +1405,10 @@ function getStatusEvents(rawOrder) {
     .sort((a, b) => a.at - b.at);
 }
 
+function isCompletedStatus(status) {
+  return status === "completed" || status === "done";
+}
+
 function formatDurationSeconds(seconds) {
   if (!Number.isFinite(seconds) || seconds <= 0) return "Collecting";
 
@@ -1413,6 +1418,81 @@ function formatDurationSeconds(seconds) {
 
   if (mins < 1) return `${secs}s`;
   return `${mins}m ${String(secs).padStart(2, "0")}s`;
+}
+
+function summarizeDurationSamples(samples = []) {
+  const durations = samples
+    .map((sample) => Number(sample.durationMs))
+    .filter((duration) => Number.isFinite(duration) && duration > 0);
+  const averageSeconds = durations.length
+    ? Math.round(
+        durations.reduce((sum, duration) => sum + duration, 0) /
+          durations.length /
+          1000
+      )
+    : 0;
+
+  return {
+    averageSeconds,
+    label: formatDurationSeconds(averageSeconds),
+    sampleSize: durations.length,
+  };
+}
+
+function formatHourLabel(hour) {
+  const normalized = ((Number(hour) || 0) + 24) % 24;
+  const suffix = normalized >= 12 ? "PM" : "AM";
+  const display = normalized % 12 || 12;
+  return `${display} ${suffix}`;
+}
+
+function getDurationBreakdowns(samples = []) {
+  const byHour = new Map();
+  const byDrinkName = new Map();
+
+  for (const sample of samples) {
+    const completedAt = Number(sample.completedAt || 0);
+    if (Number.isFinite(completedAt) && completedAt > 0) {
+      const hour = getShopDateParts(new Date(completedAt)).hour;
+      const existing = byHour.get(hour) || [];
+      existing.push(sample);
+      byHour.set(hour, existing);
+    }
+
+    for (const item of sample.items || []) {
+      const name = cleanOrderText(item.name, 160);
+      if (!name) continue;
+      const qty = Math.max(Number(item.qty || item.quantity || 1) || 1, 1);
+      const existing = byDrinkName.get(name) || [];
+      for (let i = 0; i < qty; i += 1) {
+        existing.push(sample);
+      }
+      byDrinkName.set(name, existing);
+    }
+  }
+
+  return {
+    byHour: [...byHour.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([hour, hourSamples]) => ({
+        hour,
+        hourLabel: formatHourLabel(hour),
+        ...summarizeDurationSamples(hourSamples),
+      })),
+    byDrinkName: [...byDrinkName.entries()]
+      .map(([name, drinkSamples]) => ({
+        name,
+        ...summarizeDurationSamples(drinkSamples),
+      }))
+      .filter((item) => item.sampleSize > 0)
+      .sort(
+        (a, b) =>
+          b.sampleSize - a.sampleSize ||
+          b.averageSeconds - a.averageSeconds ||
+          a.name.localeCompare(b.name)
+      )
+      .slice(0, 20),
+  };
 }
 
 function getMoneyAmountCents(money) {
@@ -2615,7 +2695,8 @@ function ticketFromDb(order, items = []) {
     customerName,
     employeeName: order.employee_name || order.raw_order?.employeeName || "",
     createdAt: new Date(order.created_at).getTime(),
-    completedAt: order.updated_at ? new Date(order.updated_at).getTime() : null,
+    updatedAt: order.updated_at ? new Date(order.updated_at).getTime() : null,
+    completedAt: order.completed_at ? new Date(order.completed_at).getTime() : null,
     source: order.source || getSquareOrderSourceLabel(order.raw_order || {}),
     pickupDueTime: getSquarePickupDueTime(order.raw_order || {}),
     status: sanitizeStatus(order.status),
@@ -2735,6 +2816,7 @@ async function getActiveTickets() {
   if (!supabase) return getLocalActiveTickets();
 
   await syncRecentSquareOrders();
+  await autoCompleteStaleReadyTickets();
 
   const { data: orders, error: orderError } = await supabase
     .from("kds_orders")
@@ -2777,6 +2859,7 @@ async function setTicketStatus(id, status) {
   const updates = {
     status: sanitizedStatus,
     updated_at: statusUpdatedAt,
+    completed_at: isCompletedStatus(sanitizedStatus) ? statusUpdatedAt : null,
   };
 
   const { data: existingOrder, error: existingError } = await supabase
@@ -2813,6 +2896,33 @@ async function setTicketStatus(id, status) {
   }
 
   return sanitizedStatus;
+}
+
+async function autoCompleteStaleReadyTickets() {
+  if (!supabase) return;
+
+  const cutoff = new Date(Date.now() - READY_AUTO_COMPLETE_MS).toISOString();
+  const { data: staleReadyOrders, error } = await supabase
+    .from("kds_orders")
+    .select("square_order_id")
+    .eq("status", "ready")
+    .lte("updated_at", cutoff)
+    .limit(20);
+
+  if (error) throw error;
+  if (!staleReadyOrders?.length) return;
+
+  for (const order of staleReadyOrders) {
+    try {
+      const updatedStatus = await setTicketStatus(order.square_order_id, "completed");
+      await updateSquareOrderFulfillment(order.square_order_id, updatedStatus);
+    } catch (error) {
+      console.error(
+        `Error auto-completing ready ticket ${order.square_order_id}:`,
+        error.message
+      );
+    }
+  }
 }
 
 async function setTicketItemDone(id, itemKey, done) {
@@ -3258,10 +3368,35 @@ function getMakingDurationFromEvents(events, start, end) {
       continue;
     }
 
-    if ((event.status === "completed" || event.status === "done") && startedAt) {
+    if ((event.status === "ready" || isCompletedStatus(event.status)) && startedAt) {
       if (event.at < start.getTime() || event.at > end.getTime()) return null;
       const durationMs = event.at - startedAt;
       return durationMs > 0 ? durationMs : null;
+    }
+  }
+
+  return null;
+}
+
+function getMakingDurationSampleFromEvents(events, start, end) {
+  let startedAt = null;
+
+  for (const event of events) {
+    if (event.status === "making") {
+      startedAt = event.at;
+      continue;
+    }
+
+    if ((event.status === "ready" || isCompletedStatus(event.status)) && startedAt) {
+      if (event.at < start.getTime() || event.at > end.getTime()) return null;
+      const durationMs = event.at - startedAt;
+      return durationMs > 0
+        ? {
+            durationMs,
+            startedAt,
+            completedAt: event.at,
+          }
+        : null;
     }
   }
 
@@ -3273,29 +3408,28 @@ async function getDrinkMakingTimeReport(range = "today") {
   const end = getRangeEnd(range);
 
   if (!supabase) {
-    const durations = tickets
+    const samples = tickets
       .filter((ticket) => ticketHasDrinkItem(ticket))
-      .map((ticket) =>
-        getMakingDurationFromEvents(
+      .map((ticket) => {
+        const sample = getMakingDurationSampleFromEvents(
           getStatusEvents(ticket.rawOrder || ticket.raw_order || {}),
           start,
           end
-        )
-      )
-      .filter((duration) => Number.isFinite(duration));
-    const averageSeconds = durations.length
-      ? Math.round(
-          durations.reduce((sum, duration) => sum + duration, 0) /
-            durations.length /
-            1000
-        )
-      : 0;
+        );
+        return sample
+          ? {
+              ...sample,
+              items: getDisplayDrinkItems(ticket),
+            }
+          : null;
+      })
+      .filter(Boolean);
+    const summary = summarizeDurationSamples(samples);
 
     return {
-      averageSeconds,
-      label: formatDurationSeconds(averageSeconds),
-      sampleSize: durations.length,
+      ...summary,
       range,
+      ...getDurationBreakdowns(samples),
     };
   }
 
@@ -3307,7 +3441,14 @@ async function getDrinkMakingTimeReport(range = "today") {
 
   if (orderError) throw orderError;
   if (!orders?.length) {
-    return { averageSeconds: 0, label: "Collecting", sampleSize: 0, range };
+    return {
+      averageSeconds: 0,
+      label: "Collecting",
+      sampleSize: 0,
+      range,
+      byHour: [],
+      byDrinkName: [],
+    };
   }
 
   const orderIds = orders.map((order) => order.square_order_id);
@@ -3318,31 +3459,42 @@ async function getDrinkMakingTimeReport(range = "today") {
 
   if (itemsError) throw itemsError;
 
-  const drinkOrderIds = new Set();
+  const drinkItemsByOrderId = new Map();
   for (const item of items || []) {
     const category = getItemDrinkCategory(item);
-    if (category) drinkOrderIds.add(item.order_id);
+    if (!category) continue;
+    const existing = drinkItemsByOrderId.get(item.order_id) || [];
+    existing.push({
+      name: item.name,
+      qty: item.quantity || 1,
+      category,
+    });
+    drinkItemsByOrderId.set(item.order_id, existing);
   }
 
-  const durations = orders
-    .filter((order) => drinkOrderIds.has(order.square_order_id))
-    .map((order) =>
-      getMakingDurationFromEvents(getStatusEvents(order.raw_order), start, end)
-    )
-    .filter((duration) => Number.isFinite(duration));
-  const averageSeconds = durations.length
-    ? Math.round(
-        durations.reduce((sum, duration) => sum + duration, 0) /
-          durations.length /
-          1000
-      )
-    : 0;
+  const samples = orders
+    .filter((order) => drinkItemsByOrderId.has(order.square_order_id))
+    .map((order) => {
+      const sample = getMakingDurationSampleFromEvents(
+        getStatusEvents(order.raw_order),
+        start,
+        end
+      );
+      return sample
+        ? {
+            ...sample,
+            orderId: order.square_order_id,
+            items: drinkItemsByOrderId.get(order.square_order_id) || [],
+          }
+        : null;
+    })
+    .filter(Boolean);
+  const summary = summarizeDurationSamples(samples);
 
   return {
-    averageSeconds,
-    label: formatDurationSeconds(averageSeconds),
-    sampleSize: durations.length,
+    ...summary,
     range,
+    ...getDurationBreakdowns(samples),
   };
 }
 
@@ -4506,7 +4658,7 @@ app.get("/api/owner/reports/drink-revenue", requireOwnerAuth, async (req, res) =
 
 app.get("/api/owner/reports/drink-making-time", requireOwnerAuth, async (req, res) => {
   try {
-    const report = await getDrinkMakingTimeReport("today");
+    const report = await getDrinkMakingTimeReport(req.query.range || "today");
 
     res.json(report);
   } catch (error) {
@@ -4793,18 +4945,28 @@ app.get("/api/tickets/completed", requireKdsAuth, async (req, res) => {
   }
 });
 
-app.get("/api/customer-insights", requireKdsOrOwnerAuth, async (_req, res) => {
+app.get("/api/customer-insights", requireKdsOrOwnerAuth, async (req, res) => {
   try {
     if (!supabase) return res.json({ insights: [] });
 
-    const { data, error } = await supabase
+    const range = String(req.query.range || "today").toLowerCase();
+    const limit = Math.min(Number.parseInt(req.query.limit, 10) || 12, 100);
+    let query = supabase
       .from("kds_customer_insights")
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(12);
+      .limit(limit);
+
+    if (range !== "all") {
+      const start = getRangeStart("today");
+      const end = getRangeEnd("today");
+      query = query.gte("created_at", start.toISOString()).lte("created_at", end.toISOString());
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
-    res.json({ insights: data || [] });
+    res.json({ insights: data || [], range });
   } catch (error) {
     if (customerInsightsTableMissing(error)) {
       return res.json({

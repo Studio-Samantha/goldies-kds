@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.9.4";
+const APP_VERSION = "v1.9.5";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -24,14 +24,29 @@ const DAILY_UPDATE_NOTICE = {
   eyebrow: "KDS update",
   title: "What changed today",
   message:
-    "Online Ordering Beta now separates customer choices more cleanly.",
+    "Ready orders, Orders Up, and customer notes got cleaned up.",
   note:
-    "Temperature and size choices sit outside Drink additions, duplicate add-ons are cleaned up, Online Orders only shows online pickup orders, and Orders Up labels Online versus In person.",
+    "Ready orders now clear after a short handoff window, Orders Up has a pickup button, customer insights reset to today's notes on the dashboard, and average drink time now measures Making to Ready.",
 };
 const RELEASE_NOTES = [
   {
-    version: "v1.9.4",
+    version: "v1.9.5",
     date: "Current build",
+    summary: "Cleaned up daily notes and pickup communication.",
+    items: [
+      "Customer insights on the dashboard now behave like daily KDS data and only show notes from today.",
+      "Older customer insight notes remain archived in Supabase for owner review.",
+      "Orders Up now gives customers a clear pickup button when their ready order is still on the board.",
+      "Ready orders are automatically cleared after two minutes so they do not sit on the board all day.",
+      "Average drink time now measures the making-to-ready workflow instead of waiting for pickup completion.",
+      "Average drink time can now expand into hourly, range, and drink-name timing breakdowns.",
+      "Focus Board now has a fast Order complete action for making tickets.",
+      "Retail-only tickets in order lookup now read Retail items only instead of showing New.",
+    ],
+  },
+  {
+    version: "v1.9.4",
+    date: "Previous build",
     summary: "Improved live display names and always-on display behavior.",
     items: [
       "KDS and Orders Up now use a customer name from item notes when Square does not provide a customer name.",
@@ -2184,6 +2199,19 @@ function TicketCard({
         className: "bg-[#0F4036] text-white hover:bg-[#0b352d]",
       },
     ];
+  } else if (ticket.status === "making") {
+    actions = [
+      {
+        label: "Ready",
+        status: "ready",
+        className: "bg-[#0F4036] text-white hover:bg-[#0b352d]",
+      },
+      {
+        label: "Order complete",
+        status: "completed",
+        className: "bg-[#111111] text-white hover:bg-black",
+      },
+    ];
   } else if (ticket.status === "ready") {
     if (ticketHasDrinks) {
       actions = [
@@ -2438,9 +2466,17 @@ function TicketCard({
   );
 }
 
-function StatCard({ label, value, detail }) {
+function StatCard({ label, value, detail, onClick, actionLabel }) {
+  const interactive = typeof onClick === "function";
+  const Element = interactive ? "button" : "div";
   return (
-    <div className="rounded-xl bg-[#FFFDF8] border border-[#CA862B]/18 p-3 shadow-sm">
+    <Element
+      type={interactive ? "button" : undefined}
+      onClick={onClick}
+      className={`rounded-xl bg-[#FFFDF8] border border-[#CA862B]/18 p-3 text-left shadow-sm ${
+        interactive ? "transition hover:border-[#CA862B]/45 hover:shadow-md" : ""
+      }`}
+    >
       <div className="text-xs uppercase tracking-wide text-[#6A614F] font-bold">
         {label}
       </div>
@@ -2450,7 +2486,12 @@ function StatCard({ label, value, detail }) {
       <div className="text-sm text-[#6A614F] mt-1">
         {detail}
       </div>
-    </div>
+      {actionLabel ? (
+        <div className="mt-2 text-xs font-black uppercase tracking-[0.14em] text-[#0F4036]">
+          {actionLabel}
+        </div>
+      ) : null}
+    </Element>
   );
 }
 
@@ -2912,7 +2953,7 @@ function CustomerInsightsPanel() {
         <div>
           <h2 className="text-xl font-black text-[#0F4036]">Customer insights</h2>
           <p className="text-sm font-semibold text-[#6A614F]">
-            Save small customer requests and menu clues for owner reports.
+            Save today's customer requests and menu clues. Older notes stay archived for owners.
           </p>
         </div>
         {status ? <div className="text-sm font-black text-[#0F4036]">{status}</div> : null}
@@ -3058,7 +3099,7 @@ function CustomerInsightsHistory() {
       try {
         setLoading(true);
         setWarning("");
-        const response = await fetch(apiUrl("/api/customer-insights"), {
+        const response = await fetch(apiUrl("/api/customer-insights?range=all&limit=60"), {
           credentials: "include",
         });
         const data = await response.json().catch(() => ({}));
@@ -3095,7 +3136,7 @@ function CustomerInsightsHistory() {
             Notes from the counter
           </h2>
           <p className="mt-1 text-sm font-semibold text-[#6A614F]">
-            Small customer requests, menu clues, and regular details saved by the team.
+            Archived customer requests, menu clues, and regular details saved by the team.
           </p>
         </div>
         <span className="rounded-full border border-[#CA862B]/18 bg-white px-3 py-1 text-xs font-black uppercase tracking-[0.14em] text-[#0F4036]">
@@ -3558,6 +3599,136 @@ function DrinkStats({ reports }) {
             </div>
           );
         })}
+      </div>
+    </section>
+  );
+}
+
+function DrinkTimeStatsPanel({ reports, onClose }) {
+  const [selectedRange, setSelectedRange] = useState("today");
+  const selectedReport = reports[selectedRange] || {};
+  const selectedLabel =
+    REPORT_RANGES.find((range) => range.key === selectedRange)?.label || "Today";
+
+  return (
+    <section className="rounded-2xl border border-[#0F4036]/12 bg-[#FFFDF8] p-4 shadow-sm">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <div className="text-xs font-black uppercase tracking-[0.16em] text-[#8B5A1D]">
+            Timing report
+          </div>
+          <h2 className="mt-1 text-2xl font-black text-[#0F4036]">
+            Average drink time
+          </h2>
+          <p className="mt-1 max-w-3xl text-sm font-semibold text-[#6A614F]">
+            Timing now measures from Making to Ready, so stale pickup status does not inflate the bar workflow read. Drink-name timing is estimated from order-level timing when a ticket contains that drink.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+        >
+          Close
+        </button>
+      </div>
+
+      <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+        {REPORT_RANGES.map((range) => {
+          const report = reports[range.key] || {};
+          const active = selectedRange === range.key;
+          return (
+            <button
+              key={range.key}
+              type="button"
+              onClick={() => setSelectedRange(range.key)}
+              className={`min-w-[135px] rounded-xl border px-3 py-2 text-left transition ${
+                active
+                  ? "border-[#0F4036] bg-[#0F4036] text-white"
+                  : "border-[#CA862B]/18 bg-white text-[#0F4036] hover:bg-[#EEE0C5]/40"
+              }`}
+            >
+              <div className="text-xs font-black uppercase tracking-[0.12em] opacity-75">
+                {range.label}
+              </div>
+              <div className="mt-1 text-xl font-black">
+                {report.label || "Collecting"}
+              </div>
+              <div className="text-xs font-bold opacity-75">
+                {report.sampleSize || 0} samples
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-4 grid gap-3 lg:grid-cols-[0.85fr_1.15fr]">
+        <div className="rounded-2xl border border-[#CA862B]/14 bg-white p-4">
+          <div className="text-xs font-black uppercase tracking-[0.14em] text-[#8B5A1D]">
+            {selectedLabel}
+          </div>
+          <div className="mt-2 text-4xl font-black text-[#111111]">
+            {selectedReport.label || "Collecting"}
+          </div>
+          <div className="mt-1 text-sm font-bold text-[#6A614F]">
+            {selectedReport.sampleSize || 0} completed drink-order samples
+          </div>
+          <div className="mt-4 rounded-xl border border-[#CA862B]/14 bg-[#EEE0C5]/45 px-3 py-2 text-sm font-semibold text-[#6A614F]">
+            The last two days had orders sitting in Ready too long, so use this report as a cleaner baseline going forward.
+          </div>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="rounded-2xl border border-[#CA862B]/14 bg-white p-4">
+            <div className="text-xs font-black uppercase tracking-[0.14em] text-[#8B5A1D]">
+              By hour
+            </div>
+            <div className="mt-3 max-h-72 space-y-2 overflow-y-auto pr-1">
+              {selectedReport.byHour?.length ? (
+                selectedReport.byHour.map((hour) => (
+                  <div key={hour.hour} className="rounded-xl border border-[#0F4036]/8 bg-[#FFFDF8] px-3 py-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="font-black text-[#111111]">{hour.hourLabel}</span>
+                      <span className="font-black text-[#0F4036]">{hour.label}</span>
+                    </div>
+                    <div className="mt-1 text-xs font-bold text-[#6A614F]">
+                      {hour.sampleSize} samples
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-xl border border-dashed border-[#CA862B]/22 bg-[#FFFDF8] p-4 text-sm font-semibold text-[#6A614F]">
+                  No hourly timing samples yet.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[#CA862B]/14 bg-white p-4">
+            <div className="text-xs font-black uppercase tracking-[0.14em] text-[#8B5A1D]">
+              By drink name
+            </div>
+            <div className="mt-3 max-h-72 space-y-2 overflow-y-auto pr-1">
+              {selectedReport.byDrinkName?.length ? (
+                selectedReport.byDrinkName.map((drink) => (
+                  <div key={drink.name} className="rounded-xl border border-[#0F4036]/8 bg-[#FFFDF8] px-3 py-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="truncate font-black text-[#111111]">{drink.name}</span>
+                      <span className="shrink-0 font-black text-[#0F4036]">{drink.label}</span>
+                    </div>
+                    <div className="mt-1 text-xs font-bold text-[#6A614F]">
+                      {drink.sampleSize} samples
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-xl border border-dashed border-[#CA862B]/22 bg-[#FFFDF8] p-4 text-sm font-semibold text-[#6A614F]">
+                  No drink-name timing samples yet.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -4458,6 +4629,7 @@ function OwnerReportsView({
 }) {
   const [range, setRange] = useState("today");
   const [report, setReport] = useState(null);
+  const [timingReport, setTimingReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showOwnerPasswordModal, setShowOwnerPasswordModal] = useState(false);
@@ -4480,6 +4652,18 @@ function OwnerReportsView({
     async function fetchReport() {
       if (demoMode) {
         setReport(buildDemoOwnerReport(demoTickets, range));
+        setTimingReport({
+          label: "3m 12s",
+          sampleSize: 4,
+          byHour: [
+            { hour: 9, hourLabel: "9 AM", label: "2m 48s", sampleSize: 2 },
+            { hour: 10, hourLabel: "10 AM", label: "3m 36s", sampleSize: 2 },
+          ],
+          byDrinkName: [
+            { name: "Latte", label: "3m 05s", sampleSize: 2 },
+            { name: "Cold Brew", label: "2m 10s", sampleSize: 1 },
+          ],
+        });
         setError("");
         setLoading(false);
         return;
@@ -4488,18 +4672,30 @@ function OwnerReportsView({
       try {
         setLoading(true);
         setError("");
-        const response = await fetch(
-          apiUrl(`/api/owner/reports/drink-revenue?range=${range}`),
-          { credentials: "include" }
-        );
+        const [response, timingResponse] = await Promise.all([
+          fetch(apiUrl(`/api/owner/reports/drink-revenue?range=${range}`), {
+            credentials: "include",
+          }),
+          fetch(apiUrl(`/api/owner/reports/drink-making-time?range=${range}`), {
+            credentials: "include",
+          }),
+        ]);
 
         if (!response.ok) {
           const data = await response.json().catch(() => ({}));
           throw new Error(data.error || `Report unavailable: ${response.status}`);
         }
+        if (!timingResponse.ok) {
+          const data = await timingResponse.json().catch(() => ({}));
+          throw new Error(data.error || `Timing report unavailable: ${timingResponse.status}`);
+        }
 
         const data = await response.json();
-        if (mounted) setReport(data);
+        const timingData = await timingResponse.json();
+        if (mounted) {
+          setReport(data);
+          setTimingReport(timingData);
+        }
       } catch (reportError) {
         if (mounted) setError(reportError.message || "Report unavailable");
       } finally {
@@ -4854,6 +5050,68 @@ function OwnerReportsView({
                   value={`${report?.multiDrinkOrderRate || 0}%`}
                   detail={`${report?.multiDrinkOrderCount || 0} of ${report?.orderCount || 0} individual drink orders`}
                 />
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-[#CA862B]/16 bg-white p-4 shadow-sm">
+                <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <div className="text-xs font-black uppercase tracking-[0.16em] text-[#8B5A1D]">
+                      Bar workflow timing
+                    </div>
+                    <h2 className="mt-1 text-2xl font-black text-[#0F4036]">
+                      Average drink time: {timingReport?.label || "Collecting"}
+                    </h2>
+                    <p className="mt-1 text-sm font-semibold text-[#6A614F]">
+                      Making to Ready, based on {timingReport?.sampleSize || 0} samples. Ready orders now clear after two minutes so pickup lag does not distort this read.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                  <div className="rounded-xl border border-[#0F4036]/8 bg-[#FFFDF8] p-3">
+                    <div className="text-xs font-black uppercase tracking-[0.14em] text-[#8B5A1D]">
+                      By hour
+                    </div>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                      {timingReport?.byHour?.length ? (
+                        timingReport.byHour.slice(0, 8).map((hour) => (
+                          <div key={hour.hour} className="rounded-lg bg-white px-3 py-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-black text-[#111111]">{hour.hourLabel}</span>
+                              <span className="font-black text-[#0F4036]">{hour.label}</span>
+                            </div>
+                            <div className="text-xs font-bold text-[#6A614F]">{hour.sampleSize} samples</div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-sm font-semibold text-[#6A614F]">
+                          No hourly timing samples yet.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-[#0F4036]/8 bg-[#FFFDF8] p-3">
+                    <div className="text-xs font-black uppercase tracking-[0.14em] text-[#8B5A1D]">
+                      By drink name
+                    </div>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                      {timingReport?.byDrinkName?.length ? (
+                        timingReport.byDrinkName.slice(0, 8).map((drink) => (
+                          <div key={drink.name} className="rounded-lg bg-white px-3 py-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="truncate font-black text-[#111111]">{drink.name}</span>
+                              <span className="shrink-0 font-black text-[#0F4036]">{drink.label}</span>
+                            </div>
+                            <div className="text-xs font-bold text-[#6A614F]">{drink.sampleSize} samples</div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-sm font-semibold text-[#6A614F]">
+                          No drink-name timing samples yet.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="mt-4">
@@ -5826,6 +6084,7 @@ function OrdersUpDisplay() {
   const [updatedAt, setUpdatedAt] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [completingOrderId, setCompletingOrderId] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -5876,6 +6135,53 @@ function OrdersUpDisplay() {
       clearInterval(interval);
     };
   }, [demoMode]);
+
+  async function handlePickupClick(order) {
+    if (!order?.id || completingOrderId) return;
+    if (demoMode) {
+      setOrders((current) => ({
+        making: current.making,
+        ready: current.ready.filter((entry) => entry.id !== order.id),
+        recentlyCompleted: [
+          { ...order, status: "Picked up", completedAt: new Date().toISOString() },
+          ...current.recentlyCompleted,
+        ].slice(0, 8),
+      }));
+      return;
+    }
+
+    setCompletingOrderId(order.id);
+    setError("");
+
+    try {
+      const response = await fetch(apiUrl(`/api/tickets/${order.id}/status`), {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "completed" }),
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || `Could not mark order picked up: ${response.status}`);
+      }
+
+      setOrders((current) => ({
+        making: current.making,
+        ready: current.ready.filter((entry) => entry.id !== order.id),
+        recentlyCompleted: [
+          { ...order, status: "Picked up", completedAt: new Date().toISOString() },
+          ...current.recentlyCompleted,
+        ].slice(0, 8),
+      }));
+      setUpdatedAt(new Date().toISOString());
+    } catch (pickupError) {
+      setError(pickupError.message || "Could not mark order picked up.");
+    } finally {
+      setCompletingOrderId("");
+    }
+  }
+
   const cardClass = isDark
     ? "border-white/12 bg-[#082622] shadow-[0_24px_70px_rgba(0,0,0,0.22)]"
     : "border-[#0F4036]/10 bg-white shadow-[0_24px_70px_rgba(15,64,54,0.12)]";
@@ -5922,7 +6228,7 @@ function OrdersUpDisplay() {
         </header>
         <DisplayStatus loading={loading} error={error} updatedAt={updatedAt} darkMode={isDark} />
 
-        <main className="grid flex-1 grid-cols-1 gap-3 xl:grid-cols-[0.9fr_1.1fr_0.65fr] lg:gap-4">
+        <main className="grid flex-1 grid-cols-1 gap-3 lg:grid-cols-[0.9fr_1.1fr_0.65fr] lg:gap-4">
           <section className={`overflow-hidden rounded-[18px] border sm:rounded-[24px] ${cardClass}`}>
             <div className={`flex items-end justify-between gap-3 border-b px-3 py-3 sm:px-4 sm:py-4 ${cardHeaderClass}`}>
               <div>
@@ -5972,6 +6278,9 @@ function OrdersUpDisplay() {
                 <h2 className={`mt-1 text-3xl font-semibold tracking-normal sm:text-4xl md:text-5xl ${headingClass}`}>
                   Pick up
                 </h2>
+                <p className={`mt-1 text-sm font-semibold ${mutedClass}`}>
+                  Tap your order when it is in your hands.
+                </p>
               </div>
               <div className={`rounded-full px-3 py-1.5 text-lg font-semibold sm:px-4 sm:text-xl ${isDark ? "bg-white/10 text-[#FFF7EA]" : "bg-[#0F4036]/8 text-[#0F4036]"}`}>
                 {orders.ready.length}
@@ -5983,9 +6292,21 @@ function OrdersUpDisplay() {
                 {orders.ready.map((order) => (
                   <div
                     key={order.id}
-                    className={`rounded-[16px] border p-3 shadow-[0_14px_34px_rgba(15,64,54,0.12)] sm:rounded-[20px] ${readyTileClass}`}
+                    className={`grid gap-3 rounded-[16px] border p-3 shadow-[0_14px_34px_rgba(15,64,54,0.12)] sm:rounded-[20px] ${readyTileClass}`}
                   >
                     <CustomerOrderDetails order={order} darkMode={isDark} />
+                    <button
+                      type="button"
+                      onClick={() => handlePickupClick(order)}
+                      disabled={completingOrderId === order.id}
+                      className={`min-h-[64px] rounded-[16px] px-4 py-3 text-lg font-black shadow-[0_12px_28px_rgba(15,64,54,0.16)] transition active:scale-[0.99] sm:text-xl ${
+                        isDark
+                          ? "bg-[#F3D39B] text-[#082622] disabled:bg-white/20 disabled:text-white/40"
+                          : "bg-[#0F4036] text-white disabled:bg-neutral-300"
+                      }`}
+                    >
+                      {completingOrderId === order.id ? "Clearing..." : "I picked this up"}
+                    </button>
                   </div>
                 ))}
               </div>
@@ -7424,7 +7745,9 @@ export default function GoldiesKDS() {
     sampleSize: 0,
   });
   const [drinkReports, setDrinkReports] = useState({});
+  const [drinkTimeReports, setDrinkTimeReports] = useState({});
   const [showStats, setShowStats] = useState(false);
+  const [showDrinkTimeStats, setShowDrinkTimeStats] = useState(false);
   const [showTodayCount, setShowTodayCount] = useState(false);
   const [showCompletedToday, setShowCompletedToday] = useState(false);
   const [showOrdersByDay, setShowOrdersByDay] = useState(false);
@@ -7482,6 +7805,7 @@ export default function GoldiesKDS() {
   const [defaultLookupDate] = useState(() => getLocalDateInputValue());
   function resetDashboardViews() {
     setShowStats(false);
+    setShowDrinkTimeStats(false);
     setShowTodayCount(false);
     setShowCompletedToday(false);
     setShowOrdersByDay(false);
@@ -7822,24 +8146,31 @@ export default function GoldiesKDS() {
   }, [authStatus, showCompletedToday, isTrainingMode]);
 
   useEffect(() => {
-    if (authStatus !== "authenticated" || !showStats || isTrainingMode)
+    if (
+      authStatus !== "authenticated" ||
+      (!showStats && !showDrinkTimeStats) ||
+      isTrainingMode
+    )
       return undefined;
 
     let mounted = true;
 
     async function fetchDrinkReports() {
       const reports = {};
+      const timeReports = {};
 
       await Promise.all(
         REPORT_RANGES.map(async (range) => {
-          const response = await fetch(
-            apiUrl(`/api/reports/drinks?range=${range.key}`),
-            {
+          const [response, timeResponse] = await Promise.all([
+            fetch(apiUrl(`/api/reports/drinks?range=${range.key}`), {
               credentials: "include",
-            }
-          );
+            }),
+            fetch(apiUrl(`/api/reports/drink-making-time?range=${range.key}`), {
+              credentials: "include",
+            }),
+          ]);
 
-          if (response.status === 401) {
+          if (response.status === 401 || timeResponse.status === 401) {
             setAuthStatus("login");
             return;
           }
@@ -7849,21 +8180,29 @@ export default function GoldiesKDS() {
               `Failed to fetch ${range.label} drink report: ${response.status}`
             );
           }
+          if (!timeResponse.ok) {
+            throw new Error(
+              `Failed to fetch ${range.label} drink time report: ${timeResponse.status}`
+            );
+          }
 
           reports[range.key] = await response.json();
+          timeReports[range.key] = await timeResponse.json();
         })
       );
 
-      return reports;
+      return { reports, timeReports };
     }
 
     async function refreshDrinkReports() {
       try {
-        const liveReports = await fetchDrinkReports();
+        const { reports: liveReports, timeReports: liveTimeReports } =
+          await fetchDrinkReports();
 
         if (!mounted) return;
 
         setDrinkReports(liveReports);
+        setDrinkTimeReports(liveTimeReports);
       } catch (error) {
         if (!mounted) return;
 
@@ -7879,7 +8218,7 @@ export default function GoldiesKDS() {
       mounted = false;
       clearInterval(interval);
     };
-  }, [authStatus, showStats, isTrainingMode]);
+  }, [authStatus, showStats, showDrinkTimeStats, isTrainingMode]);
 
   const displayedTickets = isTrainingMode ? trainingTickets : tickets;
   const displayedCompletedTickets = isTrainingMode
@@ -7904,6 +8243,22 @@ export default function GoldiesKDS() {
   const displayedDrinkReports = isTrainingMode
     ? buildTrainingReports(displayedTickets)
     : drinkReports;
+  const displayedDrinkTimeReports = isTrainingMode
+    ? {
+        today: {
+          label: "3m 12s",
+          sampleSize: 4,
+          byHour: [
+            { hour: 9, hourLabel: "9 AM", label: "2m 48s", sampleSize: 2 },
+            { hour: 10, hourLabel: "10 AM", label: "3m 36s", sampleSize: 2 },
+          ],
+          byDrinkName: [
+            { name: "Latte", label: "3m 05s", sampleSize: 2 },
+            { name: "Cold Brew", label: "2m 10s", sampleSize: 1 },
+          ],
+        },
+      }
+    : drinkTimeReports;
   const displayedConnectionStatus = isTrainingMode
     ? "Training mode"
     : connectionStatus;
@@ -8171,6 +8526,7 @@ export default function GoldiesKDS() {
     setDrinkCounts([]);
     setDrinkOrderCount(0);
     setDrinkReports({});
+    setDrinkTimeReports({});
     setShowPasswordModal(false);
     setPasswordError("");
     setPasswordNotice("");
@@ -8617,11 +8973,20 @@ export default function GoldiesKDS() {
             value={displayedDrinkMakingTime.label}
             detail={
               displayedDrinkMakingTime.sampleSize
-                ? `${displayedDrinkMakingTime.sampleSize} completed today`
-                : "Starts after first completed drink"
+                ? `${displayedDrinkMakingTime.sampleSize} ready samples today`
+                : "Starts after first ready drink"
             }
+            onClick={() => setShowDrinkTimeStats((current) => !current)}
+            actionLabel={showDrinkTimeStats ? "Hide timing report" : "Open timing report"}
           />
         </section>
+        )}
+
+        {!showFocusBoard && showDrinkTimeStats && (
+          <DrinkTimeStatsPanel
+            reports={displayedDrinkTimeReports}
+            onClose={() => setShowDrinkTimeStats(false)}
+          />
         )}
 
         {lastError && (
