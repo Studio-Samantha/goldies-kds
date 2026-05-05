@@ -1451,9 +1451,9 @@ function getDurationBreakdowns(samples = []) {
   const byDrinkName = new Map();
 
   for (const sample of samples) {
-    const completedAt = Number(sample.completedAt || 0);
-    if (Number.isFinite(completedAt) && completedAt > 0) {
-      const hour = getShopDateParts(new Date(completedAt)).hour;
+    const readyAt = Number(sample.readyAt || sample.completedAt || 0);
+    if (Number.isFinite(readyAt) && readyAt > 0) {
+      const hour = getShopDateParts(new Date(readyAt)).hour;
       const existing = byHour.get(hour) || [];
       existing.push(sample);
       byHour.set(hour, existing);
@@ -3360,26 +3360,12 @@ function getDisplayDrinkItems(ticket) {
 }
 
 function getMakingDurationFromEvents(events, start, end) {
-  let startedAt = null;
-
-  for (const event of events) {
-    if (event.status === "making") {
-      startedAt = event.at;
-      continue;
-    }
-
-    if ((event.status === "ready" || isCompletedStatus(event.status)) && startedAt) {
-      if (event.at < start.getTime() || event.at > end.getTime()) return null;
-      const durationMs = event.at - startedAt;
-      return durationMs > 0 ? durationMs : null;
-    }
-  }
-
-  return null;
+  return getMakingDurationSampleFromEvents(events, start, end)?.durationMs || null;
 }
 
 function getMakingDurationSampleFromEvents(events, start, end) {
   let startedAt = null;
+  let fallbackCompletedAt = null;
 
   for (const event of events) {
     if (event.status === "making") {
@@ -3387,20 +3373,38 @@ function getMakingDurationSampleFromEvents(events, start, end) {
       continue;
     }
 
-    if ((event.status === "ready" || isCompletedStatus(event.status)) && startedAt) {
+    if (!startedAt) continue;
+
+    if (event.status === "ready") {
       if (event.at < start.getTime() || event.at > end.getTime()) return null;
       const durationMs = event.at - startedAt;
       return durationMs > 0
         ? {
             durationMs,
             startedAt,
+            readyAt: event.at,
             completedAt: event.at,
           }
         : null;
     }
+
+    if (isCompletedStatus(event.status) && !fallbackCompletedAt) {
+      fallbackCompletedAt = event.at;
+    }
   }
 
-  return null;
+  if (!startedAt || !fallbackCompletedAt) return null;
+  if (fallbackCompletedAt < start.getTime() || fallbackCompletedAt > end.getTime()) return null;
+
+  const durationMs = fallbackCompletedAt - startedAt;
+  return durationMs > 0
+    ? {
+        durationMs,
+        startedAt,
+        readyAt: null,
+        completedAt: fallbackCompletedAt,
+      }
+    : null;
 }
 
 async function getDrinkMakingTimeReport(range = "today") {

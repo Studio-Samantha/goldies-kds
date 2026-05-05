@@ -21,12 +21,12 @@ const SETTINGS_HELP_TEXT =
 const DINING_OPTIONS = ["For here", "To go", "Pickup", "Delivery", "Drive thru"];
 const DAILY_UPDATE_NOTICE = {
   id: APP_VERSION,
-  eyebrow: "KDS update",
-  title: "What changed today",
+  eyebrow: "Today on the KDS",
+  title: "Start with a clean handoff",
   message:
-    "Ready orders, Orders Up, and customer notes got cleaned up.",
+    "Ready orders now clear after a short pickup window, and customer notes on the dashboard show today only.",
   note:
-    "Ready orders now clear after a short handoff window, Orders Up has a pickup button, customer insights reset to today's notes on the dashboard, and average drink time now measures Making to Ready.",
+    "For service today: use Ready as the handoff, use Order complete when a drink does not need the customer board, and glance at Avg Drink Time later to see whether the bar stayed smooth during the rush.",
 };
 const RELEASE_NOTES = [
   {
@@ -855,16 +855,21 @@ function CelebrationDialog({ open, onClose, celebration }) {
         <div className="px-5 py-5 space-y-4 text-[#2D261C]">
           <div className="rounded-2xl border border-[#CA862B]/18 bg-[#EEE0C5]/45 px-4 py-3">
             <div className="text-sm font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
-              Today&apos;s message
+              What changed
             </div>
             <p className="mt-2 text-base leading-7">
               {celebration.message}
             </p>
           </div>
 
-          <p className="text-base leading-7">
-            {celebration.note}
-          </p>
+          <div className="rounded-2xl border border-[#0F4036]/10 bg-white px-4 py-3">
+            <div className="text-sm font-black uppercase tracking-[0.18em] text-[#0F4036]">
+              Useful for today
+            </div>
+            <p className="mt-2 text-base leading-7">
+              {celebration.note}
+            </p>
+          </div>
 
           <div className="flex justify-end pt-2">
             <button
@@ -2825,10 +2830,10 @@ function CoffeeShopAdvice({ report, range }) {
           Coffee Shop Guidance
         </div>
         <h2 className="mt-1 text-xl font-black text-[#0F4036]">
-          Expert Read for {rangeLabel}
+          What I&apos;d watch for {rangeLabel}
         </h2>
         <p className="mt-1 text-sm font-semibold text-[#6A614F]">
-          Rotates daily, based on today&apos;s date and this report&apos;s numbers.
+          Plain-language cues for prep, staffing, and the bar rhythm.
         </p>
       </div>
 
@@ -3623,7 +3628,7 @@ function DrinkTimeStatsPanel({ reports, onClose }) {
             Average drink time
           </h2>
           <p className="mt-1 max-w-3xl text-sm font-semibold text-[#6A614F]">
-            Timing now measures from Making to Ready, so stale pickup status does not inflate the bar workflow read. Drink-name timing is estimated from order-level timing when a ticket contains that drink.
+              Timing now follows the bar from Making to Ready, so pickup lag does not make the team look slower than they were. Drink-name timing is estimated from tickets that included that drink.
           </p>
         </div>
         <button
@@ -3657,7 +3662,7 @@ function DrinkTimeStatsPanel({ reports, onClose }) {
                 {report.label || "Collecting"}
               </div>
               <div className="text-xs font-bold opacity-75">
-                {report.sampleSize || 0} samples
+                {report.sampleSize || 0} orders timed
               </div>
             </button>
           );
@@ -3673,10 +3678,10 @@ function DrinkTimeStatsPanel({ reports, onClose }) {
             {selectedReport.label || "Collecting"}
           </div>
           <div className="mt-1 text-sm font-bold text-[#6A614F]">
-            {selectedReport.sampleSize || 0} completed drink-order samples
+            {selectedReport.sampleSize || 0} drink orders timed
           </div>
           <div className="mt-4 rounded-xl border border-[#CA862B]/14 bg-[#EEE0C5]/45 px-3 py-2 text-sm font-semibold text-[#6A614F]">
-            The last two days had orders sitting in Ready too long, so use this report as a cleaner baseline going forward.
+            The last two days had orders sitting in Ready too long. Use today forward as the cleaner baseline for how the bar is really moving.
           </div>
         </div>
 
@@ -3694,7 +3699,7 @@ function DrinkTimeStatsPanel({ reports, onClose }) {
                       <span className="font-black text-[#0F4036]">{hour.label}</span>
                     </div>
                     <div className="mt-1 text-xs font-bold text-[#6A614F]">
-                      {hour.sampleSize} samples
+                      {hour.sampleSize} orders timed
                     </div>
                   </div>
                 ))
@@ -3719,7 +3724,7 @@ function DrinkTimeStatsPanel({ reports, onClose }) {
                       <span className="shrink-0 font-black text-[#0F4036]">{drink.label}</span>
                     </div>
                     <div className="mt-1 text-xs font-bold text-[#6A614F]">
-                      {drink.sampleSize} samples
+                      {drink.sampleSize} orders timed
                     </div>
                   </div>
                 ))
@@ -4380,7 +4385,7 @@ function buildOwnerSnapshotAnalysis(report, rangeKey) {
           body: "Confirm live Square orders are appearing correctly.",
         },
         {
-          title: "Owner action",
+          title: "What I&apos;d do next",
           body: serviceWindow?.action || copy.action,
         },
       ],
@@ -4423,7 +4428,7 @@ function buildOwnerSnapshotAnalysis(report, rangeKey) {
         : "Most drink tickets are currently single-drink orders.";
   const revenueRead =
     revenueCents >= 50000
-      ? "Drink revenue is building into a meaningful management signal for this range."
+      ? "Drink sales are strong enough to plan staffing and prep around this range."
       : revenueCents >= 15000
         ? "Drink revenue is active enough to watch category mix and average ticket value."
         : "Drink revenue is still early in this range, so treat this read as directional.";
@@ -4458,7 +4463,7 @@ function buildOwnerSnapshotAnalysis(report, rangeKey) {
     last7: `Short-term trend: this week is averaging ${dailyOrders} drink orders and ${dailyRevenue} in drink revenue per day. ${revenueRead} Compare this to staffing and prep for the current week.`,
     last30: `Monthly trend: the last 30 days average ${dailyOrders} drink orders and ${dailyRevenue} in drink revenue per day. ${averageOrderRead} This is the better range for menu and promo decisions.`,
     thisMonth: `Month-to-date pace: this month is averaging ${dailyOrders} drink orders and ${dailyRevenue} in drink revenue per day. ${revenueRead} Watch whether the pace is improving or fading before month end.`,
-    thisYear: `Long-term signal: year-to-date drink revenue is ${report?.totalRevenue || "$0.00"} before tax across ${drinkUnits} units. ${averageOrderRead} Use this for bigger menu, staffing, and category direction.`,
+    thisYear: `Long-term read: year-to-date drink revenue is ${report?.totalRevenue || "$0.00"} before tax across ${drinkUnits} units. ${averageOrderRead} Use this for bigger menu, staffing, and category direction.`,
   };
   const ownerActionByRange = {
     today:
@@ -4496,11 +4501,11 @@ function buildOwnerSnapshotAnalysis(report, rangeKey) {
         body: unitRead,
       },
       {
-        title: "Money signal",
+        title: "Sales read",
         body: moneySignalByRange[rangeKey] || `${revenueRead} ${averageOrderRead}`,
       },
       {
-        title: "Owner action",
+        title: "What I&apos;d do next",
         body: `${ownerActionByRange[rangeKey] || copy.action} ${volumeAction}`,
       },
     ],
@@ -4745,9 +4750,9 @@ function OwnerReportsView({
     const snapshot = buildOwnerSnapshotAnalysis(report, range);
     const advice = buildCoffeeShopAdvice(report, range);
     const moneySignal =
-      snapshot.watch.find((item) => item.title === "Money signal")?.body || "";
+      snapshot.watch.find((item) => item.title === "Sales read")?.body || "";
     const ownerAction =
-      snapshot.watch.find((item) => item.title === "Owner action")?.body || "";
+      snapshot.watch.find((item) => item.title === "What I&apos;d do next")?.body || "";
 
     try {
       setSnapshotSaving(true);
@@ -5064,7 +5069,7 @@ function OwnerReportsView({
                       Average drink time: {timingReport?.label || "Collecting"}
                     </h2>
                     <p className="mt-1 text-sm font-semibold text-[#6A614F]">
-                      Making to Ready, based on {timingReport?.sampleSize || 0} samples. Ready orders now clear after two minutes so pickup lag does not distort this read.
+                      Making to Ready, based on {timingReport?.sampleSize || 0} drink orders timed. Ready orders now clear after two minutes so pickup lag does not make the bar look slower than it was.
                     </p>
                   </div>
                 </div>
@@ -5081,7 +5086,7 @@ function OwnerReportsView({
                               <span className="font-black text-[#111111]">{hour.hourLabel}</span>
                               <span className="font-black text-[#0F4036]">{hour.label}</span>
                             </div>
-                            <div className="text-xs font-bold text-[#6A614F]">{hour.sampleSize} samples</div>
+                            <div className="text-xs font-bold text-[#6A614F]">{hour.sampleSize} orders timed</div>
                           </div>
                         ))
                       ) : (
@@ -5103,7 +5108,7 @@ function OwnerReportsView({
                               <span className="truncate font-black text-[#111111]">{drink.name}</span>
                               <span className="shrink-0 font-black text-[#0F4036]">{drink.label}</span>
                             </div>
-                            <div className="text-xs font-bold text-[#6A614F]">{drink.sampleSize} samples</div>
+                            <div className="text-xs font-bold text-[#6A614F]">{drink.sampleSize} orders timed</div>
                           </div>
                         ))
                       ) : (
