@@ -71,6 +71,8 @@ const DRINKFLOW_SQUARE_APPLICATION_SECRET =
 const DRINKFLOW_SQUARE_REDIRECT_URL =
   process.env.DRINKFLOW_SQUARE_REDIRECT_URL ||
   "https://goldieskds.com/api/drinkflow/square/oauth/callback";
+const DRINKFLOW_SQUARE_OAUTH_SCOPE =
+  "MERCHANT_PROFILE_READ ORDERS_READ ORDERS_WRITE ITEMS_READ PAYMENTS_READ PAYMENTS_WRITE";
 const SQUARE_API_VERSION = process.env.SQUARE_API_VERSION || "2025-04-16";
 const ONLINE_ORDERING_CATEGORY_NAMES = (
   process.env.ONLINE_ORDERING_CATEGORY_NAMES || "Coffee,Not Coffee,Smoothies"
@@ -152,6 +154,15 @@ function getAlertEmailConfigDiagnostics() {
     emailFromSet: Boolean(ALERT_EMAIL_FROM),
     fromResolvedToUser: Boolean(ALERT_SMTP_USER && ALERT_EMAIL_FROM === ALERT_SMTP_USER),
     fromResolvedToTo: Boolean(ALERT_EMAIL_TO && ALERT_EMAIL_FROM === ALERT_EMAIL_TO),
+  };
+}
+
+function getDrinkFlowSquareOAuthDiagnostics() {
+  return {
+    applicationIdSet: Boolean(DRINKFLOW_SQUARE_APPLICATION_ID),
+    applicationSecretSet: Boolean(DRINKFLOW_SQUARE_APPLICATION_SECRET),
+    redirectUrlSet: Boolean(DRINKFLOW_SQUARE_REDIRECT_URL),
+    redirectUrl: DRINKFLOW_SQUARE_REDIRECT_URL,
   };
 }
 
@@ -5318,7 +5329,7 @@ app.get("/api/drinkflow/square/oauth/start", (req, res) => {
     return res.status(503).json({
       error:
         "Square OAuth is not configured yet. Add DRINKFLOW_SQUARE_APPLICATION_ID, DRINKFLOW_SQUARE_APPLICATION_SECRET, and DRINKFLOW_SQUARE_REDIRECT_URL in Render.",
-      redirectUrl: DRINKFLOW_SQUARE_REDIRECT_URL,
+      diagnostics: getDrinkFlowSquareOAuthDiagnostics(),
     });
   }
 
@@ -5330,7 +5341,7 @@ app.get("/api/drinkflow/square/oauth/start", (req, res) => {
   ).toString("base64url");
   const params = new URLSearchParams({
     client_id: DRINKFLOW_SQUARE_APPLICATION_ID,
-    scope: "MERCHANT_PROFILE_READ ORDERS_READ ITEMS_READ PAYMENTS_READ",
+    scope: DRINKFLOW_SQUARE_OAUTH_SCOPE,
     session: "false",
     state,
     redirect_uri: DRINKFLOW_SQUARE_REDIRECT_URL,
@@ -5344,7 +5355,7 @@ app.get("/api/developer/square/oauth/start", requireDeveloperAuth, (req, res) =>
     return res.status(503).json({
       error:
         "Square OAuth is not configured yet. Add DRINKFLOW_SQUARE_APPLICATION_ID, DRINKFLOW_SQUARE_APPLICATION_SECRET, and DRINKFLOW_SQUARE_REDIRECT_URL in Render.",
-      redirectUrl: DRINKFLOW_SQUARE_REDIRECT_URL,
+      diagnostics: getDrinkFlowSquareOAuthDiagnostics(),
     });
   }
 
@@ -5354,7 +5365,7 @@ app.get("/api/developer/square/oauth/start", requireDeveloperAuth, (req, res) =>
   ).toString("base64url");
   const params = new URLSearchParams({
     client_id: DRINKFLOW_SQUARE_APPLICATION_ID,
-    scope: "MERCHANT_PROFILE_READ ORDERS_READ ITEMS_READ PAYMENTS_READ",
+    scope: DRINKFLOW_SQUARE_OAUTH_SCOPE,
     session: "false",
     state,
     redirect_uri: DRINKFLOW_SQUARE_REDIRECT_URL,
