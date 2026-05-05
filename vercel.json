@@ -76,6 +76,18 @@
       "destination": "/index.html"
     },
     {
+      "source": "/developer",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/dev",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/studio-dashboard",
+      "destination": "/index.html"
+    },
+    {
       "source": "/case-study/goldies",
       "destination": "/case-study-goldies.html"
     },

@@ -3397,6 +3397,13 @@ function BrandFooter({ className = "" }) {
       >
         Trademarks
       </a>
+      <span className="text-[#CA862B]/70">•</span>
+      <a
+        href="/developer"
+        className="cursor-pointer normal-case tracking-normal text-[#0F4036] transition hover:text-[#CA862B] focus:outline-none focus-visible:text-[#CA862B]"
+      >
+        Studio
+      </a>
     </div>
   );
 }
@@ -8429,6 +8436,27 @@ function DeveloperDiaryDashboard() {
               These notes can become Goldie&apos;s popups, owner portal language, release notes,
               DrinkFlow case-study updates, Studio Samantha event copy, or future product ideas.
             </p>
+          </section>
+
+          <section className="rounded-[2rem] border-4 border-white bg-white p-5 shadow-[0_24px_70px_rgba(91,58,109,0.12)]">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#7b5aa6]">
+              Founder focus
+            </p>
+            <h2 className="mt-2 text-3xl font-black text-[#ff4f8b]" style={rainbowText}>
+              Plug-and-play path
+            </h2>
+            <div className="mt-4 space-y-3 text-sm font-semibold leading-6 text-[#66576f]">
+              <p>
+                Keep the public story customer-facing. Use this private diary for Mom Test
+                questions, mentor notes, pricing reactions, and founder homework.
+              </p>
+              <ul className="space-y-2 pl-5">
+                <li>Build a list of 5-10 nearby coffee shops, food trucks, and vendors.</li>
+                <li>Ask what they use now, what breaks during rushes, and what they already pay for.</li>
+                <li>Test pricing language from starter workflow to owner-reporting setup.</li>
+                <li>Watch for real willingness to pay before expanding beyond Square.</li>
+              </ul>
+            </div>
           </section>
 
           <section className="rounded-[2rem] border-4 border-white bg-white p-4 shadow-[0_24px_70px_rgba(91,58,109,0.12)]">
