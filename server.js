@@ -924,6 +924,7 @@ let ownerPasswordState = {
 };
 let localDeveloperNotes = [];
 let localAccessLogs = [];
+let localDrinkFlowOnboardingRequests = [];
 let tickets = [
   {
     id: "local-101",
@@ -4586,6 +4587,108 @@ app.post("/api/drinkflow-surveys", async (req, res) => {
   }
 });
 
+function normalizeDrinkFlowOnboardingRequest(body = {}, req = null) {
+  const email = normalizeLeadEmail(body.email);
+  return {
+    contact_name: cleanLeadText(body.contactName, 120),
+    email,
+    phone: cleanLeadText(body.phone, 80),
+    shop_name: cleanLeadText(body.shopName, 140),
+    business_type: cleanLeadText(body.businessType, 120),
+    location: cleanLeadText(body.location, 160),
+    website: cleanLeadText(body.website, 240),
+    social_links: cleanLeadList(body.socialLinks, 8, 180),
+    pos_system: cleanLeadText(body.posSystem, 80),
+    order_sources: cleanLeadList(body.orderSources, 10, 100),
+    screen_needs: cleanLeadList(body.screenNeeds, 12, 100),
+    current_pain: cleanLeadText(body.currentPain, 1200),
+    average_daily_orders: cleanLeadText(body.averageDailyOrders, 80),
+    rush_window: cleanLeadText(body.rushWindow, 160),
+    pricing_comfort: cleanLeadText(body.pricingComfort, 120),
+    timeline: cleanLeadText(body.timeline, 160),
+    notes: cleanLeadText(body.notes, 1600),
+    status: "new",
+    source: cleanLeadText(body.source || "drinkflow-onboarding", 80),
+    page_path: cleanLeadText(body.pagePath, 200),
+    referrer: cleanLeadText(body.referrer || req?.get("referer") || "", 300),
+    user_agent: cleanLeadText(req?.get("user-agent") || "", 500),
+  };
+}
+
+function drinkFlowOnboardingTableMissing(error) {
+  const message = String(error?.message || "");
+  return (
+    error?.code === "42P01" ||
+    message.includes("drinkflow_onboarding_requests") ||
+    message.includes("schema cache")
+  );
+}
+
+app.post("/api/drinkflow-onboarding", async (req, res) => {
+  try {
+    const honeypot = cleanLeadText(req.body?.company, 80);
+    if (honeypot) {
+      return res.json({ ok: true, message: "Thanks. Your setup request was received." });
+    }
+
+    const request = normalizeDrinkFlowOnboardingRequest(req.body, req);
+
+    if (!request.email || !isValidLeadEmail(request.email)) {
+      return res.status(400).json({ ok: false, error: "Enter a valid email address." });
+    }
+
+    if (!request.shop_name && !request.business_type && !request.current_pain) {
+      return res.status(400).json({
+        ok: false,
+        error: "Tell us a little about the shop before submitting.",
+      });
+    }
+
+    if (!supabase) {
+      const localRequest = {
+        id: `local-${Date.now()}`,
+        ...request,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      localDrinkFlowOnboardingRequests.unshift(localRequest);
+      localDrinkFlowOnboardingRequests = localDrinkFlowOnboardingRequests.slice(0, 200);
+      return res.json({
+        ok: true,
+        request: localRequest,
+        storage: "memory",
+        message: "Thanks. Your setup request was received.",
+      });
+    }
+
+    const { data, error } = await supabase
+      .from("drinkflow_onboarding_requests")
+      .insert(request)
+      .select("*")
+      .single();
+
+    if (error) throw error;
+
+    res.json({
+      ok: true,
+      request: data,
+      storage: "supabase",
+      message: "Thanks. Your setup request was received.",
+    });
+  } catch (error) {
+    if (drinkFlowOnboardingTableMissing(error)) {
+      return res.status(503).json({
+        ok: false,
+        error:
+          "DrinkFlow onboarding table is not installed in Supabase yet. Run the latest supabase-schema.sql.",
+      });
+    }
+
+    console.error("Error saving DrinkFlow onboarding request:", error);
+    res.status(500).json({ ok: false, error: "Could not save that setup request right now." });
+  }
+});
+
 async function handleSquareAlertTest(req, res) {
   try {
     if (!hasAlertEmailConfig()) {
@@ -4762,6 +4865,23 @@ async function fetchDeveloperNotes({ project = "", limit = 80 } = {}) {
   return data || [];
 }
 
+async function fetchDrinkFlowOnboardingRequests({ limit = 30 } = {}) {
+  const safeLimit = Math.min(Math.max(Number(limit) || 30, 1), 100);
+
+  if (!supabase) {
+    return localDrinkFlowOnboardingRequests.slice(0, safeLimit);
+  }
+
+  const { data, error } = await supabase
+    .from("drinkflow_onboarding_requests")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(safeLimit);
+
+  if (error) throw error;
+  return data || [];
+}
+
 app.get("/api/session", (req, res) => {
   const cookies = parseCookies(req.headers.cookie || "");
   const session = getSessionFromToken(cookies[SESSION_COOKIE_NAME]);
@@ -4839,6 +4959,26 @@ app.get("/api/developer/notes", requireDeveloperAuth, async (req, res) => {
     }
 
     console.error("Error fetching developer notes:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/developer/drinkflow-onboarding", requireDeveloperAuth, async (req, res) => {
+  try {
+    const requests = await fetchDrinkFlowOnboardingRequests({ limit: req.query.limit });
+
+    res.json({ requests, storage: supabase ? "supabase" : "memory" });
+  } catch (error) {
+    if (drinkFlowOnboardingTableMissing(error)) {
+      return res.json({
+        requests: [],
+        tableMissing: true,
+        storage: "missing-table",
+        message: "DrinkFlow onboarding table is not installed in Supabase yet.",
+      });
+    }
+
+    console.error("Error fetching DrinkFlow onboarding requests:", error);
     res.status(500).json({ error: error.message });
   }
 });

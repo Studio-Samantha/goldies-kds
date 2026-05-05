@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.9.6";
+const APP_VERSION = "v1.9.7";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -30,8 +30,19 @@ const DAILY_UPDATE_NOTICE = {
 };
 const RELEASE_NOTES = [
   {
-    version: "v1.9.6",
+    version: "v1.9.7",
     date: "Current build",
+    summary: "Started the DrinkFlow plug-and-play onboarding path.",
+    items: [
+      "DrinkFlow now has a real setup request intake for future shops.",
+      "The private Studio Samantha dashboard can show new DrinkFlow setup requests after the Supabase table is installed.",
+      "The developer route is now included in the Vercel route rewrites so /developer can load directly.",
+      "The private founder-focus notes now keep customer discovery and pricing homework out of the public marketing page.",
+    ],
+  },
+  {
+    version: "v1.9.6",
+    date: "Previous build",
     summary: "Added a Studio Samantha dashboard and owner report email tools.",
     items: [
       "A private Studio Samantha dashboard can save developer notes, update ideas, and diary entries.",
@@ -7990,12 +8001,19 @@ function formatDeveloperNoteDate(value) {
   });
 }
 
+function formatDeveloperList(value) {
+  if (Array.isArray(value)) return value.filter(Boolean).join(", ");
+  if (typeof value === "string") return value;
+  return "";
+}
+
 function DeveloperDiaryDashboard() {
   const [sessionStatus, setSessionStatus] = useState("checking");
   const [username, setUsername] = useState("StudioSamantha");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
   const [notes, setNotes] = useState([]);
+  const [onboardingRequests, setOnboardingRequests] = useState([]);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -8036,6 +8054,30 @@ function DeveloperDiaryDashboard() {
     }
   }
 
+  async function refreshOnboardingRequests() {
+    try {
+      const response = await fetch(apiUrl("/api/developer/drinkflow-onboarding?limit=20"), {
+        credentials: "include",
+      });
+
+      if (response.status === 401) {
+        setSessionStatus("login");
+        return;
+      }
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not load DrinkFlow setup requests");
+
+      setOnboardingRequests(data.requests || []);
+      if (data.storage) setStorage(data.storage);
+      if (data.tableMissing) {
+        setNotice("Supabase needs the drinkflow_onboarding_requests table before setup requests appear here.");
+      }
+    } catch (requestError) {
+      setError(requestError.message || "Could not load DrinkFlow setup requests");
+    }
+  }
+
   useEffect(() => {
     let mounted = true;
 
@@ -8052,6 +8094,7 @@ function DeveloperDiaryDashboard() {
           setSessionStatus("authenticated");
           setUsername(data.username || "StudioSamantha");
           refreshNotes();
+          refreshOnboardingRequests();
         } else {
           setSessionStatus("login");
         }
@@ -8088,6 +8131,7 @@ function DeveloperDiaryDashboard() {
       setSessionStatus("authenticated");
       setUsername(data.username || username || "StudioSamantha");
       await refreshNotes();
+      await refreshOnboardingRequests();
     } catch (loginFailure) {
       setLoginError(loginFailure.message || "Studio login failed");
     }
@@ -8100,6 +8144,7 @@ function DeveloperDiaryDashboard() {
     }).catch(() => {});
     setSessionStatus("login");
     setNotes([]);
+    setOnboardingRequests([]);
   }
 
   async function handleSaveNote(event) {
@@ -8442,7 +8487,7 @@ function DeveloperDiaryDashboard() {
             <p className="text-xs font-black uppercase tracking-[0.18em] text-[#7b5aa6]">
               Founder focus
             </p>
-            <h2 className="mt-2 text-3xl font-black text-[#ff4f8b]" style={rainbowText}>
+              <h2 className="mt-2 text-3xl font-black text-[#ff4f8b]" style={rainbowText}>
               Plug-and-play path
             </h2>
             <div className="mt-4 space-y-3 text-sm font-semibold leading-6 text-[#66576f]">
@@ -8456,6 +8501,85 @@ function DeveloperDiaryDashboard() {
                 <li>Test pricing language from starter workflow to owner-reporting setup.</li>
                 <li>Watch for real willingness to pay before expanding beyond Square.</li>
               </ul>
+            </div>
+          </section>
+
+          <section className="rounded-[2rem] border-4 border-white bg-white p-4 shadow-[0_24px_70px_rgba(91,58,109,0.12)]">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[#7b5aa6]">
+                  DrinkFlow leads
+                </p>
+                <h2 className="text-xl font-black text-[#2b2235]">Setup request queue</h2>
+              </div>
+              <button
+                type="button"
+                onClick={refreshOnboardingRequests}
+                className="rounded-full bg-[#effff6] px-3 py-1.5 text-xs font-black text-[#21744f]"
+              >
+                Refresh
+              </button>
+            </div>
+
+            <div className="max-h-[560px] space-y-3 overflow-y-auto pr-1">
+              {onboardingRequests.length ? (
+                onboardingRequests.map((request) => (
+                  <article
+                    key={request.id}
+                    className="rounded-3xl border-2 border-[#c9f0dc] bg-[#fbfffd] p-4"
+                  >
+                    <div className="flex flex-wrap gap-2">
+                      <span className="rounded-full bg-[#58c785] px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-white">
+                        {request.status || "new"}
+                      </span>
+                      {request.pos_system ? (
+                        <span className="rounded-full bg-[#fff1bf] px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-[#7c5812]">
+                          {request.pos_system}
+                        </span>
+                      ) : null}
+                      {request.pricing_comfort ? (
+                        <span className="rounded-full bg-[#e8f7ff] px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-[#246d99]">
+                          {request.pricing_comfort}
+                        </span>
+                      ) : null}
+                    </div>
+                    <h3 className="mt-3 text-lg font-black text-[#2b2235]">
+                      {request.shop_name || request.business_type || "New DrinkFlow shop"}
+                    </h3>
+                    <p className="mt-1 text-xs font-black uppercase tracking-[0.12em] text-[#7b5aa6]">
+                      {formatDeveloperNoteDate(request.created_at)}
+                    </p>
+                    <div className="mt-2 space-y-1 text-sm font-semibold leading-6 text-[#66576f]">
+                      {request.contact_name || request.email ? (
+                        <p>
+                          <strong>Contact:</strong>{" "}
+                          {[request.contact_name, request.email].filter(Boolean).join(" - ")}
+                        </p>
+                      ) : null}
+                      {request.business_type || request.location ? (
+                        <p>
+                          <strong>Shop:</strong>{" "}
+                          {[request.business_type, request.location].filter(Boolean).join(" - ")}
+                        </p>
+                      ) : null}
+                      {formatDeveloperList(request.screen_needs) ? (
+                        <p>
+                          <strong>Screens:</strong> {formatDeveloperList(request.screen_needs)}
+                        </p>
+                      ) : null}
+                      {request.current_pain ? (
+                        <p>
+                          <strong>Pain point:</strong> {request.current_pain}
+                        </p>
+                      ) : null}
+                    </div>
+                  </article>
+                ))
+              ) : (
+                <div className="rounded-3xl border-2 border-dashed border-[#c9f0dc] bg-[#fbfffd] p-5 text-sm font-black text-[#21744f]">
+                  No setup requests yet.
+                </div>
+              )}
             </div>
           </section>
 

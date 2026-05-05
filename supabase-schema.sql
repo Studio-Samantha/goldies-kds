@@ -187,6 +187,43 @@ create index if not exists drinkflow_surveys_created_at_idx
 create index if not exists drinkflow_surveys_pos_system_idx
   on public.drinkflow_surveys(pos_system);
 
+create table if not exists public.drinkflow_onboarding_requests (
+  id bigserial primary key,
+  contact_name text not null default '',
+  email text not null default '',
+  phone text not null default '',
+  shop_name text not null default '',
+  business_type text not null default '',
+  location text not null default '',
+  website text not null default '',
+  social_links jsonb not null default '[]'::jsonb,
+  pos_system text not null default '',
+  order_sources jsonb not null default '[]'::jsonb,
+  screen_needs jsonb not null default '[]'::jsonb,
+  current_pain text not null default '',
+  average_daily_orders text not null default '',
+  rush_window text not null default '',
+  pricing_comfort text not null default '',
+  timeline text not null default '',
+  notes text not null default '',
+  status text not null default 'new',
+  source text not null default 'drinkflow-onboarding',
+  page_path text not null default '',
+  referrer text not null default '',
+  user_agent text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists drinkflow_onboarding_requests_created_at_idx
+  on public.drinkflow_onboarding_requests(created_at desc);
+
+create index if not exists drinkflow_onboarding_requests_status_idx
+  on public.drinkflow_onboarding_requests(status);
+
+create index if not exists drinkflow_onboarding_requests_email_idx
+  on public.drinkflow_onboarding_requests(email);
+
 create table if not exists public.developer_notes (
   id bigserial primary key,
   project text not null default 'Studio Samantha',
