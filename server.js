@@ -3241,34 +3241,12 @@ async function setTicketStatus(id, status) {
     return sanitizedStatus;
   }
 
-  const updates = {
-    status: sanitizedStatus,
-    updated_at: statusUpdatedAt,
-    completed_at: isCompletedStatus(sanitizedStatus) ? statusUpdatedAt : null,
-  };
-
-  const { data: existingOrder, error: existingError } = await supabase
-    .from("kds_orders")
-    .select("square_order_id, raw_order")
-    .eq("square_order_id", id)
-    .maybeSingle();
-
-  if (existingError) throw existingError;
-  if (!existingOrder) {
-    const missingError = new Error(`Ticket ${id} was not found`);
-    missingError.statusCode = 404;
-    throw missingError;
-  }
-
-  updates.raw_order = appendStatusEvent(
-    existingOrder.raw_order,
-    sanitizedStatus,
-    statusUpdatedAt
-  );
-
   const { data, error } = await supabase
     .from("kds_orders")
-    .update(updates)
+    .update({
+      status: sanitizedStatus,
+      updated_at: statusUpdatedAt,
+    })
     .eq("square_order_id", id)
     .select("square_order_id")
     .maybeSingle();
@@ -3278,6 +3256,51 @@ async function setTicketStatus(id, status) {
     const missingError = new Error(`Ticket ${id} was not found`);
     missingError.statusCode = 404;
     throw missingError;
+  }
+
+  try {
+    const { data: existingOrder, error: existingError } = await supabase
+      .from("kds_orders")
+      .select("raw_order")
+      .eq("square_order_id", id)
+      .maybeSingle();
+
+    if (existingError) throw existingError;
+    if (existingOrder) {
+      const { error: rawOrderError } = await supabase
+        .from("kds_orders")
+        .update({
+          raw_order: appendStatusEvent(
+            existingOrder.raw_order,
+            sanitizedStatus,
+            statusUpdatedAt
+          ),
+        })
+        .eq("square_order_id", id);
+
+      if (rawOrderError) throw rawOrderError;
+    }
+  } catch (metadataError) {
+    console.warn(
+      `KDS status saved for ${id}, but status event metadata was not updated:`,
+      metadataError.message
+    );
+  }
+
+  try {
+    const { error: completedAtError } = await supabase
+      .from("kds_orders")
+      .update({
+        completed_at: isCompletedStatus(sanitizedStatus) ? statusUpdatedAt : null,
+      })
+      .eq("square_order_id", id);
+
+    if (completedAtError) throw completedAtError;
+  } catch (completedAtError) {
+    console.warn(
+      `KDS status saved for ${id}, but completed_at was not updated:`,
+      completedAtError.message
+    );
   }
 
   return sanitizedStatus;

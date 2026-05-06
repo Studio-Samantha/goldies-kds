@@ -9482,17 +9482,19 @@ export default function GoldiesKDS() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     })
-      .then((response) => {
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+
         if (response.status === 401) {
           setAuthStatus("login");
-          throw new Error("Login required");
+          throw new Error(data.error || "Login required");
         }
 
         if (!response.ok) {
-          throw new Error(`Status update failed: ${response.status}`);
+          throw new Error(data.error || `Status update failed: ${response.status}`);
         }
 
-        return response.json().catch(() => ({}));
+        return data;
       })
       .then((data) => {
         pendingTicketStatusesRef.current.delete(id);
