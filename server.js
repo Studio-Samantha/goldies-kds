@@ -1035,6 +1035,37 @@ async function getDrinkFlowWorkspaceBySlug(slug) {
   return data || null;
 }
 
+async function refreshDrinkFlowVerificationToken({ slug, ownerEmail }) {
+  const workspaceSlug = normalizeDrinkFlowSlug(slug);
+  const email = normalizeLeadEmail(ownerEmail);
+  if (!workspaceSlug || !email || !supabase) return null;
+
+  const { data: existing, error: existingError } = await supabase
+    .from("drinkflow_workspaces")
+    .select("slug, shop_name, owner_email, owner_name, status, email_verified, app_url")
+    .eq("slug", workspaceSlug)
+    .eq("owner_email", email)
+    .maybeSingle();
+
+  if (existingError) throw existingError;
+  if (!existing || existing.email_verified) return existing || null;
+
+  const nextToken = crypto.randomBytes(24).toString("hex");
+  const { data, error } = await supabase
+    .from("drinkflow_workspaces")
+    .update({
+      email_verification_token: nextToken,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("slug", workspaceSlug)
+    .eq("owner_email", email)
+    .select("slug, shop_name, owner_email, owner_name, status, email_verified, email_verification_token, square_connected, app_url, created_at")
+    .maybeSingle();
+
+  if (error) throw error;
+  return data || null;
+}
+
 async function sendOnlineOrderConfirmationEmail({
   to,
   customerName,
@@ -5278,11 +5309,12 @@ app.post("/api/developer/drinkflow-workspaces", requireDeveloperAuth, async (req
       req,
     });
 
-    sendDrinkFlowVerificationEmail(workspace).catch((mailError) => {
+    const verificationEmailSent = await sendDrinkFlowVerificationEmail(workspace).catch((mailError) => {
       console.error("DrinkFlow verification email failed:", mailError.message);
+      return false;
     });
 
-    res.json({ ok: true, workspace: publicWorkspacePayload(workspace) });
+    res.json({ ok: true, verificationEmailSent, workspace: publicWorkspacePayload(workspace) });
   } catch (error) {
     console.error("Error reserving DrinkFlow workspace:", error);
     res.status(error.statusCode || 500).json({ error: error.message });
@@ -5331,13 +5363,58 @@ app.post("/api/drinkflow-workspaces", async (req, res) => {
       req,
     });
 
-    sendDrinkFlowVerificationEmail(workspace).catch((mailError) => {
+    const verificationEmailSent = await sendDrinkFlowVerificationEmail(workspace).catch((mailError) => {
       console.error("DrinkFlow verification email failed:", mailError.message);
+      return false;
     });
 
-    res.json({ ok: true, workspace: publicWorkspacePayload(workspace) });
+    res.json({ ok: true, verificationEmailSent, workspace: publicWorkspacePayload(workspace) });
   } catch (error) {
     console.error("Error creating DrinkFlow workspace:", error);
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+});
+
+app.post("/api/drinkflow-workspaces/resend-verification", async (req, res) => {
+  try {
+    const ownerEmail = normalizeLeadEmail(req.body?.ownerEmail || req.body?.email);
+    const slug = normalizeDrinkFlowSlug(req.body?.slug || req.body?.workspaceSlug || "");
+    if (!ownerEmail || !isValidLeadEmail(ownerEmail) || !slug) {
+      return res.status(400).json({ error: "Enter the shop link and email used for signup." });
+    }
+
+    const workspace = await refreshDrinkFlowVerificationToken({ slug, ownerEmail });
+    if (!workspace) {
+      return res.status(404).json({ error: "We could not find an unverified app with that email and shop link." });
+    }
+    if (workspace.email_verified) {
+      return res.json({
+        ok: true,
+        alreadyVerified: true,
+        message: "This email is already verified. You can continue setup.",
+        workspace: publicWorkspacePayload(workspace),
+      });
+    }
+
+    const verificationEmailSent = await sendDrinkFlowVerificationEmail(workspace).catch((mailError) => {
+      console.error("DrinkFlow verification resend failed:", mailError.message);
+      return false;
+    });
+
+    if (!verificationEmailSent) {
+      return res.status(503).json({
+        error: "The app was found, but the verification email could not be sent yet.",
+      });
+    }
+
+    res.json({
+      ok: true,
+      verificationEmailSent,
+      message: "Verification email resent.",
+      workspace: publicWorkspacePayload(workspace),
+    });
+  } catch (error) {
+    console.error("Error resending DrinkFlow verification email:", error);
     res.status(error.statusCode || 500).json({ error: error.message });
   }
 });
