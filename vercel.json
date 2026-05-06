@@ -20,6 +20,22 @@
       "destination": "/survey.html"
     },
     {
+      "source": "/souvenirs",
+      "destination": "/souvenirs.html"
+    },
+    {
+      "source": "/summer-souvenirs",
+      "destination": "/souvenirs.html"
+    },
+    {
+      "source": "/vendorflow",
+      "destination": "/vendorflow.html"
+    },
+    {
+      "source": "/vendorflowds",
+      "destination": "/vendorflow.html"
+    },
+    {
       "source": "/goldies-menu",
       "destination": "/index.html"
     },
