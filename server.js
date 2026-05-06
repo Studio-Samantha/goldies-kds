@@ -4898,6 +4898,53 @@ app.post("/api/drinkflow-leads", async (req, res) => {
   }
 });
 
+app.get("/api/drinkflow-leads", async (_req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({
+        ok: false,
+        error: "Email capture storage is not configured yet.",
+      });
+    }
+
+    const { data, error } = await supabase
+      .from("drinkflow_leads")
+      .select("email, shop_name, feature_interest, source, page_path, referrer, created_at, updated_at")
+      .order("updated_at", { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.error("Error loading DrinkFlow leads:", error);
+      const missingTable =
+        error.code === "42P01" || /drinkflow_leads|schema cache/i.test(error.message || "");
+      return res.status(missingTable ? 503 : 500).json({
+        ok: false,
+        error: missingTable
+          ? "Email capture table is not installed in Supabase yet. Run the latest supabase-schema.sql."
+          : "Could not load email leads right now.",
+      });
+    }
+
+    res.json({
+      ok: true,
+      count: data?.length || 0,
+      leads: (data || []).map((lead) => ({
+        email: lead.email || "",
+        shopName: lead.shop_name || "",
+        featureInterest: lead.feature_interest || "",
+        source: lead.source || "",
+        pagePath: lead.page_path || "",
+        referrer: lead.referrer || "",
+        createdAt: lead.created_at || null,
+        updatedAt: lead.updated_at || null,
+      })),
+    });
+  } catch (error) {
+    console.error("Error reading DrinkFlow leads:", error);
+    res.status(500).json({ ok: false, error: "Could not load email leads right now." });
+  }
+});
+
 app.post("/api/drinkflow-surveys", async (req, res) => {
   try {
     const email = normalizeLeadEmail(req.body?.email);
