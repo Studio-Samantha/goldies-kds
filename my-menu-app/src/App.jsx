@@ -2259,18 +2259,26 @@ function TicketCard({
       },
     ];
   } else if (ticket.status === "making") {
-    actions = [
-      {
-        label: "Ready",
-        status: "ready",
-        className: "bg-[#0F4036] text-white hover:bg-[#0b352d]",
-      },
-      {
-        label: "Order complete",
-        status: "completed",
-        className: "bg-[#111111] text-white hover:bg-black",
-      },
-    ];
+    actions = compact
+      ? [
+          {
+            label: "Order complete",
+            status: "completed",
+            className: "bg-[#111111] text-white hover:bg-black",
+          },
+        ]
+      : [
+          {
+            label: "Ready",
+            status: "ready",
+            className: "bg-[#0F4036] text-white hover:bg-[#0b352d]",
+          },
+          {
+            label: "Order complete",
+            status: "completed",
+            className: "bg-[#111111] text-white hover:bg-black",
+          },
+        ];
   } else if (ticket.status === "ready") {
     if (ticketHasDrinks) {
       actions = [
