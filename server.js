@@ -1021,6 +1021,20 @@ async function sendDrinkFlowVerificationEmail(workspace) {
   return true;
 }
 
+async function getDrinkFlowWorkspaceBySlug(slug) {
+  const workspaceSlug = normalizeDrinkFlowSlug(slug);
+  if (!workspaceSlug || !supabase) return null;
+
+  const { data, error } = await supabase
+    .from("drinkflow_workspaces")
+    .select("slug, shop_name, owner_email, status, email_verified, square_connected, app_url")
+    .eq("slug", workspaceSlug)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data || null;
+}
+
 async function sendOnlineOrderConfirmationEmail({
   to,
   customerName,
@@ -5317,6 +5331,10 @@ app.post("/api/drinkflow-workspaces", async (req, res) => {
       req,
     });
 
+    sendDrinkFlowVerificationEmail(workspace).catch((mailError) => {
+      console.error("DrinkFlow verification email failed:", mailError.message);
+    });
+
     res.json({ ok: true, workspace: publicWorkspacePayload(workspace) });
   } catch (error) {
     console.error("Error creating DrinkFlow workspace:", error);
@@ -5324,7 +5342,7 @@ app.post("/api/drinkflow-workspaces", async (req, res) => {
   }
 });
 
-app.get("/api/drinkflow/square/oauth/start", (req, res) => {
+app.get("/api/drinkflow/square/oauth/start", async (req, res) => {
   if (!DRINKFLOW_SQUARE_APPLICATION_ID || !DRINKFLOW_SQUARE_APPLICATION_SECRET) {
     return res.status(503).json({
       error:
@@ -5335,6 +5353,20 @@ app.get("/api/drinkflow/square/oauth/start", (req, res) => {
 
   const slug = normalizeDrinkFlowSlug(req.query.slug || "");
   if (!slug) return res.status(400).json({ error: "Workspace is required before connecting Square." });
+
+  try {
+    const workspace = await getDrinkFlowWorkspaceBySlug(slug);
+    if (!workspace) return res.status(404).json({ error: "Create your DrinkFlow app before connecting Square." });
+    if (!workspace.email_verified) {
+      return res.status(403).json({
+        error: "Verify your email before connecting Square.",
+        nextStep: "Open the verification email from DrinkFlow, then return to setup.",
+      });
+    }
+  } catch (error) {
+    console.error("Error checking DrinkFlow workspace before Square OAuth:", error);
+    return res.status(500).json({ error: "Could not verify your workspace before connecting Square." });
+  }
 
   const state = Buffer.from(
     JSON.stringify({ slug, nonce: crypto.randomUUID(), createdAt: Date.now() })

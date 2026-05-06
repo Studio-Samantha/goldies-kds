@@ -3453,6 +3453,22 @@ function BrandFooter({ className = "" }) {
   );
 }
 
+function PoweredByDrinkFlow({ className = "" }) {
+  return (
+    <div
+      className={`inline-flex items-center gap-2 rounded-full border border-[#0F4036]/12 bg-white/75 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#5A4F3E] shadow-[0_8px_18px_rgba(15,64,54,0.06)] backdrop-blur-md ${className}`}
+    >
+      <span>Powered by</span>
+      <a
+        href="https://drinkflowkds.com"
+        className="text-[#0F4036] transition hover:text-[#CA862B]"
+      >
+        DrinkFlowKDS
+      </a>
+    </div>
+  );
+}
+
 function ModeToggle({ active, label, onToggle, hint, onInfoClick }) {
   return (
     <div className="inline-flex items-center gap-1.5">
@@ -4688,6 +4704,10 @@ function OwnerLoginDialog({ open, onClose, onLogin, themeMode }) {
           {submitting ? "Signing in..." : "Open Owner Reports"}
         </button>
 
+        <div className="flex justify-center">
+          <PoweredByDrinkFlow />
+        </div>
+
         <a
           href={buildOwnerPasswordResetMailto(ownerName)}
           className="block w-full rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 text-center text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
@@ -5805,6 +5825,9 @@ function LoginScreen({
 
         <div className="mt-8 flex justify-center pb-1 pointer-events-auto">
           <BrandFooter className="max-w-full px-4 py-2 text-[11px] sm:text-[10px]" />
+        </div>
+        <div className="mt-3 flex justify-center pointer-events-auto">
+          <PoweredByDrinkFlow />
         </div>
       </main>
     </div>
