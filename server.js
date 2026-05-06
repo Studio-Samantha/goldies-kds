@@ -39,6 +39,11 @@ const ALERT_EMAIL_FROM =
   ALERT_SMTP_USER ||
   ALERT_EMAIL_TO ||
   "";
+const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
+const DRINKFLOW_EMAIL_FROM =
+  process.env.DRINKFLOW_EMAIL_FROM ||
+  process.env.RESEND_FROM_EMAIL ||
+  ALERT_EMAIL_FROM;
 const VALID_STATUSES = new Set(["new", "making", "ready", "completed", "done"]);
 const VALID_DINING_OPTIONS = new Set([
   "For here",
@@ -194,6 +199,39 @@ async function sendAlertEmail(subject, text) {
   await mailer.sendMail({
     from: ALERT_EMAIL_FROM,
     to: ALERT_EMAIL_TO,
+    subject,
+    text,
+  });
+
+  return true;
+}
+
+async function sendTransactionalEmail({ to, subject, text, from = DRINKFLOW_EMAIL_FROM }) {
+  const email = normalizeLeadEmail(to);
+  if (!email || !isValidLeadEmail(email) || !subject || !text) return false;
+
+  if (RESEND_API_KEY && from) {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ from, to: email, subject, text }),
+    });
+    if (!response.ok) {
+      const details = await response.text().catch(() => "");
+      throw new Error(`Resend email failed: ${response.status}${details ? ` ${details}` : ""}`);
+    }
+    return true;
+  }
+
+  const mailer = getAlertMailer();
+  if (!mailer) return false;
+
+  await mailer.sendMail({
+    from: from || ALERT_EMAIL_FROM,
+    to: email,
     subject,
     text,
   });
@@ -998,12 +1036,8 @@ async function sendDrinkFlowVerificationEmail(workspace) {
   const token = workspace?.email_verification_token;
   if (!email || !token || !isValidLeadEmail(email)) return false;
 
-  const mailer = getAlertMailer();
-  if (!mailer) return false;
-
   const verifyUrl = `https://goldieskds.com/api/drinkflow-workspaces/verify-email?token=${encodeURIComponent(token)}`;
-  await mailer.sendMail({
-    from: ALERT_EMAIL_FROM,
+  await sendTransactionalEmail({
     to: email,
     subject: "Verify your DrinkFlow beta workspace",
     text: [
@@ -5317,6 +5351,41 @@ app.post("/api/developer/drinkflow-workspaces", requireDeveloperAuth, async (req
     res.json({ ok: true, verificationEmailSent, workspace: publicWorkspacePayload(workspace) });
   } catch (error) {
     console.error("Error reserving DrinkFlow workspace:", error);
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+});
+
+app.post("/api/developer/drinkflow-workspaces/verify", requireDeveloperAuth, async (req, res) => {
+  try {
+    if (!supabase) return res.status(503).json({ error: "Workspace storage is not configured." });
+
+    const slug = normalizeDrinkFlowSlug(req.body?.slug || req.body?.workspaceSlug || "");
+    const ownerEmail = normalizeLeadEmail(req.body?.ownerEmail || req.body?.email || "");
+    if (!slug) return res.status(400).json({ error: "Workspace slug is required." });
+    if (ownerEmail && !isValidLeadEmail(ownerEmail)) {
+      return res.status(400).json({ error: "Enter a valid owner email address." });
+    }
+
+    const update = {
+      email_verified: true,
+      email_verification_token: "",
+      updated_at: new Date().toISOString(),
+    };
+    if (ownerEmail) update.owner_email = ownerEmail;
+
+    const { data, error } = await supabase
+      .from("drinkflow_workspaces")
+      .update(update)
+      .eq("slug", slug)
+      .select("slug, shop_name, owner_email, owner_name, status, email_verified, square_connected, app_url, created_at")
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return res.status(404).json({ error: "Workspace was not found." });
+
+    res.json({ ok: true, workspace: publicWorkspacePayload(data) });
+  } catch (error) {
+    console.error("Error manually verifying DrinkFlow workspace:", error);
     res.status(error.statusCode || 500).json({ error: error.message });
   }
 });
