@@ -2,23 +2,29 @@
   "buildCommand": "cd my-menu-app && npm install && npm run build",
   "outputDirectory": "my-menu-app/dist",
   "framework": "vite",
-  "rewrites": [
+  "redirects": [
     {
       "source": "/drinkflow-kds",
-      "destination": "/learn-more.html"
+      "destination": "https://drinkflowkds.com",
+      "permanent": false
     },
     {
       "source": "/drinkflow",
-      "destination": "/learn-more.html"
+      "destination": "https://drinkflowkds.com",
+      "permanent": false
     },
     {
       "source": "/drinkflow-survey",
-      "destination": "/survey.html"
+      "destination": "https://drinkflowkds.com/#survey",
+      "permanent": false
     },
     {
       "source": "/survey",
-      "destination": "/survey.html"
-    },
+      "destination": "https://drinkflowkds.com/#survey",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
     {
       "source": "/goldies-menu",
       "destination": "/index.html"
