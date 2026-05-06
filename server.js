@@ -3870,7 +3870,7 @@ async function getDrinkMakingTimeReport(range = "today") {
 
   const { data: orders, error: orderError } = await supabase
     .from("kds_orders")
-    .select("square_order_id, raw_order, status, updated_at, completed_at")
+    .select("square_order_id, raw_order, status, updated_at")
     .gte("created_at", start.toISOString())
     .lte("created_at", end.toISOString());
 
