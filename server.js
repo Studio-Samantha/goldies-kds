@@ -3771,7 +3771,7 @@ function getMakingDurationFromEvents(events, start, end) {
   return getMakingDurationSampleFromEvents(events, start, end)?.durationMs || null;
 }
 
-function getMakingDurationSampleFromEvents(events, start, end) {
+function getMakingDurationSampleFromEvents(events, start, end, order = null) {
   let startedAt = null;
   let fallbackCompletedAt = null;
 
@@ -3801,6 +3801,23 @@ function getMakingDurationSampleFromEvents(events, start, end) {
     }
   }
 
+  const orderUpdatedAt = order?.updated_at ? new Date(order.updated_at).getTime() : null;
+  const orderCompletedAt = order?.completed_at ? new Date(order.completed_at).getTime() : null;
+
+  if (!startedAt && order?.status === "making" && Number.isFinite(orderUpdatedAt)) {
+    startedAt = orderUpdatedAt;
+  }
+
+  if (!fallbackCompletedAt && Number.isFinite(orderCompletedAt)) {
+    fallbackCompletedAt = orderCompletedAt;
+  }
+  if (
+    !fallbackCompletedAt &&
+    isCompletedStatus(order?.status) &&
+    Number.isFinite(orderUpdatedAt)
+  ) {
+    fallbackCompletedAt = orderUpdatedAt;
+  }
   if (!startedAt || !fallbackCompletedAt) return null;
   if (fallbackCompletedAt < start.getTime() || fallbackCompletedAt > end.getTime()) return null;
 
@@ -3823,10 +3840,16 @@ async function getDrinkMakingTimeReport(range = "today") {
     const samples = tickets
       .filter((ticket) => ticketHasDrinkItem(ticket))
       .map((ticket) => {
+        const rawOrder = ticket.rawOrder || ticket.raw_order || {};
         const sample = getMakingDurationSampleFromEvents(
-          getStatusEvents(ticket.rawOrder || ticket.raw_order || {}),
+          getStatusEvents(rawOrder),
           start,
-          end
+          end,
+          {
+            status: ticket.status,
+            updated_at: ticket.updatedAt ? new Date(ticket.updatedAt).toISOString() : null,
+            completed_at: ticket.completedAt ? new Date(ticket.completedAt).toISOString() : null,
+          }
         );
         return sample
           ? {
@@ -3847,7 +3870,7 @@ async function getDrinkMakingTimeReport(range = "today") {
 
   const { data: orders, error: orderError } = await supabase
     .from("kds_orders")
-    .select("square_order_id, raw_order")
+    .select("square_order_id, raw_order, status, updated_at, completed_at")
     .gte("created_at", start.toISOString())
     .lte("created_at", end.toISOString());
 
@@ -3887,11 +3910,7 @@ async function getDrinkMakingTimeReport(range = "today") {
   const samples = orders
     .filter((order) => drinkItemsByOrderId.has(order.square_order_id))
     .map((order) => {
-      const sample = getMakingDurationSampleFromEvents(
-        getStatusEvents(order.raw_order),
-        start,
-        end
-      );
+      const sample = getMakingDurationSampleFromEvents(getStatusEvents(order.raw_order), start, end, order);
       return sample
         ? {
             ...sample,

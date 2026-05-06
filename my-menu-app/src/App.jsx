@@ -689,13 +689,13 @@ function buildSupportMailto() {
     [
       "Hi Samantha,",
       "",
-      "I need help with the Goldie's KDS.",
+      "Need help with Goldie's KDS.",
       "",
-      "What I was doing:",
+      "What were you doing:",
       "",
       "What happened:",
       "",
-      "Device/browser:",
+      "Device or browser:",
       "",
       "Thanks,",
       "",
@@ -715,7 +715,7 @@ function buildOwnerPasswordResetMailto(ownerName = "Owner") {
       "",
       `Requested by: ${ownerName || "Owner"}`,
       "",
-      "I am sending this from an approved Blake or Claire email address.",
+      "This message is from an approved Blake or Claire email address.",
       "",
       "Thanks,",
       "",
@@ -787,8 +787,8 @@ function getScheduledCelebration(dateKey = getTodayDateKey()) {
       eyebrow: "Soft Opening",
       title: "Congratulations, Goldie's",
       message:
-        "Wishing you all the luck on your soft opening from Samantha and Zahra.",
-      note: "We'll be by for coffee tomorrow morning to show support.",
+        "Wishing you all the luck on your soft opening.",
+      note: "You can stop by for coffee tomorrow morning to show support.",
     },
   ];
 
@@ -937,7 +937,7 @@ function WebServicesReminderDialog({ open, onClose }) {
 
         <div className="px-5 py-5 space-y-5 text-[#2D261C]">
           <p className="text-base leading-7">
-            Keep me in mind if you ever decide you need a website or any
+            Keep Goldie's in mind if you ever decide you need a website or any
             design help - Sammy.
           </p>
 
@@ -1280,7 +1280,7 @@ function PitchPage({ open, onBack }) {
                 Ready to talk?
               </div>
               <p className="mt-3 text-sm leading-6 text-white/90">
-                Email me about setup, customization, or a copy for another
+                Email about setup, customization, or a copy for another
                 coffee or drink shop.
               </p>
               <div className="mt-4 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white/95">
@@ -1664,6 +1664,16 @@ function formatCompletedTime(completedAt) {
     hour: "numeric",
     minute: "2-digit",
     second: "2-digit",
+  });
+}
+
+function formatCompletedDate(completedAt) {
+  if (!completedAt) return "—";
+
+  return new Date(completedAt).toLocaleDateString([], {
+    month: "numeric",
+    day: "numeric",
+    year: "numeric",
   });
 }
 
@@ -2903,7 +2913,7 @@ function CoffeeShopAdvice({ report, range }) {
           Coffee Shop Guidance
         </div>
         <h2 className="mt-1 text-xl font-black text-[#0F4036]">
-          What I&apos;d watch for {rangeLabel}
+          What you should watch for {rangeLabel}
         </h2>
         <p className="mt-1 text-sm font-semibold text-[#6A614F]">
           Plain-language cues for prep, staffing, and the bar rhythm.
@@ -3862,7 +3872,8 @@ function CompletedTransactions({ tickets }) {
               <tr>
                 <th className="px-3 py-2 font-black">Order</th>
                 <th className="px-3 py-2 font-black">Name</th>
-                <th className="px-3 py-2 font-black">Completed</th>
+                <th className="px-3 py-2 font-black">Date</th>
+                <th className="px-3 py-2 font-black">Time</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
@@ -3887,6 +3898,9 @@ function CompletedTransactions({ tickets }) {
                   </td>
                   <td className="px-3 py-2 font-bold text-[#111111]">
                     {ticket.customerName || "—"}
+                  </td>
+                  <td className="px-3 py-2 font-bold text-[#111111]">
+                    {formatCompletedDate(ticket.completedAt)}
                   </td>
                   <td className="px-3 py-2 font-bold text-[#111111]">
                     {formatCompletedTime(ticket.completedAt)}
@@ -4481,7 +4495,7 @@ function buildOwnerSnapshotAnalysis(report, rangeKey) {
           body: "Confirm live Square orders are appearing correctly.",
         },
         {
-          title: "What I&apos;d do next",
+          title: "What you should do next",
           body: serviceWindow?.action || copy.action,
         },
       ],
@@ -4601,7 +4615,7 @@ function buildOwnerSnapshotAnalysis(report, rangeKey) {
         body: moneySignalByRange[rangeKey] || `${revenueRead} ${averageOrderRead}`,
       },
       {
-        title: "What I&apos;d do next",
+          title: "What you should do next",
         body: `${ownerActionByRange[rangeKey] || copy.action} ${volumeAction}`,
       },
     ],
@@ -4952,7 +4966,7 @@ function OwnerReportsView({
     const moneySignal =
       snapshot.watch.find((item) => item.title === "Sales read")?.body || "";
     const ownerAction =
-      snapshot.watch.find((item) => item.title === "What I&apos;d do next")?.body || "";
+      snapshot.watch.find((item) => item.title === "What you should do next")?.body || "";
 
     try {
       setSnapshotSaving(true);
@@ -5474,9 +5488,6 @@ function OwnerReportsView({
                     <h2 className="mt-1 text-2xl font-black text-[#0F4036]">
                       Average drink time: {timingReport?.label || "Collecting"}
                     </h2>
-                    <p className="mt-1 text-sm font-semibold text-[#6A614F]">
-                      Making to Ready, based on {timingReport?.sampleSize || 0} drink orders timed. Ready orders now clear after two minutes so pickup lag does not make the bar look slower than it was.
-                    </p>
                   </div>
                   <button
                     type="button"
@@ -6752,7 +6763,7 @@ function OrdersUpDisplay() {
                           : "bg-[#0F4036] text-white disabled:bg-neutral-300"
                       }`}
                     >
-                      {completingOrderId === order.id ? "Clearing..." : "I picked this up"}
+                      {completingOrderId === order.id ? "Clearing..." : "Order picked up"}
                     </button>
                   </div>
                 ))}
@@ -8465,7 +8476,7 @@ function DeveloperDiaryDashboard() {
             type="submit"
             className="mt-6 w-full rounded-2xl bg-gradient-to-r from-[#ff4f8b] via-[#ffb84d] to-[#58c785] px-5 py-4 text-lg font-black text-white shadow-lg transition hover:scale-[1.01]"
           >
-            Open my diary
+            Open the diary
           </button>
         </form>
       </div>
