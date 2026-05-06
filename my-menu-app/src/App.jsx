@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 const API_BASE_URL = import.meta.env.DEV
@@ -8867,6 +8867,7 @@ export default function GoldiesKDS() {
     isDemoTrainingRoute() ? "Demo" : ""
   );
   const [tickets, setTickets] = useState([]);
+  const pendingTicketStatusesRef = useRef(new Map());
   const [completedTickets, setCompletedTickets] = useState([]);
   const [drinkCounts, setDrinkCounts] = useState([]);
   const [drinkOrderCount, setDrinkOrderCount] = useState(0);
@@ -9194,7 +9195,27 @@ export default function GoldiesKDS() {
 
         if (!mounted) return;
 
-        setTickets(liveTickets.map(normalizeTicket));
+        const now = Date.now();
+        const pendingStatuses = pendingTicketStatusesRef.current;
+        const normalizedTickets = liveTickets.map(normalizeTicket).map((ticket) => {
+          const pending = pendingStatuses.get(ticket.id);
+          if (!pending) return ticket;
+          if (pending.expiresAt <= now) {
+            pendingStatuses.delete(ticket.id);
+            return ticket;
+          }
+          return {
+            ...ticket,
+            status: pending.status,
+            updatedAt: pending.updatedAt,
+            completedAt:
+              pending.status === "completed" || pending.status === "done"
+                ? pending.updatedAt
+                : ticket.completedAt,
+          };
+        });
+
+        setTickets(normalizedTickets);
         setDrinkCounts(
           (todayReport.totalsByName || []).map((drink) => ({
             name: drink.name,
@@ -9438,9 +9459,22 @@ export default function GoldiesKDS() {
 
     setTickets((current) =>
       current.map((ticket) =>
-        ticket.id === id ? { ...ticket, status } : ticket
+        ticket.id === id
+          ? {
+              ...ticket,
+              status,
+              updatedAt: Date.now(),
+              completedAt:
+                status === "completed" || status === "done" ? Date.now() : null,
+            }
+          : ticket
       )
     );
+    pendingTicketStatusesRef.current.set(id, {
+      status,
+      updatedAt: Date.now(),
+      expiresAt: Date.now() + 15000,
+    });
 
     fetch(apiUrl(`/api/tickets/${id}/status`), {
       method: "PATCH",
@@ -9457,8 +9491,31 @@ export default function GoldiesKDS() {
         if (!response.ok) {
           throw new Error(`Status update failed: ${response.status}`);
         }
+
+        return response.json().catch(() => ({}));
+      })
+      .then((data) => {
+        pendingTicketStatusesRef.current.delete(id);
+        if (data?.status) {
+          setTickets((current) =>
+            current.map((ticket) =>
+              ticket.id === id
+                ? {
+                    ...ticket,
+                    status: data.status,
+                    updatedAt: Date.now(),
+                    completedAt:
+                      data.status === "completed" || data.status === "done"
+                        ? Date.now()
+                        : ticket.completedAt,
+                  }
+                : ticket
+            )
+          );
+        }
       })
       .catch((error) => {
+        pendingTicketStatusesRef.current.delete(id);
         setLastError(`Status update failed: ${error.message}`);
       });
   }
