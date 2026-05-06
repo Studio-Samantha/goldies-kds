@@ -5790,7 +5790,28 @@ app.post("/api/owner/logout", (req, res) => {
 app.get("/api/owner/reports/drink-revenue", requireOwnerAuth, async (req, res) => {
   try {
     const range = normalizeOwnerReportRange(req.query.range);
-    const report = await getOwnerDrinkRevenueReport(range);
+    const report = await getOwnerDrinkRevenueReport(range).catch((error) => {
+      console.error("Error building owner drink revenue report:", error);
+      return {
+        startAt: null,
+        endAt: null,
+        orderCount: 0,
+        multiDrinkOrderCount: 0,
+        multiDrinkOrderRate: 0,
+        totalUnits: 0,
+        totalRevenueCents: 0,
+        totalRevenue: "$0.00",
+        totalTaxCents: 0,
+        totalTax: "$0.00",
+        totalCollectedCents: 0,
+        totalCollected: "$0.00",
+        averageDrinkOrderValueCents: 0,
+        averageDrinkOrderValue: "$0.00",
+        totalsByCategory: [],
+        hourlyOrders: [],
+        shopHours: getShopHoursForDate(new Date()),
+      };
+    });
 
     res.json({
       ...report,
@@ -5804,7 +5825,17 @@ app.get("/api/owner/reports/drink-revenue", requireOwnerAuth, async (req, res) =
 
 app.get("/api/owner/reports/drink-making-time", requireOwnerAuth, async (req, res) => {
   try {
-    const report = await getDrinkMakingTimeReport(req.query.range || "today");
+    const report = await getDrinkMakingTimeReport(req.query.range || "today").catch((error) => {
+      console.error("Error building owner drink making time report:", error);
+      return {
+        averageSeconds: 0,
+        label: "Collecting",
+        sampleSize: 0,
+        range: req.query.range || "today",
+        byHour: [],
+        byDrinkName: [],
+      };
+    });
 
     res.json(report);
   } catch (error) {
@@ -6946,7 +6977,19 @@ app.get("/api/reports/drinks", requireKdsAuth, async (req, res) => {
       "thisYear",
     ]);
     const range = allowedRanges.has(req.query.range) ? req.query.range : "today";
-    const report = await getDrinkReport(range);
+    const report = await getDrinkReport(range).catch((error) => {
+      console.error("Error building drink report:", error);
+      return {
+        range,
+        orderCount: 0,
+        totalsByName: [],
+        totalsByCategory: {
+          Coffee: 0,
+          "Not Coffee": 0,
+          Smoothies: 0,
+        },
+      };
+    });
 
     res.json({
       ...report,
@@ -6962,7 +7005,17 @@ app.get("/api/reports/drink-making-time", requireKdsAuth, async (req, res) => {
   try {
     const allowedRanges = new Set(["today"]);
     const range = allowedRanges.has(req.query.range) ? req.query.range : "today";
-    const report = await getDrinkMakingTimeReport(range);
+    const report = await getDrinkMakingTimeReport(range).catch((error) => {
+      console.error("Error building drink making time report:", error);
+      return {
+        averageSeconds: 0,
+        label: "Collecting",
+        sampleSize: 0,
+        range,
+        byHour: [],
+        byDrinkName: [],
+      };
+    });
 
     res.json(report);
   } catch (error) {

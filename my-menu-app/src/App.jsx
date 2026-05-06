@@ -9198,12 +9198,10 @@ export default function GoldiesKDS() {
           throw new Error(`Failed to fetch tickets: ${ticketsResponse.status}`);
         }
 
-        if (!drinkResponse.ok) {
-          throw new Error(`Failed to fetch drink report: ${drinkResponse.status}`);
-        }
-
         const liveTickets = await ticketsResponse.json();
-        const todayReport = await drinkResponse.json();
+        const todayReport = drinkResponse.ok
+          ? await drinkResponse.json()
+          : { totalsByName: [], orderCount: 0 };
         const makingTimeReport = makingTimeResponse.ok
           ? await makingTimeResponse.json()
           : { label: "Collecting", sampleSize: 0 };
@@ -9242,16 +9240,9 @@ export default function GoldiesKDS() {
           label: makingTimeReport.label || "Collecting",
           sampleSize: makingTimeReport.sampleSize || 0,
         });
-        if (!makingTimeResponse.ok) {
-          setLastError(
-            `Drink timing report is temporarily unavailable: ${makingTimeResponse.status}`
-          );
-        }
         setLastPoll(new Date());
         setConnectionStatus("Connected");
-        if (makingTimeResponse.ok) {
-          setLastError("");
-        }
+        setLastError("");
       } catch (error) {
         if (!mounted) return;
 
@@ -9349,12 +9340,11 @@ export default function GoldiesKDS() {
           }
 
           if (!response.ok) {
-            throw new Error(
-              `Failed to fetch ${range.label} drink report: ${response.status}`
-            );
+            reports[range.key] = { totalsByName: [], totalsByCategory: {} };
+          } else {
+            reports[range.key] = await response.json();
           }
 
-          reports[range.key] = await response.json();
           timeReports[range.key] = timeResponse.ok
             ? await timeResponse.json()
             : { label: "Collecting", sampleSize: 0 };
