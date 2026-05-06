@@ -6741,9 +6741,27 @@ app.patch("/api/tickets/:id/status", requireKdsAuth, async (req, res) => {
     }
 
     const updatedStatus = await setTicketStatus(id, status);
-    await updateSquareOrderFulfillment(id, updatedStatus);
+    let squareFulfillmentSynced = true;
+    let squareFulfillmentError = "";
 
-    res.json({ ok: true, id, status: updatedStatus });
+    try {
+      await updateSquareOrderFulfillment(id, updatedStatus);
+    } catch (squareError) {
+      squareFulfillmentSynced = false;
+      squareFulfillmentError = squareError.message || "Square fulfillment sync failed";
+      console.warn(
+        `KDS status saved for ${id}, but Square fulfillment sync failed:`,
+        squareFulfillmentError
+      );
+    }
+
+    res.json({
+      ok: true,
+      id,
+      status: updatedStatus,
+      squareFulfillmentSynced,
+      squareFulfillmentError,
+    });
   } catch (error) {
     console.error("Error updating ticket status:", error);
     res.status(error.statusCode || 500).json({ error: error.message });
