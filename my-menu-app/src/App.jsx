@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.9.7";
+const APP_VERSION = "v1.9.8";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -30,14 +30,14 @@ const DAILY_UPDATE_NOTICE = {
 };
 const RELEASE_NOTES = [
   {
-    version: "v1.9.7",
+    version: "v1.9.8",
     date: "Current build",
-    summary: "Started the DrinkFlow plug-and-play onboarding path.",
+    summary: "Moved menu toggles to the main dashboard and tightened log retention.",
     items: [
-      "DrinkFlow now has a real setup request intake for future shops.",
-      "The private Studio Samantha dashboard can show new DrinkFlow setup requests after the Supabase table is installed.",
-      "The developer route is now included in the Vercel route rewrites so /developer can load directly.",
-      "The private founder-focus notes now keep customer discovery and pricing homework out of the public marketing page.",
+      "Menu availability toggles now live on the main staff dashboard so employees can hide sold-out items without opening Owner Reports.",
+      "Owner access logs now keep IP addresses and only show the last 7 days in the portal.",
+      "Customer insights now keep a 7-day working window and archive older notes behind the scenes.",
+      "The developer route is still available through the Vercel rewrites for the private Studio Samantha workspace.",
     ],
   },
   {
@@ -267,7 +267,7 @@ const RELEASE_NOTES = [
     items: [
       "The Learn More page now links to a dedicated Goldie's Coffee & Goods case study.",
       "The case study documents opening-week feedback, version fixes, and future Supabase-backed proof points.",
-      "Goldie's is now documented as the founding customer with lifetime free use of its current setup.",
+      "Goldie's is documented as the first live customer for this setup.",
     ],
   },
   {
@@ -3043,7 +3043,7 @@ function CustomerInsightsPanel() {
         <div>
           <h2 className="text-xl font-black text-[#0F4036]">Customer insights</h2>
           <p className="text-sm font-semibold text-[#6A614F]">
-            Save today's customer requests and menu clues. Older notes stay archived for owners.
+            Save today's customer requests and menu clues. Older notes roll into the 7-day archive for owners.
           </p>
         </div>
         {status ? <div className="text-sm font-black text-[#0F4036]">{status}</div> : null}
@@ -3090,10 +3090,149 @@ function CustomerInsightsPanel() {
               {insight.drink_name ? (
                 <div className="mt-1 text-xs font-semibold text-[#6A614F]">{insight.drink_name}</div>
               ) : null}
+              {insight.created_at ? (
+                <div className="mt-1 text-[11px] font-bold text-[#8B5A1D]">
+                  {new Date(insight.created_at).toLocaleString([], {
+                    month: "short",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
+                </div>
+              ) : null}
             </div>
           ))}
         </div>
       ) : null}
+    </section>
+  );
+}
+
+function MenuAvailabilityPanel({ demoMode = false }) {
+  const [showMenuAvailability, setShowMenuAvailability] = useState(false);
+  const [menuAvailability, setMenuAvailability] = useState([]);
+  const [menuAvailabilityLoading, setMenuAvailabilityLoading] = useState(false);
+  const [menuAvailabilityError, setMenuAvailabilityError] = useState("");
+  const [menuAvailabilityNotice, setMenuAvailabilityNotice] = useState("");
+
+  useEffect(() => {
+    if (demoMode || !showMenuAvailability) return;
+
+    async function fetchMenuAvailability() {
+      try {
+        setMenuAvailabilityLoading(true);
+        setMenuAvailabilityError("");
+        const response = await fetch(apiUrl("/api/menu/availability"), {
+          credentials: "include",
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(data.error || `Menu availability unavailable: ${response.status}`);
+        }
+        setMenuAvailability(data.items || []);
+      } catch (availabilityError) {
+        setMenuAvailabilityError(availabilityError.message || "Menu availability unavailable");
+      } finally {
+        setMenuAvailabilityLoading(false);
+      }
+    }
+
+    fetchMenuAvailability();
+  }, [demoMode, showMenuAvailability]);
+
+  async function handleMenuAvailabilityChange(itemName, available) {
+    setMenuAvailability((current) =>
+      current.map((item) =>
+        item.itemName === itemName ? { ...item, available } : item
+      )
+    );
+    setMenuAvailabilityNotice("");
+    setMenuAvailabilityError("");
+
+    try {
+      const response = await fetch(apiUrl("/api/menu/availability"), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ itemName, available }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || `Menu update failed: ${response.status}`);
+      }
+      setMenuAvailabilityNotice(
+        available
+          ? `${itemName} is back on customer menus.`
+          : `${itemName} is hidden from the menu board and online ordering.`
+      );
+    } catch (availabilityError) {
+      setMenuAvailabilityError(availabilityError.message || "Menu update failed");
+    }
+  }
+
+  if (demoMode) return null;
+
+  return (
+    <section className="rounded-2xl bg-[rgba(255,253,248,0.9)] border border-white/70 p-3 shadow-sm backdrop-blur-sm">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
+            Menu availability
+          </div>
+          <div className="mt-1 text-sm font-semibold leading-6 text-[#6A614F]">
+            Employees can hide sold-out drinks from the menu board and online ordering fast.
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowMenuAvailability((current) => !current)}
+          className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+        >
+          {showMenuAvailability ? "Hide toggles" : "Show toggles"}
+        </button>
+      </div>
+
+      {showMenuAvailability && (
+        <div className="mt-3 rounded-xl border border-[#CA862B]/12 bg-[#FFFDF8] p-3">
+          {menuAvailabilityLoading ? (
+            <div className="text-sm font-semibold text-[#6A614F]">
+              Loading menu toggles...
+            </div>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {menuAvailability.map((item) => (
+                <label
+                  key={item.itemKey || item.itemName}
+                  className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2 text-sm font-bold text-[#111111]"
+                >
+                  <span>
+                    <span className="block">{item.itemName}</span>
+                    <span className="text-xs font-semibold text-[#6A614F]">{item.category}</span>
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={item.available !== false}
+                    onChange={(event) =>
+                      handleMenuAvailabilityChange(item.itemName, event.target.checked)
+                    }
+                    className="h-5 w-5 accent-[#0F4036]"
+                  />
+                </label>
+              ))}
+            </div>
+          )}
+          {menuAvailabilityNotice ? (
+            <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-900">
+              {menuAvailabilityNotice}
+            </div>
+          ) : null}
+          {menuAvailabilityError ? (
+            <div className="mt-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-900">
+              {menuAvailabilityError}
+            </div>
+          ) : null}
+        </div>
+      )}
     </section>
   );
 }
@@ -3336,6 +3475,16 @@ function CustomerInsightsHistory() {
                   {insight.created_by ? (
                     <span className="rounded-full bg-[#EEE0C5]/55 px-2.5 py-1">
                       Saved by {insight.created_by}
+                    </span>
+                  ) : null}
+                  {insight.created_at ? (
+                    <span className="rounded-full bg-[#EEE0C5]/55 px-2.5 py-1">
+                      {new Date(insight.created_at).toLocaleString([], {
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
                     </span>
                   ) : null}
                 </div>
@@ -4772,11 +4921,6 @@ function OwnerReportsView({
   const [accessLogs, setAccessLogs] = useState([]);
   const [accessLogError, setAccessLogError] = useState("");
   const [accessLogLoading, setAccessLogLoading] = useState(false);
-  const [showMenuAvailability, setShowMenuAvailability] = useState(false);
-  const [menuAvailability, setMenuAvailability] = useState([]);
-  const [menuAvailabilityLoading, setMenuAvailabilityLoading] = useState(false);
-  const [menuAvailabilityError, setMenuAvailabilityError] = useState("");
-  const [menuAvailabilityNotice, setMenuAvailabilityNotice] = useState("");
   const demoQuery = demoMode ? "?demo=training" : "";
 
   useEffect(() => {
@@ -4899,61 +5043,6 @@ function OwnerReportsView({
 
     fetchOwnerAccessLog();
   }, [demoMode, showAccessLog]);
-
-  useEffect(() => {
-    if (demoMode || !showMenuAvailability) return;
-
-    async function fetchMenuAvailability() {
-      try {
-        setMenuAvailabilityLoading(true);
-        setMenuAvailabilityError("");
-        const response = await fetch(apiUrl("/api/menu/availability"), {
-          credentials: "include",
-        });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          throw new Error(data.error || `Menu availability unavailable: ${response.status}`);
-        }
-        setMenuAvailability(data.items || []);
-      } catch (availabilityError) {
-        setMenuAvailabilityError(availabilityError.message || "Menu availability unavailable");
-      } finally {
-        setMenuAvailabilityLoading(false);
-      }
-    }
-
-    fetchMenuAvailability();
-  }, [demoMode, showMenuAvailability]);
-
-  async function handleMenuAvailabilityChange(itemName, available) {
-    setMenuAvailability((current) =>
-      current.map((item) =>
-        item.itemName === itemName ? { ...item, available } : item
-      )
-    );
-    setMenuAvailabilityNotice("");
-    setMenuAvailabilityError("");
-
-    try {
-      const response = await fetch(apiUrl("/api/menu/availability"), {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ itemName, available }),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(data.error || `Menu update failed: ${response.status}`);
-      }
-      setMenuAvailabilityNotice(
-        available
-          ? `${itemName} is back on customer menus.`
-          : `${itemName} is hidden from the menu board and online ordering.`
-      );
-    } catch (availabilityError) {
-      setMenuAvailabilityError(availabilityError.message || "Menu update failed");
-    }
-  }
 
   async function handleSaveSnapshot() {
     if (!report) return;
@@ -5234,11 +5323,11 @@ function OwnerReportsView({
               <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                 <div className="min-w-0 flex-1">
                   <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
-                    Practice end-of-day email
+                    End-of-day wrap-up email
                   </div>
                   <label className="mt-2 block">
                     <span className="text-sm font-semibold text-[#6A614F]">
-                      Send a pretty PDF report for the selected range.
+                      Send PDF report for the selected range.
                     </span>
                     <input
                       type="email"
@@ -5278,7 +5367,7 @@ function OwnerReportsView({
                     Owner access check
                   </div>
                   <div className="mt-1 text-sm font-semibold leading-6 text-[#6A614F]">
-                    A light security view of who opened the owner portal recently.
+                    A light security view of who opened the owner portal in the last 7 days.
                   </div>
                 </div>
                 <button
@@ -5310,6 +5399,11 @@ function OwnerReportsView({
                             <div className="text-xs font-bold text-[#6A614F]">
                               {entry.action || "login"} · {entry.role || "owner"}
                             </div>
+                            {entry.ip_address ? (
+                              <div className="text-[11px] font-bold text-[#8B5A1D]">
+                                IP {entry.ip_address}
+                              </div>
+                            ) : null}
                           </div>
                           <div className="text-sm font-black text-[#0F4036]">
                             {entry.created_at
@@ -5377,70 +5471,6 @@ function OwnerReportsView({
               </div>
             </div>
           </div>
-
-          {!demoMode && (
-            <section className="mb-4 rounded-2xl border border-[#CA862B]/18 bg-white/80 p-3 shadow-sm">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
-                    Menu availability
-                  </div>
-                  <div className="mt-1 text-sm font-semibold leading-6 text-[#6A614F]">
-                    Hide sold-out drinks from the customer menu board and online ordering.
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowMenuAvailability((current) => !current)}
-                  className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-                >
-                  {showMenuAvailability ? "Hide toggles" : "Show toggles"}
-                </button>
-              </div>
-
-              {showMenuAvailability && (
-                <div className="mt-3 rounded-xl border border-[#CA862B]/12 bg-[#FFFDF8] p-3">
-                  {menuAvailabilityLoading ? (
-                    <div className="text-sm font-semibold text-[#6A614F]">
-                      Loading menu toggles...
-                    </div>
-                  ) : (
-                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                      {menuAvailability.map((item) => (
-                        <label
-                          key={item.itemKey || item.itemName}
-                          className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2 text-sm font-bold text-[#111111]"
-                        >
-                          <span>
-                            <span className="block">{item.itemName}</span>
-                            <span className="text-xs font-semibold text-[#6A614F]">{item.category}</span>
-                          </span>
-                          <input
-                            type="checkbox"
-                            checked={item.available !== false}
-                            onChange={(event) =>
-                              handleMenuAvailabilityChange(item.itemName, event.target.checked)
-                            }
-                            className="h-5 w-5 accent-[#0F4036]"
-                          />
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                  {menuAvailabilityNotice ? (
-                    <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-900">
-                      {menuAvailabilityNotice}
-                    </div>
-                  ) : null}
-                  {menuAvailabilityError ? (
-                    <div className="mt-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-900">
-                      {menuAvailabilityError}
-                    </div>
-                  ) : null}
-                </div>
-              )}
-            </section>
-          )}
 
           {loading ? (
             <div className="rounded-2xl border border-dashed border-[#CA862B]/22 bg-white/70 p-8 text-center font-semibold text-[#6A614F]">
@@ -8694,7 +8724,7 @@ function DeveloperDiaryDashboard() {
 
           <section className="rounded-[2rem] border-4 border-white bg-white p-5 shadow-[0_24px_70px_rgba(91,58,109,0.12)]">
             <p className="text-xs font-black uppercase tracking-[0.18em] text-[#7b5aa6]">
-              Founder focus
+              Private setup notes
             </p>
               <h2 className="mt-2 text-3xl font-black text-[#ff4f8b]" style={rainbowText}>
               Plug-and-play path
@@ -8702,7 +8732,7 @@ function DeveloperDiaryDashboard() {
             <div className="mt-4 space-y-3 text-sm font-semibold leading-6 text-[#66576f]">
               <p>
                 Keep the public story customer-facing. Use this private diary for Mom Test
-                questions, mentor notes, pricing reactions, and founder homework.
+                questions, mentor notes, pricing reactions, and setup homework.
               </p>
               <ul className="space-y-2 pl-5">
                 <li>Build a list of 5-10 nearby coffee shops, food trucks, and vendors.</li>
@@ -10245,7 +10275,9 @@ export default function GoldiesKDS() {
           </section>
         )}
 
-        {!showFocusBoard && <CustomerInsightsPanel />}
+          {!showFocusBoard && <CustomerInsightsPanel />}
+
+          {!showFocusBoard && <MenuAvailabilityPanel demoMode={isDemoRoute} />}
 
         {!showFocusBoard && (
         <section className="space-y-2">

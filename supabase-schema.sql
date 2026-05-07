@@ -150,6 +150,20 @@ create index if not exists kds_customer_insights_created_at_idx
 create index if not exists kds_customer_insights_customer_name_idx
   on public.kds_customer_insights(customer_name);
 
+create table if not exists public.kds_customer_insights_archive (
+  original_id bigint primary key,
+  customer_name text not null default '',
+  drink_name text not null default '',
+  note text not null,
+  source_order_id text,
+  created_by text,
+  created_at timestamptz not null default now(),
+  archived_at timestamptz not null default now()
+);
+
+create index if not exists kds_customer_insights_archive_created_at_idx
+  on public.kds_customer_insights_archive(created_at desc);
+
 create table if not exists public.drinkflow_leads (
   id bigserial primary key,
   email text not null unique,
@@ -317,3 +331,17 @@ create index if not exists kds_access_logs_role_idx
 
 create index if not exists kds_access_logs_created_at_idx
   on public.kds_access_logs(created_at desc);
+
+create table if not exists public.kds_access_logs_archive (
+  original_id bigint primary key,
+  actor text not null default '',
+  role text not null default 'owner',
+  action text not null default 'login',
+  ip_address text not null default '',
+  user_agent text not null default '',
+  created_at timestamptz not null default now(),
+  archived_at timestamptz not null default now()
+);
+
+create index if not exists kds_access_logs_archive_created_at_idx
+  on public.kds_access_logs_archive(created_at desc);

@@ -12,6 +12,7 @@ const { createClient } = require("@supabase/supabase-js");
 const { Client, Environment } = require("square");
 
 const app = express();
+app.set("trust proxy", true);
 const PORT = process.env.PORT || 3000;
 const SQUARE_ENVIRONMENT = process.env.SQUARE_ENVIRONMENT || "production";
 const SQUARE_ACCESS_TOKEN = process.env.SQUARE_ACCESS_TOKEN;
@@ -61,6 +62,8 @@ const SESSION_COOKIE_NAME = "goldies_kds_session";
 const OWNER_SESSION_COOKIE_NAME = "goldies_owner_session";
 const DEVELOPER_SESSION_COOKIE_NAME = "studio_samantha_developer_session";
 const SESSION_MAX_AGE_MS = 1000 * 60 * 60 * 12;
+const ACCESS_LOG_RETENTION_DAYS = 7;
+const CUSTOMER_INSIGHTS_RETENTION_DAYS = 7;
 const KDS_PASSWORD_SETTING_KEY = "kds_password";
 const OWNER_PASSWORD_SETTING_KEY = "owner_password";
 const DEVELOPER_USERNAME = process.env.DEVELOPER_USERNAME || "StudioSamantha";
@@ -1196,6 +1199,7 @@ let ownerPasswordState = {
 };
 let localDeveloperNotes = [];
 let localAccessLogs = [];
+let localCustomerInsights = [];
 let localDrinkFlowOnboardingRequests = [];
 let tickets = [
   {
@@ -1259,6 +1263,41 @@ let localMenuAvailability = [];
 
 function normalizeName(name = "") {
   return String(name).trim();
+}
+
+function getAccessLogRetentionCutoff() {
+  return new Date(Date.now() - ACCESS_LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+}
+
+function getRequestIp(req) {
+  const forwardedFor = String(req?.headers?.["x-forwarded-for"] || "")
+    .split(",")
+    .map((value) => value.trim())
+    .find(Boolean);
+  const directIp = cleanLeadText(req?.ip || req?.socket?.remoteAddress || "", 80);
+  const candidate = forwardedFor || directIp;
+
+  return candidate.replace(/^::ffff:/, "");
+}
+
+function trimLocalAccessLogs() {
+  const cutoffTime = Date.parse(getAccessLogRetentionCutoff());
+  localAccessLogs = localAccessLogs.filter((entry) => {
+    const createdAt = Date.parse(entry.created_at || 0);
+    return Number.isFinite(createdAt) && createdAt >= cutoffTime;
+  });
+}
+
+function getCustomerInsightRetentionCutoff() {
+  return new Date(Date.now() - CUSTOMER_INSIGHTS_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+}
+
+function trimLocalCustomerInsights() {
+  const cutoffTime = Date.parse(getCustomerInsightRetentionCutoff());
+  localCustomerInsights = localCustomerInsights.filter((entry) => {
+    const createdAt = Date.parse(entry.created_at || 0);
+    return Number.isFinite(createdAt) && createdAt >= cutoffTime;
+  });
 }
 
 function normalizeDrinkText(name = "") {
@@ -3742,13 +3781,7 @@ async function getDrinkReport(range = "today") {
   const orderDateById = new Map(
     orders.map((order) => [order.square_order_id, order.createdAt])
   );
-
-  const { data: items, error: itemsError } = await supabase
-    .from("kds_order_items")
-    .select("*")
-    .in("order_id", orderIds);
-
-  if (itemsError) throw itemsError;
+  const items = await fetchOrderItemsByOrderIds(orderIds);
 
   const reportTickets = orderIds.map((orderId) => ({
     id: orderId,
@@ -3763,6 +3796,26 @@ async function getDrinkReport(range = "today") {
   }));
 
   return buildDrinkReport(reportTickets, start, end);
+}
+
+async function fetchOrderItemsByOrderIds(orderIds = [], columns = "*") {
+  if (!supabase || !orderIds.length) return [];
+
+  const chunkSize = 100;
+  const collected = [];
+
+  for (let i = 0; i < orderIds.length; i += chunkSize) {
+    const chunk = orderIds.slice(i, i + chunkSize);
+    const { data, error } = await supabase
+      .from("kds_order_items")
+      .select(columns)
+      .in("order_id", chunk);
+
+    if (error) throw error;
+    collected.push(...(data || []));
+  }
+
+  return collected;
 }
 
 function ticketHasDrinkItem(ticket) {
@@ -3900,12 +3953,7 @@ async function getDrinkMakingTimeReport(range = "today") {
   }
 
   const orderIds = orders.map((order) => order.square_order_id);
-  const { data: items, error: itemsError } = await supabase
-    .from("kds_order_items")
-    .select("order_id, name, category")
-    .in("order_id", orderIds);
-
-  if (itemsError) throw itemsError;
+  const items = await fetchOrderItemsByOrderIds(orderIds, "order_id, name, category");
 
   const drinkItemsByOrderId = new Map();
   for (const item of items || []) {
@@ -5237,22 +5285,25 @@ async function recordAccessLog({
     actor: normalizeName(actor) || role,
     role: cleanLeadText(role, 40),
     action: cleanLeadText(action, 60),
-    ip_address: cleanLeadText(
-      req?.headers?.["x-forwarded-for"]?.split(",")?.[0] || req?.socket?.remoteAddress || "",
-      80
-    ),
+    ip_address: cleanLeadText(getRequestIp(req), 80),
     user_agent: cleanLeadText(req?.headers?.["user-agent"] || "", 300),
     created_at: new Date().toISOString(),
   };
 
   if (!supabase) {
     localAccessLogs.unshift({ id: `local-${Date.now()}`, ...entry });
+    trimLocalAccessLogs();
     localAccessLogs = localAccessLogs.slice(0, 200);
     return entry;
   }
 
   const { error } = await supabase.from("kds_access_logs").insert(entry);
   if (error) throw error;
+
+  pruneAccessLogs().catch((cleanupError) => {
+    console.warn(`WARNING: Unable to prune access logs: ${cleanupError.message}`);
+  });
+
   return entry;
 }
 
@@ -5265,19 +5316,147 @@ function accessLogsTableMissing(error) {
   );
 }
 
+function accessLogsArchiveTableMissing(error) {
+  const message = String(error?.message || "");
+  return (
+    error?.code === "42P01" ||
+    message.includes("kds_access_logs_archive") ||
+    message.includes("schema cache")
+  );
+}
+
+async function pruneAccessLogs() {
+  const cutoffAt = getAccessLogRetentionCutoff();
+
+  if (!supabase) {
+    trimLocalAccessLogs();
+    return { archived: 0, deleted: 0, storage: "memory" };
+  }
+
+  const { data: oldLogs, error: fetchError } = await supabase
+    .from("kds_access_logs")
+    .select("*")
+    .lt("created_at", cutoffAt)
+    .order("created_at", { ascending: true })
+    .limit(500);
+
+  if (fetchError) throw fetchError;
+  if (!oldLogs?.length) return { archived: 0, deleted: 0, storage: "supabase" };
+
+  const archiveRows = oldLogs.map(({ id, ...row }) => ({
+    original_id: id,
+    ...row,
+  }));
+
+  let archiveSucceeded = false;
+  try {
+    const { error: archiveError } = await supabase
+      .from("kds_access_logs_archive")
+      .upsert(archiveRows, { onConflict: "original_id" });
+
+    if (archiveError) {
+      if (!accessLogsArchiveTableMissing(archiveError)) throw archiveError;
+    } else {
+      archiveSucceeded = true;
+    }
+  } catch (error) {
+    if (!accessLogsArchiveTableMissing(error)) throw error;
+  }
+
+  const { error: deleteError } = await supabase
+    .from("kds_access_logs")
+    .delete()
+    .lt("created_at", cutoffAt);
+
+  if (deleteError) throw deleteError;
+
+  return {
+    archived: archiveSucceeded ? archiveRows.length : 0,
+    deleted: oldLogs.length,
+    storage: "supabase",
+  };
+}
+
+function customerInsightsArchiveTableMissing(error) {
+  const message = String(error?.message || "");
+  return (
+    error?.code === "42P01" ||
+    message.includes("kds_customer_insights_archive") ||
+    message.includes("schema cache")
+  );
+}
+
+async function pruneCustomerInsights() {
+  const cutoffAt = getCustomerInsightRetentionCutoff();
+
+  if (!supabase) {
+    trimLocalCustomerInsights();
+    return { archived: 0, deleted: 0, storage: "memory" };
+  }
+
+  const { data: oldInsights, error: fetchError } = await supabase
+    .from("kds_customer_insights")
+    .select("*")
+    .lt("created_at", cutoffAt)
+    .order("created_at", { ascending: true })
+    .limit(500);
+
+  if (fetchError) throw fetchError;
+  if (!oldInsights?.length) return { archived: 0, deleted: 0, storage: "supabase" };
+
+  const archiveRows = oldInsights.map(({ id, ...row }) => ({
+    original_id: id,
+    ...row,
+  }));
+
+  let archiveSucceeded = false;
+  try {
+    const { error: archiveError } = await supabase
+      .from("kds_customer_insights_archive")
+      .upsert(archiveRows, { onConflict: "original_id" });
+
+    if (archiveError) {
+      if (!customerInsightsArchiveTableMissing(archiveError)) throw archiveError;
+    } else {
+      archiveSucceeded = true;
+    }
+  } catch (error) {
+    if (!customerInsightsArchiveTableMissing(error)) throw error;
+  }
+
+  const { error: deleteError } = await supabase
+    .from("kds_customer_insights")
+    .delete()
+    .lt("created_at", cutoffAt);
+
+  if (deleteError) throw deleteError;
+
+  return {
+    archived: archiveSucceeded ? archiveRows.length : 0,
+    deleted: oldInsights.length,
+    storage: "supabase",
+  };
+}
+
 async function fetchAccessLogs({ role = "owner", limit = 12 } = {}) {
   const safeLimit = Math.min(Math.max(Number(limit) || 12, 1), 80);
   const normalizedRole = cleanLeadText(role, 40);
+  const cutoffAt = getAccessLogRetentionCutoff();
 
   if (!supabase) {
     return localAccessLogs
-      .filter((entry) => !normalizedRole || entry.role === normalizedRole)
+      .filter(
+        (entry) =>
+          (!normalizedRole || entry.role === normalizedRole) &&
+          Date.parse(entry.created_at || 0) >= Date.parse(cutoffAt)
+      )
       .slice(0, safeLimit);
   }
 
   let query = supabase
     .from("kds_access_logs")
     .select("*")
+    .gte("created_at", cutoffAt)
     .order("created_at", { ascending: false })
     .limit(safeLimit);
 
@@ -6010,6 +6189,9 @@ app.post("/api/owner/reports/drink-revenue/email", requireOwnerAuth, async (req,
 
 app.get("/api/owner/access-log", requireOwnerAuth, async (req, res) => {
   try {
+    pruneAccessLogs().catch((cleanupError) => {
+      console.warn(`WARNING: Unable to prune access logs: ${cleanupError.message}`);
+    });
     const logs = await fetchAccessLogs({ role: "owner", limit: req.query.limit || 12 });
     res.json({ logs, storage: supabase ? "supabase" : "memory" });
   } catch (error) {
@@ -6258,13 +6440,33 @@ app.get("/api/tickets/completed", requireKdsAuth, async (req, res) => {
 
 app.get("/api/customer-insights", requireKdsOrOwnerAuth, async (req, res) => {
   try {
-    if (!supabase) return res.json({ insights: [] });
-
     const range = String(req.query.range || "today").toLowerCase();
     const limit = Math.min(Number.parseInt(req.query.limit, 10) || 12, 100);
+    const cutoffAt = getCustomerInsightRetentionCutoff();
+
+    pruneCustomerInsights().catch((cleanupError) => {
+      console.warn(`WARNING: Unable to prune customer insights: ${cleanupError.message}`);
+    });
+
+    if (!supabase) {
+      const filtered = localCustomerInsights.filter((insight) => {
+        const createdAt = Date.parse(insight.created_at || 0);
+        if (!Number.isFinite(createdAt) || createdAt < Date.parse(cutoffAt)) return false;
+        if (range !== "all") {
+          const start = getRangeStart("today").toISOString();
+          const end = getRangeEnd("today").toISOString();
+          return createdAt >= Date.parse(start) && createdAt <= Date.parse(end);
+        }
+        return true;
+      });
+
+      return res.json({ insights: filtered.slice(0, limit), range, storage: "memory" });
+    }
+
     let query = supabase
       .from("kds_customer_insights")
       .select("*")
+      .gte("created_at", cutoffAt)
       .order("created_at", { ascending: false })
       .limit(limit);
 
@@ -6307,10 +6509,14 @@ app.post("/api/customer-insights", requireKdsAuth, async (req, res) => {
       drink_name: drinkName,
       source_order_id: sourceOrderId,
       created_by: req.kdsSession?.employeeName || "",
+      created_at: new Date().toISOString(),
     };
 
     if (!supabase) {
-      return res.json({ ok: true, insight: { id: `local-${Date.now()}`, ...insight } });
+      const localInsight = { id: `local-${Date.now()}`, ...insight };
+      localCustomerInsights.unshift(localInsight);
+      trimLocalCustomerInsights();
+      return res.json({ ok: true, insight: localInsight });
     }
 
     const { data, error } = await supabase
@@ -6320,6 +6526,9 @@ app.post("/api/customer-insights", requireKdsAuth, async (req, res) => {
       .single();
 
     if (error) throw error;
+    pruneCustomerInsights().catch((cleanupError) => {
+      console.warn(`WARNING: Unable to prune customer insights: ${cleanupError.message}`);
+    });
     res.json({ ok: true, insight: data });
   } catch (error) {
     if (customerInsightsTableMissing(error)) {
@@ -6386,7 +6595,7 @@ app.get("/api/display/menu", requireKdsAuth, async (_req, res) => {
   }
 });
 
-app.get("/api/menu/availability", requireOwnerAuth, async (_req, res) => {
+app.get("/api/menu/availability", requireKdsOrOwnerAuth, async (_req, res) => {
   try {
     const [categories, availability] = await Promise.all([
       getGoldiesMenuBoard(),
@@ -6426,7 +6635,7 @@ app.get("/api/menu/availability", requireOwnerAuth, async (_req, res) => {
   }
 });
 
-app.patch("/api/menu/availability", requireOwnerAuth, async (req, res) => {
+app.patch("/api/menu/availability", requireKdsOrOwnerAuth, async (req, res) => {
   try {
     const itemName = req.body?.itemName;
     const available = req.body?.available !== false;
