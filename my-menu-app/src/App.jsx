@@ -2984,6 +2984,101 @@ function DailyDrinkCount({ drinkCounts, orderCount }) {
   );
 }
 
+function ReportWindowShell({ eyebrow, title, description, onClose, children }) {
+  const closeWindow = onClose || (() => window.close());
+
+  return (
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,253,248,0.96),_rgba(238,224,197,1)_50%,_rgba(230,210,173,1)_100%)] px-3 py-3 text-[#111111] sm:px-4 sm:py-4">
+      <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-[1400px] flex-col gap-3">
+        <header className="rounded-2xl border border-white/70 bg-[rgba(255,253,248,0.94)] px-4 py-4 shadow-sm backdrop-blur-sm">
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
+                {eyebrow}
+              </div>
+              <h1 className="mt-1 text-2xl font-black text-[#0F4036] sm:text-3xl">
+                {title}
+              </h1>
+              <p className="mt-1 max-w-3xl text-sm font-semibold text-[#6A614F]">
+                {description}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <a
+                href="/"
+                className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+              >
+                Back to dashboard
+              </a>
+              <button
+                type="button"
+                onClick={closeWindow}
+                className="rounded-xl bg-[#0F4036] px-4 py-2 text-sm font-black text-white transition hover:bg-[#0b352d]"
+              >
+                Close window
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <div className="min-h-0 flex-1">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function TodayCountReportWindow({ drinkCounts, orderCount }) {
+  return (
+    <ReportWindowShell
+      eyebrow="Daily report"
+      title="Today's Count"
+      description="This opens in its own window so the main dashboard can stay focused on live tickets."
+    >
+      <DailyDrinkCount drinkCounts={drinkCounts} orderCount={orderCount} />
+    </ReportWindowShell>
+  );
+}
+
+function OrdersByDayReportWindow({
+  defaultDate,
+  trainingMode,
+  trainingTickets,
+}) {
+  return (
+    <ReportWindowShell
+      eyebrow="Daily lookup"
+      title="Orders By Day"
+      description="Search one day of completed or active tickets without crowding the main board."
+    >
+      <OrdersByDayLookup
+        defaultDate={defaultDate}
+        collapsed={false}
+        onToggle={() => window.close()}
+        trainingMode={trainingMode}
+        trainingTickets={trainingTickets}
+        windowMode
+      />
+    </ReportWindowShell>
+  );
+}
+
+function StatsReportWindow({ reports, timeReports, onClose }) {
+  return (
+    <ReportWindowShell
+      eyebrow="Owner stats"
+      title="View Stats"
+      description="Open the larger report set in a separate window so the dashboard stays cleaner."
+      onClose={onClose}
+    >
+      <div className="grid gap-4">
+        <DrinkStats reports={reports} />
+        <DrinkTimeStatsPanel reports={timeReports} onClose={onClose} />
+      </div>
+    </ReportWindowShell>
+  );
+}
+
 function CustomerInsightsPanel() {
   const [customerName, setCustomerName] = useState("");
   const [drinkName, setDrinkName] = useState("");
@@ -4152,6 +4247,7 @@ function OrdersByDayLookup({
   onToggle,
   trainingMode,
   trainingTickets,
+  windowMode = false,
 }) {
   const [date, setDate] = useState(defaultDate);
   const [loading, setLoading] = useState(false);
@@ -4239,7 +4335,7 @@ function OrdersByDayLookup({
           onClick={onToggle}
           className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
         >
-          {collapsed ? "Show" : "Hide"}
+          {windowMode ? "Close window" : collapsed ? "Show" : "Hide"}
         </button>
       </div>
 
@@ -6035,6 +6131,54 @@ function getDisplayRoute() {
   if (path === "/volume-board" || path === "/drink-volume") return "volume";
   if (path === "/online-orders" || path === "/online-order-board") return "online-orders";
   return "";
+}
+
+function getDashboardReportPanel() {
+  if (typeof window === "undefined") return "";
+
+  try {
+    const path = window.location.pathname.replace(/\/+$/, "");
+    const params = new URLSearchParams(window.location.search);
+    const panel = params.get("panel") || "";
+    const normalizedPanel = ["today-count", "orders-by-day", "stats"].includes(panel)
+      ? panel
+      : "";
+
+    if (normalizedPanel) return normalizedPanel;
+    if (path === "/today-count") return "today-count";
+    if (path === "/orders-by-day") return "orders-by-day";
+    if (path === "/stats") return "stats";
+  } catch {
+    return "";
+  }
+
+  return "";
+}
+
+function openDashboardReportWindow(panel) {
+  if (typeof window === "undefined") return;
+
+  const routeMap = {
+    "today-count": "/today-count",
+    "orders-by-day": "/orders-by-day",
+    stats: "/stats",
+  };
+  const nextPath = routeMap[panel];
+  if (!nextPath) return;
+
+  const nextUrl = new URL(window.location.href);
+  nextUrl.pathname = nextPath;
+  nextUrl.search = "";
+
+  try {
+    if (window.location.search.includes("demo=training")) {
+      nextUrl.searchParams.set("demo", "training");
+    }
+  } catch {
+    // ignore URL construction failures
+  }
+
+  window.open(nextUrl.toString(), "_blank", "noopener,noreferrer,width=1280,height=900");
 }
 
 function useDisplayTheme() {
@@ -8924,10 +9068,8 @@ export default function GoldiesKDS() {
   });
   const [drinkReports, setDrinkReports] = useState({});
   const [drinkTimeReports, setDrinkTimeReports] = useState({});
-  const [showStats, setShowStats] = useState(false);
   const [showDrinkTimeStats, setShowDrinkTimeStats] = useState(false);
-  const [showTodayCount, setShowTodayCount] = useState(false);
-  const [showOrdersByDay, setShowOrdersByDay] = useState(true);
+  const [showTicketColumns, setShowTicketColumns] = useState(false);
   const [showFocusBoard, setShowFocusBoard] = useState(false);
   const [showOpenTickets, setShowOpenTickets] = useState(false);
   const [showOnlineOrderAlertDetails, setShowOnlineOrderAlertDetails] = useState(false);
@@ -8981,11 +9123,13 @@ export default function GoldiesKDS() {
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
   const [lastError, setLastError] = useState("");
   const [defaultLookupDate] = useState(() => getLocalDateInputValue());
+  const dashboardReportPanel = getDashboardReportPanel();
+  const isTodayCountWindow = dashboardReportPanel === "today-count";
+  const isOrdersByDayWindow = dashboardReportPanel === "orders-by-day";
+  const isStatsWindow = dashboardReportPanel === "stats";
   function resetDashboardViews() {
-    setShowStats(false);
     setShowDrinkTimeStats(false);
-    setShowTodayCount(false);
-    setShowOrdersByDay(false);
+    setShowTicketColumns(false);
     setShowFocusBoard(false);
     setShowOpenTickets(false);
     setShowSettingsMenu(false);
@@ -9292,7 +9436,7 @@ export default function GoldiesKDS() {
   useEffect(() => {
     if (
       authStatus !== "authenticated" ||
-      (!showStats && !showDrinkTimeStats) ||
+      (!isStatsWindow && !showDrinkTimeStats) ||
       isTrainingMode
     )
       return undefined;
@@ -9358,7 +9502,7 @@ export default function GoldiesKDS() {
       mounted = false;
       clearInterval(interval);
     };
-  }, [authStatus, showStats, showDrinkTimeStats, isTrainingMode]);
+  }, [authStatus, isStatsWindow, showDrinkTimeStats, isTrainingMode]);
 
   const displayedTickets = isTrainingMode ? trainingTickets : tickets;
   const displayedDrinkCounts = isTrainingMode
@@ -9705,6 +9849,37 @@ export default function GoldiesKDS() {
     setSignedInEmployee("");
   }
 
+  if (authStatus === "authenticated") {
+    if (isTodayCountWindow) {
+      return (
+        <TodayCountReportWindow
+          drinkCounts={displayedDrinkCounts}
+          orderCount={displayedDrinkOrderCount}
+        />
+      );
+    }
+
+    if (isOrdersByDayWindow) {
+      return (
+        <OrdersByDayReportWindow
+          defaultDate={defaultLookupDate}
+          trainingMode={isTrainingMode}
+          trainingTickets={isTrainingMode ? displayedTickets : []}
+        />
+      );
+    }
+
+    if (isStatsWindow) {
+      return (
+        <StatsReportWindow
+          reports={displayedDrinkReports}
+          timeReports={displayedDrinkTimeReports}
+          onClose={() => window.close()}
+        />
+      );
+    }
+  }
+
   let content;
 
   if (authStatus === "checking") {
@@ -9972,34 +10147,38 @@ export default function GoldiesKDS() {
 
               <button
                 type="button"
-                onClick={() => setShowStats((current) => !current)}
+                onClick={() => openDashboardReportWindow("stats")}
                 className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
               >
-                {showStats ? "Hide Stats" : "View Stats"}
+                View Stats
               </button>
 
               <button
                 type="button"
-                onClick={() => setShowTodayCount((current) => !current)}
-                className={`rounded-2xl border border-[#CA862B]/14 px-4 py-2 text-sm font-black transition shadow-sm ${
-                  showTodayCount
-                    ? "bg-[#0F4036] text-white hover:bg-[#0b352d]"
-                    : "bg-white/80 text-[#0F4036] hover:bg-[#EEE0C5]/55"
-                }`}
+                onClick={() => openDashboardReportWindow("today-count")}
+                className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
               >
                 Today&apos;s Count
               </button>
 
               <button
                 type="button"
-                onClick={() => setShowOrdersByDay((current) => !current)}
+                onClick={() => openDashboardReportWindow("orders-by-day")}
+                className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
+              >
+                Orders By Day
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowTicketColumns((current) => !current)}
                 className={`rounded-2xl border border-[#CA862B]/14 px-4 py-2 text-sm font-black transition shadow-sm ${
-                  showOrdersByDay
+                  showTicketColumns
                     ? "bg-[#0F4036] text-white hover:bg-[#0b352d]"
                     : "bg-white/80 text-[#0F4036] hover:bg-[#EEE0C5]/55"
                 }`}
               >
-                Orders By Day
+                Ticket Columns
               </button>
 
               <div className="relative" onClick={(event) => event.stopPropagation()}>
@@ -10313,91 +10492,81 @@ export default function GoldiesKDS() {
 
           {!showFocusBoard && <MenuAvailabilityPanel demoMode={isDemoRoute} />}
 
-        {!showFocusBoard && (
-        <section className="space-y-2">
-          <div className="flex items-center justify-between gap-3 rounded-2xl bg-[rgba(255,253,248,0.9)] border border-white/70 px-4 py-3 shadow-sm backdrop-blur-sm">
-            <div>
-              <h2 className="text-lg md:text-2xl font-black text-[#0F4036]">Today&apos;s Count</h2>
-              <p className="text-sm text-[#6A614F]">
-                Drink totals
-              </p>
+        {!showFocusBoard && !showTicketColumns ? (
+          <section className="rounded-2xl border border-white/70 bg-[rgba(255,253,248,0.9)] p-4 shadow-sm backdrop-blur-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-lg md:text-2xl font-black text-[#0F4036]">Ticket columns</h2>
+                <p className="text-sm text-[#6A614F]">
+                  New, making, and ready stay tucked away until you open them.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowTicketColumns(true)}
+                className="rounded-xl bg-[#0F4036] px-4 py-2 text-sm font-black text-white transition hover:bg-[#0b352d]"
+              >
+                Open ticket columns
+              </button>
             </div>
-          </div>
+          </section>
+        ) : (
+          <section className={`grid grid-cols-1 gap-3 ${
+            showFocusBoard ? "xl:grid-cols-2" : "xl:grid-cols-3"
+          }`}>
+            {(showFocusBoard ? FOCUS_STATUS_COLUMNS : STATUS_COLUMNS).map((column) => (
+              <section
+                key={column.key}
+                className={`rounded-2xl bg-[rgba(255,253,248,0.9)] border border-white/70 border-t-4 ${column.accent} p-3 shadow-[0_16px_40px_rgba(15,64,54,0.08)] flex flex-col backdrop-blur-sm ${
+                  showFocusBoard
+                    ? "min-h-[calc(100vh-170px)] max-h-[calc(100vh-150px)]"
+                    : hasOpenTickets
+                      ? "xl:min-h-[520px]"
+                      : "xl:min-h-[220px]"
+                }`}
+              >
+                <div className={`flex items-center justify-between px-1 py-1.5 mb-2 shrink-0 ${
+                  showFocusBoard ? "sticky top-0 z-10 rounded-xl bg-[#FFFDF8]/95 backdrop-blur" : ""
+                }`}>
+                  <h2 className="text-lg xl:text-xl font-black text-[#111111]">
+                    {column.label}
+                  </h2>
 
-          {showTodayCount && (
-            <DailyDrinkCount
-              drinkCounts={displayedDrinkCounts}
-              orderCount={displayedDrinkOrderCount}
-            />
-          )}
-        </section>
+                  <span
+                    className={`rounded-full px-3 py-1 text-sm font-black shadow-sm ${column.badge}`}
+                  >
+                    {grouped[column.key]?.length || 0}
+                  </span>
+                </div>
+
+                <div className={`min-h-0 ${
+                  showFocusBoard ? "space-y-2 overflow-y-auto pr-1" : "space-y-3 xl:pr-1"
+                }`}>
+                  {grouped[column.key]?.length ? (
+                    grouped[column.key].map((ticket) => (
+                      <TicketCard
+                        key={ticket.id}
+                        ticket={ticket}
+                        onStatusChange={handleStatusChange}
+                        onItemDoneChange={handleItemDoneChange}
+                        onNameChange={handleNameChange}
+                        onDiningOptionChange={handleDiningOptionChange}
+                        showDiningOption={showDiningOnTickets}
+                        compact={showFocusBoard}
+                      />
+                    ))
+                  ) : (
+                    <div className="rounded-2xl border border-dashed border-[#CA862B]/22 bg-white/70 p-8 text-center text-[#6A614F] font-semibold">
+                      No tickets
+                    </div>
+                  )}
+                </div>
+              </section>
+            ))}
+          </section>
         )}
 
-        {!showFocusBoard && showStats && <DrinkStats reports={displayedDrinkReports} />}
-
-        <section className={`grid grid-cols-1 gap-3 ${
-          showFocusBoard ? "xl:grid-cols-2" : "xl:grid-cols-3"
-        }`}>
-          {(showFocusBoard ? FOCUS_STATUS_COLUMNS : STATUS_COLUMNS).map((column) => (
-            <section
-              key={column.key}
-              className={`rounded-2xl bg-[rgba(255,253,248,0.9)] border border-white/70 border-t-4 ${column.accent} p-3 shadow-[0_16px_40px_rgba(15,64,54,0.08)] flex flex-col backdrop-blur-sm ${
-                showFocusBoard
-                  ? "min-h-[calc(100vh-170px)] max-h-[calc(100vh-150px)]"
-                  : hasOpenTickets
-                    ? "xl:min-h-[520px]"
-                    : "xl:min-h-[220px]"
-              }`}
-            >
-              <div className={`flex items-center justify-between px-1 py-1.5 mb-2 shrink-0 ${
-                showFocusBoard ? "sticky top-0 z-10 rounded-xl bg-[#FFFDF8]/95 backdrop-blur" : ""
-              }`}>
-                <h2 className="text-lg xl:text-xl font-black text-[#111111]">
-                  {column.label}
-                </h2>
-
-                <span
-                  className={`rounded-full px-3 py-1 text-sm font-black shadow-sm ${column.badge}`}
-                >
-                  {grouped[column.key]?.length || 0}
-                </span>
-              </div>
-
-              <div className={`min-h-0 ${
-                showFocusBoard ? "space-y-2 overflow-y-auto pr-1" : "space-y-3 xl:pr-1"
-              }`}>
-                {grouped[column.key]?.length ? (
-                  grouped[column.key].map((ticket) => (
-                    <TicketCard
-                      key={ticket.id}
-                      ticket={ticket}
-                      onStatusChange={handleStatusChange}
-                      onItemDoneChange={handleItemDoneChange}
-                      onNameChange={handleNameChange}
-                      onDiningOptionChange={handleDiningOptionChange}
-                      showDiningOption={showDiningOnTickets}
-                      compact={showFocusBoard}
-                    />
-                  ))
-                ) : (
-                  <div className="rounded-2xl border border-dashed border-[#CA862B]/22 bg-white/70 p-8 text-center text-[#6A614F] font-semibold">
-                    No tickets
-                  </div>
-                )}
-              </div>
-            </section>
-          ))}
-        </section>
-
-        {!showFocusBoard && (
-        <OrdersByDayLookup
-          defaultDate={defaultLookupDate}
-          collapsed={!showOrdersByDay}
-          onToggle={() => setShowOrdersByDay((current) => !current)}
-          trainingMode={isTrainingMode}
-          trainingTickets={isTrainingMode ? displayedTickets : []}
-        />
-        )}
+        {!showFocusBoard && null}
       </main>
       </div>
 
