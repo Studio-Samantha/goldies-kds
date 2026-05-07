@@ -10004,19 +10004,115 @@ export default function GoldiesKDS() {
               </p>
 
               {!isDashboardFullscreen && (
-              <div className="mt-3 inline-flex rounded-2xl border border-[#CA862B]/18 bg-white/75 p-1 shadow-sm">
-                <button
-                  type="button"
-                  onClick={() => setShowFocusBoard((current) => !current)}
-                  className={`rounded-xl px-4 py-2 text-sm font-black transition ${
-                    showFocusBoard
-                      ? "bg-[#0F4036] text-white"
-                      : "bg-transparent text-[#0F4036] hover:bg-[#EEE0C5]/55"
-                  }`}
-                >
-                  {showFocusBoard ? "Full Dashboard" : "Focus Board"}
-                </button>
-              </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowFocusBoard((current) => !current)}
+                    className={`rounded-2xl border border-[#CA862B]/18 px-4 py-2 text-sm font-black transition shadow-sm ${
+                      showFocusBoard
+                        ? "bg-[#0F4036] text-white"
+                        : "bg-white/80 text-[#0F4036] hover:bg-[#EEE0C5]/55"
+                    }`}
+                  >
+                    {showFocusBoard ? "Full Dashboard" : "Focus Board"}
+                  </button>
+
+                  <div className="relative" onClick={(event) => event.stopPropagation()}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowDisplaysMenu(false);
+                        setShowSettingsMenu(false);
+                        setShowReportsMenu((current) => !current);
+                      }}
+                      className="rounded-2xl border border-[#CA862B]/18 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
+                      aria-expanded={showReportsMenu}
+                    >
+                      View Stats
+                    </button>
+
+                    {showReportsMenu && (
+                      <div className="absolute left-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-[#CA862B]/22 bg-white p-1.5 shadow-[0_18px_45px_rgba(15,64,54,0.16)]">
+                        <button
+                          type="button"
+                          onClick={() => openDashboardReportWindow("today-count")}
+                          className="block w-full rounded-xl px-3 py-2 text-left text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
+                        >
+                          Today&apos;s Drink Order Count
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openDashboardReportWindow("orders-by-day")}
+                          className="block w-full rounded-xl px-3 py-2 text-left text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
+                        >
+                          Look up orders by day
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openDashboardReportWindow("stats")}
+                          className="block w-full rounded-xl px-3 py-2 text-left text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
+                        >
+                          View Stats
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="relative" onClick={(event) => event.stopPropagation()}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowSettingsMenu(false);
+                        setShowDisplaysMenu((current) => !current);
+                      }}
+                      className="rounded-2xl border border-[#CA862B]/18 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
+                      aria-expanded={showDisplaysMenu}
+                    >
+                      Displays
+                    </button>
+
+                    {showDisplaysMenu && (
+                      <div className="absolute left-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-[#CA862B]/22 bg-white p-1.5 shadow-[0_18px_45px_rgba(15,64,54,0.16)]">
+                        <a
+                          href={getDisplayHref("/goldies-menu", isDemoRoute)}
+                          className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
+                        >
+                          Menu Board
+                        </a>
+                        <a
+                          href={getDisplayHref("/orders-up", isDemoRoute)}
+                          className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
+                        >
+                          Orders Up
+                        </a>
+                        <a
+                          href={getDisplayHref("/drive-thru", isDemoRoute)}
+                          className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
+                        >
+                          Drive Thru
+                        </a>
+                        <a
+                          href={getDisplayHref("/volume-board", isDemoRoute)}
+                          className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
+                        >
+                          Volume Board
+                        </a>
+                        <a
+                          href={getDisplayHref("/online-orders", isDemoRoute)}
+                          className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
+                        >
+                          Online Orders
+                        </a>
+                        <a
+                          href={getDisplayHref("/self-order-kiosk", isDemoRoute)}
+                          className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
+                        >
+                          Self Order Kiosk
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -10075,7 +10171,7 @@ export default function GoldiesKDS() {
                       setShowDisplaysMenu(false);
                       setShowSettingsMenu((current) => !current);
                     }}
-                    className="rounded-xl border border-transparent bg-transparent px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
+                    className="rounded-xl border border-[#0F4036]/16 bg-[#0F4036] px-4 py-2 text-sm font-black text-white transition hover:bg-[#0b352d]"
                   >
                     Settings
                   </button>
@@ -10135,102 +10231,6 @@ export default function GoldiesKDS() {
                     setShowReleaseNotes(true);
                   }}
                 />
-              </div>
-
-              <div className="relative" onClick={(event) => event.stopPropagation()}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowDisplaysMenu(false);
-                    setShowSettingsMenu(false);
-                    setShowReportsMenu((current) => !current);
-                  }}
-                  className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
-                  aria-expanded={showReportsMenu}
-                >
-                  View Stats
-                </button>
-
-                {showReportsMenu && (
-                  <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-[#CA862B]/22 bg-white p-1.5 shadow-[0_18px_45px_rgba(15,64,54,0.16)]">
-              <button
-                type="button"
-                onClick={() => openDashboardReportWindow("today-count")}
-                className="block w-full rounded-xl px-3 py-2 text-left text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
-              >
-                      Today&apos;s Drink Order Count
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => openDashboardReportWindow("orders-by-day")}
-                      className="block w-full rounded-xl px-3 py-2 text-left text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
-                    >
-                      Look up orders by day
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => openDashboardReportWindow("stats")}
-                      className="block w-full rounded-xl px-3 py-2 text-left text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
-                    >
-                      View Stats
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div className="relative" onClick={(event) => event.stopPropagation()}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowSettingsMenu(false);
-                    setShowDisplaysMenu((current) => !current);
-                  }}
-                  className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
-                  aria-expanded={showDisplaysMenu}
-                >
-                  Displays
-                </button>
-
-                {showDisplaysMenu && (
-                  <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-[#CA862B]/22 bg-white p-1.5 shadow-[0_18px_45px_rgba(15,64,54,0.16)]">
-                    <a
-                      href={getDisplayHref("/goldies-menu", isDemoRoute)}
-                      className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
-                    >
-                      Menu Board
-                    </a>
-                    <a
-                      href={getDisplayHref("/orders-up", isDemoRoute)}
-                      className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
-                    >
-                      Orders Up
-                    </a>
-                    <a
-                      href={getDisplayHref("/drive-thru", isDemoRoute)}
-                      className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
-                    >
-                      Drive Thru
-                    </a>
-                    <a
-                      href={getDisplayHref("/volume-board", isDemoRoute)}
-                      className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
-                    >
-                      Volume Board
-                    </a>
-                    <a
-                      href={getDisplayHref("/online-orders", isDemoRoute)}
-                      className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
-                    >
-                      Online Orders
-                    </a>
-                    <a
-                      href={getDisplayHref("/self-order-kiosk", isDemoRoute)}
-                      className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
-                    >
-                      Self Order Kiosk
-                    </a>
-                  </div>
-                )}
               </div>
 
               <button
