@@ -1582,7 +1582,7 @@ async function fetchRecentMenuPrices() {
 async function getCustomerOrdersUp() {
   const active = await getActiveTickets();
   const completed = await getCompletedTicketsToday().catch(() => []);
-  const recentCompletedCutoff = Date.now() - 60 * 60 * 1000;
+  const recentCompletedCutoff = Date.now() - 15 * 60 * 1000;
 
   const making = active
     .filter((ticket) => ticket.status === "making" && ticketHasDrinkItem(ticket))
@@ -7063,7 +7063,7 @@ app.get("/api/reports/drinks", requireKdsAuth, async (req, res) => {
 
 app.get("/api/reports/drink-making-time", requireKdsAuth, async (req, res) => {
   try {
-    const allowedRanges = new Set(["today"]);
+    const allowedRanges = new Set(["today", "yesterday", "last7", "last30", "thisMonth", "thisYear"]);
     const range = allowedRanges.has(req.query.range) ? req.query.range : "today";
     const report = await getDrinkMakingTimeReport(range).catch((error) => {
       console.error("Error building drink making time report:", error);
