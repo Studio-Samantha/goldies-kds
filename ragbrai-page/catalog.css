@@ -118,6 +118,17 @@
   padding: 0;
 }
 
+.hat-grid article {
+  min-height: 100%;
+}
+
+.hat-grid img {
+  aspect-ratio: 1 / 1;
+  padding: 0.4rem;
+  object-fit: cover;
+  object-position: center;
+}
+
 .image-pair {
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
@@ -374,5 +385,10 @@
   .catalog-grid img {
     aspect-ratio: 4 / 3;
     padding: 0.55rem;
+  }
+
+  .hat-grid img {
+    aspect-ratio: 4 / 3;
+    padding: 0.45rem;
   }
 }
