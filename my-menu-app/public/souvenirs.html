@@ -157,12 +157,8 @@
         const totalMinutes = Math.floor(diff / 60000);
         const days = Math.floor(totalMinutes / 1440);
         const hours = Math.floor((totalMinutes % 1440) / 60);
-        const parts = [];
 
-        if (days > 0) parts.push(`${days} day${days === 1 ? "" : "s"}`);
-        parts.push(`${hours} hour${hours === 1 ? "" : "s"}`);
-
-        launchCountdown.textContent = `Orders go live June 1 · ${parts.join(", ")}`;
+        launchCountdown.textContent = `Orders go live June 1 in ${days} day${days === 1 ? "" : "s"} and ${hours} hour${hours === 1 ? "" : "s"}.`;
       };
 
       const juneFirst = new Date(new Date().getFullYear(), 5, 1, 0, 0, 0, 0);
