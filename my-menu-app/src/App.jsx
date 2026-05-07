@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.9.8";
+const APP_VERSION = "v1.9.9";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -22,21 +22,21 @@ const DINING_OPTIONS = ["HANGIN' OUT", "TAKING OFF", "Pickup", "Delivery", "Driv
 const DAILY_UPDATE_NOTICE = {
   id: APP_VERSION,
   eyebrow: "Today on the KDS",
-  title: "Start with a clean handoff",
+  title: "Clean handoff, clean dashboard",
   message:
-    "Ready orders now clear after a short pickup window, and customer notes on the dashboard show today only.",
+    "The dashboard is cleaned up for the day, with the live board, reports, and display controls staying easy to reach.",
   note:
-    "For service today: use Ready as the handoff, use Order complete when a drink does not need the customer board, and glance at Avg Drink Time later to see whether the bar stayed smooth during the rush.",
+    "For service today: use Ready as the handoff, keep the live views simple, and open View Stats or Look up orders by day in a separate window when you want the full story.",
 };
 const RELEASE_NOTES = [
   {
-    version: "v1.9.8",
+    version: "v1.9.9",
     date: "Current build",
-    summary: "Moved menu toggles to the main dashboard and tightened log retention.",
+    summary: "Finished the dashboard cleanup and refreshed the public story copy.",
     items: [
-      "Menu availability toggles now live on the main staff dashboard so employees can hide sold-out items without opening Owner Reports.",
-      "Owner access logs now keep IP addresses and only show the last 7 days in the portal.",
-      "Customer insights now keep a 7-day working window and archive older notes behind the scenes.",
+      "View Stats, Displays, and Focus Board now stay grouped together, while the fullscreen toggle stays small and out of the way.",
+      "The public case study and login popup now match the cleaned-up dashboard version.",
+      "Menu availability toggles, owner access logs, and customer note retention still follow the tighter day-by-day workflow.",
       "The developer route is still available through the Vercel rewrites for the private Studio Samantha workspace.",
     ],
   },
