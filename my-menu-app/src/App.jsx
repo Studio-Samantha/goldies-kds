@@ -18,7 +18,7 @@ const SUPPORT_EMAIL = "samantha@studiosamantha.com";
 const SOFT_OPENING_DATE = "2026-04-29";
 const SETTINGS_HELP_TEXT =
   "Settings has the app tools: theme, password change, support, and release notes.";
-const DINING_OPTIONS = ["For here", "To go", "Pickup", "Delivery", "Drive thru"];
+const DINING_OPTIONS = ["HANGIN' OUT", "TAKING OFF", "Pickup", "Delivery", "Drive thru"];
 const DAILY_UPDATE_NOTICE = {
   id: APP_VERSION,
   eyebrow: "Today on the KDS",
@@ -324,7 +324,7 @@ const RELEASE_NOTES = [
     date: "Previous build",
     summary: "Added a ticket service dropdown.",
     items: [
-      "Ticket cards now let staff set For here, To go, Pickup, Delivery, or Drive thru directly.",
+      "Ticket cards now let staff set HANGIN' OUT, TAKING OFF, Pickup, Delivery, or Drive thru directly.",
       "Service labels can also be inferred from Square item notes like to go or for here.",
     ],
   },
@@ -1952,6 +1952,7 @@ function formatDiningOption(ticket) {
   if (value.includes("pickup") || value.includes("pick up")) return "Pickup";
   if (value.includes("drive")) return "Drive thru";
   if (
+    value.includes("taking off") ||
     value.includes("to go") ||
     value.includes("togo") ||
     value.includes("takeout") ||
@@ -1959,15 +1960,16 @@ function formatDiningOption(ticket) {
     value.includes("carryout") ||
     value.includes("carry out")
   ) {
-    return "To go";
+    return "TAKING OFF";
   }
   if (
     value.includes("dine") ||
+    value.includes("hangin") ||
     value.includes("for here") ||
     value.includes("eat in") ||
     value.includes("eatin")
   ) {
-    return "For here";
+    return "HANGIN' OUT";
   }
 
   return "Unspecified";
@@ -2093,7 +2095,7 @@ function createTrainingTickets() {
       completedAt: null,
       source: "Square Register",
       status: "new",
-      diningOption: "To go",
+      diningOption: "TAKING OFF",
       items: [
         { name: "Americano", qty: 1, modifiers: ["Oat milk"], note: "" },
         { name: "Butter Croissant", qty: 1, modifiers: [], note: "" },
@@ -2123,7 +2125,7 @@ function createTrainingTickets() {
       completedAt: null,
       source: "Square Register",
       status: "ready",
-      diningOption: "For here",
+      diningOption: "HANGIN' OUT",
       items: [
         { name: "Matcha Latte", qty: 1, modifiers: ["Coconut milk"], note: "" },
         { name: "Bagel", qty: 1, modifiers: ["Toasted"], note: "" },
@@ -2184,7 +2186,7 @@ function createTrainingTickets() {
       completedAt: getTrainingTimestamp(-1, 13, 27),
       source: "Square Handheld",
       status: "done",
-      diningOption: "To go",
+      diningOption: "TAKING OFF",
       items: [
         { name: "Strawberry Banana", qty: 1, modifiers: [], note: "" },
         { name: "Teas", qty: 1, modifiers: [], note: "" },
@@ -2199,7 +2201,7 @@ function createTrainingTickets() {
       completedAt: getTrainingTimestamp(-3, 10, 39),
       source: "Square Register",
       status: "done",
-      diningOption: "For here",
+      diningOption: "HANGIN' OUT",
       items: [
         { name: "Cappuccino", qty: 1, modifiers: ["Whole milk"], note: "" },
         { name: "Muffin", qty: 1, modifiers: [], note: "" },

@@ -47,12 +47,14 @@ const DRINKFLOW_EMAIL_FROM =
   ALERT_EMAIL_FROM;
 const VALID_STATUSES = new Set(["new", "making", "ready", "completed", "done"]);
 const VALID_DINING_OPTIONS = new Set([
-  "For here",
-  "To go",
+  "HANGIN' OUT",
+  "TAKING OFF",
   "Pickup",
   "Delivery",
   "Drive thru",
   "Unspecified",
+  "For here",
+  "To go",
 ]);
 const SQUARE_SYNC_INTERVAL_MS = 30 * 1000;
 const SQUARE_HEALTH_CHECK_INTERVAL_MS = 30 * 1000;
@@ -526,7 +528,7 @@ function getOnlineOrderingDrinkRule(itemName = "") {
     text.includes("gibraltar") ||
     text.includes("pour over")
   ) {
-    return { online: false, reason: "For here only" };
+    return { online: false, reason: "HANGIN' OUT only" };
   }
 
   if (text.includes("americano") || text === "latte" || text.startsWith("latte ")) {
@@ -1308,6 +1310,43 @@ function normalizeDrinkText(name = "") {
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
+}
+
+function normalizeDiningOptionValue(value = "") {
+  const normalized = String(value || "").trim();
+  const lower = normalized.toLowerCase();
+
+  if (
+    lower.includes("delivery") ||
+    lower.includes("shipment") ||
+    lower.includes("shipping")
+  ) {
+    return "Delivery";
+  }
+  if (lower.includes("pickup") || lower.includes("pick up")) return "Pickup";
+  if (lower.includes("drive")) return "Drive thru";
+  if (
+    lower.includes("hangin") ||
+    lower.includes("hanging out") ||
+    lower.includes("for here") ||
+    lower.includes("dine") ||
+    lower.includes("eat in") ||
+    lower.includes("eatin")
+  ) {
+    return "HANGIN' OUT";
+  }
+  if (
+    lower.includes("taking off") ||
+    lower.includes("to go") ||
+    lower.includes("togo") ||
+    lower.includes("takeout") ||
+    lower.includes("take out") ||
+    lower.includes("carryout") ||
+    lower.includes("carry out")
+  ) {
+    return "TAKING OFF";
+  }
+  return normalized;
 }
 
 function matchesAnyPattern(value, patterns = []) {
@@ -2828,7 +2867,7 @@ function getDiningOption(order) {
 
   if (type === "DELIVERY" || type === "SHIPMENT") return "Delivery";
   if (type === "PICKUP") return "Pickup";
-  if (type.includes("DINE")) return "For here";
+  if (type.includes("DINE")) return "HANGIN' OUT";
   if (type.includes("DRIVE")) return "Drive thru";
 
   const metadataCandidates = [
@@ -2866,7 +2905,7 @@ function getDiningOption(order) {
     value.includes("carryout") ||
     value.includes("carry out")
   ) {
-    return "To go";
+    return "TAKING OFF";
   }
   if (
     value.includes("dine") ||
@@ -2874,7 +2913,7 @@ function getDiningOption(order) {
     value.includes("eat in") ||
     value.includes("eatin")
   ) {
-    return "For here";
+    return "HANGIN' OUT";
   }
 
   return "";
@@ -3449,7 +3488,7 @@ async function setTicketName(id, customerName) {
 }
 
 async function setTicketDiningOption(id, diningOption) {
-  const normalizedDiningOption = String(diningOption || "").trim() || "Unspecified";
+  const normalizedDiningOption = normalizeDiningOptionValue(diningOption) || "Unspecified";
 
   if (!VALID_DINING_OPTIONS.has(normalizedDiningOption)) {
     const error = new Error("Invalid dining option");
