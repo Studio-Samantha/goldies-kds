@@ -85,7 +85,7 @@
           <h2>Hats</h2>
           <p>Three easy-to-wear cap styles.</p>
         </div>
-        <div class="catalog-grid hat-grid">
+        <div class="catalog-grid">
           <article>
             <img src="assets/ragbrai/reference-products/hat-iowa-patch-trucker-olive-tan.jpg" alt="" />
             <h3>Iowa Patch Trucker Hat</h3>
@@ -157,15 +157,12 @@
         const totalMinutes = Math.floor(diff / 60000);
         const days = Math.floor(totalMinutes / 1440);
         const hours = Math.floor((totalMinutes % 1440) / 60);
-        const minutes = totalMinutes % 60;
+        const parts = [];
 
-        const parts = [
-          `${days}d`,
-          `${hours}h`,
-          minutes > 0 ? `${minutes}m` : null,
-        ].filter(Boolean);
+        if (days > 0) parts.push(`${days} day${days === 1 ? "" : "s"}`);
+        parts.push(`${hours} hour${hours === 1 ? "" : "s"}`);
 
-        launchCountdown.textContent = `Orders go live June 1 · ${parts.join(" ")}`;
+        launchCountdown.textContent = `Orders go live June 1 · ${parts.join(", ")}`;
       };
 
       const juneFirst = new Date(new Date().getFullYear(), 5, 1, 0, 0, 0, 0);

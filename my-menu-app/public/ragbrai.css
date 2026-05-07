@@ -100,6 +100,19 @@ nav a {
   white-space: nowrap;
 }
 
+.launch-countdown {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.55rem 0.9rem;
+  border: 2px solid rgba(9, 35, 63, 0.14);
+  border-radius: 999px;
+  background: var(--red);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
 .hero,
 .section,
 .final-cta {
