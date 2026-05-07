@@ -26,6 +26,7 @@
         <a href="#tees">Tees</a>
         <a href="#totes">Totes</a>
         <a href="#hats">Hats</a>
+        <span class="launch-countdown" aria-live="polite" data-launch-countdown>Orders go live June 1</span>
       </nav>
     </header>
 
@@ -143,6 +144,38 @@
       <img src="" alt="" />
     </div>
     <script>
+      const launchCountdown = document.querySelector("[data-launch-countdown]");
+
+      const formatCountdown = (targetDate) => {
+        const diff = targetDate.getTime() - Date.now();
+
+        if (diff <= 0) {
+          launchCountdown.textContent = "Orders are live now.";
+          return;
+        }
+
+        const totalMinutes = Math.floor(diff / 60000);
+        const days = Math.floor(totalMinutes / 1440);
+        const hours = Math.floor((totalMinutes % 1440) / 60);
+        const minutes = totalMinutes % 60;
+
+        const parts = [
+          `${days}d`,
+          `${hours}h`,
+          minutes > 0 ? `${minutes}m` : null,
+        ].filter(Boolean);
+
+        launchCountdown.textContent = `Orders go live June 1 · ${parts.join(" ")}`;
+      };
+
+      const juneFirst = new Date(new Date().getFullYear(), 5, 1, 0, 0, 0, 0);
+      if (Date.now() >= juneFirst.getTime()) {
+        juneFirst.setFullYear(juneFirst.getFullYear() + 1);
+      }
+
+      formatCountdown(juneFirst);
+      setInterval(() => formatCountdown(juneFirst), 1000);
+
       const lightbox = document.querySelector(".lightbox");
       const lightboxImage = lightbox.querySelector("img");
       const closeLightbox = () => {
