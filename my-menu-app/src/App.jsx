@@ -6150,7 +6150,7 @@ function DisplayHeader({ eyebrow, title, subtitle }) {
           <div className="text-xs md:text-sm font-black uppercase tracking-[0.22em] text-[#8B5A1D]">
             {eyebrow}
           </div>
-          <h1 className="mt-1 text-4xl font-black tracking-tight text-[#0F4036] md:text-6xl">
+          <h1 className="mt-1 text-3xl font-black tracking-tight text-[#0F4036] md:text-4xl">
             {title}
           </h1>
         </div>
@@ -6424,7 +6424,7 @@ function MenuBoardDisplay() {
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F3D39B] sm:text-xs sm:tracking-[0.24em]">
                 {demoMode ? "DF Demo Cafe" : "Goldie's Coffee & Goods"}
               </div>
-              <h1 className="mt-1 text-3xl font-semibold tracking-normal sm:text-4xl md:text-6xl">
+              <h1 className="mt-1 text-2xl font-semibold tracking-normal sm:text-3xl md:text-4xl">
                 Drink Menu
               </h1>
             </div>
@@ -6442,7 +6442,7 @@ function MenuBoardDisplay() {
               className={`flex min-h-0 flex-col overflow-hidden rounded-[18px] border sm:rounded-[24px] lg:min-h-[360px] ${cardClass}`}
             >
               <div className={`border-b px-3 py-3 sm:px-4 sm:py-4 ${cardHeaderClass}`}>
-                <h2 className={`text-2xl font-semibold tracking-normal md:text-4xl ${headingClass}`}>
+                <h2 className={`text-xl font-semibold tracking-normal md:text-2xl ${headingClass}`}>
                   {category.label}
                 </h2>
               </div>
@@ -6453,10 +6453,10 @@ function MenuBoardDisplay() {
                       key={item.name}
                       className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 px-3 py-2.5 sm:px-4 sm:py-3"
                     >
-                      <span className={`min-w-0 text-base font-medium leading-tight tracking-normal sm:text-lg md:text-xl ${itemClass}`}>
+                      <span className={`min-w-0 text-sm font-medium leading-tight tracking-normal sm:text-base md:text-lg ${itemClass}`}>
                         {item.name}
                       </span>
-                      <span className={`rounded-full px-2.5 py-1 text-sm font-semibold sm:text-base md:text-lg ${priceClass}`}>
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold sm:text-sm md:text-base ${priceClass}`}>
                         {item.price || "Ask"}
                       </span>
                     </div>
@@ -6675,7 +6675,7 @@ function OrdersUpDisplay() {
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F3D39B] sm:text-xs sm:tracking-[0.24em]">
                 {demoMode ? "DF Demo Cafe" : "Goldie's Coffee & Goods"}
               </div>
-              <h1 className="mt-1 text-3xl font-semibold tracking-normal sm:text-4xl md:text-6xl">
+              <h1 className="mt-1 text-2xl font-semibold tracking-normal sm:text-3xl md:text-4xl">
                 Orders Up
               </h1>
             </div>
@@ -6693,11 +6693,11 @@ function OrdersUpDisplay() {
                 <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8B5A1D] sm:text-xs sm:tracking-[0.2em]">
                   Being made
                 </div>
-                <h2 className={`mt-1 text-3xl font-semibold tracking-normal sm:text-4xl md:text-5xl ${headingClass}`}>
+                <h2 className={`mt-1 text-2xl font-semibold tracking-normal sm:text-3xl md:text-4xl ${headingClass}`}>
                   At the bar
                 </h2>
               </div>
-              <div className={`rounded-full px-3 py-1.5 text-lg font-semibold sm:px-4 sm:text-xl ${isDark ? "bg-white/10 text-[#FFF7EA]" : "bg-[#CA862B]/12 text-[#8B5A1D]"}`}>
+              <div className={`rounded-full px-3 py-1.5 text-sm font-semibold sm:px-4 sm:text-base ${isDark ? "bg-white/10 text-[#FFF7EA]" : "bg-[#CA862B]/12 text-[#8B5A1D]"}`}>
                 {orders.making.length}
               </div>
             </div>
@@ -6716,7 +6716,7 @@ function OrdersUpDisplay() {
             ) : (
               <div className="grid min-h-[180px] place-items-center p-4 text-center">
                 <div>
-                  <div className={`text-2xl font-semibold tracking-normal sm:text-3xl ${headingClass}`}>
+                  <div className={`text-xl font-semibold tracking-normal sm:text-2xl ${headingClass}`}>
                     No drinks at the bar
                   </div>
                   <p className={`mt-2 text-base font-medium ${mutedClass}`}>
@@ -6733,14 +6733,14 @@ function OrdersUpDisplay() {
                 <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8B5A1D] sm:text-xs sm:tracking-[0.2em]">
                   Ready now
                 </div>
-                <h2 className={`mt-1 text-3xl font-semibold tracking-normal sm:text-4xl md:text-5xl ${headingClass}`}>
+                <h2 className={`mt-1 text-2xl font-semibold tracking-normal sm:text-3xl md:text-4xl ${headingClass}`}>
                   Pick up
                 </h2>
                 <p className={`mt-1 text-sm font-semibold ${mutedClass}`}>
                   Tap your order when it is in your hands.
                 </p>
               </div>
-              <div className={`rounded-full px-3 py-1.5 text-lg font-semibold sm:px-4 sm:text-xl ${isDark ? "bg-white/10 text-[#FFF7EA]" : "bg-[#0F4036]/8 text-[#0F4036]"}`}>
+              <div className={`rounded-full px-3 py-1.5 text-sm font-semibold sm:px-4 sm:text-base ${isDark ? "bg-white/10 text-[#FFF7EA]" : "bg-[#0F4036]/8 text-[#0F4036]"}`}>
                 {orders.ready.length}
               </div>
             </div>
@@ -6771,7 +6771,7 @@ function OrdersUpDisplay() {
             ) : (
               <div className="grid min-h-[220px] place-items-center p-4 text-center sm:min-h-[280px] lg:min-h-[320px]">
                 <div>
-                  <div className={`text-3xl font-semibold tracking-normal sm:text-4xl md:text-6xl ${headingClass}`}>
+                  <div className={`text-2xl font-semibold tracking-normal sm:text-3xl md:text-4xl ${headingClass}`}>
                     Making drinks
                   </div>
                   <p className={`mt-3 text-base font-medium sm:text-lg ${mutedClass}`}>
@@ -6787,7 +6787,7 @@ function OrdersUpDisplay() {
               <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8B5A1D] sm:text-xs sm:tracking-[0.2em]">
                 Recently picked up
               </div>
-              <h2 className={`mt-1 text-2xl font-semibold tracking-normal sm:text-3xl md:text-4xl ${headingClass}`}>
+              <h2 className={`mt-1 text-lg font-semibold tracking-normal sm:text-xl md:text-2xl ${headingClass}`}>
                 Completed
               </h2>
             </div>
@@ -6928,7 +6928,7 @@ function DriveThruDisplay() {
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F3D39B] sm:text-xs sm:tracking-[0.24em]">
                 {demoMode ? "DF Demo Cafe" : "Pickup & Drive Thru"}
               </div>
-              <h1 className="mt-1 text-3xl font-semibold tracking-normal sm:text-4xl md:text-6xl">
+              <h1 className="mt-1 text-2xl font-semibold tracking-normal sm:text-3xl md:text-4xl">
                 Order Board
               </h1>
             </div>
@@ -7212,7 +7212,7 @@ function VolumeBoardDisplay() {
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F3D39B] sm:text-xs sm:tracking-[0.24em]">
                 {shopHours.label} Central
               </div>
-              <h1 className="mt-1 text-3xl font-semibold tracking-normal sm:text-4xl md:text-6xl">
+              <h1 className="mt-1 text-2xl font-semibold tracking-normal sm:text-3xl md:text-4xl">
                 Volume Board
               </h1>
             </div>
@@ -7242,7 +7242,7 @@ function VolumeBoardDisplay() {
                 <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8B5A1D] sm:text-xs sm:tracking-[0.2em]">
                   Hourly order volume
                 </div>
-                <h2 className={`mt-1 text-2xl font-semibold tracking-normal sm:text-4xl ${headingClass}`}>
+                <h2 className={`mt-1 text-xl font-semibold tracking-normal sm:text-3xl ${headingClass}`}>
                   Today&apos;s rush curve
                 </h2>
                 <p className={`mt-2 max-w-3xl text-sm font-medium sm:text-base ${mutedClass}`}>
@@ -7266,15 +7266,15 @@ function VolumeBoardDisplay() {
             <div className="grid grid-cols-2 gap-3">
               <div className={`rounded-[18px] border p-4 sm:rounded-[22px] ${cardClass}`}>
                 <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${mutedClass}`}>Drink orders</span>
-                <strong className={`mt-2 block text-4xl font-semibold leading-none ${headingClass}`}>{orderCount}</strong>
+                <strong className={`mt-2 block text-3xl font-semibold leading-none ${headingClass}`}>{orderCount}</strong>
               </div>
               <div className={`rounded-[18px] border p-4 sm:rounded-[22px] ${cardClass}`}>
                 <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${mutedClass}`}>Avg drinks</span>
-                <strong className={`mt-2 block text-4xl font-semibold leading-none ${headingClass}`}>{averageDrinks}</strong>
+                <strong className={`mt-2 block text-3xl font-semibold leading-none ${headingClass}`}>{averageDrinks}</strong>
               </div>
               <div className={`rounded-[18px] border p-4 sm:rounded-[22px] ${cardClass}`}>
                 <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${mutedClass}`}>2+ drink rate</span>
-                <strong className={`mt-2 block text-4xl font-semibold leading-none ${headingClass}`}>{Number(report?.multiDrinkOrderRate || 0)}%</strong>
+                <strong className={`mt-2 block text-3xl font-semibold leading-none ${headingClass}`}>{Number(report?.multiDrinkOrderRate || 0)}%</strong>
               </div>
               <div className={`rounded-[18px] border p-4 sm:rounded-[22px] ${cardClass}`}>
                 <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${mutedClass}`}>Peak hour</span>
@@ -7412,7 +7412,7 @@ function OnlineOrdersDisplay() {
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F3D39B] sm:text-xs sm:tracking-[0.24em]">
                 {demoMode ? "DF Demo Cafe" : "Online Pickup Beta"}
               </div>
-              <h1 className="mt-1 text-3xl font-semibold tracking-normal sm:text-4xl md:text-6xl">
+              <h1 className="mt-1 text-2xl font-semibold tracking-normal sm:text-3xl md:text-4xl">
                 Online Orders
               </h1>
             </div>
@@ -7431,11 +7431,11 @@ function OnlineOrdersDisplay() {
                   <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8B5A1D]">
                     Online pickup
                   </div>
-                  <h2 className={`mt-1 text-2xl font-semibold tracking-normal sm:text-4xl ${headingClass}`}>
+                  <h2 className={`mt-1 text-xl font-semibold tracking-normal sm:text-2xl ${headingClass}`}>
                     {group.label}
                   </h2>
                 </div>
-                <div className={`rounded-full px-3 py-1.5 text-lg font-semibold ${isDark ? "bg-white/10 text-[#FFF7EA]" : "bg-[#0F4036]/8 text-[#0F4036]"}`}>
+                <div className={`rounded-full px-3 py-1.5 text-sm font-semibold ${isDark ? "bg-white/10 text-[#FFF7EA]" : "bg-[#0F4036]/8 text-[#0F4036]"}`}>
                   {group.orders.length}
                 </div>
               </div>
@@ -7793,7 +7793,7 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
                 <div className="text-xs font-black uppercase tracking-[0.24em] text-[#F3D39B]">
                   {kioskMode ? "Self order kiosk beta" : "Online ordering beta"}
                 </div>
-                <h1 className="mt-2 text-4xl font-black leading-none md:text-6xl">
+                <h1 className="mt-2 text-3xl font-black leading-tight md:text-4xl">
                   {kioskMode ? "Order at the counter, without the line." : "Goldie's drinks, ordered ahead."}
                 </h1>
               </div>
@@ -7827,7 +7827,7 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
                     <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
                       {kioskMode ? "Kiosk order" : "Pickup order"}
                     </div>
-                    <div className="text-lg font-black text-[#0F4036]">Ready-time estimate</div>
+                    <div className="text-base font-black text-[#0F4036]">Ready-time estimate</div>
                   </div>
                 </div>
                 <span className="rounded-full bg-[#CA862B]/12 px-3 py-1 text-xs font-black text-[#8B5A1D]">
@@ -7846,7 +7846,7 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
               </div>
               <div className="mt-4 rounded-2xl bg-[#0F4036] p-4 text-white">
                 <div className="text-xs font-black uppercase tracking-[0.18em] text-[#F3D39B]">Estimated pickup</div>
-                <div className="mt-1 text-3xl font-black">ASAP + queue</div>
+                <div className="mt-1 text-2xl font-black">ASAP + queue</div>
               </div>
             </div>
             <div className="rounded-[2rem] border border-white/14 bg-[rgba(255,253,248,0.95)] p-4 text-[#0F4036] shadow-[0_30px_90px_rgba(0,0,0,0.18)]">
@@ -8132,7 +8132,7 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
                     <div className="text-xs font-black uppercase tracking-[0.18em] text-white/75">
                       Goldie&apos;s {getOnlineOrderVisualStyle(detailItem).label}
                     </div>
-                    <h2 className="mt-1 text-4xl font-black leading-none">
+                    <h2 className="mt-1 text-3xl font-black leading-none">
                       {detailItem.name}
                     </h2>
                     {detailItem.variationName ? (
@@ -8686,7 +8686,7 @@ function DeveloperDiaryDashboard() {
             <p className="text-xs font-black uppercase tracking-[0.18em] text-[#ffd35a]">
               How this becomes useful
             </p>
-            <h2 className="mt-2 text-4xl font-black text-[#ffd35a]" style={rainbowText}>
+            <h2 className="mt-2 text-3xl font-black text-[#ffd35a]" style={rainbowText}>
               Write once, reuse later
             </h2>
             <p className="mt-3 text-sm font-semibold leading-6 text-white/78">
