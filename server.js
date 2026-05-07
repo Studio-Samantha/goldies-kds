@@ -1582,7 +1582,7 @@ async function fetchRecentMenuPrices() {
 async function getCustomerOrdersUp() {
   const active = await getActiveTickets();
   const completed = await getCompletedTicketsToday().catch(() => []);
-  const recentCompletedCutoff = Date.now() - 15 * 60 * 1000;
+  const recentCompletedCutoff = Date.now() - 60 * 60 * 1000;
 
   const making = active
     .filter((ticket) => ticket.status === "making" && ticketHasDrinkItem(ticket))
