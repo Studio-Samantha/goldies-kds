@@ -6158,17 +6158,11 @@ function getDashboardReportPanel() {
 function openDashboardReportWindow(panel) {
   if (typeof window === "undefined") return;
 
-  const routeMap = {
-    "today-count": "/today-count",
-    "orders-by-day": "/orders-by-day",
-    stats: "/stats",
-  };
-  const nextPath = routeMap[panel];
-  if (!nextPath) return;
-
   const nextUrl = new URL(window.location.href);
-  nextUrl.pathname = nextPath;
+  nextUrl.pathname = "/";
   nextUrl.search = "";
+  nextUrl.hash = "";
+  nextUrl.searchParams.set("panel", panel);
 
   try {
     if (window.location.search.includes("demo=training")) {
@@ -6178,7 +6172,11 @@ function openDashboardReportWindow(panel) {
     // ignore URL construction failures
   }
 
-  window.open(nextUrl.toString(), "_blank", "noopener,noreferrer,width=1280,height=900");
+  window.open(
+    nextUrl.toString(),
+    "_blank",
+    "noopener,noreferrer,width=1280,height=900"
+  );
 }
 
 function useDisplayTheme() {
@@ -9079,6 +9077,7 @@ export default function GoldiesKDS() {
   const [showOwnerReports, setShowOwnerReports] = useState(false);
   const [signedInOwner, setSignedInOwner] = useState("");
   const [showReleaseNotes, setShowReleaseNotes] = useState(false);
+  const [showReportsMenu, setShowReportsMenu] = useState(false);
   const [showPitch, setShowPitch] = useState(false);
   const [pitchHash, setPitchHash] = useState(() => {
     if (typeof window === "undefined") return "";
@@ -9132,6 +9131,7 @@ export default function GoldiesKDS() {
     setShowTicketColumns(false);
     setShowFocusBoard(false);
     setShowOpenTickets(false);
+    setShowReportsMenu(false);
     setShowSettingsMenu(false);
     setShowDisplaysMenu(false);
     setShowOwnerLogin(false);
@@ -9972,6 +9972,7 @@ export default function GoldiesKDS() {
         onClick={() => {
           setShowSettingsMenu(false);
           setShowDisplaysMenu(false);
+          setShowReportsMenu(false);
         }}
       >
         <div
@@ -10145,29 +10146,46 @@ export default function GoldiesKDS() {
                 Square Dashboard
               </a>
 
-              <button
-                type="button"
-                onClick={() => openDashboardReportWindow("stats")}
-                className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
-              >
-                View Stats
-              </button>
+              <div className="relative" onClick={(event) => event.stopPropagation()}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDisplaysMenu(false);
+                    setShowSettingsMenu(false);
+                    setShowReportsMenu((current) => !current);
+                  }}
+                  className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
+                  aria-expanded={showReportsMenu}
+                >
+                  Reports
+                </button>
 
-              <button
-                type="button"
-                onClick={() => openDashboardReportWindow("today-count")}
-                className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
-              >
-                Today&apos;s Count
-              </button>
-
-              <button
-                type="button"
-                onClick={() => openDashboardReportWindow("orders-by-day")}
-                className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
-              >
-                Orders By Day
-              </button>
+                {showReportsMenu && (
+                  <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-[#CA862B]/22 bg-white p-1.5 shadow-[0_18px_45px_rgba(15,64,54,0.16)]">
+                    <button
+                      type="button"
+                      onClick={() => openDashboardReportWindow("today-count")}
+                      className="block w-full rounded-xl px-3 py-2 text-left text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
+                    >
+                      Today&apos;s Count
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openDashboardReportWindow("orders-by-day")}
+                      className="block w-full rounded-xl px-3 py-2 text-left text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
+                    >
+                      Orders By Day
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openDashboardReportWindow("stats")}
+                      className="block w-full rounded-xl px-3 py-2 text-left text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
+                    >
+                      View Stats
+                    </button>
+                  </div>
+                )}
+              </div>
 
               <button
                 type="button"
