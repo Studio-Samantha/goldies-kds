@@ -122,8 +122,25 @@
   min-height: 100%;
 }
 
+.hat-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.hat-grid,
+#hats .catalog-grid {
+  align-items: stretch;
+}
+
 .hat-grid img {
   aspect-ratio: 1 / 1;
+  padding: 0.4rem;
+  object-fit: cover;
+  object-position: center;
+}
+
+#hats .catalog-grid img {
+  aspect-ratio: 1 / 1;
+  height: auto;
   padding: 0.4rem;
   object-fit: cover;
   object-position: center;
@@ -388,6 +405,15 @@
   }
 
   .hat-grid img {
+    aspect-ratio: 4 / 3;
+    padding: 0.45rem;
+  }
+
+  #hats .catalog-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #hats .catalog-grid img {
     aspect-ratio: 4 / 3;
     padding: 0.45rem;
   }
