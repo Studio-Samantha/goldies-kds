@@ -1,5 +1,5 @@
 {
-  "buildCommand": "rm -rf my-menu-app/public/assets/ragbrai my-menu-app/public/souvenirs.html my-menu-app/public/ragbrai.css my-menu-app/public/catalog.css && mkdir -p my-menu-app/public/assets && cp -R ragbrai-page/assets/ragbrai my-menu-app/public/assets/ && cp ragbrai-page/catalog.html my-menu-app/public/souvenirs.html && cp ragbrai-page/ragbrai.css my-menu-app/public/ragbrai.css && cp ragbrai-page/catalog.css my-menu-app/public/catalog.css && cd my-menu-app && npm install && npm run build",
+  "buildCommand": "cd my-menu-app && npm install && npm run build",
   "outputDirectory": "my-menu-app/dist",
   "framework": "vite",
   "redirects": [

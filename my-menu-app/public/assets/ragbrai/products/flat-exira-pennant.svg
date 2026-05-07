@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img" aria-label="Exira pennant flat vector draft">
+  <rect width="900" height="520" fill="#fff6e4"/>
+  <path d="M90 110h115l610 150-610 150H90z" fill="#0d315d" stroke="#09233f" stroke-width="22" stroke-linejoin="round"/>
+  <path d="M125 145h80v230h-80z" fill="#b8241f"/>
+  <path d="M225 170l500 90-500 90z" fill="none" stroke="#d19a2a" stroke-width="16" stroke-linejoin="round"/>
+  <text x="430" y="300" text-anchor="middle" font-family="Georgia, serif" font-size="120" font-weight="900" fill="#fff6e4">EXIRA</text>
+  <path d="M645 235l17 35 39 6-28 27 7 38-35-18-35 18 7-38-28-27 39-6z" fill="#d19a2a"/>
+</svg>

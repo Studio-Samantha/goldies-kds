@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-label="Ride Exira circle flat vector draft">
+  <rect width="800" height="800" fill="#fff6e4"/>
+  <circle cx="400" cy="400" r="300" fill="#0d315d"/>
+  <circle cx="400" cy="400" r="270" fill="none" stroke="#f7e6c3" stroke-width="42"/>
+  <circle cx="400" cy="400" r="303" fill="none" stroke="#09233f" stroke-width="22"/>
+  <text x="400" y="210" text-anchor="middle" font-family="Georgia, serif" font-size="64" font-weight="700" fill="#f7e6c3">RAGBRAI LIII</text>
+  <text x="400" y="620" text-anchor="middle" font-family="Georgia, serif" font-size="58" font-weight="700" fill="#f7e6c3">EXIRA, IOWA</text>
+  <path d="M255 445h230l-95-130-62 130 157-130" fill="none" stroke="#f7e6c3" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="245" cy="465" r="70" fill="none" stroke="#f7e6c3" stroke-width="20"/>
+  <circle cx="555" cy="465" r="70" fill="none" stroke="#f7e6c3" stroke-width="20"/>
+  <path d="M400 285c-30-45-105-7-67 51 18 27 67 62 67 62s49-35 67-62c38-58-37-96-67-51z" fill="#b8241f"/>
+</svg>

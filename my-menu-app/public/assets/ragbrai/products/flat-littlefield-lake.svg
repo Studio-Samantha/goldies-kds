@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 650" role="img" aria-label="Littlefield Lake flat vector draft">
+  <rect width="900" height="650" fill="#fff6e4"/>
+  <path d="M120 95h660a55 55 0 0 1 55 55v350a55 55 0 0 1-55 55H120a55 55 0 0 1-55-55V150a55 55 0 0 1 55-55z" fill="#b7d8df" stroke="#09233f" stroke-width="24"/>
+  <circle cx="455" cy="245" r="65" fill="#d19a2a"/>
+  <path d="M95 335c130-60 210-35 330 5s210 38 380-8v188H95z" fill="#0d315d"/>
+  <path d="M95 386c132-30 238-18 355 7s235 23 355-12" fill="none" stroke="#fff6e4" stroke-width="14" opacity=".9"/>
+  <path d="M185 325l45-110 45 110zm85 0l45-130 55 130zm410 0l50-120 50 120z" fill="#496227"/>
+  <path d="M410 425c40-20 90-20 130 0-36 30-92 30-130 0z" fill="#b8241f"/>
+  <text x="450" y="175" text-anchor="middle" font-family="Georgia, serif" font-size="58" font-weight="900" fill="#09233f">LITTLEFIELD LAKE</text>
+  <text x="450" y="505" text-anchor="middle" font-family="Georgia, serif" font-size="54" font-weight="900" fill="#fff6e4">EXIRA, IOWA</text>
+</svg>

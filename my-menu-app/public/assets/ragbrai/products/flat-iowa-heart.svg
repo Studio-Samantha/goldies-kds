@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 640" role="img" aria-label="Iowa heart flat vector draft">
+  <rect width="760" height="640" fill="#fff6e4"/>
+  <path d="M155 110h390l40 55-22 65 40 58-34 60 28 72-70 85H155z" fill="#f7e6c3" stroke="#09233f" stroke-width="24" stroke-linejoin="round"/>
+  <text x="355" y="265" text-anchor="middle" font-family="Georgia, serif" font-size="100" font-weight="900" fill="#0d315d">IOWA</text>
+  <path d="M355 310c-28-42-95-7-60 48 17 26 60 57 60 57s43-31 60-57c35-55-32-90-60-48z" fill="#b8241f"/>
+  <text x="355" y="480" text-anchor="middle" font-family="Georgia, serif" font-size="58" font-weight="900" fill="#0d315d">EXIRA</text>
+  <path d="M235 525c80-35 160-35 240 0" fill="none" stroke="#d19a2a" stroke-width="18" stroke-linecap="round"/>
+</svg>
