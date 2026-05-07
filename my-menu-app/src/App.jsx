@@ -8887,7 +8887,6 @@ export default function GoldiesKDS() {
   );
   const [tickets, setTickets] = useState([]);
   const pendingTicketStatusesRef = useRef(new Map());
-  const [completedTickets, setCompletedTickets] = useState([]);
   const [drinkCounts, setDrinkCounts] = useState([]);
   const [drinkOrderCount, setDrinkOrderCount] = useState(0);
   const [drinkMakingTime, setDrinkMakingTime] = useState({
@@ -8899,8 +8898,7 @@ export default function GoldiesKDS() {
   const [showStats, setShowStats] = useState(false);
   const [showDrinkTimeStats, setShowDrinkTimeStats] = useState(false);
   const [showTodayCount, setShowTodayCount] = useState(false);
-  const [showCompletedToday, setShowCompletedToday] = useState(false);
-  const [showOrdersByDay, setShowOrdersByDay] = useState(false);
+  const [showOrdersByDay, setShowOrdersByDay] = useState(true);
   const [showFocusBoard, setShowFocusBoard] = useState(false);
   const [showOnlineOrderAlertDetails, setShowOnlineOrderAlertDetails] = useState(false);
   const [showDiningOnTickets, setShowDiningOnTickets] = useState(true);
@@ -8957,7 +8955,6 @@ export default function GoldiesKDS() {
     setShowStats(false);
     setShowDrinkTimeStats(false);
     setShowTodayCount(false);
-    setShowCompletedToday(false);
     setShowOrdersByDay(false);
     setShowFocusBoard(false);
     setShowSettingsMenu(false);
@@ -9262,54 +9259,6 @@ export default function GoldiesKDS() {
   }, [authStatus, isTrainingMode]);
 
   useEffect(() => {
-    if (authStatus !== "authenticated" || !showCompletedToday || isTrainingMode)
-      return undefined;
-
-    let mounted = true;
-
-    async function fetchCompletedTickets() {
-      const response = await fetch(apiUrl("/api/tickets/completed"), {
-        credentials: "include",
-      });
-
-      if (response.status === 401) {
-        setAuthStatus("login");
-        return [];
-      }
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch completed tickets: ${response.status}`);
-      }
-
-      const completed = await response.json();
-      return completed.map(normalizeTicket);
-    }
-
-    async function refreshCompletedTickets() {
-      try {
-        const liveCompletedTickets = await fetchCompletedTickets();
-
-        if (!mounted) return;
-
-        setCompletedTickets(liveCompletedTickets);
-      } catch (error) {
-        if (!mounted) return;
-
-        setLastError(error.message || "Completed tickets unavailable");
-      }
-    }
-
-    refreshCompletedTickets();
-
-    const interval = setInterval(refreshCompletedTickets, 10000);
-
-    return () => {
-      mounted = false;
-      clearInterval(interval);
-    };
-  }, [authStatus, showCompletedToday, isTrainingMode]);
-
-  useEffect(() => {
     if (
       authStatus !== "authenticated" ||
       (!showStats && !showDrinkTimeStats) ||
@@ -9381,13 +9330,6 @@ export default function GoldiesKDS() {
   }, [authStatus, showStats, showDrinkTimeStats, isTrainingMode]);
 
   const displayedTickets = isTrainingMode ? trainingTickets : tickets;
-  const displayedCompletedTickets = isTrainingMode
-    ? displayedTickets.filter(
-        (ticket) =>
-          ["completed", "done"].includes(ticket.status) &&
-          isSameLocalDay(ticket.completedAt || ticket.createdAt, getTodayDateKey())
-      )
-    : completedTickets;
   const displayedDrinkCounts = isTrainingMode
     ? getDailyDrinkCounts(displayedTickets)
     : drinkCounts;
@@ -9720,7 +9662,6 @@ export default function GoldiesKDS() {
     }).catch(() => {});
 
     setTickets([]);
-    setCompletedTickets([]);
     setDrinkCounts([]);
     setDrinkOrderCount(0);
     setDrinkReports({});
@@ -10360,30 +10301,6 @@ export default function GoldiesKDS() {
             </section>
           ))}
         </section>
-
-        {!showFocusBoard && (
-        <section className="space-y-2">
-          <div className="flex items-center justify-between gap-3 rounded-2xl bg-[rgba(255,253,248,0.9)] border border-white/70 px-4 py-3 shadow-sm backdrop-blur-sm">
-            <div>
-              <h2 className="text-lg md:text-2xl font-black text-[#0F4036]">Completed Today</h2>
-              <p className="text-sm text-[#6A614F]">
-                Finished tickets
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowCompletedToday((current) => !current)}
-              className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-            >
-              {showCompletedToday ? "Hide" : "Show"}
-            </button>
-          </div>
-
-          {showCompletedToday && (
-            <CompletedTransactions tickets={displayedCompletedTickets} />
-          )}
-        </section>
-        )}
 
         {!showFocusBoard && (
         <OrdersByDayLookup
