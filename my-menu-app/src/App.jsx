@@ -10235,14 +10235,6 @@ export default function GoldiesKDS() {
 
               <button
                 type="button"
-                onClick={handleDashboardFullscreen}
-                className="rounded-2xl border border-[#0F4036]/16 bg-[#0F4036] px-4 py-2 text-sm font-black text-white transition hover:bg-[#0b352d] shadow-sm"
-              >
-                Full Screen
-              </button>
-
-              <button
-                type="button"
                 onClick={handleLogout}
                 className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-black text-red-800 transition hover:bg-red-100 shadow-sm"
               >
@@ -10252,8 +10244,32 @@ export default function GoldiesKDS() {
             )}
 
             {signedInEmployee && (
-              <div className="rounded-full border border-[#CA862B]/18 bg-white/80 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-[#0F4036] shadow-sm">
-                {signedInEmployee}
+              <div className="flex items-center gap-2">
+                <div className="rounded-full border border-[#CA862B]/18 bg-white/80 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-[#0F4036] shadow-sm">
+                  {signedInEmployee}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleDashboardFullscreen}
+                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] transition shadow-sm ${
+                    isDashboardFullscreen
+                      ? "border-[#0F4036]/16 bg-[#0F4036] text-white hover:bg-[#0b352d]"
+                      : "border-[#CA862B]/18 bg-white/80 text-[#0F4036] hover:bg-[#EEE0C5]/55"
+                  }`}
+                  title={isDashboardFullscreen ? "Exit full screen" : "Enter full screen"}
+                  aria-label={isDashboardFullscreen ? "Exit full screen" : "Enter full screen"}
+                >
+                  <span
+                    className={`inline-flex h-4 w-4 items-center justify-center rounded-full border text-[10px] leading-none ${
+                      isDashboardFullscreen
+                        ? "border-white/35 bg-white/12 text-white"
+                        : "border-[#CA862B]/20 bg-[#EEE0C5]/45 text-[#0F4036]"
+                    }`}
+                  >
+                    {isDashboardFullscreen ? "–" : "+"}
+                  </span>
+                  <span>{isDashboardFullscreen ? "Exit full screen" : "Full screen"}</span>
+                </button>
               </div>
             )}
           </div>
