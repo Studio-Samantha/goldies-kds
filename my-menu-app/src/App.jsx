@@ -5653,7 +5653,7 @@ function LoginScreen({
   suggestFixHref,
   onVersionClickMenu,
 }) {
-  const [employeeName, setEmployeeName] = useState("");
+  const [employeeName, setEmployeeName] = useState("Employee");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -5689,7 +5689,7 @@ function LoginScreen({
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password, employeeName }),
+        body: JSON.stringify({ password, employeeName: employeeName.trim() || "Employee" }),
       });
       const data = await response.json().catch(() => ({}));
 
@@ -5701,7 +5701,7 @@ function LoginScreen({
       setEmployeeName("");
       setFailedAttempts(0);
       setLockoutUntil(0);
-      onLogin(data.employeeName || employeeName.trim());
+      onLogin(data.employeeName || employeeName.trim() || "Employee");
     } catch (loginError) {
       const nextAttempts = failedAttempts + 1;
       setFailedAttempts(nextAttempts);
@@ -5835,7 +5835,7 @@ function LoginScreen({
 
           <button
             type="submit"
-            disabled={submitting || lockoutActive || !password || !employeeName.trim()}
+            disabled={submitting || lockoutActive || !password}
             className="w-full rounded-2xl bg-[#0F4036] text-white px-4 py-3 font-black transition hover:bg-[#0b352d] disabled:cursor-not-allowed disabled:bg-neutral-300 shadow-[0_18px_40px_rgba(15,64,54,0.18)]"
           >
             {submitting ? "Signing in..." : "Sign in"}
