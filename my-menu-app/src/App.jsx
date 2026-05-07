@@ -9970,6 +9970,38 @@ export default function GoldiesKDS() {
                 Square Dashboard
               </a>
 
+              <button
+                type="button"
+                onClick={() => setShowStats((current) => !current)}
+                className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
+              >
+                {showStats ? "Hide Stats" : "View Stats"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowTodayCount((current) => !current)}
+                className={`rounded-2xl border border-[#CA862B]/14 px-4 py-2 text-sm font-black transition shadow-sm ${
+                  showTodayCount
+                    ? "bg-[#0F4036] text-white hover:bg-[#0b352d]"
+                    : "bg-white/80 text-[#0F4036] hover:bg-[#EEE0C5]/55"
+                }`}
+              >
+                Today&apos;s Count
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowOrdersByDay((current) => !current)}
+                className={`rounded-2xl border border-[#CA862B]/14 px-4 py-2 text-sm font-black transition shadow-sm ${
+                  showOrdersByDay
+                    ? "bg-[#0F4036] text-white hover:bg-[#0b352d]"
+                    : "bg-white/80 text-[#0F4036] hover:bg-[#EEE0C5]/55"
+                }`}
+              >
+                Orders By Day
+              </button>
+
               <div className="relative" onClick={(event) => event.stopPropagation()}>
                 <button
                   type="button"
@@ -10290,13 +10322,6 @@ export default function GoldiesKDS() {
                 Drink totals
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowTodayCount((current) => !current)}
-              className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-            >
-              {showTodayCount ? "Hide" : "Show"}
-            </button>
           </div>
 
           {showTodayCount && (
@@ -10306,18 +10331,6 @@ export default function GoldiesKDS() {
             />
           )}
         </section>
-        )}
-
-        {!showFocusBoard && (
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => setShowStats((current) => !current)}
-            className="rounded-xl bg-[#0F4036] text-white px-4 py-3 font-black transition hover:bg-[#0b352d] shadow-[0_14px_30px_rgba(15,64,54,0.16)]"
-          >
-            {showStats ? "Hide Stats" : "View Stats"}
-          </button>
-        </div>
         )}
 
         {!showFocusBoard && showStats && <DrinkStats reports={displayedDrinkReports} />}
