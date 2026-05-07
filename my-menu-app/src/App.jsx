@@ -10157,7 +10157,7 @@ export default function GoldiesKDS() {
                   className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
                   aria-expanded={showReportsMenu}
                 >
-                  Reports
+                  Stats
                 </button>
 
                 {showReportsMenu && (
@@ -10187,18 +10187,6 @@ export default function GoldiesKDS() {
                 )}
               </div>
 
-              <button
-                type="button"
-                onClick={() => setShowTicketColumns((current) => !current)}
-                className={`rounded-2xl border border-[#CA862B]/14 px-4 py-2 text-sm font-black transition shadow-sm ${
-                  showTicketColumns
-                    ? "bg-[#0F4036] text-white hover:bg-[#0b352d]"
-                    : "bg-white/80 text-[#0F4036] hover:bg-[#EEE0C5]/55"
-                }`}
-              >
-                Ticket Columns
-              </button>
-
               <div className="relative" onClick={(event) => event.stopPropagation()}>
                 <button
                   type="button"
@@ -10214,6 +10202,14 @@ export default function GoldiesKDS() {
 
                 {showDisplaysMenu && (
                   <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-[#CA862B]/22 bg-white p-1.5 shadow-[0_18px_45px_rgba(15,64,54,0.16)]">
+                    <button
+                      type="button"
+                      onClick={() => setShowTicketColumns((current) => !current)}
+                      className="block w-full rounded-xl px-3 py-2 text-left text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
+                    >
+                      Ticket Columns
+                    </button>
+                    <div className="my-1 h-px bg-[#CA862B]/12" />
                     <a
                       href={getDisplayHref("/goldies-menu", isDemoRoute)}
                       className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
