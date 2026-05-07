@@ -1659,8 +1659,17 @@ async function fetchRecentMenuPrices() {
 
 async function getCustomerOrdersUp() {
   const active = await getActiveTickets();
-  const completed = await getCompletedTicketsToday().catch(() => []);
+  const completedToday = await getCompletedTicketsToday().catch(() => []);
+  const fallbackCompleted = active.filter(
+    (ticket) => isCompletedStatus(ticket.status) && Number(ticket.completedAt || ticket.updatedAt || 0) > 0
+  );
+  const completed = completedToday.length ? completedToday : fallbackCompleted;
   const recentCompletedCutoff = Date.now() - 15 * 60 * 1000;
+  const uniqueCompleted = new Map();
+
+  for (const ticket of completed) {
+    uniqueCompleted.set(ticket.id, ticket);
+  }
 
   const making = active
     .filter((ticket) => ticket.status === "making" && ticketHasDrinkItem(ticket))
@@ -1692,7 +1701,7 @@ async function getCustomerOrdersUp() {
       readyAt: ticket.updatedAt || ticket.createdAt || null,
     }));
 
-  const recentlyCompleted = completed
+  const recentlyCompleted = Array.from(uniqueCompleted.values())
     .filter(
       (ticket) =>
         ticketHasDrinkItem(ticket) &&

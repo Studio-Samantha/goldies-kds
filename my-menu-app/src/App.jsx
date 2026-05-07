@@ -9067,7 +9067,7 @@ export default function GoldiesKDS() {
   const [drinkReports, setDrinkReports] = useState({});
   const [drinkTimeReports, setDrinkTimeReports] = useState({});
   const [showDrinkTimeStats, setShowDrinkTimeStats] = useState(false);
-  const [showTicketColumns, setShowTicketColumns] = useState(false);
+  const [showTicketColumns, setShowTicketColumns] = useState(true);
   const [showFocusBoard, setShowFocusBoard] = useState(false);
   const [showOpenTickets, setShowOpenTickets] = useState(false);
   const [showOnlineOrderAlertDetails, setShowOnlineOrderAlertDetails] = useState(false);
@@ -9128,7 +9128,7 @@ export default function GoldiesKDS() {
   const isStatsWindow = dashboardReportPanel === "stats";
   function resetDashboardViews() {
     setShowDrinkTimeStats(false);
-    setShowTicketColumns(false);
+    setShowTicketColumns(true);
     setShowFocusBoard(false);
     setShowOpenTickets(false);
     setShowReportsMenu(false);
@@ -10202,14 +10202,6 @@ export default function GoldiesKDS() {
 
                 {showDisplaysMenu && (
                   <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-[#CA862B]/22 bg-white p-1.5 shadow-[0_18px_45px_rgba(15,64,54,0.16)]">
-                    <button
-                      type="button"
-                      onClick={() => setShowTicketColumns((current) => !current)}
-                      className="block w-full rounded-xl px-3 py-2 text-left text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
-                    >
-                      Ticket Columns
-                    </button>
-                    <div className="my-1 h-px bg-[#CA862B]/12" />
                     <a
                       href={getDisplayHref("/goldies-menu", isDemoRoute)}
                       className="block rounded-xl px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
@@ -10525,58 +10517,76 @@ export default function GoldiesKDS() {
             </div>
           </section>
         ) : (
-          <section className={`grid grid-cols-1 gap-3 ${
-            showFocusBoard ? "xl:grid-cols-2" : "xl:grid-cols-3"
-          }`}>
-            {(showFocusBoard ? FOCUS_STATUS_COLUMNS : STATUS_COLUMNS).map((column) => (
-              <section
-                key={column.key}
-                className={`rounded-2xl bg-[rgba(255,253,248,0.9)] border border-white/70 border-t-4 ${column.accent} p-3 shadow-[0_16px_40px_rgba(15,64,54,0.08)] flex flex-col backdrop-blur-sm ${
-                  showFocusBoard
-                    ? "min-h-[calc(100vh-170px)] max-h-[calc(100vh-150px)]"
-                    : hasOpenTickets
-                      ? "xl:min-h-[520px]"
-                      : "xl:min-h-[220px]"
-                }`}
+          <section className="rounded-2xl bg-[rgba(255,253,248,0.9)] border border-white/70 p-4 shadow-sm backdrop-blur-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-3">
+              <div>
+                <h2 className="text-lg md:text-2xl font-black text-[#0F4036]">Ticket columns</h2>
+                <p className="text-sm text-[#6A614F]">
+                  New, making, and ready stay open by default. Collapse them here if you want a cleaner view.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowTicketColumns(false)}
+                className="rounded-xl bg-[#0F4036] px-4 py-2 text-sm font-black text-white transition hover:bg-[#0b352d]"
               >
-                <div className={`flex items-center justify-between px-1 py-1.5 mb-2 shrink-0 ${
-                  showFocusBoard ? "sticky top-0 z-10 rounded-xl bg-[#FFFDF8]/95 backdrop-blur" : ""
-                }`}>
-                  <h2 className="text-lg xl:text-xl font-black text-[#111111]">
-                    {column.label}
-                  </h2>
+                Collapse ticket columns
+              </button>
+            </div>
 
-                  <span
-                    className={`rounded-full px-3 py-1 text-sm font-black shadow-sm ${column.badge}`}
-                  >
-                    {grouped[column.key]?.length || 0}
-                  </span>
-                </div>
+            <div className={`grid grid-cols-1 gap-3 ${
+              showFocusBoard ? "xl:grid-cols-2" : "xl:grid-cols-3"
+            }`}>
+              {(showFocusBoard ? FOCUS_STATUS_COLUMNS : STATUS_COLUMNS).map((column) => (
+                <section
+                  key={column.key}
+                  className={`rounded-2xl bg-white border border-[#CA862B]/12 border-t-4 ${column.accent} p-3 shadow-[0_16px_40px_rgba(15,64,54,0.08)] flex flex-col ${
+                    showFocusBoard
+                      ? "min-h-[calc(100vh-170px)] max-h-[calc(100vh-150px)]"
+                      : hasOpenTickets
+                        ? "xl:min-h-[520px]"
+                        : "xl:min-h-[220px]"
+                  }`}
+                >
+                  <div className={`flex items-center justify-between px-1 py-1.5 mb-2 shrink-0 ${
+                    showFocusBoard ? "sticky top-0 z-10 rounded-xl bg-[#FFFDF8]/95 backdrop-blur" : ""
+                  }`}>
+                    <h2 className="text-lg xl:text-xl font-black text-[#111111]">
+                      {column.label}
+                    </h2>
 
-                <div className={`min-h-0 ${
-                  showFocusBoard ? "space-y-2 overflow-y-auto pr-1" : "space-y-3 xl:pr-1"
-                }`}>
-                  {grouped[column.key]?.length ? (
-                    grouped[column.key].map((ticket) => (
-                      <TicketCard
-                        key={ticket.id}
-                        ticket={ticket}
-                        onStatusChange={handleStatusChange}
-                        onItemDoneChange={handleItemDoneChange}
-                        onNameChange={handleNameChange}
-                        onDiningOptionChange={handleDiningOptionChange}
-                        showDiningOption={showDiningOnTickets}
-                        compact={showFocusBoard}
-                      />
-                    ))
-                  ) : (
-                    <div className="rounded-2xl border border-dashed border-[#CA862B]/22 bg-white/70 p-8 text-center text-[#6A614F] font-semibold">
-                      No tickets
-                    </div>
-                  )}
-                </div>
-              </section>
-            ))}
+                    <span
+                      className={`rounded-full px-3 py-1 text-sm font-black shadow-sm ${column.badge}`}
+                    >
+                      {grouped[column.key]?.length || 0}
+                    </span>
+                  </div>
+
+                  <div className={`min-h-0 ${
+                    showFocusBoard ? "space-y-2 overflow-y-auto pr-1" : "space-y-3 xl:pr-1"
+                  }`}>
+                    {grouped[column.key]?.length ? (
+                      grouped[column.key].map((ticket) => (
+                        <TicketCard
+                          key={ticket.id}
+                          ticket={ticket}
+                          onStatusChange={handleStatusChange}
+                          onItemDoneChange={handleItemDoneChange}
+                          onNameChange={handleNameChange}
+                          onDiningOptionChange={handleDiningOptionChange}
+                          showDiningOption={showDiningOnTickets}
+                          compact={showFocusBoard}
+                        />
+                      ))
+                    ) : (
+                      <div className="rounded-2xl border border-dashed border-[#CA862B]/22 bg-white/70 p-8 text-center text-[#6A614F] font-semibold">
+                        No tickets
+                      </div>
+                    )}
+                  </div>
+                </section>
+              ))}
+            </div>
           </section>
         )}
 
