@@ -10137,15 +10137,6 @@ export default function GoldiesKDS() {
                 />
               </div>
 
-              <a
-                href="https://squareup.com/dashboard"
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
-              >
-                Square Dashboard
-              </a>
-
               <div className="relative" onClick={(event) => event.stopPropagation()}>
                 <button
                   type="button"
@@ -10157,7 +10148,7 @@ export default function GoldiesKDS() {
                   className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
                   aria-expanded={showReportsMenu}
                 >
-                  Stats
+                  View Stats
                 </button>
 
                 {showReportsMenu && (
@@ -10245,7 +10236,7 @@ export default function GoldiesKDS() {
               <button
                 type="button"
                 onClick={handleDashboardFullscreen}
-                className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
+                className="rounded-2xl border border-[#0F4036]/16 bg-[#0F4036] px-4 py-2 text-sm font-black text-white transition hover:bg-[#0b352d] shadow-sm"
               >
                 Full Screen
               </button>
@@ -10253,7 +10244,7 @@ export default function GoldiesKDS() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
+                className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-black text-red-800 transition hover:bg-red-100 shadow-sm"
               >
                 Sign out
               </button>
