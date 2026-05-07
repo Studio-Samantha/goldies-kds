@@ -3786,9 +3786,6 @@ function DrinkTimeStatsPanel({ reports, onClose }) {
           <div className="mt-1 text-sm font-bold text-[#6A614F]">
             {selectedReport.sampleSize || 0} drink orders timed
           </div>
-          <div className="mt-4 rounded-xl border border-[#CA862B]/14 bg-[#EEE0C5]/45 px-3 py-2 text-sm font-semibold text-[#6A614F]">
-            The last two days had orders sitting in Ready too long. Use today forward as the cleaner baseline for how the bar is really moving.
-          </div>
         </div>
 
         <div className="grid gap-3 md:grid-cols-2">
@@ -8900,6 +8897,7 @@ export default function GoldiesKDS() {
   const [showTodayCount, setShowTodayCount] = useState(false);
   const [showOrdersByDay, setShowOrdersByDay] = useState(true);
   const [showFocusBoard, setShowFocusBoard] = useState(false);
+  const [showOpenTickets, setShowOpenTickets] = useState(false);
   const [showOnlineOrderAlertDetails, setShowOnlineOrderAlertDetails] = useState(false);
   const [showDiningOnTickets, setShowDiningOnTickets] = useState(true);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -8957,6 +8955,7 @@ export default function GoldiesKDS() {
     setShowTodayCount(false);
     setShowOrdersByDay(false);
     setShowFocusBoard(false);
+    setShowOpenTickets(false);
     setShowSettingsMenu(false);
     setShowDisplaysMenu(false);
     setShowOwnerLogin(false);
@@ -10105,6 +10104,8 @@ export default function GoldiesKDS() {
             label="Open tickets"
             value={activeTickets.length}
             detail="All active columns"
+            onClick={() => setShowOpenTickets((current) => !current)}
+            actionLabel={showOpenTickets ? "Hide open tickets" : "Show open tickets"}
           />
 
           <StatCard
@@ -10138,6 +10139,45 @@ export default function GoldiesKDS() {
           <div className="rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-900 px-4 py-3 font-medium">
             {passwordNotice}
           </div>
+        )}
+
+        {!showFocusBoard && showOpenTickets && (
+          <section className="space-y-2 rounded-2xl bg-[rgba(255,253,248,0.9)] border border-white/70 p-4 shadow-sm backdrop-blur-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg md:text-2xl font-black text-[#0F4036]">Open Tickets</h2>
+                <p className="text-sm text-[#6A614F]">Current open tickets across all active columns.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowOpenTickets(false)}
+                className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+              >
+                Hide
+              </button>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {activeTickets.length ? (
+                activeTickets.map((ticket) => (
+                  <div key={ticket.id} className="rounded-2xl border border-[#CA862B]/14 bg-white p-3 shadow-sm">
+                    <TicketCard
+                      ticket={ticket}
+                      onStatusChange={handleStatusChange}
+                      onItemDoneChange={handleItemDoneChange}
+                      onNameChange={handleNameChange}
+                      onDiningOptionChange={handleDiningOptionChange}
+                      showDiningOption={showDiningOnTickets}
+                      compact={true}
+                    />
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-2xl border border-dashed border-[#CA862B]/22 bg-white/70 p-8 text-center text-[#6A614F] font-semibold">
+                  No open tickets right now
+                </div>
+              )}
+            </div>
+          </section>
         )}
 
         {pendingOnlineOrders.length > 0 && (
