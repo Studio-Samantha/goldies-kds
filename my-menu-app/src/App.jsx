@@ -3032,7 +3032,7 @@ function TodayCountReportWindow({ drinkCounts, orderCount }) {
   return (
     <ReportWindowShell
       eyebrow="Daily report"
-      title="Today's Count"
+      title="Today's Drink Order Count"
       description="This opens in its own window so the main dashboard can stay focused on live tickets."
     >
       <DailyDrinkCount drinkCounts={drinkCounts} orderCount={orderCount} />
@@ -3048,7 +3048,7 @@ function OrdersByDayReportWindow({
   return (
     <ReportWindowShell
       eyebrow="Daily lookup"
-      title="Orders By Day"
+      title="Look up orders by day"
       description="Search one day of completed or active tickets without crowding the main board."
     >
       <OrdersByDayLookup
@@ -10153,19 +10153,19 @@ export default function GoldiesKDS() {
 
                 {showReportsMenu && (
                   <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-[#CA862B]/22 bg-white p-1.5 shadow-[0_18px_45px_rgba(15,64,54,0.16)]">
-                    <button
-                      type="button"
-                      onClick={() => openDashboardReportWindow("today-count")}
-                      className="block w-full rounded-xl px-3 py-2 text-left text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
-                    >
-                      Today&apos;s Count
+              <button
+                type="button"
+                onClick={() => openDashboardReportWindow("today-count")}
+                className="block w-full rounded-xl px-3 py-2 text-left text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
+              >
+                      Today&apos;s Drink Order Count
                     </button>
                     <button
                       type="button"
                       onClick={() => openDashboardReportWindow("orders-by-day")}
                       className="block w-full rounded-xl px-3 py-2 text-left text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55"
                     >
-                      Orders By Day
+                      Look up orders by day
                     </button>
                     <button
                       type="button"
