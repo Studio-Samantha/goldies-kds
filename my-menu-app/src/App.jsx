@@ -1236,7 +1236,7 @@ function ConnectionReportDialog({ open, report, loading, error, onClose, onRefre
             ))}
           </div>
           <div className="rounded-2xl border border-[#0F4036]/10 bg-[#0F4036]/8 px-4 py-3 text-sm font-semibold leading-6 text-[#0F4036]">
-            Downtime and recovery duration are tracked by scheduled system checks when they run with GOLDIES_TRACK_UPTIME=1.
+            Scheduled system checks can keep a simple record of when the dashboard has trouble and when it comes back online, so downtime is easier to review later.
           </div>
           <div className="flex flex-wrap justify-end gap-2">
             <button
