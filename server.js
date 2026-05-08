@@ -3333,9 +3333,11 @@ async function getActiveTickets() {
 async function getStoredActiveTickets() {
   if (!supabase) return getLocalActiveTickets();
 
+  const activeStart = getRangeStart("today");
   const { data: orders, error: orderError } = await supabase
     .from("kds_orders")
-    .select("*")
+    .select("square_order_id, order_number, customer_name, employee_name, created_at, updated_at, completed_at, source, status, dining_option, raw_order")
+    .gte("created_at", activeStart.toISOString())
     .neq("status", "done")
     .order("created_at", { ascending: false });
 
