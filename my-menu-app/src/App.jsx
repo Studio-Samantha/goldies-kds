@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.3";
+const APP_VERSION = "v1.10.4";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -30,9 +30,9 @@ const DAILY_UPDATE_NOTICE = {
 };
 const OWNER_PORTAL_RECENT_CHANGES = [
   {
-    title: "Orders Up and owner view",
+    title: "Owner guidance",
     body:
-      "Completed drink tickets now use the same saved service-day lookup as owner stats, and the owner portal has a cleaner menu.",
+      "Sales read and next-step guidance now rotate daily so the owner view feels less repetitive while keeping the same report numbers.",
   },
   {
     title: "Ordering screens",
@@ -47,12 +47,23 @@ const OWNER_PORTAL_RECENT_CHANGES = [
 ];
 const RELEASE_NOTES = [
   {
-    version: "v1.10.3",
+    version: "v1.10.4",
     date: "Current build",
+    summary: "Tightened Owner Portal wording and varied the daily owner read.",
+    items: [
+      "Owner Portal recent changes now start collapsed so the main report stays first.",
+      "Sales read and What you should do next now rotate daily based on date, range, category mix, order count, and ticket value.",
+      "The confusing Owner tools shortcut strip was removed; existing report actions stay where they already worked.",
+      "Weather and local events are tracked as the next owner-context source to add, using public sources such as Exira Public Library, Exira Community Club, Exira Community Center events and rentals, City of Exira updates, TJ's Pourhouse events, local business-hosted events like yoga in the park, civic groups, churches, and other local event listings.",
+    ],
+  },
+  {
+    version: "v1.10.3",
+    date: "Previous build",
     summary: "Cleaned up Owner Portal, connection reporting, and customer ordering visuals.",
     items: [
       "Owner Portal now opens with the main report first and keeps recent changes and owner tools collapsible.",
-      "A compact portal menu gives owners quick access to recent changes, report tools, exports, beta tools, and access checks.",
+      "Owner Portal recent changes can collapse, while exports, email reports, beta links, and access checks stay in the main report area where they already worked.",
       "Owner Portal now has one clear exit button instead of separate Back and Sign out buttons doing the same thing.",
       "The dashboard Connection box now opens a connection report with Square health, sync state, cached ticket count, and downtime tracking notes.",
       "Self Order Kiosk and Online Ordering now share the same refined Goldie's photo-menu style.",
@@ -2954,6 +2965,10 @@ function pickDailyAdvice(seed, options) {
   return options[getDailyAdviceIndex(seed, options.length)];
 }
 
+function pickOwnerSnapshotLine(seed, options) {
+  return pickDailyAdvice(seed, options.filter(Boolean));
+}
+
 function buildCoffeeShopAdvice(report, range) {
   const hourlyStats = getHourlyVolumeStats(report?.hourlyOrders || []);
   const categories = report?.totalsByCategory || [];
@@ -5124,33 +5139,82 @@ function buildOwnerSnapshotAnalysis(report, rangeKey) {
   const dailyRevenue = formatCurrencyCents(Math.round(revenueCents / rangeDays));
   const dailyOrders = (orderCount / rangeDays).toFixed(orderCount < rangeDays ? 1 : 0);
   const rangeLabel = getOwnerRangeLabel(rangeKey);
+  const snapshotSeed = `${getTodayDateKey()}:${rangeKey}:${orderCount}:${drinkUnits}:${topCategory?.category || "none"}:${averageCents}`;
   const moneySignalByRange = {
-    today: `${serviceWindow?.pace || "Live service read:"} ${revenueRead} ${averageOrderRead} Watch the rest of today for whether average ticket value climbs during rush periods.`,
-    yesterday: `Closed-day read: yesterday finished at ${report?.totalRevenue || "$0.00"} before tax. ${averageOrderRead} Use it as a clean comparison against today, not as a live staffing signal.`,
-    last7: `Short-term trend: this week is averaging ${dailyOrders} drink orders and ${dailyRevenue} in drink revenue per day. ${revenueRead} Compare this to staffing and prep for the current week.`,
-    last30: `Monthly trend: the last 30 days average ${dailyOrders} drink orders and ${dailyRevenue} in drink revenue per day. ${averageOrderRead} This is the better range for menu and promo decisions.`,
-    thisMonth: `Month-to-date pace: this month is averaging ${dailyOrders} drink orders and ${dailyRevenue} in drink revenue per day. ${revenueRead} Watch whether the pace is improving or fading before month end.`,
-    thisYear: `Long-term read: year-to-date drink revenue is ${report?.totalRevenue || "$0.00"} before tax across ${drinkUnits} units. ${averageOrderRead} Use this for bigger menu, staffing, and category direction.`,
+    today: pickOwnerSnapshotLine(`${snapshotSeed}:money:today`, [
+      `${serviceWindow?.pace || "Live service read:"} ${revenueRead} ${averageOrderRead} Watch whether average ticket value climbs during rush periods.`,
+      `${rangeLabel} is showing ${report?.totalRevenue || "$0.00"} before tax from ${orderCount} drink orders. ${averageOrderRead} The next signal is whether multi-drink orders show up during the busiest stretch.`,
+      `${serviceWindow?.label || "Today"} has a ${averageRead} pattern so far. ${categoryFocusRead} Keep an eye on whether that mix holds through the next service window.`,
+    ]),
+    yesterday: pickOwnerSnapshotLine(`${snapshotSeed}:money:yesterday`, [
+      `Closed-day read: yesterday finished at ${report?.totalRevenue || "$0.00"} before tax. ${averageOrderRead} Use it as a clean comparison against today, not as a live staffing signal.`,
+      `Yesterday gives you a settled read: ${orderCount} drink orders, ${drinkUnits} units, and ${report?.averageDrinkOrderValue || "$0.00"} per drink order. Compare the category leader against today's early pattern.`,
+      `Yesterday's drink sales landed at ${report?.totalRevenue || "$0.00"} before tax. ${categoryFocusRead} That is the useful detail to carry into the next schedule or prep note.`,
+    ]),
+    last7: pickOwnerSnapshotLine(`${snapshotSeed}:money:last7`, [
+      `Short-term trend: this week is averaging ${dailyOrders} drink orders and ${dailyRevenue} in drink revenue per day. ${revenueRead} Compare this to staffing and prep for the current week.`,
+      `The 7-day view is best for near-term rhythm: ${dailyOrders} drink orders per day on average and ${averageRead}. Use it to spot whether this week feels heavier, lighter, or just different.`,
+      `This week has ${drinkUnits} drink units across ${orderCount} drink orders. ${categoryFocusRead} That mix matters more than one isolated busy hour.`,
+    ]),
+    last30: pickOwnerSnapshotLine(`${snapshotSeed}:money:last30`, [
+      `Monthly trend: the last 30 days average ${dailyOrders} drink orders and ${dailyRevenue} in drink revenue per day. ${averageOrderRead} This is the better range for menu and promo decisions.`,
+      `The 30-day read smooths out odd days: ${dailyRevenue} in drink revenue per day and ${dailyOrders} drink orders per day on average. ${categoryFocusRead}`,
+      `Over the last 30 days, ${report?.averageDrinkOrderValue || "$0.00"} is the average collected per drink order. ${averageOrderRead} Watch whether that is coming from premium drinks, multiple drinks, or both.`,
+    ]),
+    thisMonth: pickOwnerSnapshotLine(`${snapshotSeed}:money:thisMonth`, [
+      `Month-to-date pace: this month is averaging ${dailyOrders} drink orders and ${dailyRevenue} in drink revenue per day. ${revenueRead} Watch whether the pace is improving or fading before month end.`,
+      `This month is building around ${topCategory?.category || "the current drink mix"} with ${drinkUnits} units so far. ${categoryFocusRead} Use the remaining days to test small adjustments.`,
+      `Month-to-date drink revenue is ${report?.totalRevenue || "$0.00"} before tax. ${averageOrderRead} The useful question is whether the average ticket is moving with the traffic.`,
+    ]),
+    thisYear: pickOwnerSnapshotLine(`${snapshotSeed}:money:thisYear`, [
+      `Long-term read: year-to-date drink revenue is ${report?.totalRevenue || "$0.00"} before tax across ${drinkUnits} units. ${averageOrderRead} Use this for bigger menu, staffing, and category direction.`,
+      `The year-to-date view is the strategic read: ${drinkUnits} drink units, ${orderCount} drink orders, and ${report?.averageDrinkOrderValue || "$0.00"} per drink order. Look for the pattern that keeps repeating.`,
+      `Year-to-date, the strongest signal is not one day; it is the repeated category and ticket-value pattern. ${categoryFocusRead} ${averageOrderRead}`,
+    ]),
   };
   const ownerActionByRange = {
-    today:
+    today: pickOwnerSnapshotLine(`${snapshotSeed}:action:today`, [
       averageCents < 600
         ? `${serviceWindow?.action || "For the rest of today, coach add-ons or premium drink suggestions and see whether the average ticket improves before close."}`
         : `${serviceWindow?.action || "For the rest of today, protect speed and prep on the strongest category so higher-value tickets do not slow the bar."}`,
-    yesterday:
+      topCategory
+        ? `Before the next rush, check ${topCategory.category} backups first, then watch whether add-ons or second drinks lift the ticket average.`
+        : "Before the next rush, check the live board against Square and keep the bar reset simple.",
+      unitsPerOrder >= 1.25
+        ? "Keep the handoff area clear for multi-drink orders, then note whether those bigger tickets are slowing pickup."
+        : "Try one short add-on prompt today and watch whether single-drink tickets start turning into two-drink tickets.",
+    ]),
+    yesterday: pickOwnerSnapshotLine(`${snapshotSeed}:action:yesterday`, [
       "Use yesterday as a review: compare the strongest category, average ticket value, and staffing notes before changing today's plan.",
-    last7:
+      topCategory ? `Carry one concrete prep note forward from yesterday: was ${topCategory.category} stocked before the rush or did it need a mid-service reset?` : "Use yesterday as a calm review day and compare Square totals before making a menu call.",
+      "Pick one thing to compare against today: category leader, average ticket, or busiest hour. Do not try to optimize all three from one day.",
+    ]),
+    last7: pickOwnerSnapshotLine(`${snapshotSeed}:action:last7`, [
       topCategoryShare >= 55
         ? `This week, make sure ${topCategory.category} prep and stock match demand before the next rush.`
         : "This week, watch whether demand stays spread across categories or starts concentrating in one lane.",
-    last30:
+      "Use the 7-day view for staffing rhythm: compare the busiest windows against who was actually on bar.",
+      averageCents < 600
+        ? "For the next week, test one easy upsell or featured pairing and see whether average order value moves."
+        : "For the next week, protect the drink lane that is already working before adding a new special.",
+    ]),
+    last30: pickOwnerSnapshotLine(`${snapshotSeed}:action:last30`, [
       averageCents < 600
         ? "For the 30-day view, test a simple add-on or featured drink strategy before changing the broader menu."
         : "For the 30-day view, use the stronger average ticket to decide which drink lane deserves more menu focus.",
-    thisMonth:
+      topCategory ? `Use this month of data to decide whether ${topCategory.category} needs more menu attention, prep space, or purchasing priority.` : "Use the 30-day view to choose one menu or prep experiment, then measure it for another month.",
+      "Make one small operating change from this view, not five. The 30-day report is strongest when it turns into one clear test.",
+    ]),
+    thisMonth: pickOwnerSnapshotLine(`${snapshotSeed}:action:thisMonth`, [
       "For this month, compare the current daily pace to the goal and adjust prep, specials, or category focus before the month closes.",
-    thisYear:
+      "Before month end, choose whether the priority is more orders, higher average ticket, or smoother rush coverage. The next move depends on that choice.",
+      topCategory ? `If ${topCategory.category} stays on top through month end, consider giving it the cleanest prep plan and menu visibility.` : "Use the rest of the month to identify a category leader before making a promo decision.",
+    ]),
+    thisYear: pickOwnerSnapshotLine(`${snapshotSeed}:action:thisYear`, [
       "For the year-to-date view, use the repeated category leader and ticket value pattern for bigger staffing, menu, and purchasing decisions.",
+      "Use this range for big calls only: menu structure, seasonal planning, staffing assumptions, and purchasing habits.",
+      topCategory ? `If ${topCategory.category} keeps leading year-to-date, it should influence buying, training, and how the menu is organized.` : "Use the year-to-date view to separate real patterns from opening-week noise.",
+    ]),
   };
 
   return {
@@ -5332,8 +5396,7 @@ function OwnerReportsView({
   const [accessLogs, setAccessLogs] = useState([]);
   const [accessLogError, setAccessLogError] = useState("");
   const [accessLogLoading, setAccessLogLoading] = useState(false);
-  const [showRecentChanges, setShowRecentChanges] = useState(true);
-  const [showOwnerTools, setShowOwnerTools] = useState(false);
+  const [showRecentChanges, setShowRecentChanges] = useState(false);
   const demoQuery = demoMode ? "?demo=training" : "";
 
   useEffect(() => {
@@ -5653,54 +5716,6 @@ function OwnerReportsView({
           </div>
         )}
 
-        <nav className="rounded-2xl border border-white/70 bg-[rgba(255,253,248,0.9)] p-2 shadow-sm" aria-label="Owner portal menu">
-          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-            <button
-              type="button"
-              onClick={() => setShowRecentChanges((current) => !current)}
-              className={`rounded-xl px-3 py-2 text-sm font-black transition ${
-                showRecentChanges
-                  ? "bg-[#0F4036] text-white"
-                  : "border border-[#CA862B]/22 bg-white text-[#0F4036] hover:bg-[#EEE0C5]/45"
-              }`}
-            >
-              Recent changes
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowOwnerTools((current) => !current)}
-              className={`rounded-xl px-3 py-2 text-sm font-black transition ${
-                showOwnerTools
-                  ? "bg-[#0F4036] text-white"
-                  : "border border-[#CA862B]/22 bg-white text-[#0F4036] hover:bg-[#EEE0C5]/45"
-              }`}
-            >
-              Owner tools
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowOwnerTools(true);
-                setReportExportMenuOpen((current) => !current);
-              }}
-              disabled={loading || Boolean(error)}
-              className="rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45 disabled:cursor-not-allowed disabled:text-neutral-400"
-            >
-              Export
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowOwnerTools(true);
-                setShowAccessLog(true);
-              }}
-              className="rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-            >
-              Access check
-            </button>
-          </div>
-        </nav>
-
         {!demoMode && (
           <section className="rounded-3xl border border-[#CA862B]/18 bg-[rgba(255,253,248,0.94)] p-4 shadow-sm">
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
@@ -5712,7 +5727,7 @@ function OwnerReportsView({
                   What changed in {APP_VERSION}
                 </h2>
                 <p className="mt-1 text-sm font-semibold leading-6 text-[#6A614F]">
-                  Owner-facing notes for live service fixes, dashboard behavior, and operational tracking.
+                  Short owner notes for live-service fixes and ordering updates.
                 </p>
               </div>
               <button
@@ -5808,7 +5823,7 @@ function OwnerReportsView({
             </div>
           </div>
 
-          {!demoMode && showOwnerTools && (
+          {!demoMode && (
             <form
               onSubmit={handleEmailOwnerReport}
               className="mb-4 rounded-2xl border border-[#CA862B]/18 bg-white/80 p-3 shadow-sm"
@@ -5852,7 +5867,7 @@ function OwnerReportsView({
             </form>
           )}
 
-          {!demoMode && showOwnerTools && (
+          {!demoMode && (
             <section className="mb-4 rounded-2xl border border-[#CA862B]/18 bg-white/80 p-3 shadow-sm">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -5932,7 +5947,6 @@ function OwnerReportsView({
             </div>
           )}
 
-          {showOwnerTools && (
           <div className="mb-4 rounded-2xl border border-[#CA862B]/18 bg-white/80 p-3 shadow-sm">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
@@ -5965,7 +5979,6 @@ function OwnerReportsView({
               </div>
             </div>
           </div>
-          )}
 
           {loading ? (
             <div className="rounded-2xl border border-dashed border-[#CA862B]/22 bg-white/70 p-8 text-center font-semibold text-[#6A614F]">
