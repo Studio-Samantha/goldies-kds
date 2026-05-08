@@ -1757,7 +1757,8 @@ async function fetchRecentMenuPrices() {
 
 async function getCustomerOrdersUp() {
   const active = await getActiveTickets();
-  const completedToday = await getCompletedTicketsToday().catch(() => []);
+  const dayTickets = await getTicketsForDay(getShopDateString()).catch(() => []);
+  const completedToday = dayTickets.filter((ticket) => isCompletedStatus(ticket.status));
   const fallbackCompleted = active.filter(
     (ticket) => isCompletedStatus(ticket.status) && Number(ticket.completedAt || ticket.updatedAt || 0) > 0
   );

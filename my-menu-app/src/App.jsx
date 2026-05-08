@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.0";
+const APP_VERSION = "v1.10.1";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -22,16 +22,27 @@ const DINING_OPTIONS = ["HANGIN' OUT", "TAKING OFF", "Pickup", "Delivery", "Driv
 const DAILY_UPDATE_NOTICE = {
   id: APP_VERSION,
   eyebrow: "Today on the KDS",
-  title: "Live board sync is stabilized",
+  title: "Orders Up display now follows day lookup",
   message:
-    "The live board now has a production fallback that can restore today's active tickets from stored Square orders if the direct Square sync path is slow.",
+    "Recently completed drink orders now come from the same saved day lookup that already powers owner stats and order history, so the Orders Up display keeps showing finished tickets after service updates.",
   note:
-    "For service today: keep using the live board normally. View Stats, Look up orders by day, and Today's Drink Count remain the backup checks when the counter is busy.",
+    "For service today: keep using Orders Up normally. Look up orders by day, View Stats, and Today's Drink Count remain the backup checks when the counter is busy.",
 };
 const RELEASE_NOTES = [
   {
-    version: "v1.10.0",
+    version: "v1.10.1",
     date: "Current build",
+    summary: "Fixed the Orders Up recently completed list for live service.",
+    items: [
+      "Orders Up now pulls completed drink tickets from today's saved order lookup before falling back to active tickets.",
+      "The recently completed display now matches the same production data path used by day lookup, owner stats, and drink counts.",
+      "The Staff tools shortcut area stays focused on private recipe cards; the menu-toggle shortcut was removed.",
+      "Production update rule: owner portal notes, visible version notes, and the public case study should be updated with each live-facing change.",
+    ],
+  },
+  {
+    version: "v1.10.0",
+    date: "Previous build",
     summary: "Stabilized the production Square sync path during live service.",
     items: [
       "The live board now falls back to today's stored active tickets if the direct active-ticket request fails.",
