@@ -14,6 +14,7 @@ const { Client, Environment } = require("square");
 const app = express();
 app.set("trust proxy", true);
 const PORT = process.env.PORT || 3000;
+const STAFF_SOP_DIR = path.join(__dirname, "staff-private", "sop");
 const SQUARE_ENVIRONMENT = process.env.SQUARE_ENVIRONMENT || "production";
 const SQUARE_ACCESS_TOKEN = process.env.SQUARE_ACCESS_TOKEN;
 const SQUARE_LOCATION_ID = process.env.SQUARE_LOCATION_ID;
@@ -498,12 +499,20 @@ function getDrinkImageSlug(itemName = "") {
 
   if (normalized.includes("decaf") && normalized.includes("americano")) return "decaf-americano";
   if (normalized.includes("americano")) return "americano";
+  if (normalized.includes("drip") || normalized.includes("pour-over") || normalized.includes("pour-over")) return "americano";
+  if (normalized.includes("flat") && normalized.includes("white")) return "latte";
   if (normalized.includes("cold") && normalized.includes("brew")) return "cold-brew";
   if (normalized.includes("cappuccino")) return "cappuccino";
   if (normalized.includes("london") && normalized.includes("fog")) return "london-fog";
   if (normalized.includes("chai")) return "chai-latte";
   if (normalized.includes("matcha")) return "matcha-latte";
+  if (normalized.includes("hot") && normalized.includes("chocolate")) return "chai-latte";
+  if (normalized.includes("refresher")) return "strawberry-banana";
+  if (normalized.includes("steamer")) return "london-fog";
   if (normalized.includes("chocolate") && normalized.includes("banana")) return "chocolate-pb-banana";
+  if (normalized.includes("mango")) return "strawberry-banana";
+  if (normalized.includes("strawberry")) return "strawberry-banana";
+  if (normalized.includes("greens") || normalized.includes("green")) return "green-smoothie";
   if (normalized.includes("strawberry") && normalized.includes("banana")) return "strawberry-banana";
   if (normalized.includes("green") && normalized.includes("smoothie")) return "green-smoothie";
   if (normalized.includes("latte")) return "latte";
@@ -7140,6 +7149,27 @@ app.get("/api/display/volume", requireKdsAuth, async (req, res) => {
     console.error("Error fetching volume display:", error);
     res.status(error.statusCode || 500).json({ error: error.message });
   }
+});
+
+app.get("/api/staff/sop/:file", requireKdsAuth, (req, res) => {
+  const allowedFiles = new Set([
+    "goldies-recipes-1.png",
+    "goldies-recipes-2.png",
+  ]);
+  const fileName = path.basename(String(req.params.file || ""));
+
+  if (!allowedFiles.has(fileName)) {
+    return res.status(404).json({ error: "Recipe SOP not found" });
+  }
+
+  res.setHeader("Cache-Control", "private, max-age=300");
+  res.sendFile(path.join(STAFF_SOP_DIR, fileName), (error) => {
+    if (!error) return;
+    console.error("Error serving staff SOP:", error.message);
+    if (!res.headersSent) {
+      res.status(error.statusCode || 500).json({ error: "Recipe SOP unavailable" });
+    }
+  });
 });
 
 app.post("/api/square-sync", requireKdsAuth, async (req, res) => {

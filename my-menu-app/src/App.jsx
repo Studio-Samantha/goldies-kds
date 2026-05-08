@@ -3384,7 +3384,7 @@ function MenuAvailabilityPanel({ demoMode = false }) {
   if (demoMode) return null;
 
   return (
-    <section className="rounded-2xl bg-[rgba(255,253,248,0.9)] border border-white/70 p-3 shadow-sm backdrop-blur-sm">
+    <section id="menu-availability" className="scroll-mt-24 rounded-2xl bg-[rgba(255,253,248,0.9)] border border-white/70 p-3 shadow-sm backdrop-blur-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
@@ -3444,6 +3444,52 @@ function MenuAvailabilityPanel({ demoMode = false }) {
           ) : null}
         </div>
       )}
+    </section>
+  );
+}
+
+function StaffToolsGuide({ demoMode = false }) {
+  if (demoMode) return null;
+
+  return (
+    <section className="rounded-2xl border border-[#CA862B]/18 bg-[rgba(255,253,248,0.92)] p-4 shadow-sm backdrop-blur-sm">
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <div>
+          <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
+            Staff tools to know
+          </div>
+          <h2 className="mt-1 text-xl font-black text-[#0F4036]">
+            New dashboard shortcuts
+          </h2>
+          <p className="mt-1 max-w-3xl text-sm font-semibold leading-6 text-[#6A614F]">
+            Use Menu Availability to hide sold-out drinks from customer menus, and open the private recipe cards when staff need a quick drink build reference.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <a
+            href="#menu-availability"
+            className="rounded-xl bg-[#0F4036] px-4 py-2 text-sm font-black text-white transition hover:bg-[#0b352d]"
+          >
+            Menu toggles
+          </a>
+          <a
+            href={apiUrl("/api/staff/sop/goldies-recipes-1.png")}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+          >
+            Smoothie recipes
+          </a>
+          <a
+            href={apiUrl("/api/staff/sop/goldies-recipes-2.png")}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+          >
+            Coffee recipes
+          </a>
+        </div>
+      </div>
     </section>
   );
 }
@@ -10645,6 +10691,8 @@ export default function GoldiesKDS() {
             {passwordNotice}
           </div>
         )}
+
+        {!showFocusBoard && <StaffToolsGuide demoMode={isDemoRoute} />}
 
         {!showFocusBoard && showOpenTickets && (
           <section className="space-y-2 rounded-2xl bg-[rgba(255,253,248,0.9)] border border-white/70 p-4 shadow-sm backdrop-blur-sm">
