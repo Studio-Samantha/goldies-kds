@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.9";
+const APP_VERSION = "v1.10.10";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -22,13 +22,28 @@ const DINING_OPTIONS = ["HANGIN' OUT", "TAKING OFF", "Pickup", "Delivery", "Driv
 const DAILY_UPDATE_NOTICE = {
   id: APP_VERSION,
   eyebrow: "Today on the KDS",
-  title: "Drink names are cleaned up across the app",
+  title: "View Stats and report email got a cleanup",
   message:
-    "Today's Count, Drink Stats, Average Drink Time, display boards, Online Ordering, and Self Order Kiosk now show readable drink names even when Square sends edited all-caps labels.",
+    "View Stats now fits better on phones, iPads, and desktop screens. Owner report emails also have a clearer path when Microsoft blocks SMTP sending.",
   note:
-    "Square checkout still uses the original Square item IDs and variation IDs behind the scenes.",
+    "If Microsoft SMTP is blocked, download the PDF for now or use the Resend-backed email setup.",
 };
 const OWNER_PORTAL_RECENT_CHANGES = [
+  {
+    title: "View Stats mobile cleanup",
+    body:
+      "The View Stats report, range toggles, drink breakdown, and timing report now fit better on phones, iPads, and desktop screens.",
+  },
+  {
+    title: "Owner report email",
+    body:
+      "End-of-day PDF email now prefers the Resend email path when configured and explains Microsoft SMTP blocks in plain English.",
+  },
+  {
+    title: "Deeper owner downloads",
+    body:
+      "Owner report downloads now include CPA, inventory, hourly, order-detail, and non-drink add-on signals while keeping the PDF polished.",
+  },
   {
     title: "Owner guidance",
     body:
@@ -57,8 +72,19 @@ const OWNER_PORTAL_RECENT_CHANGES = [
 ];
 const RELEASE_NOTES = [
   {
-    version: "v1.10.9",
+    version: "v1.10.10",
     date: "Current build",
+    summary: "Cleaned up View Stats on mobile and report email handling.",
+    items: [
+      "View Stats now uses tighter mobile controls and cards so drink stats and timing reports fit better on phones, iPads, and desktop screens.",
+      "End-of-day PDF report email now prefers Resend when configured instead of relying only on Outlook SMTP.",
+      "If Microsoft 365 blocks SMTP AUTH, the owner portal now gets a plain-English error instead of the raw Outlook failure.",
+      "Owner report downloads now include detailed CPA, inventory, hourly, order-detail, and non-drink add-on sections.",
+    ],
+  },
+  {
+    version: "v1.10.9",
+    date: "Previous build",
     summary: "Cleaned up edited drink names across dashboards and ordering.",
     items: [
       "Today's Count, Drink Stats, Average Drink Time, display boards, Online Ordering, and Self Order Kiosk now use readable drink names instead of raw all-caps Square names.",
@@ -3254,14 +3280,14 @@ function getDashboardReportHref(panel) {
 
 function ReportWindowSwitcher({ activePanel }) {
   return (
-    <nav className="flex flex-wrap gap-2" aria-label="Report views">
+    <nav className="grid w-full grid-cols-3 gap-2 sm:flex sm:w-auto sm:flex-wrap" aria-label="Report views">
       {REPORT_WINDOW_OPTIONS.map((option) => {
         const isActive = option.panel === activePanel;
         return (
           <a
             key={option.panel}
             href={getDashboardReportHref(option.panel)}
-            className={`rounded-xl px-3 py-2 text-xs font-black transition sm:text-sm ${
+            className={`flex min-h-10 items-center justify-center rounded-xl px-2 py-2 text-center text-[11px] font-black leading-tight transition sm:min-h-0 sm:px-3 sm:text-sm ${
               isActive
                 ? "bg-[#0F4036] text-white"
                 : "border border-[#CA862B]/22 bg-white text-[#0F4036] hover:bg-[#EEE0C5]/45"
@@ -3296,21 +3322,23 @@ function ReportWindowShell({ eyebrow, title, description, activePanel, onClose, 
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex w-full flex-col gap-2 md:w-auto md:items-end">
               {activePanel ? <ReportWindowSwitcher activePanel={activePanel} /> : null}
-              <a
-                href="/"
-                className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-              >
-                Back to dashboard
-              </a>
-              <button
-                type="button"
-                onClick={closeWindow}
-                className="rounded-xl bg-[#0F4036] px-4 py-2 text-sm font-black text-white transition hover:bg-[#0b352d]"
-              >
-                Close window
-              </button>
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
+                <a
+                  href="/"
+                  className="flex min-h-10 items-center justify-center rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-center text-xs font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45 sm:px-4 sm:text-sm"
+                >
+                  Back
+                </a>
+                <button
+                  type="button"
+                  onClick={closeWindow}
+                  className="flex min-h-10 items-center justify-center rounded-xl bg-[#0F4036] px-3 py-2 text-center text-xs font-black text-white transition hover:bg-[#0b352d] sm:px-4 sm:text-sm"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </header>
@@ -3415,7 +3443,7 @@ function StatsReportWindow({ reports, timeReports, onClose }) {
       activePanel="stats"
       onClose={onClose}
     >
-      <div className="grid gap-4">
+      <div className="grid gap-3 sm:gap-4">
         <DrinkStats reports={reports} />
         <DrinkTimeStatsPanel reports={timeReports} onClose={onClose} />
       </div>
@@ -4268,8 +4296,8 @@ function DrinkStats({ reports }) {
   );
 
   return (
-    <section className="rounded-2xl bg-[#FFFDF8] border border-[#0F4036]/12 p-4 shadow-sm">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
+    <section className="rounded-2xl bg-[#FFFDF8] border border-[#0F4036]/12 p-3 shadow-sm sm:p-4">
+      <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-xl md:text-2xl font-black text-[#0F4036]">Drink Stats</h2>
           <p className="text-sm text-[#6A614F]">
@@ -4279,7 +4307,7 @@ function DrinkStats({ reports }) {
         <button
           type="button"
           onClick={() => setCollapsed((current) => !current)}
-          className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+          className="w-full rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45 sm:w-auto"
           aria-expanded={!collapsed}
         >
           {collapsed ? "Show drink stats" : "Collapse drink stats"}
@@ -4303,7 +4331,7 @@ function DrinkStats({ reports }) {
                 setSelectedRange(range.key);
                 setCollapsed(false);
               }}
-              className={`min-w-[135px] rounded-xl border px-3 py-2 text-left transition ${
+              className={`min-w-[112px] rounded-xl border px-3 py-2 text-left transition sm:min-w-[135px] ${
                 active
                   ? "border-[#0F4036] bg-[#0F4036] text-white"
                   : "border-[#CA862B]/18 bg-white text-[#0F4036] hover:bg-[#EEE0C5]/40"
@@ -4320,7 +4348,7 @@ function DrinkStats({ reports }) {
       </div>
 
       {!collapsed && (
-        <div className="mt-2 rounded-xl bg-white border border-[#0F4036]/10 p-4">
+        <div className="mt-2 rounded-xl bg-white border border-[#0F4036]/10 p-3 sm:p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="text-xs font-black uppercase tracking-[0.14em] text-[#8B5A1D]">
@@ -4335,7 +4363,7 @@ function DrinkStats({ reports }) {
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-3 gap-2">
+          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
             {["Coffee", "Not Coffee", "Smoothies"].map((category) => (
               <div
                 key={category}
@@ -4361,12 +4389,12 @@ function DrinkStats({ reports }) {
                 {selectedReport.totalsByName.map((drink) => (
                   <div
                     key={drink.name}
-                    className="flex items-center justify-between gap-3 text-sm rounded-lg bg-[#FFFDF8] border border-[#0F4036]/8 px-3 py-2"
+                    className="flex items-center justify-between gap-3 rounded-lg border border-[#0F4036]/8 bg-[#FFFDF8] px-3 py-2 text-sm"
                   >
-                    <span className="font-bold text-[#111111] truncate">
+                    <span className="min-w-0 font-bold text-[#111111]">
                       {drink.name}
                     </span>
-                    <span className="font-black text-[#0F4036]">
+                    <span className="shrink-0 font-black text-[#0F4036]">
                       {drink.qty}
                     </span>
                   </div>
@@ -4400,13 +4428,13 @@ function DrinkTimeStatsPanel({ reports, onClose }) {
     REPORT_RANGES.find((range) => range.key === selectedRange)?.label || "Today";
 
   return (
-    <section className="rounded-2xl border border-[#0F4036]/12 bg-[#FFFDF8] p-4 shadow-sm">
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+    <section className="rounded-2xl border border-[#0F4036]/12 bg-[#FFFDF8] p-3 shadow-sm sm:p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="text-xs font-black uppercase tracking-[0.16em] text-[#8B5A1D]">
             Timing report
           </div>
-          <h2 className="mt-1 text-2xl font-black text-[#0F4036]">
+          <h2 className="mt-1 text-xl font-black text-[#0F4036] sm:text-2xl">
             Average drink time
           </h2>
           <p className="mt-1 max-w-3xl text-sm font-semibold text-[#6A614F]">
@@ -4416,7 +4444,7 @@ function DrinkTimeStatsPanel({ reports, onClose }) {
         <button
           type="button"
           onClick={onClose}
-          className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+          className="w-full rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45 sm:w-auto"
         >
           Close
         </button>
@@ -4431,7 +4459,7 @@ function DrinkTimeStatsPanel({ reports, onClose }) {
               key={range.key}
               type="button"
               onClick={() => setSelectedRange(range.key)}
-              className={`min-w-[135px] rounded-xl border px-3 py-2 text-left transition ${
+              className={`min-w-[112px] rounded-xl border px-3 py-2 text-left transition sm:min-w-[135px] ${
                 active
                   ? "border-[#0F4036] bg-[#0F4036] text-white"
                   : "border-[#CA862B]/18 bg-white text-[#0F4036] hover:bg-[#EEE0C5]/40"
@@ -4452,11 +4480,11 @@ function DrinkTimeStatsPanel({ reports, onClose }) {
       </div>
 
       <div className="mt-4 grid gap-3 lg:grid-cols-[0.85fr_1.15fr]">
-        <div className="rounded-2xl border border-[#CA862B]/14 bg-white p-4">
+        <div className="rounded-2xl border border-[#CA862B]/14 bg-white p-3 sm:p-4">
           <div className="text-xs font-black uppercase tracking-[0.14em] text-[#8B5A1D]">
             {selectedLabel}
           </div>
-          <div className="mt-2 text-4xl font-black text-[#111111]">
+          <div className="mt-2 text-3xl font-black text-[#111111] sm:text-4xl">
             {selectedReport.label || "Collecting"}
           </div>
           <div className="mt-1 text-sm font-bold text-[#6A614F]">
@@ -4465,7 +4493,7 @@ function DrinkTimeStatsPanel({ reports, onClose }) {
         </div>
 
         <div className="grid gap-3 md:grid-cols-2">
-          <div className="rounded-2xl border border-[#CA862B]/14 bg-white p-4">
+          <div className="rounded-2xl border border-[#CA862B]/14 bg-white p-3 sm:p-4">
             <div className="text-xs font-black uppercase tracking-[0.14em] text-[#8B5A1D]">
               By hour
             </div>
@@ -4473,7 +4501,7 @@ function DrinkTimeStatsPanel({ reports, onClose }) {
               {selectedReport.byHour?.length ? (
                 selectedReport.byHour.map((hour) => (
                   <div key={hour.hour} className="rounded-xl border border-[#0F4036]/8 bg-[#FFFDF8] px-3 py-2">
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="font-black text-[#111111]">{hour.hourLabel}</span>
                       <span className="font-black text-[#0F4036]">{hour.label}</span>
                     </div>
@@ -4490,7 +4518,7 @@ function DrinkTimeStatsPanel({ reports, onClose }) {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[#CA862B]/14 bg-white p-4">
+          <div className="rounded-2xl border border-[#CA862B]/14 bg-white p-3 sm:p-4">
             <div className="text-xs font-black uppercase tracking-[0.14em] text-[#8B5A1D]">
               By drink name
             </div>
@@ -4499,7 +4527,7 @@ function DrinkTimeStatsPanel({ reports, onClose }) {
                 selectedReport.byDrinkName.map((drink) => (
                   <div key={drink.name} className="rounded-xl border border-[#0F4036]/8 bg-[#FFFDF8] px-3 py-2">
                     <div className="flex items-center justify-between gap-3">
-                      <span className="truncate font-black text-[#111111]">{drink.name}</span>
+                      <span className="min-w-0 font-black text-[#111111]">{drink.name}</span>
                       <span className="shrink-0 font-black text-[#0F4036]">{drink.label}</span>
                     </div>
                     <div className="mt-1 text-xs font-bold text-[#6A614F]">
@@ -5196,6 +5224,16 @@ function buildOwnerSnapshotAnalysis(report, rangeKey) {
   const topCategoryShare = topCategory && drinkUnits
     ? Math.round((Number(topCategory.units || 0) / drinkUnits) * 100)
     : 0;
+  const drinkOrderNonDrinkAttachmentRate = Number(report?.drinkOrderNonDrinkAttachmentRate || 0);
+  const drinkOrdersWithNonDrinkItems = Number(report?.drinkOrdersWithNonDrinkItems || 0);
+  const nonDrinkAttachmentRead =
+    drinkOrderNonDrinkAttachmentRate >= 45
+      ? `${drinkOrderNonDrinkAttachmentRate}% of drink orders also included non-drink items (${drinkOrdersWithNonDrinkItems} orders), which is a strong add-on and inventory signal.`
+      : drinkOrderNonDrinkAttachmentRate >= 20
+        ? `${drinkOrderNonDrinkAttachmentRate}% of drink orders also included non-drink items (${drinkOrdersWithNonDrinkItems} orders), so add-ons are meaningfully attached to drink traffic.`
+        : drinkOrderNonDrinkAttachmentRate > 0
+          ? `${drinkOrderNonDrinkAttachmentRate}% of drink orders also included non-drink items (${drinkOrdersWithNonDrinkItems} orders). Keep watching which food or retail items pair with drinks.`
+          : "No non-drink add-ons are attached to drink orders in this range yet.";
   const unitsPerOrder = orderCount ? drinkUnits / orderCount : 0;
   const unitsPerOrderLabel = unitsPerOrder.toFixed(1);
   const categoryFocusRead =
@@ -5331,7 +5369,7 @@ function buildOwnerSnapshotAnalysis(report, rangeKey) {
       },
       {
         title: "Ticket behavior",
-        body: unitRead,
+        body: `${unitRead} ${nonDrinkAttachmentRead}`,
       },
       {
         title: "Sales read",

@@ -170,6 +170,18 @@ function getAlertEmailConfigDiagnostics() {
   };
 }
 
+function hasReportEmailConfig() {
+  return Boolean((RESEND_API_KEY && DRINKFLOW_EMAIL_FROM) || hasAlertEmailConfig());
+}
+
+function getReportEmailConfigDiagnostics() {
+  return {
+    resendApiKeySet: Boolean(RESEND_API_KEY),
+    resendFromSet: Boolean(DRINKFLOW_EMAIL_FROM),
+    ...getAlertEmailConfigDiagnostics(),
+  };
+}
+
 function getDrinkFlowSquareOAuthDiagnostics() {
   return {
     applicationIdSet: Boolean(DRINKFLOW_SQUARE_APPLICATION_ID),
@@ -214,6 +226,57 @@ async function sendAlertEmail(subject, text) {
   return true;
 }
 
+async function sendEmailWithAttachments({
+  to,
+  subject,
+  text,
+  attachments = [],
+  from = DRINKFLOW_EMAIL_FROM,
+}) {
+  const email = normalizeLeadEmail(to);
+  if (!email || !isValidLeadEmail(email) || !subject || !text) return false;
+
+  if (RESEND_API_KEY && from) {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to: email,
+        subject,
+        text,
+        attachments: attachments.map((attachment) => ({
+          filename: attachment.filename,
+          content: Buffer.isBuffer(attachment.content)
+            ? attachment.content.toString("base64")
+            : attachment.content,
+        })),
+      }),
+    });
+    if (!response.ok) {
+      const details = await response.text().catch(() => "");
+      throw new Error(`Resend email failed: ${response.status}${details ? ` ${details}` : ""}`);
+    }
+    return true;
+  }
+
+  const mailer = getAlertMailer();
+  if (!mailer) return false;
+
+  await mailer.sendMail({
+    from: from || ALERT_EMAIL_FROM,
+    to: email,
+    subject,
+    text,
+    attachments,
+  });
+
+  return true;
+}
+
 async function sendTransactionalEmail({ to, subject, text, from = DRINKFLOW_EMAIL_FROM }) {
   const email = normalizeLeadEmail(to);
   if (!email || !isValidLeadEmail(email) || !subject || !text) return false;
@@ -245,6 +308,15 @@ async function sendTransactionalEmail({ to, subject, text, from = DRINKFLOW_EMAI
   });
 
   return true;
+}
+
+function isSmtpAuthDisabledError(error) {
+  const message = String(error?.message || error || "").toLowerCase();
+  return (
+    message.includes("smtpclientauthentication is disabled") ||
+    message.includes("smtp auth") ||
+    message.includes("5.7.139")
+  );
 }
 
 async function sendSquareOfflineEmail(reason, details = "") {
@@ -4284,6 +4356,8 @@ function buildOwnerDrinkRevenueReport(orders = [], start, end) {
     "Not Coffee": { category: "Not Coffee", revenueCents: 0, taxCents: 0, totalCents: 0, units: 0 },
     Smoothies: { category: "Smoothies", revenueCents: 0, taxCents: 0, totalCents: 0, units: 0 },
   };
+  const drinksByName = new Map();
+  const orderDetails = [];
   const hourly = Array.from({ length: 24 }, (_value, hour) => ({
     hour,
     label: new Date(2024, 0, 1, hour).toLocaleTimeString("en-US", {
@@ -4296,39 +4370,109 @@ function buildOwnerDrinkRevenueReport(orders = [], start, end) {
     revenue: "$0.00",
   }));
   const orderIds = new Set();
+  const allOrderIds = new Set();
   let multiDrinkOrderCount = 0;
+  let ordersWithNonDrinkItems = 0;
+  let drinkOrdersWithNonDrinkItems = 0;
+  let nonDrinkUnits = 0;
+  let nonDrinkRevenueCents = 0;
+  let nonDrinkTaxCents = 0;
+  let nonDrinkTotalCents = 0;
 
   for (const order of orders || []) {
     const rawOrder = order.raw_order || {};
     const lineItems = rawOrder.lineItems || rawOrder.line_items || [];
     let orderHasDrink = false;
+    let orderHasNonDrink = false;
     let orderUnits = 0;
     let orderRevenueCents = 0;
+    let orderTaxCents = 0;
+    let orderTotalCents = 0;
+    const orderDrinkNames = [];
+
+    if (order.square_order_id && lineItems.length) {
+      allOrderIds.add(order.square_order_id);
+    }
 
     for (const lineItem of lineItems) {
       const name = lineItem.name || "";
       const category = getItemDrinkCategory({ name });
-      if (!category) continue;
-
+      const displayName = getCanonicalDrinkName(name);
       const qty = Number.parseFloat(lineItem.quantity || "1") || 1;
       const totalCents = getLineItemAmountCents(lineItem);
       const taxCents = getLineItemTaxCents(lineItem);
       const revenueCents = Math.max(totalCents - taxCents, 0);
 
+      if (!category) {
+        orderHasNonDrink = true;
+        nonDrinkUnits += qty;
+        nonDrinkRevenueCents += revenueCents;
+        nonDrinkTaxCents += taxCents;
+        nonDrinkTotalCents += totalCents;
+        continue;
+      }
+
+      const drinkSummary =
+        drinksByName.get(displayName) || {
+          name: displayName,
+          category,
+          units: 0,
+          orderCount: 0,
+          revenueCents: 0,
+          taxCents: 0,
+          totalCents: 0,
+        };
+
       categories[category].units += qty;
       categories[category].revenueCents += revenueCents;
       categories[category].taxCents += taxCents;
       categories[category].totalCents += totalCents;
+      drinkSummary.units += qty;
+      drinkSummary.orderCount += 1;
+      drinkSummary.revenueCents += revenueCents;
+      drinkSummary.taxCents += taxCents;
+      drinkSummary.totalCents += totalCents;
+      drinksByName.set(displayName, drinkSummary);
       orderUnits += qty;
       orderRevenueCents += revenueCents;
+      orderTaxCents += taxCents;
+      orderTotalCents += totalCents;
+      orderDrinkNames.push(`${displayName}${qty > 1 ? ` x${qty}` : ""}`);
       orderHasDrink = true;
     }
+
+    if (orderHasNonDrink) ordersWithNonDrinkItems += 1;
 
     if (orderHasDrink) {
       orderIds.add(order.square_order_id);
       if (orderUnits >= 2) multiDrinkOrderCount += 1;
+      if (orderHasNonDrink) drinkOrdersWithNonDrinkItems += 1;
 
       const createdAt = new Date(order.created_at);
+      orderDetails.push({
+        orderId: order.square_order_id,
+        orderNumber: order.order_number || String(order.square_order_id || "").slice(-4),
+        customerName: order.customer_name || "",
+        createdAt: order.created_at,
+        createdAtLabel: Number.isNaN(createdAt.getTime())
+          ? ""
+          : createdAt.toLocaleString("en-US", {
+              timeZone: SHOP_TIME_ZONE,
+              month: "short",
+              day: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+            }),
+        units: orderUnits,
+        revenueCents: orderRevenueCents,
+        revenue: formatCurrency(orderRevenueCents),
+        taxCents: orderTaxCents,
+        tax: formatCurrency(orderTaxCents),
+        totalCents: orderTotalCents,
+        total: formatCurrency(orderTotalCents),
+        items: orderDrinkNames,
+      });
+
       if (!Number.isNaN(createdAt.getTime())) {
         const bucket = hourly[createdAt.getHours()];
         bucket.orderCount += 1;
@@ -4348,6 +4492,18 @@ function buildOwnerDrinkRevenueReport(orders = [], start, end) {
     tax: formatCurrency(item.taxCents),
     total: formatCurrency(item.totalCents),
   }));
+  const totalsByName = Array.from(drinksByName.values())
+    .map((item) => ({
+      ...item,
+      revenue: formatCurrency(item.revenueCents),
+      tax: formatCurrency(item.taxCents),
+      total: formatCurrency(item.totalCents),
+      averageUnitRevenueCents: item.units ? Math.round(item.revenueCents / item.units) : 0,
+      averageUnitRevenue: formatCurrency(
+        item.units ? Math.round(item.revenueCents / item.units) : 0
+      ),
+    }))
+    .sort((a, b) => b.units - a.units || b.revenueCents - a.revenueCents || a.name.localeCompare(b.name));
   const totalRevenueCents = totalsByCategory.reduce(
     (sum, item) => sum + item.revenueCents,
     0
@@ -4364,13 +4520,31 @@ function buildOwnerDrinkRevenueReport(orders = [], start, end) {
   const multiDrinkOrderRate = orderIds.size
     ? Math.round((multiDrinkOrderCount / orderIds.size) * 100)
     : 0;
+  const nonDrinkOrderRate = allOrderIds.size
+    ? Math.round((ordersWithNonDrinkItems / allOrderIds.size) * 100)
+    : 0;
+  const drinkOrderNonDrinkAttachmentRate = orderIds.size
+    ? Math.round((drinkOrdersWithNonDrinkItems / orderIds.size) * 100)
+    : 0;
 
   return {
     startAt: start.toISOString(),
     endAt: end.toISOString(),
     orderCount: orderIds.size,
+    allOrderCount: allOrderIds.size,
     multiDrinkOrderCount,
     multiDrinkOrderRate,
+    ordersWithNonDrinkItems,
+    nonDrinkOrderRate,
+    drinkOrdersWithNonDrinkItems,
+    drinkOrderNonDrinkAttachmentRate,
+    nonDrinkUnits,
+    nonDrinkRevenueCents,
+    nonDrinkRevenue: formatCurrency(nonDrinkRevenueCents),
+    nonDrinkTaxCents,
+    nonDrinkTax: formatCurrency(nonDrinkTaxCents),
+    nonDrinkTotalCents,
+    nonDrinkTotal: formatCurrency(nonDrinkTotalCents),
     totalUnits,
     totalRevenueCents,
     totalRevenue: formatCurrency(totalRevenueCents),
@@ -4385,7 +4559,11 @@ function buildOwnerDrinkRevenueReport(orders = [], start, end) {
       orderIds.size ? Math.round(totalCollectedCents / orderIds.size) : 0
     ),
     totalsByCategory,
+    totalsByName,
     hourlyOrders,
+    orderDetails: orderDetails.sort(
+      (a, b) => Date.parse(a.createdAt || 0) - Date.parse(b.createdAt || 0)
+    ),
     shopHours,
   };
 }
@@ -4402,7 +4580,7 @@ async function getOwnerDrinkRevenueReport(range = "today") {
 
   const { data: orders, error } = await supabase
     .from("kds_orders")
-    .select("square_order_id, created_at, raw_order")
+    .select("square_order_id, order_number, customer_name, created_at, raw_order")
     .gte("created_at", start.toISOString())
     .lte("created_at", end.toISOString());
 
@@ -4427,7 +4605,7 @@ async function getOwnerDrinkRevenueReportForDay(dateString = getLocalDateKey()) 
 
   const { data: orders, error } = await supabase
     .from("kds_orders")
-    .select("square_order_id, created_at, raw_order")
+    .select("square_order_id, order_number, customer_name, created_at, raw_order")
     .gte("created_at", range.start.toISOString())
     .lte("created_at", range.end.toISOString());
 
@@ -4578,6 +4756,9 @@ function ownerReportToCsv(report = {}, range = "today") {
     ["Average drink order value", report.averageDrinkOrderValue || "$0.00"],
     ["Orders with 2+ drinks", Number(report.multiDrinkOrderCount || 0)],
     ["2+ drink order rate", `${Number(report.multiDrinkOrderRate || 0)}%`],
+    ["Drink orders with non-drink items", Number(report.drinkOrdersWithNonDrinkItems || 0)],
+    ["Drink order non-drink attachment rate", `${Number(report.drinkOrderNonDrinkAttachmentRate || 0)}%`],
+    ["Non-drink total collected", report.nonDrinkTotal || "$0.00"],
     [],
     ["Category", "Revenue", "Tax", "Total collected", "Units"],
     ...(report.totalsByCategory || []).map((item) => [
@@ -4586,6 +4767,18 @@ function ownerReportToCsv(report = {}, range = "today") {
       item.tax,
       item.total,
       item.units,
+    ]),
+    [],
+    ["Drink", "Category", "Units", "Lines", "Revenue", "Tax", "Total collected", "Average unit revenue"],
+    ...(report.totalsByName || []).map((item) => [
+      item.name,
+      item.category,
+      item.units,
+      item.orderCount,
+      item.revenue,
+      item.tax,
+      item.total,
+      item.averageUnitRevenue,
     ]),
     [],
     ["Hour", "Orders", "Drink units", "Revenue"],
@@ -4623,6 +4816,11 @@ async function buildOwnerReportWorkbook(report = {}, range = "today") {
     ["Average drink order value", report.averageDrinkOrderValue || "$0.00"],
     ["Orders with 2+ drinks", Number(report.multiDrinkOrderCount || 0)],
     ["2+ drink order rate", `${Number(report.multiDrinkOrderRate || 0)}%`],
+    ["Drink orders with non-drink items", Number(report.drinkOrdersWithNonDrinkItems || 0)],
+    ["Drink order non-drink attachment rate", `${Number(report.drinkOrderNonDrinkAttachmentRate || 0)}%`],
+    ["All orders with non-drink items", Number(report.ordersWithNonDrinkItems || 0)],
+    ["All-order non-drink item rate", `${Number(report.nonDrinkOrderRate || 0)}%`],
+    ["Non-drink total collected", report.nonDrinkTotal || "$0.00"],
   ].forEach(([metric, value]) => summary.addRow({ metric, value }));
 
   const categories = workbook.addWorksheet("Category Mix");
@@ -4663,7 +4861,61 @@ async function buildOwnerReportWorkbook(report = {}, range = "today") {
   });
   hourly.getColumn("revenue").numFmt = "$#,##0.00";
 
-  [summary, categories, hourly].forEach((sheet) => {
+  const drinks = workbook.addWorksheet("Drink Inventory Detail");
+  drinks.columns = [
+    { header: "Drink", key: "name", width: 28 },
+    { header: "Category", key: "category", width: 16 },
+    { header: "Units", key: "units", width: 12 },
+    { header: "Lines", key: "orderCount", width: 12 },
+    { header: "Revenue", key: "revenue", width: 16 },
+    { header: "Tax", key: "tax", width: 14 },
+    { header: "Total Collected", key: "total", width: 18 },
+    { header: "Average Unit Revenue", key: "averageUnitRevenue", width: 20 },
+  ];
+  (report.totalsByName || []).forEach((item) => {
+    drinks.addRow({
+      name: item.name,
+      category: item.category,
+      units: Number(item.units || 0),
+      orderCount: Number(item.orderCount || 0),
+      revenue: Number(item.revenueCents || 0) / 100,
+      tax: Number(item.taxCents || 0) / 100,
+      total: Number(item.totalCents || 0) / 100,
+      averageUnitRevenue: Number(item.averageUnitRevenueCents || 0) / 100,
+    });
+  });
+  ["revenue", "tax", "total", "averageUnitRevenue"].forEach((key) => {
+    drinks.getColumn(key).numFmt = "$#,##0.00";
+  });
+
+  const orderDetail = workbook.addWorksheet("Order Detail");
+  orderDetail.columns = [
+    { header: "Time", key: "createdAtLabel", width: 22 },
+    { header: "Order", key: "orderNumber", width: 14 },
+    { header: "Customer", key: "customerName", width: 20 },
+    { header: "Drink Units", key: "units", width: 14 },
+    { header: "Drink Revenue", key: "revenue", width: 16 },
+    { header: "Drink Tax", key: "tax", width: 14 },
+    { header: "Drink Total", key: "total", width: 16 },
+    { header: "Drinks", key: "items", width: 46 },
+  ];
+  (report.orderDetails || []).forEach((order) => {
+    orderDetail.addRow({
+      createdAtLabel: order.createdAtLabel,
+      orderNumber: order.orderNumber,
+      customerName: order.customerName || "",
+      units: Number(order.units || 0),
+      revenue: Number(order.revenueCents || 0) / 100,
+      tax: Number(order.taxCents || 0) / 100,
+      total: Number(order.totalCents || 0) / 100,
+      items: (order.items || []).join(", "),
+    });
+  });
+  ["revenue", "tax", "total"].forEach((key) => {
+    orderDetail.getColumn(key).numFmt = "$#,##0.00";
+  });
+
+  [summary, categories, hourly, drinks, orderDetail].forEach((sheet) => {
     sheet.getRow(1).eachCell((cell) => {
       cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
       cell.fill = {
@@ -4731,7 +4983,7 @@ function drawOwnerDrinkReportPdf(doc, report = {}, range = "today") {
     ["Drink revenue", report.totalRevenue || "$0.00"],
     ["Drink orders", String(report.orderCount || 0)],
     ["Drink units", String(report.totalUnits || 0)],
-    ["2+ drink orders", `${Number(report.multiDrinkOrderRate || 0)}%`],
+    ["Non-drink add-ons", `${Number(report.drinkOrderNonDrinkAttachmentRate || 0)}%`],
   ];
   metrics.forEach(([label, value], index) => {
     const x = 42 + index * 135;
@@ -4758,6 +5010,16 @@ function drawOwnerDrinkReportPdf(doc, report = {}, range = "today") {
       `${Number(report.multiDrinkOrderCount || 0)} of ${Number(report.orderCount || 0)} individual drink orders contained 2 or more drinks.`,
       42,
       252,
+      { width: 528 }
+    );
+  doc
+    .fillColor("#111111")
+    .fontSize(10)
+    .font("Helvetica")
+    .text(
+      `${Number(report.drinkOrdersWithNonDrinkItems || 0)} of ${Number(report.orderCount || 0)} drink orders also contained non-drink items.`,
+      42,
+      266,
       { width: 528 }
     );
 
@@ -4826,7 +5088,265 @@ function drawOwnerDrinkReportPdf(doc, report = {}, range = "today") {
       { width: 528, align: "center" }
     );
 
+  drawOwnerDrinkReportDetailPages(doc, report, range);
   doc.end();
+}
+
+function drawOwnerReportHeader(doc, title, subtitle = "") {
+  doc
+    .fillColor("#0F4036")
+    .fontSize(18)
+    .font("Helvetica-Bold")
+    .text(title, 42, 42, { width: 340 });
+  if (subtitle) {
+    doc
+      .fillColor("#6A614F")
+      .fontSize(9)
+      .font("Helvetica-Bold")
+      .text(subtitle.toUpperCase(), 42, 66, {
+        width: 500,
+        characterSpacing: 0.6,
+      });
+  }
+  doc.moveTo(42, 86).lineTo(570, 86).strokeColor("#E9D8B7").stroke();
+}
+
+function drawOwnerReportFooter(doc, pageLabel) {
+  doc
+    .fillColor("#6A614F")
+    .fontSize(8)
+    .font("Helvetica")
+    .text(pageLabel, 42, 736, { width: 528, align: "center" });
+}
+
+function drawOwnerReportTable(doc, { x = 42, y = 108, columns = [], rows = [], maxRows = 18 }) {
+  const rowHeight = 28;
+  const headerHeight = 24;
+  doc.roundedRect(x, y, 528, headerHeight, 8).fillAndStroke("#0F4036", "#0F4036");
+  let cursorX = x;
+  columns.forEach((column) => {
+    doc
+      .fillColor("#FFFFFF")
+      .fontSize(7)
+      .font("Helvetica-Bold")
+      .text(String(column.label || "").toUpperCase(), cursorX + 8, y + 8, {
+        width: column.width - 10,
+      });
+    cursorX += column.width;
+  });
+
+  let cursorY = y + headerHeight + 6;
+  rows.slice(0, maxRows).forEach((row, index) => {
+    const bg = index % 2 === 0 ? "#FFFDF8" : "#FFFFFF";
+    doc.roundedRect(x, cursorY, 528, rowHeight, 7).fillAndStroke(bg, "#E9D8B7");
+    cursorX = x;
+    columns.forEach((column) => {
+      doc
+        .fillColor(column.color || "#111111")
+        .fontSize(column.fontSize || 8)
+        .font(column.bold ? "Helvetica-Bold" : "Helvetica")
+        .text(String(row[column.key] ?? ""), cursorX + 8, cursorY + 8, {
+          width: column.width - 10,
+          align: column.align || "left",
+          ellipsis: true,
+        });
+      cursorX += column.width;
+    });
+    cursorY += rowHeight + 4;
+  });
+
+  return cursorY;
+}
+
+function drawOwnerDrinkReportDetailPages(doc, report = {}, range = "today") {
+  const rangeLabel = getOwnerRangeLabel(range);
+  const generatedLabel = new Date().toLocaleString("en-US", {
+    timeZone: SHOP_TIME_ZONE,
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  const topDrinks = Array.isArray(report.totalsByName) ? report.totalsByName : [];
+  const hourly = Array.isArray(report.hourlyOrders) ? report.hourlyOrders : [];
+  const orderDetails = Array.isArray(report.orderDetails) ? report.orderDetails : [];
+
+  doc.addPage();
+  drawOwnerReportHeader(
+    doc,
+    "CPA + Tax Detail",
+    `${rangeLabel} | generated ${generatedLabel}`
+  );
+  const taxRows = [
+    {
+      label: "Drink revenue before tax",
+      amount: report.totalRevenue || "$0.00",
+      note: "Sales attributed to Coffee, Not Coffee, and Smoothies only.",
+    },
+    {
+      label: "Taxes collected on drinks",
+      amount: report.totalTax || "$0.00",
+      note: "Pulled from Square line-item tax on drink items.",
+    },
+    {
+      label: "Total collected on drinks",
+      amount: report.totalCollected || "$0.00",
+      note: "Drink revenue plus drink tax.",
+    },
+    {
+      label: "Average drink order value",
+      amount: report.averageDrinkOrderValue || "$0.00",
+      note: "Total collected divided by drink-order count.",
+    },
+    {
+      label: "Drink orders with non-drink items",
+      amount: `${Number(report.drinkOrderNonDrinkAttachmentRate || 0)}%`,
+      note: `${Number(report.drinkOrdersWithNonDrinkItems || 0)} of ${Number(report.orderCount || 0)} drink orders also included food, retail, grocery, or other non-drink items.`,
+    },
+    {
+      label: "Non-drink collected in same period",
+      amount: report.nonDrinkTotal || "$0.00",
+      note: `${Number(report.ordersWithNonDrinkItems || 0)} total orders contained non-drink items. This is shown as context, not included in drink revenue.`,
+    },
+  ];
+  let y = drawOwnerReportTable(doc, {
+    y: 108,
+    columns: [
+      { key: "label", label: "CPA line", width: 190, bold: true, color: "#0F4036" },
+      { key: "amount", label: "Amount", width: 110, bold: true, align: "right" },
+      { key: "note", label: "Notes", width: 228, fontSize: 7 },
+    ],
+    rows: taxRows,
+    maxRows: 10,
+  });
+  y += 16;
+  doc
+    .fillColor("#0F4036")
+    .fontSize(12)
+    .font("Helvetica-Bold")
+    .text("Category ledger", 42, y);
+  y += 22;
+  drawOwnerReportTable(doc, {
+    y,
+    columns: [
+      { key: "category", label: "Category", width: 128, bold: true, color: "#0F4036" },
+      { key: "units", label: "Units", width: 70, align: "right" },
+      { key: "revenue", label: "Revenue", width: 100, align: "right", bold: true },
+      { key: "tax", label: "Tax", width: 100, align: "right" },
+      { key: "total", label: "Collected", width: 130, align: "right", bold: true },
+    ],
+    rows: report.totalsByCategory || [],
+    maxRows: 8,
+  });
+  drawOwnerReportFooter(
+    doc,
+    "CPA note: retail, grocery, food, and bagged coffee are excluded from this drink-only report."
+  );
+
+  const inventoryRows = topDrinks.map((item) => ({
+    ...item,
+    units: Number(item.units || 0),
+    orderCount: Number(item.orderCount || 0),
+  }));
+  const inventoryChunks = chunkRows(inventoryRows, 18);
+  (inventoryChunks.length ? inventoryChunks : [[]]).forEach((chunk, index) => {
+    doc.addPage();
+    drawOwnerReportHeader(
+      doc,
+      index ? `Inventory + Prep Detail (${index + 1})` : "Inventory + Prep Detail",
+      "Drink unit movement by menu item"
+    );
+    drawOwnerReportTable(doc, {
+      y: 108,
+      columns: [
+        { key: "name", label: "Drink", width: 178, bold: true, color: "#0F4036" },
+        { key: "category", label: "Category", width: 92 },
+        { key: "units", label: "Units", width: 60, align: "right", bold: true },
+        { key: "orderCount", label: "Lines", width: 60, align: "right" },
+        { key: "revenue", label: "Revenue", width: 78, align: "right" },
+        { key: "averageUnitRevenue", label: "Avg/unit", width: 60, align: "right" },
+      ],
+      rows: chunk,
+      maxRows: 18,
+    });
+    if (!index) {
+      doc
+        .fillColor("#6A614F")
+        .fontSize(9)
+        .font("Helvetica")
+        .text(
+          "Inventory use: start with the highest-unit drinks when checking smoothie supplies, milk, coffee, matcha, chai, refresher base, cups, lids, and syrups.",
+          42,
+          690,
+          { width: 528 }
+        );
+    }
+    drawOwnerReportFooter(doc, "Inventory detail is based on Square drink line items and quantities.");
+  });
+
+  doc.addPage();
+  drawOwnerReportHeader(doc, "Hourly Staffing + Prep Detail", "Order flow by hour");
+  drawOwnerReportTable(doc, {
+    y: 108,
+    columns: [
+      { key: "label", label: "Hour", width: 110, bold: true, color: "#0F4036" },
+      { key: "orderCount", label: "Orders", width: 82, align: "right", bold: true },
+      { key: "units", label: "Units", width: 82, align: "right" },
+      { key: "revenue", label: "Revenue", width: 110, align: "right" },
+      { key: "notes", label: "Use", width: 144 },
+    ],
+    rows: hourly
+      .filter((item) => isHourWithinShopHours(item.hour, report.shopHours))
+      .map((item) => ({
+        ...item,
+        notes: Number(item.orderCount || 0) > 0 ? "Prep/staffing signal" : "Quiet hour",
+      })),
+    maxRows: 18,
+  });
+  drawOwnerReportFooter(doc, "Hourly detail helps spot rushes, prep windows, and staffing patterns.");
+
+  const orderRows = orderDetails.map((order) => ({
+    ...order,
+    customerName: order.customerName || "-",
+    itemsLabel: (order.items || []).join(", "),
+  }));
+  const orderChunks = chunkRows(orderRows, 19);
+  (orderChunks.length ? orderChunks : [[]]).forEach((chunk, index) => {
+    doc.addPage();
+    drawOwnerReportHeader(
+      doc,
+      index ? `Order Detail (${index + 1})` : "Order Detail",
+      "Drink orders included in this report"
+    );
+    drawOwnerReportTable(doc, {
+      y: 108,
+      columns: [
+        { key: "createdAtLabel", label: "Time", width: 92, bold: true },
+        { key: "orderNumber", label: "Order", width: 60, color: "#0F4036", bold: true },
+        { key: "customerName", label: "Name", width: 76 },
+        { key: "units", label: "Units", width: 48, align: "right", bold: true },
+        { key: "total", label: "Collected", width: 82, align: "right" },
+        { key: "itemsLabel", label: "Drinks", width: 170, fontSize: 7 },
+      ],
+      rows: chunk,
+      maxRows: 19,
+    });
+    drawOwnerReportFooter(
+      doc,
+      orderRows.length
+        ? `Order detail page ${index + 1} of ${orderChunks.length}.`
+        : "No drink orders were found for this report range."
+    );
+  });
+}
+
+function chunkRows(rows = [], size = 18) {
+  const chunks = [];
+  for (let index = 0; index < rows.length; index += size) {
+    chunks.push(rows.slice(index, index + size));
+  }
+  return chunks;
 }
 
 function writeOwnerDrinkReportPdf(res, report = {}, range = "today") {
@@ -6403,33 +6923,35 @@ app.post("/api/owner/reports/drink-revenue/email", requireOwnerAuth, async (req,
       return res.status(400).json({ error: "Enter a valid email address." });
     }
 
-    if (!hasAlertEmailConfig()) {
+    if (!hasReportEmailConfig()) {
       return res.status(503).json({
         error: "Report email is not configured on the backend yet.",
-        diagnostics: getAlertEmailConfigDiagnostics(),
+        diagnostics: getReportEmailConfigDiagnostics(),
       });
     }
 
     const report = await getOwnerDrinkRevenueReport(range);
     const pdfBuffer = await buildOwnerDrinkReportPdfBuffer(report, range);
     const rangeLabel = getOwnerRangeLabel(range);
+    const text = [
+      `Attached is the Goldie's KDS ${rangeLabel.toLowerCase()} owner report.`,
+      "",
+      "Included:",
+      "- drink revenue",
+      "- drink units",
+      "- hourly volume chart",
+      "- category mix",
+      "- drink-by-drink inventory detail",
+      "- non-drink add-on percentage",
+      "- multi-drink order signal",
+      "",
+      "This is a practice report email from the Owner Portal.",
+    ].join("\n");
 
-    await getAlertMailer().sendMail({
-      from: ALERT_EMAIL_FROM,
+    await sendEmailWithAttachments({
       to: email,
       subject: `Goldie's KDS ${rangeLabel} owner report`,
-      text: [
-        `Attached is the Goldie's KDS ${rangeLabel.toLowerCase()} owner report.`,
-        "",
-        "Included:",
-        "- drink revenue",
-        "- drink units",
-        "- hourly volume chart",
-        "- category mix",
-        "- multi-drink order signal",
-        "",
-        "This is a practice report email from the Owner Portal.",
-      ].join("\n"),
+      text,
       attachments: [
         {
           filename: `goldies-owner-report-${range}.pdf`,
@@ -6445,6 +6967,12 @@ app.post("/api/owner/reports/drink-revenue/email", requireOwnerAuth, async (req,
     });
   } catch (error) {
     console.error("Error emailing owner report:", error);
+    if (isSmtpAuthDisabledError(error)) {
+      return res.status(503).json({
+        error:
+          "Email is blocked by Microsoft 365 because SMTP AUTH is disabled for this mailbox. Download the PDF for now, or switch report emails to Resend / enable SMTP AUTH for the sending mailbox.",
+      });
+    }
     res.status(error.statusCode || 500).json({ error: error.message });
   }
 });
