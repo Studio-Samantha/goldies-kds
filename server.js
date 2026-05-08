@@ -11,6 +11,7 @@ const PDFDocument = require("pdfkit");
 const { createClient } = require("@supabase/supabase-js");
 const { Client, Environment } = require("square");
 
+const IS_TEST_MODE = process.env.GOLDIES_TEST_MODE === "1";
 const app = express();
 app.set("trust proxy", true);
 const PORT = process.env.PORT || 3000;
@@ -120,12 +121,12 @@ const SHOP_HOURS = {
   6: { openHour: 8, closeHour: 13 },
 };
 
-if (!SQUARE_ACCESS_TOKEN) {
+if (!IS_TEST_MODE && !SQUARE_ACCESS_TOKEN) {
   console.error("ERROR: SQUARE_ACCESS_TOKEN environment variable is required");
   process.exit(1);
 }
 
-if (!SQUARE_LOCATION_ID) {
+if (!IS_TEST_MODE && !SQUARE_LOCATION_ID) {
   console.error("ERROR: SQUARE_LOCATION_ID environment variable is required");
   process.exit(1);
 }
@@ -1310,17 +1311,23 @@ async function sendOnlineOrderConfirmationEmail({
   return true;
 }
 
-console.log("Initializing Square client...");
-console.log(`Environment: ${SQUARE_ENVIRONMENT}`);
-console.log(`Location ID: ${SQUARE_LOCATION_ID ? "Set" : "Missing"}`);
+if (!IS_TEST_MODE) {
+  console.log("Initializing Square client...");
+  console.log(`Environment: ${SQUARE_ENVIRONMENT}`);
+  console.log(`Location ID: ${SQUARE_LOCATION_ID ? "Set" : "Missing"}`);
+}
 
-const squareClient = new Client({
-  accessToken: SQUARE_ACCESS_TOKEN,
-  environment:
-    SQUARE_ENVIRONMENT === "sandbox" ? Environment.Sandbox : Environment.Production,
-});
+const squareClient = IS_TEST_MODE
+  ? {}
+  : new Client({
+      accessToken: SQUARE_ACCESS_TOKEN,
+      environment:
+        SQUARE_ENVIRONMENT === "sandbox" ? Environment.Sandbox : Environment.Production,
+    });
 
-console.log("Square client initialized successfully");
+if (!IS_TEST_MODE) {
+  console.log("Square client initialized successfully");
+}
 
 const defaultAllowedOrigins = [
   "https://goldieskds.com",
@@ -1585,6 +1592,7 @@ function getCanonicalDrinkName(itemName = "") {
   if (withoutSize === "greens" || compact.includes("greens")) return "Greens";
   if (withoutSize === "mango") return "Mango";
   if (withoutSize === "strawberry") return "Strawberry";
+  if (compact.includes("strawmango") || compact.includes("strawberrymango")) return "Refresher - Strawberry Mango";
   if (lower.includes("refresher") && lower.includes("strawberry") && lower.includes("mango")) return "Refresher - Strawberry Mango";
   if (lower.includes("decaf") && lower.includes("americano")) return "Americano (DECAF)";
 
@@ -1609,6 +1617,10 @@ function getDrinkCategory(itemName = "") {
   const compact = lower.replace(/\s+/g, "");
 
   if (isNonDrinkItem(name)) return null;
+
+  if (compact.includes("strawmango") || compact.includes("strawberrymango")) {
+    return "Not Coffee";
+  }
 
   if (COFFEE_DRINKS.has(name)) return "Coffee";
   if (NOT_COFFEE_DRINKS.has(name)) return "Not Coffee";
@@ -8151,7 +8163,22 @@ async function bootstrap() {
   }, SQUARE_HEALTH_CHECK_INTERVAL_MS);
 }
 
-bootstrap().catch((error) => {
-  console.error("Failed to boot KDS backend:", error);
-  process.exit(1);
-});
+if (require.main === module) {
+  bootstrap().catch((error) => {
+    console.error("Failed to boot KDS backend:", error);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  app,
+  __testExports: {
+    buildOwnerDrinkRevenueReport,
+    cleanCustomerName,
+    getCanonicalDrinkName,
+    getDrinkCategory,
+    getItemDrinkCategory,
+    isSmoothieDrinkName,
+    parseCustomerNameFromNotes,
+  },
+};

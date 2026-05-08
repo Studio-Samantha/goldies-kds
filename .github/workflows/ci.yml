@@ -1,0 +1,44 @@
+name: CI Checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  app-checks:
+    name: Backend tests and frontend build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            my-menu-app/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm ci
+
+      - name: Check backend syntax
+        run: node --check server.js
+
+      - name: Run backend regression tests
+        run: npm test
+
+      - name: Install frontend dependencies
+        working-directory: my-menu-app
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: my-menu-app
+        run: npm run build
