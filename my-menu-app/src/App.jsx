@@ -1197,7 +1197,7 @@ function ConnectionReportDialog({ open, report, loading, error, onClose, onRefre
   const square = report?.squareApi || {};
   const rows = [
     ["App status", report?.ok ? "Online" : "Unknown"],
-    ["Storage", report?.storage || "Unknown"],
+    ["Storage", report?.storage ? "Online" : "Unknown"],
     ["Square API", square.online === false ? "Offline" : "Online"],
     ["Last healthy", square.lastHealthyAt ? new Date(square.lastHealthyAt).toLocaleString() : "Not recorded"],
     ["Last sync", square.lastSyncSuccessAt ? new Date(square.lastSyncSuccessAt).toLocaleString() : "Not recorded"],
