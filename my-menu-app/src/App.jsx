@@ -3467,12 +3467,6 @@ function StaffToolsGuide({ demoMode = false }) {
         </div>
         <div className="flex flex-wrap gap-2">
           <a
-            href="#menu-availability"
-            className="rounded-xl bg-[#0F4036] px-4 py-2 text-sm font-black text-white transition hover:bg-[#0b352d]"
-          >
-            Menu toggles
-          </a>
-          <a
             href={apiUrl("/api/staff/sop/goldies-recipes-1.png")}
             target="_blank"
             rel="noreferrer"

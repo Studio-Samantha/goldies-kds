@@ -3691,7 +3691,7 @@ async function getCompletedTicketsToday() {
 
   const { data: orders, error } = await supabase
     .from("kds_orders")
-    .select("square_order_id, order_number, customer_name, created_at, updated_at, completed_at, source, status, dining_option, raw_order")
+    .select("square_order_id, order_number, customer_name, created_at, updated_at, source, status, dining_option, raw_order")
     .in("status", ["completed", "done"])
     .order("completed_at", { ascending: false, nullsFirst: false })
     .order("updated_at", { ascending: false });
