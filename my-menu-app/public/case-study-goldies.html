@@ -530,6 +530,9 @@
         display: grid;
         gap: 14px;
       }
+      .timeline.is-collapsed .timeline-item:nth-of-type(n + 7) {
+        display: none;
+      }
       .timeline-item {
         display: grid;
         grid-template-columns: 130px minmax(0, 1fr);
@@ -545,6 +548,27 @@
       }
       .timeline h3 {
         margin-bottom: 8px;
+      }
+      .timeline-actions {
+        margin-top: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .timeline-toggle {
+        border: 1px solid rgba(202, 134, 43, 0.28);
+        border-radius: 999px;
+        background: #fff;
+        color: var(--green);
+        cursor: pointer;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 950;
+        padding: 12px 18px;
+        box-shadow: 0 14px 34px rgba(15, 64, 54, 0.08);
+      }
+      .timeline-toggle:hover {
+        background: var(--cream);
       }
       .metric-strip {
         display: grid;
@@ -861,7 +885,8 @@
         <div class="section-inner">
           <p class="eyebrow">Opening-week timeline</p>
           <h2>Version history with the why included.</h2>
-          <div class="timeline">
+          <p class="section-copy">The newest changes stay visible first. Open the full archive when you want the complete build history.</p>
+          <div class="timeline is-collapsed" id="version-timeline">
             <article class="timeline-item">
               <div class="timeline-date">v1.10.0</div>
               <div>
@@ -1045,6 +1070,11 @@
               </div>
             </article>
           </div>
+          <div class="timeline-actions">
+            <button class="timeline-toggle" type="button" id="version-timeline-toggle" aria-expanded="false" aria-controls="version-timeline">
+              Show full version history
+            </button>
+          </div>
         </div>
       </section>
 
@@ -1144,5 +1174,18 @@
         </div>
       </div>
     </footer>
+    <script>
+      const timeline = document.getElementById("version-timeline");
+      const timelineToggle = document.getElementById("version-timeline-toggle");
+      if (timeline && timelineToggle) {
+        timelineToggle.addEventListener("click", () => {
+          const collapsed = timeline.classList.toggle("is-collapsed");
+          timelineToggle.setAttribute("aria-expanded", String(!collapsed));
+          timelineToggle.textContent = collapsed
+            ? "Show full version history"
+            : "Hide older versions";
+        });
+      }
+    </script>
   </body>
 </html>

@@ -7915,6 +7915,51 @@ const ONLINE_ORDERING_BETA_MENU = [
   },
 ];
 
+const KIOSK_STOCK_IMAGE_URLS = {
+  "latte":
+    "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=900&q=80",
+  "americano":
+    "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80",
+  "decaf-americano":
+    "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=900&q=80",
+  "cold-brew":
+    "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=900&q=80",
+  "cappuccino":
+    "https://images.unsplash.com/photo-1572442388796-11668a67e53d?auto=format&fit=crop&w=900&q=80",
+  "london-fog":
+    "https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&w=900&q=80",
+  "chai-latte":
+    "https://images.unsplash.com/photo-1571934811356-5cc061b6821f?auto=format&fit=crop&w=900&q=80",
+  "matcha-latte":
+    "https://images.unsplash.com/photo-1515823064-d6e0c04616a7?auto=format&fit=crop&w=900&q=80",
+  "strawberry-banana":
+    "https://images.unsplash.com/photo-1502741224143-90386d7f8c82?auto=format&fit=crop&w=900&q=80",
+  "chocolate-pb-banana":
+    "https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=900&q=80",
+  "green-smoothie":
+    "https://images.unsplash.com/photo-1610970881699-44a5587cabec?auto=format&fit=crop&w=900&q=80",
+};
+
+function getKioskImageSlug(item = {}) {
+  const text = String(item.name || item.id || "latte")
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  if (text.includes("decaf") && text.includes("americano")) return "decaf-americano";
+  if (text.includes("americano") || text.includes("drip") || text.includes("pour") || text.includes("flat-white")) return "americano";
+  if (text.includes("cold-brew")) return "cold-brew";
+  if (text.includes("cappuccino")) return "cappuccino";
+  if (text.includes("london-fog") || text.includes("steamer")) return "london-fog";
+  if (text.includes("chai")) return "chai-latte";
+  if (text.includes("matcha")) return "matcha-latte";
+  if (text.includes("chocolate") && text.includes("banana")) return "chocolate-pb-banana";
+  if (text.includes("green") || text.includes("greens")) return "green-smoothie";
+  if (text.includes("strawberry") || text.includes("mango") || text.includes("refresher")) return "strawberry-banana";
+  return "latte";
+}
+
 function getOnlineOrderItemDescription(item = {}) {
   if (item.description) return item.description;
 
@@ -7955,27 +8000,20 @@ function getOnlineOrderVisualStyle(item = {}) {
 }
 
 function getOnlineOrderImageUrl(item = {}) {
-  if (item.imageUrl) return item.imageUrl;
+  if (item.imageUrl && !String(item.imageUrl).startsWith("/assets/drinks/")) {
+    return item.imageUrl;
+  }
 
-  const slug = String(item.id || item.name || "latte")
-    .toLowerCase()
-    .replace(/&/g, "and")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-
-  return `/assets/drinks/${slug || "latte"}.svg`;
+  return KIOSK_STOCK_IMAGE_URLS[getKioskImageSlug(item)] || KIOSK_STOCK_IMAGE_URLS.latte;
 }
 
 function DrinkProductImage({ item, className = "" }) {
   return (
-    <div
-      className={`overflow-hidden bg-[#F6EFE1] ${className}`}
-      style={{ background: getOnlineOrderVisualStyle(item).background }}
-    >
+    <div className={`overflow-hidden bg-[#E8DDC9] ${className}`}>
       <img
         src={getOnlineOrderImageUrl(item)}
         alt=""
-        className="h-full w-full object-cover"
+        className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
         loading="lazy"
       />
     </div>
@@ -8009,6 +8047,7 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
   const [scheduledPickupTime, setScheduledPickupTime] = useState("");
   const [readyQuote, setReadyQuote] = useState(null);
   const [detailItem, setDetailItem] = useState(null);
+  const [showCartDrawer, setShowCartDrawer] = useState(false);
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [orderError, setOrderError] = useState("");
@@ -8207,95 +8246,69 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#F6EFE1] text-[#111111]">
-      <div className="relative overflow-hidden bg-[#0F4036] text-white">
-        <div className="absolute inset-0 opacity-15" style={{ backgroundImage: `url(${LOGO_DARK_URL})`, backgroundSize: "220px auto", backgroundRepeat: "repeat", transform: "rotate(-8deg) scale(1.1)" }} />
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#F6EFE1] to-transparent" />
-        <div className="relative mx-auto grid max-w-6xl gap-6 px-4 py-6 md:grid-cols-[minmax(0,1fr)_430px] md:items-center md:py-10">
-          <div>
+    <div className="min-h-screen bg-[#F5E9D7] text-[#111111]">
+      <div className="relative overflow-hidden border-b border-[#CA862B]/16 bg-[#FDF8EF]">
+        <div className="absolute inset-x-0 top-0 h-1 bg-[#0F4036]" />
+        <div className="relative mx-auto max-w-7xl px-4 py-5 md:py-8">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <a
               href={demoMode ? "/?demo=training" : "/"}
-              className="inline-flex rounded-full border border-white/18 bg-white/10 px-4 py-2 text-sm font-black text-white transition hover:bg-white/16"
+              className="inline-flex rounded-full border border-[#CA862B]/18 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
             >
               Back to KDS
             </a>
-            <div className="mt-8 flex items-center gap-4">
-              <div className="grid h-20 w-20 place-items-center rounded-3xl border border-white/16 bg-white shadow-[0_24px_70px_rgba(0,0,0,0.22)]">
-                {demoMode ? <DemoBrandMark size="sm" /> : <img src={LOGO_URL} alt="Goldie's Coffee & Goods" className="max-h-16 max-w-16 object-contain" />}
-              </div>
-              <div>
-                <div className="text-xs font-black uppercase tracking-[0.24em] text-[#F3D39B]">
-                  {kioskMode ? "Self order kiosk beta" : "Online ordering beta"}
-                </div>
-                <h1 className="mt-2 text-3xl font-black leading-tight md:text-4xl">
-                  {kioskMode ? "Order at the counter, without the line." : "Goldie's drinks, ordered ahead."}
-                </h1>
-              </div>
-            </div>
-            <p className="mt-5 max-w-2xl text-lg font-semibold leading-8 text-white/78">
-              {kioskMode
-                ? "Tap a drink photo, choose any options, add a pickup name, and pay through Square checkout."
-                : "Choose your drink, add a pickup name, and pay through Square checkout. This test is drinks-only while the pickup workflow is being proven live."}
-            </p>
-            <div className="mt-5 flex flex-wrap gap-2 text-xs font-black uppercase tracking-[0.16em] text-[#F3D39B]">
-              <span className="rounded-full border border-white/16 bg-white/10 px-3 py-2">Mon-Fri 7-3 · Sat 8-1</span>
-              <span className="rounded-full border border-white/16 bg-white/10 px-3 py-2">
-                {kioskMode ? "In-shop kiosk test" : "Pickup test"}
-              </span>
-              <span className="rounded-full border border-white/16 bg-white/10 px-3 py-2">Square checkout</span>
-            </div>
-            {orderingHours && !orderingHours.accepting ? (
-              <div className="mt-5 rounded-2xl border border-[#F3D39B]/30 bg-white/10 px-4 py-3 text-sm font-bold leading-6 text-white">
-                {orderingHours.message} You can still schedule a pickup during open hours.
-              </div>
-            ) : null}
+            <button
+              type="button"
+              onClick={() => setShowCartDrawer(true)}
+              className="inline-flex items-center gap-3 rounded-full bg-[#0F4036] px-4 py-2 text-sm font-black text-white shadow-[0_14px_34px_rgba(15,64,54,0.18)] transition hover:bg-[#0b352d]"
+            >
+              <span>Cart</span>
+              <span className="rounded-full bg-white px-2 py-0.5 text-[#0F4036]">{cartItemCount}</span>
+            </button>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-1">
-            <div className="rounded-[2rem] border border-white/20 bg-[rgba(255,253,248,0.96)] p-4 text-[#111111] shadow-[0_30px_90px_rgba(0,0,0,0.28)]">
-              <div className="flex items-center justify-between gap-3 border-b border-[#CA862B]/16 pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#0F4036] text-sm font-black text-white">
-                    GO
+
+          <div className="mt-7 grid gap-7 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-end">
+            <div>
+              <div className="flex items-center gap-4">
+                <div className="grid h-24 w-24 place-items-center rounded-[1.75rem] border border-[#CA862B]/16 bg-white shadow-[0_20px_48px_rgba(15,64,54,0.12)]">
+                  {demoMode ? <DemoBrandMark size="sm" /> : <img src={LOGO_URL} alt="Goldie's Coffee & Goods" className="max-h-20 max-w-20 object-contain" />}
+                </div>
+                <div>
+                  <div className="text-xs font-black uppercase tracking-[0.24em] text-[#8B5A1D]">
+                    {kioskMode ? "Goldie's self order" : "Goldie's pickup ordering"}
                   </div>
-                  <div>
-                    <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
-                      {kioskMode ? "Kiosk order" : "Pickup order"}
-                    </div>
-                    <div className="text-base font-black text-[#0F4036]">Ready-time estimate</div>
-                  </div>
-                </div>
-                <span className="rounded-full bg-[#CA862B]/12 px-3 py-1 text-xs font-black text-[#8B5A1D]">
-                  Beta
-                </span>
-              </div>
-              <div className="mt-4 grid gap-2">
-                <div className="rounded-2xl border border-[#CA862B]/16 bg-white p-3">
-                  <div className="text-sm font-black text-[#111111]">1x Latte</div>
-                  <div className="text-xs font-semibold text-[#6A614F]">Oat milk · Vanilla</div>
-                </div>
-                <div className="rounded-2xl border border-[#CA862B]/16 bg-white p-3">
-                  <div className="text-sm font-black text-[#111111]">1x London Fog</div>
-                  <div className="text-xs font-semibold text-[#6A614F]">Honey · Pickup name added</div>
+                  <h1 className="mt-2 max-w-3xl text-4xl font-black leading-[0.98] tracking-normal text-[#0F4036] md:text-6xl">
+                    {kioskMode ? "Choose your drink." : "Goldie's drinks, ordered ahead."}
+                  </h1>
                 </div>
               </div>
-              <div className="mt-4 rounded-2xl bg-[#0F4036] p-4 text-white">
-                <div className="text-xs font-black uppercase tracking-[0.18em] text-[#F3D39B]">Estimated pickup</div>
-                <div className="mt-1 text-2xl font-black">ASAP + queue</div>
-              </div>
+              <p className="mt-5 max-w-2xl text-lg font-semibold leading-8 text-[#5A4F3E]">
+                {kioskMode
+                  ? "Browse the photo menu, add your favorites, then open the cart when you're ready."
+                  : "Choose your drink, add a pickup name, and pay through Square checkout."}
+              </p>
             </div>
-            <div className="rounded-[2rem] border border-white/14 bg-[rgba(255,253,248,0.95)] p-4 text-[#0F4036] shadow-[0_30px_90px_rgba(0,0,0,0.18)]">
-              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">Pickup flow</div>
-              <div className="mt-2 grid grid-cols-3 gap-2 text-center">
-                {["Choose", "Pay", "Pickup"].map((step) => (
-                  <div key={step} className="rounded-2xl border border-[#CA862B]/16 bg-white px-2 py-3 text-sm font-black">{step}</div>
+            <div className="rounded-[1.75rem] border border-[#CA862B]/16 bg-white p-4 shadow-[0_24px_70px_rgba(15,64,54,0.12)]">
+              <div className="grid grid-cols-3 gap-2 text-center">
+                {["Choose", "Customize", "Checkout"].map((step) => (
+                  <div key={step} className="rounded-2xl bg-[#F6EFE1] px-2 py-3 text-sm font-black text-[#0F4036]">{step}</div>
                 ))}
               </div>
+              <div className="mt-3 rounded-2xl bg-[#0F4036] px-4 py-3 text-white">
+                <div className="text-xs font-black uppercase tracking-[0.18em] text-[#F3D39B]">Pickup</div>
+                <div className="mt-1 text-xl font-black">{readyQuote?.readyTimeLabel ? `ASAP around ${readyQuote.readyTimeLabel}` : "ASAP or scheduled"}</div>
+              </div>
             </div>
           </div>
+          {orderingHours && !orderingHours.accepting ? (
+            <div className="mt-5 rounded-2xl border border-[#CA862B]/20 bg-white px-4 py-3 text-sm font-bold leading-6 text-[#0F4036]">
+              {orderingHours.message} You can still schedule a pickup during open hours.
+            </div>
+          ) : null}
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl space-y-4 p-4">
+      <div className="mx-auto max-w-7xl space-y-4 p-4 pb-28">
 
         {ordered ? (
           <div className="rounded-3xl border border-[#0F4036]/14 bg-white/90 p-4 text-sm font-bold leading-6 text-[#0F4036] shadow-sm">
@@ -8303,7 +8316,7 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
           </div>
         ) : null}
 
-        <main className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_390px]">
+        <main className="grid gap-5">
           <section className="space-y-4">
             <div className="sticky top-0 z-20 -mx-4 border-b border-[#CA862B]/12 bg-[#F6EFE1]/92 px-4 py-3 backdrop-blur-md lg:static lg:border-0 lg:bg-transparent lg:p-0">
               <div className="flex gap-2 overflow-x-auto pb-1">
@@ -8327,11 +8340,11 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
                     {group.items.length}
                   </span>
                 </div>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {group.items.map((item) => (
                     <div
                       key={item.id}
-                      className="group overflow-hidden rounded-[1.6rem] border border-[#CA862B]/16 bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                      className="group overflow-hidden rounded-[1.25rem] border border-[#CA862B]/16 bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                     >
                       <button
                         type="button"
@@ -8379,12 +8392,27 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
             ))}
           </section>
 
-          <aside className="rounded-[2rem] border border-white/70 bg-[rgba(255,253,248,0.98)] p-4 shadow-[0_24px_70px_rgba(15,64,54,0.12)] lg:sticky lg:top-4 lg:self-start">
+          {showCartDrawer && (
+            <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/40 p-3 backdrop-blur-sm md:items-center">
+              <button
+                type="button"
+                aria-label="Close cart"
+                className="absolute inset-0 cursor-default"
+                onClick={() => setShowCartDrawer(false)}
+              />
+          <aside className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-white/70 bg-[rgba(255,253,248,0.98)] p-4 shadow-[0_24px_70px_rgba(15,64,54,0.24)]">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">Your pickup</div>
-                <h2 className="mt-1 text-2xl font-black text-[#0F4036]">Beta order</h2>
+                <h2 className="mt-1 text-2xl font-black text-[#0F4036]">Review order</h2>
               </div>
+              <button
+                type="button"
+                onClick={() => setShowCartDrawer(false)}
+                className="rounded-full border border-[#CA862B]/18 bg-white px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+              >
+                Close
+              </button>
               <div className="rounded-2xl bg-[#0F4036] px-3 py-2 text-right text-white">
                 <div className="text-xs font-black uppercase tracking-[0.12em] text-white/70">{cartItemCount} items</div>
                 <div className="text-lg font-black">${(cartTotalCents / 100).toFixed(2)}</div>
@@ -8551,27 +8579,38 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
               Beta behavior: payment opens in Square checkout. Once paid, Square sends the order back for KDS intake.
             </p>
           </aside>
+            </div>
+          )}
         </main>
       </div>
+
+      {cartItemCount > 0 && !showCartDrawer ? (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#CA862B]/18 bg-[#FFFDF8]/96 p-3 shadow-[0_-18px_45px_rgba(15,64,54,0.14)] backdrop-blur-md">
+          <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
+            <div>
+              <div className="text-xs font-black uppercase tracking-[0.14em] text-[#8B5A1D]">Your order</div>
+              <div className="text-lg font-black text-[#0F4036]">
+                {cartItemCount} {cartItemCount === 1 ? "item" : "items"} · ${(cartTotalCents / 100).toFixed(2)}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowCartDrawer(true)}
+              className="rounded-2xl bg-[#0F4036] px-5 py-3 text-sm font-black text-white shadow-[0_14px_30px_rgba(15,64,54,0.2)] transition hover:bg-[#0b352d]"
+            >
+              View cart
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {detailItem ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/45 p-4 backdrop-blur-sm">
           <div className="absolute inset-0" onClick={() => setDetailItem(null)} />
           <div className="relative w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/70 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.24)]">
             <div
-              className="relative grid gap-4 overflow-hidden p-5 text-white md:grid-cols-[0.9fr_1.1fr] md:items-center"
-              style={{ background: getOnlineOrderVisualStyle(detailItem).background }}
+              className="relative grid gap-4 overflow-hidden bg-[#0F4036] p-5 text-white md:grid-cols-[0.9fr_1.1fr] md:items-center"
             >
-              <div
-                aria-hidden="true"
-                className="absolute inset-0 opacity-12"
-                style={{
-                  backgroundImage: `url(${LOGO_DARK_URL})`,
-                  backgroundRepeat: "repeat",
-                  backgroundSize: "180px auto",
-                  transform: "rotate(-8deg) scale(1.12)",
-                }}
-              />
               <button
                 type="button"
                 onClick={() => setDetailItem(null)}

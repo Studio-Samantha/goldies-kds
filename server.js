@@ -519,8 +519,34 @@ function getDrinkImageSlug(itemName = "") {
   return normalized || "latte";
 }
 
+const KIOSK_STOCK_IMAGE_URLS = {
+  latte:
+    "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=900&q=80",
+  americano:
+    "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80",
+  "decaf-americano":
+    "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=900&q=80",
+  "cold-brew":
+    "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=900&q=80",
+  cappuccino:
+    "https://images.unsplash.com/photo-1572442388796-11668a67e53d?auto=format&fit=crop&w=900&q=80",
+  "london-fog":
+    "https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&w=900&q=80",
+  "chai-latte":
+    "https://images.unsplash.com/photo-1571934811356-5cc061b6821f?auto=format&fit=crop&w=900&q=80",
+  "matcha-latte":
+    "https://images.unsplash.com/photo-1515823064-d6e0c04616a7?auto=format&fit=crop&w=900&q=80",
+  "strawberry-banana":
+    "https://images.unsplash.com/photo-1502741224143-90386d7f8c82?auto=format&fit=crop&w=900&q=80",
+  "chocolate-pb-banana":
+    "https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=900&q=80",
+  "green-smoothie":
+    "https://images.unsplash.com/photo-1610970881699-44a5587cabec?auto=format&fit=crop&w=900&q=80",
+};
+
 function getFallbackDrinkImageUrl(itemName = "") {
   const slug = getDrinkImageSlug(itemName);
+  if (KIOSK_STOCK_IMAGE_URLS[slug]) return KIOSK_STOCK_IMAGE_URLS[slug];
   const path = `/assets/drinks/${slug}.svg`;
   return KIOSK_ASSET_BASE_URL ? `${KIOSK_ASSET_BASE_URL}${path}` : path;
 }
