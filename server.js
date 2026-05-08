@@ -1177,6 +1177,9 @@ app.use(
 app.use(express.json());
 
 let lastSquareSyncAt = 0;
+let lastSquareSyncSuccessAt = 0;
+let lastSquareSyncErrorAt = 0;
+let lastSquareSyncError = "";
 let lastSquareHealthCheckAt = 0;
 let alertMailer = null;
 let squareApiAlertState = {
@@ -3285,13 +3288,33 @@ async function syncRecentSquareOrders() {
     const ticket = await normalizeSquareOrder(order, employeeNameByOrderId.get(order.id) || null);
     await upsertTicket(ticket, order);
   }
+
+  lastSquareSyncSuccessAt = Date.now();
+  lastSquareSyncErrorAt = 0;
+  lastSquareSyncError = "";
+}
+
+async function trySyncRecentSquareOrders(context = "ticket request") {
+  try {
+    await syncRecentSquareOrders();
+    return true;
+  } catch (error) {
+    lastSquareSyncError = error.message || "Unknown Square sync error";
+    lastSquareSyncErrorAt = Date.now();
+    console.error(`Square sync failed during ${context}; serving stored tickets:`, lastSquareSyncError);
+    return false;
+  }
 }
 
 async function getActiveTickets() {
   if (!supabase) return getLocalActiveTickets();
 
-  await syncRecentSquareOrders();
-  await autoCompleteStaleReadyTickets();
+  await trySyncRecentSquareOrders("active tickets");
+  try {
+    await autoCompleteStaleReadyTickets();
+  } catch (error) {
+    console.error("Auto-complete check failed; serving active tickets:", error.message);
+  }
 
   const { data: orders, error: orderError } = await supabase
     .from("kds_orders")
@@ -4942,6 +4965,13 @@ app.get("/api/health", (req, res) => {
         ? new Date(squareApiAlertState.lastHealthyAt).toISOString()
         : null,
       lastError: squareApiAlertState.lastError || null,
+      lastSyncSuccessAt: lastSquareSyncSuccessAt
+        ? new Date(lastSquareSyncSuccessAt).toISOString()
+        : null,
+      lastSyncErrorAt: lastSquareSyncErrorAt
+        ? new Date(lastSquareSyncErrorAt).toISOString()
+        : null,
+      lastSyncError: lastSquareSyncError || null,
       alertsConfigured: hasAlertEmailConfig(),
       alertConfig: getAlertEmailConfigDiagnostics(),
     },
