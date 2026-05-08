@@ -1180,6 +1180,8 @@ let lastSquareSyncAt = 0;
 let lastSquareSyncSuccessAt = 0;
 let lastSquareSyncErrorAt = 0;
 let lastSquareSyncError = "";
+let lastKnownActiveTickets = [];
+let lastKnownActiveTicketsAt = 0;
 let lastSquareHealthCheckAt = 0;
 let alertMailer = null;
 let squareApiAlertState = {
@@ -3324,7 +3326,11 @@ async function getActiveTickets() {
 
   if (orderError) throw orderError;
 
-  if (!orders.length) return [];
+  if (!orders.length) {
+    lastKnownActiveTickets = [];
+    lastKnownActiveTicketsAt = Date.now();
+    return [];
+  }
 
   const orderIds = orders.map((order) => order.square_order_id);
   const { data: items, error: itemsError } = await supabase
@@ -3342,7 +3348,12 @@ async function getActiveTickets() {
     itemsByOrderId.set(item.order_id, existing);
   }
 
-  return orders.map((order) => ticketFromDb(order, itemsByOrderId.get(order.square_order_id) || []));
+  const activeTickets = orders.map((order) =>
+    ticketFromDb(order, itemsByOrderId.get(order.square_order_id) || [])
+  );
+  lastKnownActiveTickets = activeTickets;
+  lastKnownActiveTicketsAt = Date.now();
+  return activeTickets;
 }
 
 async function setTicketStatus(id, status) {
@@ -4972,6 +4983,10 @@ app.get("/api/health", (req, res) => {
         ? new Date(lastSquareSyncErrorAt).toISOString()
         : null,
       lastSyncError: lastSquareSyncError || null,
+      cachedActiveTicketCount: lastKnownActiveTickets.length,
+      cachedActiveTicketsAt: lastKnownActiveTicketsAt
+        ? new Date(lastKnownActiveTicketsAt).toISOString()
+        : null,
       alertsConfigured: hasAlertEmailConfig(),
       alertConfig: getAlertEmailConfigDiagnostics(),
     },
@@ -6502,7 +6517,8 @@ app.get("/api/tickets", requireKdsAuth, async (req, res) => {
     res.json(activeTickets);
   } catch (error) {
     console.error("Error fetching tickets:", error);
-    res.status(500).json({ error: error.message });
+    res.setHeader("X-Goldies-KDS-Fallback", "last-known-active-tickets");
+    res.json(lastKnownActiveTickets);
   }
 });
 
