@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.4";
+const APP_VERSION = "v1.10.5";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -47,8 +47,17 @@ const OWNER_PORTAL_RECENT_CHANGES = [
 ];
 const RELEASE_NOTES = [
   {
-    version: "v1.10.4",
+    version: "v1.10.5",
     date: "Current build",
+    summary: "Made owner sessions easier to tuck away.",
+    items: [
+      "Owner Portal now labels recent access as Owner sessions and keeps the session details collapsed until opened.",
+      "The sessions area now reads like a quiet security summary instead of another always-open tool.",
+    ],
+  },
+  {
+    version: "v1.10.4",
+    date: "Previous build",
     summary: "Tightened Owner Portal wording and varied the daily owner read.",
     items: [
       "Owner Portal recent changes now start collapsed so the main report stays first.",
@@ -5872,10 +5881,10 @@ function OwnerReportsView({
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
-                    Owner access check
+                    Owner sessions
                   </div>
                   <div className="mt-1 text-sm font-semibold leading-6 text-[#6A614F]">
-                    A light security view of who opened the owner portal in the last 7 days.
+                    Recent owner portal sign-ins stay tucked away unless you need to review them.
                   </div>
                 </div>
                 <button
@@ -5883,7 +5892,7 @@ function OwnerReportsView({
                   onClick={() => setShowAccessLog((current) => !current)}
                   className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
                 >
-                  {showAccessLog ? "Hide access log" : "Show access log"}
+                  {showAccessLog ? "Hide sessions" : "Show sessions"}
                 </button>
               </div>
 
