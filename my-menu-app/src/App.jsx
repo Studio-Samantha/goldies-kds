@@ -54,7 +54,7 @@ const RELEASE_NOTES = [
       "Owner Portal recent changes now start collapsed so the main report stays first.",
       "Sales read and What you should do next now rotate daily based on date, range, category mix, order count, and ticket value.",
       "The confusing Owner tools shortcut strip was removed; existing report actions stay where they already worked.",
-      "Weather and local events are tracked as the next owner-context source to add, using public sources such as Exira Public Library, Exira Community Club, Exira Community Center events and rentals, City of Exira updates, TJ's Pourhouse events, local business-hosted events like yoga in the park, civic groups, churches, and other local event listings.",
+      "Weather, local events, and Goldie's news mentions are tracked as the next owner-context sources to add, using public sources such as Exira Public Library, Exira Community Club, Exira Community Center events and rentals, City of Exira updates, TJ's Pourhouse events, local business-hosted events like yoga in the park, civic groups, churches, local news, and other public listings.",
     ],
   },
   {
