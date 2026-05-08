@@ -57,6 +57,7 @@ const VALID_DINING_OPTIONS = new Set([
   "To go",
 ]);
 const SQUARE_SYNC_INTERVAL_MS = 30 * 1000;
+const SQUARE_SYNC_TIMEOUT_MS = Number(process.env.SQUARE_SYNC_TIMEOUT_MS || 4500);
 const SQUARE_HEALTH_CHECK_INTERVAL_MS = 30 * 1000;
 const SQUARE_HEALTH_ALERT_COOLDOWN_MS = 15 * 60 * 1000;
 const READY_AUTO_COMPLETE_MS = 2 * 60 * 1000;
@@ -3298,7 +3299,15 @@ async function syncRecentSquareOrders() {
 
 async function trySyncRecentSquareOrders(context = "ticket request") {
   try {
-    await syncRecentSquareOrders();
+    await Promise.race([
+      syncRecentSquareOrders(),
+      new Promise((_, reject) =>
+        setTimeout(
+          () => reject(new Error(`Square sync timed out after ${SQUARE_SYNC_TIMEOUT_MS}ms`)),
+          SQUARE_SYNC_TIMEOUT_MS
+        )
+      ),
+    ]);
     return true;
   } catch (error) {
     lastSquareSyncError = error.message || "Unknown Square sync error";
