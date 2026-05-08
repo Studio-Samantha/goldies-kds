@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.7";
+const APP_VERSION = "v1.10.8";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -47,8 +47,17 @@ const OWNER_PORTAL_RECENT_CHANGES = [
 ];
 const RELEASE_NOTES = [
   {
-    version: "v1.10.7",
+    version: "v1.10.8",
     date: "Current build",
+    summary: "Restored smoothie items to drink workflows.",
+    items: [
+      "Smoothies now count as drink items even when Square sends all-caps names or kids-size labels.",
+      "Mango, Strawberry, Greens, Strawberry Banana, and Chocolate P/B Banana variants now stay visible on KDS and display boards.",
+    ],
+  },
+  {
+    version: "v1.10.7",
+    date: "Previous build",
     summary: "Added retry and safe recovery to cloud checks.",
     items: [
       "Cloud system checks now retry once after a failure before treating it as a real incident.",
@@ -1985,6 +1994,19 @@ function getBeverageCategory(itemName = "") {
     ].includes(name) ||
     /smoothie/i.test(lower) ||
     compact.includes("greens")
+  ) {
+    return "Smoothies";
+  }
+
+  const smoothieName = lower
+    .replace(/\b12\s*oz\b/g, "")
+    .replace(/\bkids?\b/g, "")
+    .replace(/\bsmall\b/g, "")
+    .trim();
+  if (
+    compact.includes("strawberrybanana") ||
+    compact.includes("chocolatepbbanana") ||
+    ["mango", "strawberry", "greens", "chocolate p b banana", "chocolate pb banana", "strawberry banana"].includes(smoothieName)
   ) {
     return "Smoothies";
   }

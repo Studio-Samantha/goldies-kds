@@ -1476,6 +1476,24 @@ function isNonDrinkItem(itemName = "") {
   ]);
 }
 
+function isSmoothieDrinkName(itemName = "") {
+  const lower = normalizeDrinkText(itemName);
+  const compact = lower.replace(/\s+/g, "");
+
+  if (lower.includes("smoothie")) return true;
+  if (compact.includes("greens")) return true;
+  if (compact.includes("strawberrybanana")) return true;
+  if (compact.includes("chocolatepbbanana")) return true;
+
+  const withoutSize = lower
+    .replace(/\b12\s*oz\b/g, "")
+    .replace(/\bkids?\b/g, "")
+    .replace(/\bsmall\b/g, "")
+    .trim();
+
+  return ["mango", "strawberry", "greens", "chocolate p b banana", "chocolate pb banana", "strawberry banana"].includes(withoutSize);
+}
+
 function getDrinkCategory(itemName = "") {
   const name = normalizeName(itemName);
   const lower = normalizeDrinkText(name);
@@ -1526,8 +1544,7 @@ function getDrinkCategory(itemName = "") {
     return "Not Coffee";
   }
 
-  if (lower.includes("smoothie")) return "Smoothies";
-  if (compact.includes("greens")) return "Smoothies";
+  if (isSmoothieDrinkName(name)) return "Smoothies";
 
   return null;
 }
