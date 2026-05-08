@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.9.9";
+const APP_VERSION = "v1.10.0";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -22,16 +22,28 @@ const DINING_OPTIONS = ["HANGIN' OUT", "TAKING OFF", "Pickup", "Delivery", "Driv
 const DAILY_UPDATE_NOTICE = {
   id: APP_VERSION,
   eyebrow: "Today on the KDS",
-  title: "Clean handoff, clean dashboard",
+  title: "Live board sync is stabilized",
   message:
-    "The dashboard is cleaned up for the day, with the live board, reports, and display controls staying easy to reach.",
+    "The live board now has a production fallback that can restore today's active tickets from stored Square orders if the direct Square sync path is slow.",
   note:
-    "For service today: use Ready as the handoff, keep the live views simple, and open View Stats or Look up orders by day in a separate window when you want the full story.",
+    "For service today: keep using the live board normally. View Stats, Look up orders by day, and Today's Drink Count remain the backup checks when the counter is busy.",
 };
 const RELEASE_NOTES = [
   {
-    version: "v1.9.9",
+    version: "v1.10.0",
     date: "Current build",
+    summary: "Stabilized the production Square sync path during live service.",
+    items: [
+      "The live board now falls back to today's stored active tickets if the direct active-ticket request fails.",
+      "The active board filters to New, Making, and Ready so completed history does not crowd service.",
+      "System health now exposes Square sync state so production checks can tell the difference between app health and connector lag.",
+      "Display boards and report windows now have quick switchers so staff can jump between related views without returning to the dashboard first.",
+      "This is still the stabilized production build; the Square OAuth connect flow remains the next major release.",
+    ],
+  },
+  {
+    version: "v1.9.9",
+    date: "Previous build",
     summary: "Finished the dashboard cleanup and refreshed the public story copy.",
     items: [
       "View Stats, Displays, and Focus Board now stay grouped together, while the fullscreen toggle stays small and out of the way.",
@@ -2984,7 +2996,57 @@ function DailyDrinkCount({ drinkCounts, orderCount }) {
   );
 }
 
-function ReportWindowShell({ eyebrow, title, description, onClose, children }) {
+const REPORT_WINDOW_OPTIONS = [
+  { panel: "today-count", label: "Today's Count" },
+  { panel: "orders-by-day", label: "Orders By Day" },
+  { panel: "stats", label: "View Stats" },
+];
+
+function getDashboardReportHref(panel) {
+  if (typeof window === "undefined") return `/?panel=${panel}`;
+
+  const nextUrl = new URL(window.location.href);
+  nextUrl.pathname = "/";
+  nextUrl.search = "";
+  nextUrl.hash = "";
+  nextUrl.searchParams.set("panel", panel);
+
+  try {
+    if (window.location.search.includes("demo=training")) {
+      nextUrl.searchParams.set("demo", "training");
+    }
+  } catch {
+    // ignore URL construction failures
+  }
+
+  return `${nextUrl.pathname}${nextUrl.search}`;
+}
+
+function ReportWindowSwitcher({ activePanel }) {
+  return (
+    <nav className="flex flex-wrap gap-2" aria-label="Report views">
+      {REPORT_WINDOW_OPTIONS.map((option) => {
+        const isActive = option.panel === activePanel;
+        return (
+          <a
+            key={option.panel}
+            href={getDashboardReportHref(option.panel)}
+            className={`rounded-xl px-3 py-2 text-xs font-black transition sm:text-sm ${
+              isActive
+                ? "bg-[#0F4036] text-white"
+                : "border border-[#CA862B]/22 bg-white text-[#0F4036] hover:bg-[#EEE0C5]/45"
+            }`}
+            aria-current={isActive ? "page" : undefined}
+          >
+            {option.label}
+          </a>
+        );
+      })}
+    </nav>
+  );
+}
+
+function ReportWindowShell({ eyebrow, title, description, activePanel, onClose, children }) {
   const closeWindow = onClose || (() => window.close());
 
   return (
@@ -3005,6 +3067,7 @@ function ReportWindowShell({ eyebrow, title, description, onClose, children }) {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+              {activePanel ? <ReportWindowSwitcher activePanel={activePanel} /> : null}
               <a
                 href="/"
                 className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
@@ -3077,6 +3140,7 @@ function TodayCountReportWindow({ drinkCounts, orderCount }) {
       eyebrow="Daily report"
       title="Today's Drink Order Count"
       description="This opens in its own window so the main dashboard can stay focused on live tickets."
+      activePanel="today-count"
     >
       {error && (
         <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-950">
@@ -3098,6 +3162,7 @@ function OrdersByDayReportWindow({
       eyebrow="Daily lookup"
       title="Look up orders by day"
       description="Search one day of completed or active tickets without crowding the main board."
+      activePanel="orders-by-day"
     >
       <OrdersByDayLookup
         defaultDate={defaultDate}
@@ -3117,6 +3182,7 @@ function StatsReportWindow({ reports, timeReports, onClose }) {
       eyebrow="Owner stats"
       title="View Stats"
       description="Open the larger report set in a separate window so the dashboard stays cleaner."
+      activePanel="stats"
       onClose={onClose}
     >
       <div className="grid gap-4">
@@ -3920,6 +3986,17 @@ function SettingsPopover({
 }
 
 function DrinkStats({ reports }) {
+  const [selectedRange, setSelectedRange] = useState("today");
+  const [collapsed, setCollapsed] = useState(false);
+  const selectedReport = reports[selectedRange] || {};
+  const selectedRangeLabel =
+    REPORT_RANGES.find((range) => range.key === selectedRange)?.label || "Today";
+  const categories = selectedReport.totalsByCategory || {};
+  const total = (selectedReport.totalsByName || []).reduce(
+    (sum, drink) => sum + Number(drink.qty || 0),
+    0
+  );
+
   return (
     <section className="rounded-2xl bg-[#FFFDF8] border border-[#0F4036]/12 p-4 shadow-sm">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
@@ -3929,84 +4006,119 @@ function DrinkStats({ reports }) {
             Coffee, not coffee, and smoothies only
           </p>
         </div>
+        <button
+          type="button"
+          onClick={() => setCollapsed((current) => !current)}
+          className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+          aria-expanded={!collapsed}
+        >
+          {collapsed ? "Show drink stats" : "Collapse drink stats"}
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+      <div className="flex gap-2 overflow-x-auto pb-2">
         {REPORT_RANGES.map((range) => {
           const report = reports[range.key] || {};
-          const categories = report.totalsByCategory || {};
-          const total = (report.totalsByName || []).reduce(
+          const rangeTotal = (report.totalsByName || []).reduce(
             (sum, drink) => sum + Number(drink.qty || 0),
             0
           );
+          const active = selectedRange === range.key;
 
           return (
-            <div
+            <button
               key={range.key}
-              className="rounded-xl bg-white border border-[#0F4036]/10 p-4"
+              type="button"
+              onClick={() => {
+                setSelectedRange(range.key);
+                setCollapsed(false);
+              }}
+              className={`min-w-[135px] rounded-xl border px-3 py-2 text-left transition ${
+                active
+                  ? "border-[#0F4036] bg-[#0F4036] text-white"
+                  : "border-[#CA862B]/18 bg-white text-[#0F4036] hover:bg-[#EEE0C5]/40"
+              }`}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="text-sm font-black text-[#0F4036]">
-                  {range.label}
-                </div>
+              <div className="text-xs font-black uppercase tracking-[0.12em] opacity-75">
+                {range.label}
+              </div>
+              <div className="mt-1 text-2xl font-black">{rangeTotal}</div>
+              <div className="text-xs font-bold opacity-75">drinks counted</div>
+            </button>
+          );
+        })}
+      </div>
 
-                <div className="rounded-full bg-[#EEE0C5]/65 border border-[#0F4036]/12 px-3 py-1 text-sm font-black text-[#111111]">
-                  {total}
+      {!collapsed && (
+        <div className="mt-2 rounded-xl bg-white border border-[#0F4036]/10 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-xs font-black uppercase tracking-[0.14em] text-[#8B5A1D]">
+                {selectedRangeLabel}
+              </div>
+              <div className="mt-1 text-3xl font-black text-[#111111]">
+                {total}
+              </div>
+              <div className="text-sm font-bold text-[#6A614F]">
+                total drinks counted
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            {["Coffee", "Not Coffee", "Smoothies"].map((category) => (
+              <div
+                key={category}
+                className="rounded-lg bg-[#FFFDF8] border border-[#0F4036]/10 px-3 py-2"
+              >
+                <div className="text-lg font-black text-[#111111]">
+                  {categories[category] || 0}
+                </div>
+                <div className="text-xs font-bold text-[#6A614F] leading-tight">
+                  {category}
                 </div>
               </div>
+            ))}
+          </div>
 
-              <div className="mt-4 grid grid-cols-3 gap-2">
-                {["Coffee", "Not Coffee", "Smoothies"].map((category) => (
+          {selectedReport.totalsByName?.length > 0 ? (
+            <div className="mt-4 border-t border-[#0F4036]/10 pt-3">
+              <div className="text-xs font-black uppercase tracking-wide text-[#6A614F] mb-2">
+                Drink breakdown
+              </div>
+
+              <div className="max-h-56 overflow-y-auto space-y-2 pr-1">
+                {selectedReport.totalsByName.map((drink) => (
                   <div
-                    key={category}
-                    className="rounded-lg bg-[#FFFDF8] border border-[#0F4036]/10 px-3 py-2"
+                    key={drink.name}
+                    className="flex items-center justify-between gap-3 text-sm rounded-lg bg-[#FFFDF8] border border-[#0F4036]/8 px-3 py-2"
                   >
-                    <div className="text-lg font-black text-[#111111]">
-                      {categories[category] || 0}
-                    </div>
-                    <div className="text-xs font-bold text-[#6A614F] leading-tight">
-                      {category}
-                    </div>
+                    <span className="font-bold text-[#111111] truncate">
+                      {drink.name}
+                    </span>
+                    <span className="font-black text-[#0F4036]">
+                      {drink.qty}
+                    </span>
                   </div>
                 ))}
               </div>
 
-              {report.totalsByName?.length > 0 && (
-                <div className="mt-4 border-t border-[#0F4036]/10 pt-3">
-                  <div className="text-xs font-black uppercase tracking-wide text-[#6A614F] mb-2">
-                    Drink breakdown
-                  </div>
-
-                  <div className="max-h-44 overflow-y-auto space-y-2 pr-1">
-                    {report.totalsByName.map((drink) => (
-                      <div
-                        key={drink.name}
-                        className="flex items-center justify-between gap-3 text-sm rounded-lg bg-[#FFFDF8] border border-[#0F4036]/8 px-3 py-2"
-                      >
-                        <span className="font-bold text-[#111111] truncate">
-                          {drink.name}
-                        </span>
-                        <span className="font-black text-[#0F4036]">
-                          {drink.qty}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-3 flex items-center justify-between gap-3 rounded-lg bg-[#EEE0C5]/55 border border-[#0F4036]/12 px-3 py-2">
-                    <span className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
-                      Total drinks
-                    </span>
-                    <span className="text-sm font-black text-[#111111]">
-                      {total}
-                    </span>
-                  </div>
-                </div>
-              )}
+              <div className="mt-3 flex items-center justify-between gap-3 rounded-lg bg-[#EEE0C5]/55 border border-[#0F4036]/12 px-3 py-2">
+                <span className="text-xs font-black uppercase tracking-wide text-[#6A614F]">
+                  Total drinks
+                </span>
+                <span className="text-sm font-black text-[#111111]">
+                  {total}
+                </span>
+              </div>
             </div>
-          );
-        })}
-      </div>
+          ) : (
+            <div className="mt-4 rounded-xl border border-dashed border-[#CA862B]/22 bg-[#FFFDF8] p-4 text-sm font-semibold text-[#6A614F]">
+              No drink breakdown for this range yet.
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }
@@ -6206,22 +6318,8 @@ function getDashboardReportPanel() {
 function openDashboardReportWindow(panel) {
   if (typeof window === "undefined") return;
 
-  const nextUrl = new URL(window.location.href);
-  nextUrl.pathname = "/";
-  nextUrl.search = "";
-  nextUrl.hash = "";
-  nextUrl.searchParams.set("panel", panel);
-
-  try {
-    if (window.location.search.includes("demo=training")) {
-      nextUrl.searchParams.set("demo", "training");
-    }
-  } catch {
-    // ignore URL construction failures
-  }
-
   window.open(
-    nextUrl.toString(),
+    getDashboardReportHref(panel),
     "_blank",
     "noopener,noreferrer,width=1280,height=900"
   );
@@ -6550,6 +6648,45 @@ function DisplayThemeButton({ themeMode, onToggle, darkMode = false }) {
   );
 }
 
+const DISPLAY_SWITCHER_OPTIONS = [
+  { route: "menu", label: "Menu", path: "/goldies-menu" },
+  { route: "orders", label: "Orders Up", path: "/orders-up" },
+  { route: "online-orders", label: "Online", path: "/online-orders" },
+  { route: "drive-thru", label: "Drive Thru", path: "/drive-thru" },
+  { route: "volume", label: "Volume", path: "/volume-board" },
+];
+
+function DisplaySwitcher({ activeRoute, darkMode = false, demoMode = false }) {
+  const { isFullscreen } = useFullscreenMode();
+  if (isFullscreen) return null;
+
+  const inactiveClass = darkMode
+    ? "border-white/14 bg-white/10 text-[#FFF7EA] hover:bg-white/16"
+    : "border-[#0F4036]/12 bg-white/86 text-[#0F4036] hover:bg-white";
+
+  return (
+    <nav className="mx-auto flex w-full max-w-[1500px] flex-wrap gap-2 rounded-[18px] border border-white/60 bg-white/60 p-2 shadow-sm backdrop-blur-md" aria-label="Display boards">
+      {DISPLAY_SWITCHER_OPTIONS.map((option) => {
+        const isActive = option.route === activeRoute;
+        return (
+          <a
+            key={option.route}
+            href={getDisplayHref(option.path, demoMode)}
+            className={`rounded-xl px-3 py-2 text-xs font-black transition sm:text-sm ${
+              isActive
+                ? "bg-[#0F4036] text-white"
+                : inactiveClass
+            }`}
+            aria-current={isActive ? "page" : undefined}
+          >
+            {option.label}
+          </a>
+        );
+      })}
+    </nav>
+  );
+}
+
 function MenuBoardDisplay() {
   const { themeMode, isDark, toggleTheme } = useDisplayTheme();
   const demoMode = isDemoTrainingRoute();
@@ -6626,6 +6763,7 @@ function MenuBoardDisplay() {
       <FullscreenButton darkMode={isDark} />
       <DisplayThemeButton themeMode={themeMode} onToggle={toggleTheme} darkMode={isDark} />
       <div className="mx-auto flex min-h-[calc(100vh-32px)] max-w-[1500px] flex-col gap-3 sm:min-h-[calc(100vh-44px)] md:gap-4">
+        <DisplaySwitcher activeRoute="menu" darkMode={isDark} demoMode={demoMode} />
         <header className="overflow-hidden rounded-[20px] border border-[#0F4036]/14 bg-[#0F4036] text-white shadow-[0_20px_60px_rgba(15,64,54,0.18)] sm:rounded-[26px]">
           <div className="grid gap-3 p-3 sm:grid-cols-[auto_1fr] sm:items-center sm:p-4 md:grid-cols-[auto_1fr_auto] md:gap-4 md:p-5">
             <div className="grid h-14 w-14 place-items-center rounded-[16px] bg-white shadow-[0_14px_36px_rgba(0,0,0,0.16)] sm:h-16 sm:w-16 sm:rounded-[18px] md:h-20 md:w-20 md:rounded-[22px]">
@@ -6877,6 +7015,7 @@ function OrdersUpDisplay() {
       <FullscreenButton darkMode={isDark} />
       <DisplayThemeButton themeMode={themeMode} onToggle={toggleTheme} darkMode={isDark} />
       <div className="mx-auto flex min-h-[calc(100vh-32px)] max-w-[1500px] flex-col gap-3 sm:min-h-[calc(100vh-44px)] md:gap-4">
+        <DisplaySwitcher activeRoute="orders" darkMode={isDark} demoMode={demoMode} />
         <header className="overflow-hidden rounded-[20px] border border-[#0F4036]/14 bg-[#0F4036] text-white shadow-[0_20px_60px_rgba(15,64,54,0.18)] sm:rounded-[26px]">
           <div className="grid gap-3 p-3 sm:grid-cols-[auto_1fr] sm:items-center sm:p-4 md:grid-cols-[auto_1fr_auto] md:gap-4 md:p-5">
             <div className="grid h-14 w-14 place-items-center rounded-[16px] bg-white shadow-[0_14px_36px_rgba(0,0,0,0.16)] sm:h-16 sm:w-16 sm:rounded-[18px] md:h-20 md:w-20 md:rounded-[22px]">
@@ -7130,6 +7269,7 @@ function DriveThruDisplay() {
       <FullscreenButton darkMode={isDark} />
       <DisplayThemeButton themeMode={themeMode} onToggle={toggleTheme} darkMode={isDark} />
       <div className="mx-auto flex min-h-[calc(100vh-32px)] max-w-[1500px] flex-col gap-3 sm:min-h-[calc(100vh-44px)] md:gap-4">
+        <DisplaySwitcher activeRoute="drive-thru" darkMode={isDark} demoMode={demoMode} />
         <header className="overflow-hidden rounded-[20px] border border-[#0F4036]/14 bg-[#0F4036] text-white shadow-[0_20px_60px_rgba(15,64,54,0.18)] sm:rounded-[26px]">
           <div className="grid gap-3 p-3 sm:grid-cols-[auto_1fr_auto] sm:items-center sm:p-4 md:gap-4 md:p-5">
             <div className="grid h-14 w-14 place-items-center rounded-[16px] bg-white shadow-[0_14px_36px_rgba(0,0,0,0.16)] sm:h-16 sm:w-16 sm:rounded-[18px] md:h-20 md:w-20 md:rounded-[22px]">
@@ -7414,6 +7554,7 @@ function VolumeBoardDisplay() {
       <FullscreenButton darkMode={isDark} />
       <DisplayThemeButton themeMode={themeMode} onToggle={toggleTheme} darkMode={isDark} />
       <div className="mx-auto flex min-h-[calc(100vh-32px)] max-w-[1500px] flex-col gap-3 sm:min-h-[calc(100vh-44px)] md:gap-4">
+        <DisplaySwitcher activeRoute="volume" darkMode={isDark} demoMode={demoMode} />
         <header className="overflow-hidden rounded-[20px] border border-[#0F4036]/14 bg-[#0F4036] text-white shadow-[0_20px_60px_rgba(15,64,54,0.18)] sm:rounded-[26px]">
           <div className="grid gap-3 p-3 sm:grid-cols-[auto_1fr_auto] sm:items-center sm:p-4 md:gap-4 md:p-5">
             <div className="grid h-14 w-14 place-items-center rounded-[16px] bg-white shadow-[0_14px_36px_rgba(0,0,0,0.16)] sm:h-16 sm:w-16 sm:rounded-[18px] md:h-20 md:w-20 md:rounded-[22px]">
@@ -7614,6 +7755,7 @@ function OnlineOrdersDisplay() {
       <FullscreenButton darkMode={isDark} />
       <DisplayThemeButton themeMode={themeMode} onToggle={toggleTheme} darkMode={isDark} />
       <div className="mx-auto flex min-h-[calc(100vh-32px)] max-w-[1500px] flex-col gap-3 sm:min-h-[calc(100vh-44px)] md:gap-4">
+        <DisplaySwitcher activeRoute="online-orders" darkMode={isDark} demoMode={demoMode} />
         <header className="overflow-hidden rounded-[20px] border border-[#0F4036]/14 bg-[#0F4036] text-white shadow-[0_20px_60px_rgba(15,64,54,0.18)] sm:rounded-[26px]">
           <div className="grid gap-3 p-3 sm:grid-cols-[auto_1fr_auto] sm:items-center sm:p-4 md:gap-4 md:p-5">
             <div className="grid h-14 w-14 place-items-center rounded-[16px] bg-white shadow-[0_14px_36px_rgba(0,0,0,0.16)] sm:h-16 sm:w-16 sm:rounded-[18px] md:h-20 md:w-20 md:rounded-[22px]">
@@ -9168,9 +9310,8 @@ export default function GoldiesKDS() {
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [lastPoll, setLastPoll] = useState(new Date());
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
+  const [connectionDetail, setConnectionDetail] = useState("Square API");
   const [lastError, setLastError] = useState("");
-  const [systemNotice, setSystemNotice] = useState("");
-  const [showSystemPopup, setShowSystemPopup] = useState(false);
   const [defaultLookupDate] = useState(() => getLocalDateInputValue());
   const dashboardReportPanel = getDashboardReportPanel();
   const isTodayCountWindow = dashboardReportPanel === "today-count";
@@ -9269,6 +9410,7 @@ export default function GoldiesKDS() {
 
     setTrainingTickets(createTrainingTickets());
     setConnectionStatus("Training mode");
+    setConnectionDetail("Practice data");
     setLastError("");
     setLastPoll(new Date());
   }, [isTrainingMode]);
@@ -9276,6 +9418,7 @@ export default function GoldiesKDS() {
   useEffect(() => {
     if (!isTrainingMode && authStatus === "authenticated") {
       setConnectionStatus("Connecting...");
+      setConnectionDetail("Square API");
     }
   }, [isTrainingMode, authStatus]);
 
@@ -9395,7 +9538,7 @@ export default function GoldiesKDS() {
 
     async function fetchBoardAndTodayCounts() {
       try {
-        const [ticketsResponse, drinkResponse, makingTimeResponse, healthResponse] = await Promise.all([
+        const [ticketsResponse, drinkResponse, makingTimeResponse] = await Promise.all([
           fetch(apiUrl("/api/tickets"), {
             credentials: "include",
           }),
@@ -9403,9 +9546,6 @@ export default function GoldiesKDS() {
             credentials: "include",
           }),
           fetch(apiUrl("/api/reports/drink-making-time?range=today"), {
-            credentials: "include",
-          }),
-          fetch(apiUrl("/api/health"), {
             credentials: "include",
           }),
         ]);
@@ -9419,36 +9559,12 @@ export default function GoldiesKDS() {
           return;
         }
 
-        const health = healthResponse.ok ? await healthResponse.json() : null;
-        const squareApi = health?.squareApi || {};
-        let currentSystemNotice = "";
-        if (squareApi.online === false || squareApi.lastSyncError) {
-          const notice =
-            squareApi.lastSyncError ||
-            squareApi.lastError ||
-            "Square is not reporting healthy right now.";
-          currentSystemNotice = `Square sync is being checked. The dashboard may show stored tickets while the connection catches up. Detail: ${notice}`;
-          setSystemNotice(currentSystemNotice);
-          setShowSystemPopup(true);
-        } else {
-          setSystemNotice("");
-        }
-
         if (!ticketsResponse.ok) {
-          let detail = "";
-          try {
-            const payload = await ticketsResponse.json();
-            detail = payload?.error || "";
-          } catch {
-            detail = "";
-          }
-          setSystemNotice(
-            `Ticket sync is having trouble. Keep taking orders in Square and use any tickets already visible here while we reconnect. ${detail ? `Detail: ${detail}` : ""}`
-          );
-          setShowSystemPopup(true);
           throw new Error(`Failed to fetch tickets: ${ticketsResponse.status}`);
         }
 
+        const ticketFallback = ticketsResponse.headers.get("x-goldies-kds-fallback") || "";
+        const nextConnectionDetail = ticketFallback ? "Stored tickets" : "Square API";
         const liveTickets = await ticketsResponse.json();
         const todayReport = drinkResponse.ok
           ? await drinkResponse.json()
@@ -9492,20 +9608,15 @@ export default function GoldiesKDS() {
           sampleSize: makingTimeReport.sampleSize || 0,
         });
         setLastPoll(new Date());
-        setConnectionStatus(currentSystemNotice ? "Checking Square" : "Connected");
+        setConnectionStatus("Connected");
+        setConnectionDetail(nextConnectionDetail);
         setLastError("");
       } catch (error) {
         if (!mounted) return;
 
         setConnectionStatus("Offline");
-        const message = error.message || "Unknown polling error";
-        setLastError(message);
-        if (message.includes("Failed to fetch tickets")) {
-          setSystemNotice(
-            "Ticket sync is temporarily unavailable. Square itself may still be taking orders. We are checking the Square connection and stored dashboard tickets."
-          );
-          setShowSystemPopup(true);
-        }
+        setConnectionDetail("Check connection");
+        setLastError(error.message || "Unknown polling error");
       }
     }
 
@@ -9625,6 +9736,7 @@ export default function GoldiesKDS() {
   const displayedConnectionStatus = isTrainingMode
     ? "Training mode"
     : connectionStatus;
+  const displayedConnectionDetail = isTrainingMode ? "Practice data" : connectionDetail;
   const activeTickets = displayedTickets.filter(
     (ticket) =>
       ticket.status !== "done" &&
@@ -10074,30 +10186,6 @@ export default function GoldiesKDS() {
           darkMode={themeMode === "dark"}
           demoMode={isDemoRoute}
         />
-        {showSystemPopup && systemNotice && (
-          <div className="fixed inset-x-4 top-4 z-[80] mx-auto max-w-3xl rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950 shadow-[0_18px_55px_rgba(120,53,15,0.22)]">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <div className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">
-                  Square connection notice
-                </div>
-                <div className="mt-1 text-sm font-bold leading-relaxed">
-                  {systemNotice}
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setShowSystemPopup(false);
-                }}
-                className="rounded-xl bg-amber-700 px-3 py-2 text-sm font-black text-white transition hover:bg-amber-800"
-              >
-                Got it
-              </button>
-            </div>
-          </div>
-        )}
       <div className="relative z-10">
       <header className="relative z-40 border-b border-white/70 bg-[rgba(255,253,248,0.9)] backdrop-blur-xl px-4 md:px-6 py-4 shadow-[0_12px_30px_rgba(15,64,54,0.06)]">
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
@@ -10453,7 +10541,7 @@ export default function GoldiesKDS() {
           <StatCard
             label="Connection"
             value={displayedConnectionStatus}
-            detail="Square API"
+            detail={displayedConnectionDetail}
           />
 
           <StatCard
@@ -10493,15 +10581,6 @@ export default function GoldiesKDS() {
             reports={displayedDrinkTimeReports}
             onClose={() => setShowDrinkTimeStats(false)}
           />
-        )}
-
-        {systemNotice && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950 shadow-sm">
-            <div className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">
-              Square connection notice
-            </div>
-            <div className="mt-1 text-sm font-bold leading-relaxed">{systemNotice}</div>
-          </div>
         )}
 
         {lastError && (
