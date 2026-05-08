@@ -1362,6 +1362,18 @@ let lastSquareSyncAt = 0;
 let lastSquareSyncSuccessAt = 0;
 let lastSquareSyncErrorAt = 0;
 let lastSquareSyncError = "";
+let lastSquareSyncSummary = {
+  context: "startup",
+  startedAt: null,
+  finishedAt: null,
+  fetchedOrders: 0,
+  fetchedPaymentOrders: 0,
+  dedupedOrders: 0,
+  created: 0,
+  updated: 0,
+  saved: 0,
+  failed: 0,
+};
 let lastKnownActiveTickets = [];
 let lastKnownActiveTicketsAt = 0;
 let lastSquareHealthCheckAt = 0;
@@ -3425,9 +3437,34 @@ function ticketFromDb(order, items = []) {
   };
 }
 
+function getSuspiciousPickupNameTickets(ticketsToCheck = lastKnownActiveTickets) {
+  return (ticketsToCheck || [])
+    .filter((ticket) => {
+      const name = normalizeName(ticket.customerName || "");
+      if (!name) return false;
+      const compact = normalizeDrinkText(name).replace(/\s+/g, "");
+      return (
+        getDrinkCategory(name) ||
+        isSmoothieDrinkName(name) ||
+        compact.includes("strawmango") ||
+        compact.includes("strawberrybanana") ||
+        compact.includes("chocolatepbbanana") ||
+        compact.includes("refresher") ||
+        compact.includes("smoothie")
+      );
+    })
+    .map((ticket) => ({
+      id: ticket.id,
+      orderNumber: ticket.orderNumber || ticket.id,
+      customerName: ticket.customerName || "",
+      status: ticket.status || "",
+    }));
+}
+
 async function upsertTicket(ticket, rawOrder = null) {
   if (!supabase) {
-    return addTicket(ticket);
+    const alreadyExists = tickets.some((existing) => existing.id === ticket.id);
+    return { ...addTicket(ticket), syncAction: alreadyExists ? "updated" : "created" };
   }
 
   const { data: existingOrder, error: existingError } = await supabase
@@ -3503,35 +3540,61 @@ async function upsertTicket(ticket, rawOrder = null) {
     if (itemsError) throw itemsError;
   }
 
-  return { ...ticket, status };
+  return { ...ticket, status, syncAction: existingOrder ? "updated" : "created" };
 }
 
-async function syncRecentSquareOrders() {
+async function syncRecentSquareOrders(context = "scheduled sync") {
   if (!supabase) return;
 
   const now = Date.now();
   if (now - lastSquareSyncAt < SQUARE_SYNC_INTERVAL_MS) return;
 
   lastSquareSyncAt = now;
+  const startedAt = Date.now();
   const squareOrders = await fetchSquareOrders();
   const squarePayments = await fetchSquarePayments();
   const paymentOrders = await fetchSquarePaymentOrders(squarePayments);
   const employeeNameByOrderId = await buildPaymentEmployeeMap(squarePayments);
+  const dedupedOrders = dedupeOrders([...squareOrders, ...paymentOrders]);
+  const summary = {
+    context,
+    startedAt: new Date(startedAt).toISOString(),
+    finishedAt: null,
+    fetchedOrders: squareOrders.length,
+    fetchedPaymentOrders: paymentOrders.length,
+    dedupedOrders: dedupedOrders.length,
+    created: 0,
+    updated: 0,
+    saved: 0,
+    failed: 0,
+  };
 
-  for (const order of dedupeOrders([...squareOrders, ...paymentOrders])) {
-    const ticket = await normalizeSquareOrder(order, employeeNameByOrderId.get(order.id) || null);
-    await upsertTicket(ticket, order);
+  for (const order of dedupedOrders) {
+    try {
+      const ticket = await normalizeSquareOrder(order, employeeNameByOrderId.get(order.id) || null);
+      const savedTicket = await upsertTicket(ticket, order);
+      summary.saved += 1;
+      if (savedTicket?.syncAction === "created") summary.created += 1;
+      if (savedTicket?.syncAction === "updated") summary.updated += 1;
+    } catch (orderError) {
+      summary.failed += 1;
+      console.error(`Square order ${order?.id || "unknown"} failed during sync:`, orderError.message);
+    }
   }
 
   lastSquareSyncSuccessAt = Date.now();
   lastSquareSyncErrorAt = 0;
   lastSquareSyncError = "";
+  lastSquareSyncSummary = {
+    ...summary,
+    finishedAt: new Date(lastSquareSyncSuccessAt).toISOString(),
+  };
 }
 
 async function trySyncRecentSquareOrders(context = "ticket request") {
   try {
     await Promise.race([
-      syncRecentSquareOrders(),
+      syncRecentSquareOrders(context),
       new Promise((_, reject) =>
         setTimeout(
           () => reject(new Error(`Square sync timed out after ${SQUARE_SYNC_TIMEOUT_MS}ms`)),
@@ -5679,10 +5742,12 @@ app.get("/api/health", (req, res) => {
         ? new Date(lastSquareSyncErrorAt).toISOString()
         : null,
       lastSyncError: lastSquareSyncError || null,
+      lastSyncSummary: lastSquareSyncSummary,
       cachedActiveTicketCount: lastKnownActiveTickets.length,
       cachedActiveTicketsAt: lastKnownActiveTicketsAt
         ? new Date(lastKnownActiveTicketsAt).toISOString()
         : null,
+      suspiciousPickupNames: getSuspiciousPickupNameTickets(),
       alertsConfigured: hasAlertEmailConfig(),
       alertConfig: getAlertEmailConfigDiagnostics(),
     },
@@ -7800,18 +7865,43 @@ app.post("/api/square-sync", requireKdsAuth, async (req, res) => {
     const squareOrders = await fetchSquareOrders();
     const paymentOrders = await fetchSquarePaymentOrders();
     const savedTickets = [];
+    const summary = {
+      context: "manual sync",
+      startedAt: new Date().toISOString(),
+      fetchedOrders: squareOrders.length,
+      fetchedPaymentOrders: paymentOrders.length,
+      dedupedOrders: 0,
+      created: 0,
+      updated: 0,
+      saved: 0,
+      failed: 0,
+    };
+    const dedupedOrders = dedupeOrders([...squareOrders, ...paymentOrders]);
+    summary.dedupedOrders = dedupedOrders.length;
 
-    for (const order of dedupeOrders([...squareOrders, ...paymentOrders])) {
-      const ticket = await normalizeSquareOrder(order);
-      const savedTicket = await upsertTicket(ticket, order);
-      savedTickets.push(savedTicket);
+    for (const order of dedupedOrders) {
+      try {
+        const ticket = await normalizeSquareOrder(order);
+        const savedTicket = await upsertTicket(ticket, order);
+        savedTickets.push(savedTicket);
+        summary.saved += 1;
+        if (savedTicket?.syncAction === "created") summary.created += 1;
+        if (savedTicket?.syncAction === "updated") summary.updated += 1;
+      } catch (orderError) {
+        summary.failed += 1;
+        console.error(`Manual Square sync failed for order ${order?.id || "unknown"}:`, orderError.message);
+      }
     }
+    summary.finishedAt = new Date().toISOString();
+    lastSquareSyncSummary = summary;
+    lastSquareSyncSuccessAt = Date.now();
 
     res.json({
       ok: true,
       found: squareOrders.length,
       foundFromPayments: paymentOrders.length,
       saved: savedTickets.length,
+      summary,
       orderIds: savedTickets.map((ticket) => ticket.id),
       orderNumbers: savedTickets.map((ticket) => ticket.orderNumber),
     });
@@ -8178,6 +8268,7 @@ module.exports = {
     getCanonicalDrinkName,
     getDrinkCategory,
     getItemDrinkCategory,
+    getSuspiciousPickupNameTickets,
     isSmoothieDrinkName,
     parseCustomerNameFromNotes,
   },

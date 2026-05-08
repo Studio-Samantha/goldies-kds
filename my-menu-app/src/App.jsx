@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.11";
+const APP_VERSION = "v1.10.12";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -22,13 +22,18 @@ const DINING_OPTIONS = ["HANGIN' OUT", "TAKING OFF", "Pickup", "Delivery", "Driv
 const DAILY_UPDATE_NOTICE = {
   id: APP_VERSION,
   eyebrow: "Today on the KDS",
-  title: "Square name handling is safer",
+  title: "Connection report has sync audit details",
   message:
-    "The app now has regression tests for Square drink names, customer-name cleanup, smoothie/refresher classification, and owner report add-on math.",
+    "The Connection report now shows how many Square orders were found, created, updated, or failed during the last sync.",
   note:
-    "Drink labels like STRAWMANGO stay treated as drinks, not pickup names.",
+    "It also flags suspicious pickup names so bad Square labels are easier to catch.",
 };
 const OWNER_PORTAL_RECENT_CHANGES = [
+  {
+    title: "Square sync audit",
+    body:
+      "The dashboard Connection report now shows Square orders found, created, updated, failed, and suspicious pickup-name flags.",
+  },
   {
     title: "Safer Square imports",
     body:
@@ -82,8 +87,18 @@ const OWNER_PORTAL_RECENT_CHANGES = [
 ];
 const RELEASE_NOTES = [
   {
-    version: "v1.10.11",
+    version: "v1.10.12",
     date: "Current build",
+    summary: "Added sync audit details to the Connection report.",
+    items: [
+      "Connection report now shows the last Square sync context, orders found, created, updated, saved, and failed.",
+      "Connection report now flags suspicious pickup names when a drink label appears where a customer name should be.",
+      "Manual Square sync also records the same summary counts.",
+    ],
+  },
+  {
+    version: "v1.10.11",
+    date: "Previous build",
     summary: "Added Square normalization regression checks.",
     items: [
       "Drink labels like STRAWMANGO now normalize to Refresher - Strawberry Mango instead of being treated as pickup names.",
@@ -1294,6 +1309,8 @@ function ConnectionReportDialog({ open, report, loading, error, onClose, onRefre
   if (!open) return null;
 
   const square = report?.squareApi || {};
+  const syncSummary = square.lastSyncSummary || {};
+  const suspiciousPickupNames = square.suspiciousPickupNames || [];
   const rows = [
     ["App status", report?.ok ? "Online" : "Unknown"],
     ["Storage", report?.storage ? "Online" : "Unknown"],
@@ -1301,7 +1318,11 @@ function ConnectionReportDialog({ open, report, loading, error, onClose, onRefre
     ["Last healthy", square.lastHealthyAt ? new Date(square.lastHealthyAt).toLocaleString() : "Not recorded"],
     ["Last sync", square.lastSyncSuccessAt ? new Date(square.lastSyncSuccessAt).toLocaleString() : "Not recorded"],
     ["Last sync error", square.lastSyncError || "None"],
+    ["Orders found", String(syncSummary.dedupedOrders ?? "Unknown")],
+    ["Created / updated", `${syncSummary.created ?? 0} / ${syncSummary.updated ?? 0}`],
+    ["Sync failures", String(syncSummary.failed ?? 0)],
     ["Cached active tickets", String(square.cachedActiveTicketCount ?? "Unknown")],
+    ["Suspicious pickup names", String(suspiciousPickupNames.length)],
     ["Alerts configured", square.alertsConfigured ? "Yes" : "No"],
   ];
 
@@ -1335,8 +1356,13 @@ function ConnectionReportDialog({ open, report, loading, error, onClose, onRefre
             ))}
           </div>
           <div className="rounded-2xl border border-[#0F4036]/10 bg-[#0F4036]/8 px-4 py-3 text-sm font-semibold leading-6 text-[#0F4036]">
-            Scheduled system checks can keep a simple record of when the dashboard has trouble and when it comes back online, so downtime is easier to review later.
+            Last sync context: {syncSummary.context || "Not recorded"}. The created/updated count helps show whether Square sent new orders or refreshed existing tickets.
           </div>
+          {suspiciousPickupNames.length ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold leading-6 text-amber-950">
+              Review pickup names: {suspiciousPickupNames.map((ticket) => `#${ticket.orderNumber} ${ticket.customerName}`).join(", ")}
+            </div>
+          ) : null}
           <div className="flex flex-wrap justify-end gap-2">
             <button
               type="button"

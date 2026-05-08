@@ -39,6 +39,7 @@ const {
   __testExports: {
     buildOwnerDrinkRevenueReport,
     cleanCustomerName,
+    getSuspiciousPickupNameTickets,
     getCanonicalDrinkName,
     getItemDrinkCategory,
     parseCustomerNameFromNotes,
@@ -50,6 +51,32 @@ test("canonical drink names clean up Square edits without changing display style
   assert.equal(getCanonicalDrinkName("STRAWMANGO"), "Refresher - Strawberry Mango");
   assert.equal(getCanonicalDrinkName("12 oz kids chocolate pb banana"), "Chocolate P/B Banana");
   assert.equal(getCanonicalDrinkName("AMERICANO DECAF"), "Americano (DECAF)");
+});
+
+test("sync audit flags active tickets with drink labels as pickup names", () => {
+  const suspicious = getSuspiciousPickupNameTickets([
+    {
+      id: "1",
+      orderNumber: "1001",
+      customerName: "STRAWMANGO",
+      status: "new",
+    },
+    {
+      id: "2",
+      orderNumber: "1002",
+      customerName: "Claire",
+      status: "making",
+    },
+  ]);
+
+  assert.deepEqual(suspicious, [
+    {
+      id: "1",
+      orderNumber: "1001",
+      customerName: "STRAWMANGO",
+      status: "new",
+    },
+  ]);
 });
 
 test("customer-name cleanup rejects drink names and all-caps menu codes", () => {
