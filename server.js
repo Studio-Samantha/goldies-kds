@@ -85,6 +85,7 @@ const DRINKFLOW_SQUARE_REDIRECT_URL =
 const DRINKFLOW_SQUARE_OAUTH_SCOPE =
   "MERCHANT_PROFILE_READ ORDERS_READ ORDERS_WRITE ITEMS_READ PAYMENTS_READ PAYMENTS_WRITE";
 const SQUARE_API_VERSION = process.env.SQUARE_API_VERSION || "2025-04-16";
+const KIOSK_ASSET_BASE_URL = (process.env.KIOSK_ASSET_BASE_URL || "").replace(/\/+$/, "");
 const ONLINE_ORDERING_CATEGORY_NAMES = (
   process.env.ONLINE_ORDERING_CATEGORY_NAMES || "Coffee,Not Coffee,Smoothies"
 )
@@ -483,6 +484,38 @@ function isCatalogObjectPresentAtLocation(data = {}) {
   return !locationIds.length || locationIds.includes(SQUARE_LOCATION_ID);
 }
 
+function getCatalogImageUrl(imageObject) {
+  const imageData = imageObject?.image_data || imageObject?.imageData || {};
+  return imageData.url || "";
+}
+
+function getDrinkImageSlug(itemName = "") {
+  const normalized = String(itemName || "")
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  if (normalized.includes("decaf") && normalized.includes("americano")) return "decaf-americano";
+  if (normalized.includes("americano")) return "americano";
+  if (normalized.includes("cold") && normalized.includes("brew")) return "cold-brew";
+  if (normalized.includes("cappuccino")) return "cappuccino";
+  if (normalized.includes("london") && normalized.includes("fog")) return "london-fog";
+  if (normalized.includes("chai")) return "chai-latte";
+  if (normalized.includes("matcha")) return "matcha-latte";
+  if (normalized.includes("chocolate") && normalized.includes("banana")) return "chocolate-pb-banana";
+  if (normalized.includes("strawberry") && normalized.includes("banana")) return "strawberry-banana";
+  if (normalized.includes("green") && normalized.includes("smoothie")) return "green-smoothie";
+  if (normalized.includes("latte")) return "latte";
+  return normalized || "latte";
+}
+
+function getFallbackDrinkImageUrl(itemName = "") {
+  const slug = getDrinkImageSlug(itemName);
+  const path = `/assets/drinks/${slug}.svg`;
+  return KIOSK_ASSET_BASE_URL ? `${KIOSK_ASSET_BASE_URL}${path}` : path;
+}
+
 function formatCatalogMoney(cents) {
   return formatMoney(Number(cents || 0));
 }
@@ -741,6 +774,7 @@ function buildStaticOnlineOrderingMenu() {
       variationId: "",
       variationName: "",
       description: "",
+      imageUrl: getFallbackDrinkImageUrl(item.name),
       modifierGroups: [],
       source: "static",
     });
@@ -754,11 +788,18 @@ async function getSquareOnlineOrderingMenu() {
   const objects = await fetchSquareCatalogObjects([
     "ITEM",
     "ITEM_VARIATION",
+    "IMAGE",
     "MODIFIER",
     "MODIFIER_LIST",
     "CATEGORY",
   ]);
   const byId = new Map(objects.map((object) => [object.id, object]));
+  const imagesById = new Map(
+    objects
+      .filter((object) => object.type === "IMAGE")
+      .map((object) => [object.id, getCatalogImageUrl(object)])
+      .filter(([, url]) => Boolean(url))
+  );
   const categoriesById = new Map(
     objects
       .filter((object) => object.type === "CATEGORY")
@@ -794,6 +835,10 @@ async function getSquareOnlineOrderingMenu() {
 
     const itemRule = getOnlineOrderingDrinkRule(itemData.name || "");
     if (!itemRule.online) continue;
+    const catalogImageUrl =
+      (itemData.image_ids || [])
+        .map((imageId) => imagesById.get(imageId))
+        .find(Boolean) || "";
 
     const modifierGroups = (itemData.modifier_list_info || [])
       .map((info) => {
@@ -855,6 +900,7 @@ async function getSquareOnlineOrderingMenu() {
         variationId: variation.id,
         variationName,
         description: itemData.description || "",
+        imageUrl: catalogImageUrl || getFallbackDrinkImageUrl(itemName),
         modifierGroups: variationModifierGroups,
         source: "square",
       });

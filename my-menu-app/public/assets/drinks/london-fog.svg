@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" role="img" aria-label="London Fog">
+  <rect width="640" height="480" fill="#eee6f4"/>
+  <circle cx="512" cy="92" r="100" fill="#8b79b7" opacity=".25"/>
+  <circle cx="112" cy="382" r="118" fill="#ca862b" opacity=".14"/>
+  <ellipse cx="320" cy="365" rx="160" ry="28" fill="#4d3d5c" opacity=".14"/>
+  <path d="M218 166h204l-22 204H240z" fill="#fffdf8"/>
+  <path d="M238 205h164l-16 144H254z" fill="#c8b0de"/>
+  <ellipse cx="320" cy="166" rx="103" ry="34" fill="#fffdf8"/>
+  <ellipse cx="320" cy="166" rx="78" ry="22" fill="#d8c5e8"/>
+  <path d="M283 164c22-18 51-18 74 0" fill="none" stroke="#fff7ea" stroke-width="12" stroke-linecap="round"/>
+  <path d="M424 214c52 0 51 80 0 84" fill="none" stroke="#fffdf8" stroke-width="22" stroke-linecap="round"/>
+</svg>

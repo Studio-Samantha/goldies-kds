@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" role="img" aria-label="Cold Brew">
+  <rect width="640" height="480" fill="#e8f2f4"/>
+  <circle cx="110" cy="96" r="92" fill="#88c6d8" opacity=".28"/>
+  <circle cx="518" cy="384" r="118" fill="#0f4036" opacity=".14"/>
+  <ellipse cx="320" cy="385" rx="148" ry="25" fill="#18302f" opacity=".13"/>
+  <path d="M242 132h156l-20 244H262z" fill="#d7eef4"/>
+  <path d="M258 196h124l-14 159H272z" fill="#4a2d1c"/>
+  <path d="M252 162h136" stroke="#fffdf8" stroke-width="18" stroke-linecap="round"/>
+  <rect x="277" y="212" width="32" height="32" rx="8" fill="#cbe9f0" opacity=".9"/>
+  <rect x="328" y="246" width="34" height="34" rx="8" fill="#cbe9f0" opacity=".82"/>
+  <rect x="292" y="294" width="30" height="30" rx="8" fill="#cbe9f0" opacity=".78"/>
+  <path d="M286 92h68" stroke="#0f4036" stroke-width="16" stroke-linecap="round"/>
+  <path d="M320 92v54" stroke="#0f4036" stroke-width="12" stroke-linecap="round"/>
+</svg>

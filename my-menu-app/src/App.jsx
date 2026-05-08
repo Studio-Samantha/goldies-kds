@@ -7844,27 +7844,27 @@ const ONLINE_ORDERING_BETA_MENU = [
   {
     category: "Coffee",
     items: [
-      { id: "latte", name: "Latte", price: "$5.75" },
-      { id: "americano", name: "Americano", price: "$4.25" },
-      { id: "decaf-americano", name: "Decaf (Americano)", price: "$4.25" },
-      { id: "cold-brew", name: "Cold Brew", price: "$5.50" },
-      { id: "cappuccino", name: "Cappuccino", price: "$5.25" },
+      { id: "latte", name: "Latte", price: "$5.75", imageUrl: "/assets/drinks/latte.svg" },
+      { id: "americano", name: "Americano", price: "$4.25", imageUrl: "/assets/drinks/americano.svg" },
+      { id: "decaf-americano", name: "Decaf (Americano)", price: "$4.25", imageUrl: "/assets/drinks/decaf-americano.svg" },
+      { id: "cold-brew", name: "Cold Brew", price: "$5.50", imageUrl: "/assets/drinks/cold-brew.svg" },
+      { id: "cappuccino", name: "Cappuccino", price: "$5.25", imageUrl: "/assets/drinks/cappuccino.svg" },
     ],
   },
   {
     category: "Not Coffee",
     items: [
-      { id: "london-fog", name: "London Fog", price: "$5.75" },
-      { id: "chai-latte", name: "Chai Latte", price: "$5.75" },
-      { id: "matcha-latte", name: "Matcha Latte", price: "$6.25" },
+      { id: "london-fog", name: "London Fog", price: "$5.75", imageUrl: "/assets/drinks/london-fog.svg" },
+      { id: "chai-latte", name: "Chai Latte", price: "$5.75", imageUrl: "/assets/drinks/chai-latte.svg" },
+      { id: "matcha-latte", name: "Matcha Latte", price: "$6.25", imageUrl: "/assets/drinks/matcha-latte.svg" },
     ],
   },
   {
     category: "Smoothies",
     items: [
-      { id: "strawberry-banana", name: "Strawberry Banana", price: "$7.00" },
-      { id: "chocolate-pb-banana", name: "Chocolate P/B Banana", price: "$7.00" },
-      { id: "green-smoothie", name: "Green Smoothie", price: "$7.00" },
+      { id: "strawberry-banana", name: "Strawberry Banana", price: "$7.00", imageUrl: "/assets/drinks/strawberry-banana.svg" },
+      { id: "chocolate-pb-banana", name: "Chocolate P/B Banana", price: "$7.00", imageUrl: "/assets/drinks/chocolate-pb-banana.svg" },
+      { id: "green-smoothie", name: "Green Smoothie", price: "$7.00", imageUrl: "/assets/drinks/green-smoothie.svg" },
     ],
   },
 ];
@@ -7906,6 +7906,34 @@ function getOnlineOrderVisualStyle(item = {}) {
       "radial-gradient(circle at 24% 18%, rgba(255,255,255,0.78), transparent 26%), linear-gradient(135deg, #FFF7EA, #CA862B 50%, #0F4036)",
     label: "Coffee bar",
   };
+}
+
+function getOnlineOrderImageUrl(item = {}) {
+  if (item.imageUrl) return item.imageUrl;
+
+  const slug = String(item.id || item.name || "latte")
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  return `/assets/drinks/${slug || "latte"}.svg`;
+}
+
+function DrinkProductImage({ item, className = "" }) {
+  return (
+    <div
+      className={`overflow-hidden bg-[#F6EFE1] ${className}`}
+      style={{ background: getOnlineOrderVisualStyle(item).background }}
+    >
+      <img
+        src={getOnlineOrderImageUrl(item)}
+        alt=""
+        className="h-full w-full object-cover"
+        loading="lazy"
+      />
+    </div>
+  );
 }
 
 function OnlineOrderingBetaPage({ kioskMode = false }) {
@@ -7962,7 +7990,6 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
       : readyQuote?.readyTimeLabel
         ? `ASAP - estimated ${readyQuote.readyTimeLabel}`
         : "ASAP";
-
   useEffect(() => {
     let mounted = true;
 
@@ -8161,7 +8188,7 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
             </div>
             <p className="mt-5 max-w-2xl text-lg font-semibold leading-8 text-white/78">
               {kioskMode
-                ? "Choose a drink from the shop kiosk, add a pickup name, and pay through Square checkout. This beta uses the same drink rules as online ordering."
+                ? "Tap a drink photo, choose any options, add a pickup name, and pay through Square checkout."
                 : "Choose your drink, add a pickup name, and pay through Square checkout. This test is drinks-only while the pickup workflow is being proven live."}
             </p>
             <div className="mt-5 flex flex-wrap gap-2 text-xs font-black uppercase tracking-[0.16em] text-[#F3D39B]">
@@ -8231,30 +8258,52 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
         ) : null}
 
         <main className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_390px]">
-          <section className="space-y-5">
+          <section className="space-y-4">
+            <div className="sticky top-0 z-20 -mx-4 border-b border-[#CA862B]/12 bg-[#F6EFE1]/92 px-4 py-3 backdrop-blur-md lg:static lg:border-0 lg:bg-transparent lg:p-0">
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {menuGroups.map((group) => (
+                  <a
+                    key={group.category}
+                    href={`#kiosk-category-${group.category.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`}
+                    className="shrink-0 rounded-full border border-[#CA862B]/18 bg-white px-4 py-2 text-sm font-black text-[#0F4036] shadow-sm transition hover:bg-[#EEE0C5]/45"
+                  >
+                    {group.category}
+                  </a>
+                ))}
+              </div>
+            </div>
+
             {menuGroups.map((group) => (
               <article key={group.category} className="rounded-[2rem] border border-white/70 bg-[rgba(255,253,248,0.96)] p-4 shadow-[0_18px_48px_rgba(15,64,54,0.08)]">
-                <div className="flex items-end justify-between gap-3">
+                <div id={`kiosk-category-${group.category.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`} className="flex scroll-mt-24 items-end justify-between gap-3">
                   <h2 className="text-2xl font-black text-[#0F4036]">{group.category}</h2>
                   <span className="rounded-full bg-[#CA862B]/10 px-2.5 py-1 text-xs font-black text-[#8B5A1D]">
                     {group.items.length}
                   </span>
                 </div>
-                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   {group.items.map((item) => (
                     <div
                       key={item.id}
-                      className="group rounded-2xl border border-[#CA862B]/16 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:bg-[#EEE0C5]/45 hover:shadow-md"
+                      className="group overflow-hidden rounded-[1.6rem] border border-[#CA862B]/16 bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                     >
-                      <span className="flex items-center justify-between gap-2">
-                        <span className="block text-base font-black text-[#111111]">
-                          {item.name}
-                          {item.variationName ? (
-                            <span className="block text-xs font-bold text-[#6A614F]">
-                              {item.variationName}
-                            </span>
-                          ) : null}
-                        </span>
+                      <button
+                        type="button"
+                        onClick={() => setDetailItem({ ...item, category: group.category })}
+                        className="block w-full text-left"
+                      >
+                        <DrinkProductImage item={{ ...item, category: group.category }} className="aspect-[4/3] w-full" />
+                      </button>
+                      <div className="p-4">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="block text-base font-black text-[#111111]">
+                            {item.name}
+                            {item.variationName ? (
+                              <span className="block text-xs font-bold text-[#6A614F]">
+                                {item.variationName}
+                              </span>
+                            ) : null}
+                          </span>
                         <button
                           type="button"
                           onClick={() => setDetailItem({ ...item, category: group.category })}
@@ -8264,18 +8313,19 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
                         >
                           i
                         </button>
-                      </span>
-                      <span className="mt-1 block text-sm font-semibold text-[#6A614F]">
-                        {item.price}
-                        {menuSource === "square" ? " · Square menu" : ""}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => addItem(item, group.category)}
-                        className="mt-3 w-full rounded-xl bg-[#0F4036] px-3 py-2 text-sm font-black text-white transition hover:bg-[#0b352d]"
-                      >
-                        Add to order
-                      </button>
+                        </div>
+                        <span className="mt-1 block text-sm font-semibold text-[#6A614F]">
+                          {item.price}
+                          {menuSource === "square" ? " · Square menu" : ""}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => addItem(item, group.category)}
+                          className="mt-3 min-h-11 w-full rounded-xl bg-[#0F4036] px-3 py-2 text-sm font-black text-white transition hover:bg-[#0b352d]"
+                        >
+                          Add to order
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -8381,7 +8431,7 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
                 ))
               ) : (
                 <div className="rounded-2xl border border-dashed border-[#CA862B]/22 bg-white/70 p-4 text-sm font-semibold text-[#6A614F]">
-                  Add drinks to start a beta pickup request.
+                  Tap a drink photo to start an order.
                 </div>
               )}
             </div>
@@ -8449,7 +8499,7 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
                 cart.length && customerName.trim() && !submitting ? "bg-[#0F4036] hover:bg-[#0b352d]" : "bg-neutral-300"
               }`}
             >
-              {submitting ? "Opening Square checkout..." : "Pay with Square"}
+              {submitting ? "Opening Square checkout..." : kioskMode ? "Checkout" : "Pay with Square"}
             </button>
             <p className="mt-3 text-xs font-semibold leading-5 text-[#6A614F]">
               Beta behavior: payment opens in Square checkout. Once paid, Square sends the order back for KDS intake.
@@ -8463,7 +8513,7 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
           <div className="absolute inset-0" onClick={() => setDetailItem(null)} />
           <div className="relative w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/70 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.24)]">
             <div
-              className="relative min-h-64 overflow-hidden p-5 text-white"
+              className="relative grid gap-4 overflow-hidden p-5 text-white md:grid-cols-[0.9fr_1.1fr] md:items-center"
               style={{ background: getOnlineOrderVisualStyle(detailItem).background }}
             >
               <div
@@ -8484,10 +8534,11 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
               >
                 x
               </button>
+              <DrinkProductImage item={detailItem} className="relative aspect-square rounded-[1.8rem] border border-white/24 shadow-[0_24px_70px_rgba(0,0,0,0.22)]" />
               <div className="relative flex min-h-52 flex-col justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="grid h-16 w-16 place-items-center rounded-2xl bg-white shadow-lg">
-                    <img src={LOGO_URL} alt="Goldie's Coffee & Goods" className="max-h-12 max-w-12 object-contain" />
+                <div>
+                  <div className="mb-4 inline-grid h-14 w-14 place-items-center rounded-2xl bg-white shadow-lg">
+                    <img src={LOGO_URL} alt="Goldie's Coffee & Goods" className="max-h-11 max-w-11 object-contain" />
                   </div>
                   <div>
                     <div className="text-xs font-black uppercase tracking-[0.18em] text-white/75">

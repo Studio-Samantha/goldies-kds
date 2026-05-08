@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" role="img" aria-label="Decaf Americano">
+  <rect width="640" height="480" fill="#f2e8db"/>
+  <circle cx="516" cy="84" r="92" fill="#8f7659" opacity=".25"/>
+  <circle cx="116" cy="386" r="118" fill="#ca862b" opacity=".16"/>
+  <ellipse cx="318" cy="365" rx="152" ry="28" fill="#3c2518" opacity=".14"/>
+  <path d="M228 160h184l-19 202H247z" fill="#fffdf8"/>
+  <path d="M247 199h146l-15 142H262z" fill="#6b4a32"/>
+  <ellipse cx="320" cy="160" rx="93" ry="31" fill="#fffdf8"/>
+  <ellipse cx="320" cy="160" rx="71" ry="20" fill="#4a2f20"/>
+  <path d="M278 159c30 9 55 9 84 0" fill="none" stroke="#a97855" stroke-width="9" stroke-linecap="round"/>
+  <path d="M267 229h106" stroke="#f3d39b" stroke-width="13" stroke-linecap="round" opacity=".85"/>
+  <path d="M410 214c48 4 45 76 0 81" fill="none" stroke="#fffdf8" stroke-width="20" stroke-linecap="round"/>
+</svg>

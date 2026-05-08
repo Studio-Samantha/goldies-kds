@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" role="img" aria-label="Strawberry Banana Smoothie">
+  <rect width="640" height="480" fill="#ffe5dc"/>
+  <circle cx="510" cy="92" r="100" fill="#f06f77" opacity=".28"/>
+  <circle cx="116" cy="386" r="120" fill="#f3d39b" opacity=".35"/>
+  <ellipse cx="320" cy="386" rx="150" ry="25" fill="#8e3942" opacity=".14"/>
+  <path d="M242 128h156l-20 248H262z" fill="#fff7ea"/>
+  <path d="M258 190h124l-14 166H272z" fill="#f47b86"/>
+  <path d="M252 162h136" stroke="#fffdf8" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="288" cy="224" r="13" fill="#fff0b5"/>
+  <circle cx="344" cy="265" r="14" fill="#fff0b5"/>
+  <circle cx="310" cy="313" r="12" fill="#fff0b5"/>
+  <path d="M286 90h68" stroke="#0f4036" stroke-width="16" stroke-linecap="round"/>
+  <path d="M320 90v54" stroke="#0f4036" stroke-width="12" stroke-linecap="round"/>
+</svg>

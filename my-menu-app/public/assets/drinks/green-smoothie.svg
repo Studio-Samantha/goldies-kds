@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" role="img" aria-label="Green Smoothie">
+  <rect width="640" height="480" fill="#eaf2df"/>
+  <circle cx="512" cy="90" r="100" fill="#75a857" opacity=".3"/>
+  <circle cx="118" cy="386" r="118" fill="#0f4036" opacity=".13"/>
+  <ellipse cx="320" cy="386" rx="150" ry="25" fill="#2f5527" opacity=".15"/>
+  <path d="M242 128h156l-20 248H262z" fill="#fff7ea"/>
+  <path d="M258 190h124l-14 166H272z" fill="#6fa655"/>
+  <path d="M252 162h136" stroke="#fffdf8" stroke-width="18" stroke-linecap="round"/>
+  <path d="M286 235c22-32 48-31 70 0-24 20-49 20-70 0z" fill="#cce7a7"/>
+  <circle cx="306" cy="306" r="13" fill="#e6f3c6"/>
+  <path d="M286 90h68" stroke="#0f4036" stroke-width="16" stroke-linecap="round"/>
+  <path d="M320 90v54" stroke="#0f4036" stroke-width="12" stroke-linecap="round"/>
+</svg>
