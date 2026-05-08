@@ -3029,13 +3029,61 @@ function ReportWindowShell({ eyebrow, title, description, onClose, children }) {
 }
 
 function TodayCountReportWindow({ drinkCounts, orderCount }) {
+  const [liveDrinkCounts, setLiveDrinkCounts] = useState(drinkCounts || []);
+  const [liveOrderCount, setLiveOrderCount] = useState(orderCount || 0);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function fetchTodayCount() {
+      try {
+        const response = await fetch(apiUrl("/api/reports/drinks?range=today"), {
+          credentials: "include",
+        });
+        if (response.status === 401) {
+          setError("Login required. Close this window and reopen it from the dashboard.");
+          return;
+        }
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(data.error || `Today's count unavailable: ${response.status}`);
+        }
+        if (!mounted) return;
+        setLiveDrinkCounts(
+          (data.totalsByName || []).map((drink) => ({
+            name: drink.name,
+            qty: drink.qty,
+          }))
+        );
+        setLiveOrderCount(data.orderCount || 0);
+        setError("");
+      } catch (countError) {
+        if (!mounted) return;
+        setError(countError.message || "Today's count unavailable.");
+      }
+    }
+
+    fetchTodayCount();
+    const interval = setInterval(fetchTodayCount, 15000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
   return (
     <ReportWindowShell
       eyebrow="Daily report"
       title="Today's Drink Order Count"
       description="This opens in its own window so the main dashboard can stay focused on live tickets."
     >
-      <DailyDrinkCount drinkCounts={drinkCounts} orderCount={orderCount} />
+      {error && (
+        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-950">
+          {error}
+        </div>
+      )}
+      <DailyDrinkCount drinkCounts={liveDrinkCounts} orderCount={liveOrderCount} />
     </ReportWindowShell>
   );
 }
