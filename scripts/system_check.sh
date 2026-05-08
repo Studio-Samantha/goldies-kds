@@ -146,10 +146,14 @@ check_json_endpoint() {
   local out="/tmp/goldies-check-${name}.json"
   local code
 
+  rm -f "$out"
   code="$(curl -sS -o "$out" -w "%{http_code}" -b "$COOKIE_JAR" "$url")"
   if [ "$code" != "200" ]; then
     echo "FAIL $name status=$code"
-    cat "$out"
+    if [ -s "$out" ]; then
+      head -c 1000 "$out"
+      echo
+    fi
     STATUS=1
     return 1
   fi

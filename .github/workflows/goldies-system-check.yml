@@ -1,0 +1,84 @@
+name: Goldie's System Check
+
+on:
+  schedule:
+    # Every 5 minutes covers pre-open, service, and after-close checks without relying on a local computer.
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: goldies-system-check
+  cancel-in-progress: false
+
+jobs:
+  system-check:
+    name: Production health and workflow check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Restore uptime state
+        id: restore-uptime
+        uses: actions/cache/restore@v4
+        with:
+          path: .goldies-uptime
+          key: goldies-uptime-${{ github.run_id }}
+          restore-keys: |
+            goldies-uptime-
+
+      - name: Run production system check
+        id: system-check
+        continue-on-error: true
+        env:
+          GOLDIES_BASE_URL: https://goldieskds.com
+          GOLDIES_KDS_PASSWORD: ${{ secrets.GOLDIES_KDS_PASSWORD }}
+          GOLDIES_TRACK_UPTIME: "1"
+          GOLDIES_UPTIME_STATE_DIR: ${{ github.workspace }}/.goldies-uptime
+          KDS_TIME_ZONE: America/Chicago
+        run: bash scripts/system_check.sh
+
+      - name: Wait before retry
+        if: steps.system-check.outcome == 'failure'
+        run: sleep 60
+
+      - name: Retry production system check
+        id: retry-system-check
+        if: steps.system-check.outcome == 'failure'
+        continue-on-error: true
+        env:
+          GOLDIES_BASE_URL: https://goldieskds.com
+          GOLDIES_KDS_PASSWORD: ${{ secrets.GOLDIES_KDS_PASSWORD }}
+          GOLDIES_TRACK_UPTIME: "1"
+          GOLDIES_UPTIME_STATE_DIR: ${{ github.workspace }}/.goldies-uptime
+          KDS_TIME_ZONE: America/Chicago
+        run: bash scripts/system_check.sh
+
+      - name: Trigger safe Render redeploy after repeated failure
+        if: steps.system-check.outcome == 'failure' && steps.retry-system-check.outcome == 'failure' && secrets.GOLDIES_RENDER_DEPLOY_HOOK_URL != ''
+        env:
+          GOLDIES_RENDER_DEPLOY_HOOK_URL: ${{ secrets.GOLDIES_RENDER_DEPLOY_HOOK_URL }}
+        run: curl -fsS "$GOLDIES_RENDER_DEPLOY_HOOK_URL"
+
+      - name: Fail workflow after repeated failure
+        if: steps.system-check.outcome == 'failure' && steps.retry-system-check.outcome == 'failure'
+        run: |
+          echo "Goldie's production system check failed twice. If configured, a safe Render redeploy was triggered."
+          exit 1
+
+      - name: Save uptime state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .goldies-uptime
+          key: goldies-uptime-${{ github.run_id }}
+
+      - name: Upload uptime event log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: goldies-uptime-events
+          path: .goldies-uptime/system-health-events.jsonl
+          if-no-files-found: ignore

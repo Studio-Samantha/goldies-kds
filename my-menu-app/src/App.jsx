@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.5";
+const APP_VERSION = "v1.10.7";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -47,8 +47,30 @@ const OWNER_PORTAL_RECENT_CHANGES = [
 ];
 const RELEASE_NOTES = [
   {
-    version: "v1.10.5",
+    version: "v1.10.7",
     date: "Current build",
+    summary: "Added retry and safe recovery to cloud checks.",
+    items: [
+      "Cloud system checks now retry once after a failure before treating it as a real incident.",
+      "If the retry also fails, the workflow can trigger a safe Render redeploy when the deploy-hook secret is configured.",
+      "The workflow still fails after repeated trouble so GitHub can alert instead of silently hiding the issue.",
+      "A production runbook now documents what is safe to automate and what still needs human review.",
+    ],
+  },
+  {
+    version: "v1.10.6",
+    date: "Previous build",
+    summary: "Added cloud-scheduled production system checks.",
+    items: [
+      "GitHub now runs Goldie's production system check every 5 minutes from the cloud, including before opening and after close.",
+      "The scheduled check verifies health, login, active tickets, daily reports, display boards, staff SOP access, and kiosk menu images.",
+      "Downtime and recovery state are saved between scheduled runs so incidents are easier to review later.",
+      "The authenticated checks need the GOLDIES_KDS_PASSWORD repository secret to stay set in GitHub.",
+    ],
+  },
+  {
+    version: "v1.10.5",
+    date: "Previous build",
     summary: "Made owner sessions easier to tuck away.",
     items: [
       "Owner Portal now labels recent access as Owner sessions and keeps the session details collapsed until opened.",
