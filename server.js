@@ -260,13 +260,14 @@ async function sendEmailWithAttachments({
       const details = await response.text().catch(() => "");
       throw new Error(`Resend email failed: ${response.status}${details ? ` ${details}` : ""}`);
     }
-    return true;
+    const data = await response.json().catch(() => ({}));
+    return { provider: "resend", id: data.id || null };
   }
 
   const mailer = getAlertMailer();
   if (!mailer) return false;
 
-  await mailer.sendMail({
+  const info = await mailer.sendMail({
     from: from || ALERT_EMAIL_FROM,
     to: email,
     subject,
@@ -274,7 +275,7 @@ async function sendEmailWithAttachments({
     attachments,
   });
 
-  return true;
+  return { provider: "smtp", id: info?.messageId || null };
 }
 
 async function sendTransactionalEmail({ to, subject, text, from = DRINKFLOW_EMAIL_FROM }) {
@@ -3174,7 +3175,22 @@ function getSquareCustomerNameFromFields(order) {
     order.metadata?.name ||
     "";
 
-  return String(rawName).trim();
+  return cleanCustomerName(rawName);
+}
+
+function cleanCustomerName(value = "") {
+  const name = String(value || "").trim().replace(/\s+/g, " ");
+  if (!name) return "";
+  const lower = normalizeDrinkText(name);
+  const compact = lower.replace(/\s+/g, "");
+
+  if (getDrinkCategory(name) || isSmoothieDrinkName(name)) return "";
+  if (compact.includes("strawmango") || compact.includes("strawberrymango")) return "";
+  if (compact.includes("strawberrybanana") || compact.includes("chocolatepbbanana")) return "";
+  if (compact.includes("refresher") || compact.includes("smoothie")) return "";
+  if (/^[A-Z0-9 _-]{5,}$/.test(name) && name === name.toUpperCase()) return "";
+
+  return name;
 }
 
 function parseCustomerNameFromNotes(items = []) {
@@ -3183,39 +3199,18 @@ function parseCustomerNameFromNotes(items = []) {
     .filter(Boolean)
     .join(" ");
   const match =
-    noteText.match(/\b(?:name|customer|cust)\s*[:\-]\s*([a-z][a-z\s'.-]{1,40})/i) ||
-    noteText.match(/\bfor\s+([a-z][a-z\s'.-]{1,40})/i);
+    noteText.match(/\b(?:name|customer|cust)\s*[:\-]\s*([a-z][a-z\s'.-]{1,40})/i);
 
   if (match) {
-    return match[1]
-      .replace(/\s+(pickup|pick up|order|scheduled|at|for)\b.*$/i, "")
-      .trim()
-      .replace(/\s+/g, " ");
-  }
-
-  const ignoredStarts =
-    /^(to go|togo|for here|pickup|pick up|delivery|drive|hot|iced|ice|no |extra |add |sub |oat|almond|soy|whole|skim|decaf|regular|light|less|more)\b/i;
-  const candidates = (items || [])
-    .flatMap((item) => String(item.note || item.notes || "").split(/[,;|\n]|\s+-\s+/))
-    .map((candidate) =>
-      candidate
-        .replace(/^(name|customer|cust)\s*[:\-]\s*/i, "")
-        .replace(/\b(pickup|pick up|order|scheduled|at\s+\d.*|to go|for here)\b.*$/i, "")
+    return cleanCustomerName(
+      match[1]
+        .replace(/\s+(pickup|pick up|order|scheduled|at|for)\b.*$/i, "")
         .trim()
         .replace(/\s+/g, " ")
-    )
-    .filter(Boolean);
+    );
+  }
 
-  return (
-    candidates.find((candidate) => {
-      if (ignoredStarts.test(candidate)) return false;
-      if (!/^[a-z][a-z'.-]*(\s+[a-z][a-z'.-]*){0,2}$/i.test(candidate)) {
-        return false;
-      }
-
-      return candidate.length >= 2 && candidate.length <= 40;
-    }) || ""
-  );
+  return "";
 }
 
 async function getSquareTeamMemberName(teamMemberId) {
@@ -3372,7 +3367,7 @@ async function normalizeSquareOrder(order, payment = null) {
   return {
     id: order.id,
     orderNumber: order.orderNumber || order.id.slice(-4),
-    customerName: (await getSquareCustomerName(order)) || parseCustomerNameFromNotes(items),
+    customerName: cleanCustomerName(await getSquareCustomerName(order)) || parseCustomerNameFromNotes(items),
     employeeName: await getSquareEmployeeName(order, payment),
     createdAt: new Date(order.createdAt || Date.now()).getTime(),
     source: getSquareOrderSourceLabel(order),
@@ -3386,7 +3381,7 @@ async function normalizeSquareOrder(order, payment = null) {
 function ticketFromDb(order, items = []) {
   const rawDiningOption = getDiningOption(order.raw_order || {});
   const completedItemKeys = new Set(getCompletedItemKeys(order.raw_order));
-  const customerName = order.customer_name || parseCustomerNameFromNotes(items);
+  const customerName = cleanCustomerName(order.customer_name) || parseCustomerNameFromNotes(items);
   const storedDiningOption =
     order.dining_option &&
     order.dining_option !== "Order" &&
@@ -6948,7 +6943,7 @@ app.post("/api/owner/reports/drink-revenue/email", requireOwnerAuth, async (req,
       "This is a practice report email from the Owner Portal.",
     ].join("\n");
 
-    await sendEmailWithAttachments({
+    const sendResult = await sendEmailWithAttachments({
       to: email,
       subject: `Goldie's KDS ${rangeLabel} owner report`,
       text,
@@ -6964,6 +6959,8 @@ app.post("/api/owner/reports/drink-revenue/email", requireOwnerAuth, async (req,
     res.json({
       ok: true,
       message: `Sent ${rangeLabel.toLowerCase()} PDF report to ${email}.`,
+      provider: sendResult?.provider || "unknown",
+      messageId: sendResult?.id || null,
     });
   } catch (error) {
     console.error("Error emailing owner report:", error);
