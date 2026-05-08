@@ -808,7 +808,8 @@ function buildStaticOnlineOrderingMenu() {
     if (!grouped.has(item.category)) grouped.set(item.category, []);
     grouped.get(item.category).push({
       id: item.id,
-      name: item.name,
+      name: getCanonicalDrinkName(item.name),
+      squareName: item.name,
       category: item.category,
       price: formatCatalogMoney(item.priceCents),
       priceCents: item.priceCents,
@@ -925,6 +926,7 @@ async function getSquareOnlineOrderingMenu() {
       if (!isMenuItemAvailable({ name: itemName }, unavailableKeys)) continue;
       const variationName =
         variationData.name && variationData.name !== "Regular" ? variationData.name : "";
+      const displayName = getCanonicalDrinkName(itemName);
       const variationModifierGroups = filterModifierGroupsForVariation(
         modifierGroups,
         itemName,
@@ -934,7 +936,8 @@ async function getSquareOnlineOrderingMenu() {
       if (!groups.has(categoryName)) groups.set(categoryName, []);
       groups.get(categoryName).push({
         id: variation.id,
-        name: itemName,
+        name: displayName,
+        squareName: itemName,
         category: categoryName,
         price: formatCatalogMoney(priceCents),
         priceCents,
@@ -1494,6 +1497,39 @@ function isSmoothieDrinkName(itemName = "") {
   return ["mango", "strawberry", "greens", "chocolate p b banana", "chocolate pb banana", "strawberry banana"].includes(withoutSize);
 }
 
+function getCanonicalDrinkName(itemName = "") {
+  const name = normalizeName(itemName);
+  const lower = normalizeDrinkText(name);
+  const compact = lower.replace(/\s+/g, "");
+  const withoutSize = lower
+    .replace(/\b12\s*oz\b/g, "")
+    .replace(/\bkids?\b/g, "")
+    .replace(/\bsmall\b/g, "")
+    .trim();
+
+  if (compact.includes("chocolatepbbanana") || withoutSize === "chocolate p b banana" || withoutSize === "chocolate pb banana") return "Chocolate P/B Banana";
+  if (compact.includes("strawberrybanana") || withoutSize === "strawberry banana") return "Strawberry Banana";
+  if (withoutSize === "greens" || compact.includes("greens")) return "Greens";
+  if (withoutSize === "mango") return "Mango";
+  if (withoutSize === "strawberry") return "Strawberry";
+  if (lower.includes("refresher") && lower.includes("strawberry") && lower.includes("mango")) return "Refresher - Strawberry Mango";
+  if (lower.includes("decaf") && lower.includes("americano")) return "Americano (DECAF)";
+
+  const knownNames = [
+    ...COFFEE_DRINKS,
+    ...NOT_COFFEE_DRINKS,
+    ...SMOOTHIE_DRINKS,
+  ];
+  const matched = knownNames.find((knownName) => normalizeDrinkText(knownName) === lower);
+  if (matched) return matched;
+
+  if (name && (name === name.toUpperCase() || name === name.toLowerCase())) {
+    return lower.replace(/\b\w/g, (char) => char.toUpperCase());
+  }
+
+  return name;
+}
+
 function getDrinkCategory(itemName = "") {
   const name = normalizeName(itemName);
   const lower = normalizeDrinkText(name);
@@ -2022,7 +2058,7 @@ function getDurationBreakdowns(samples = []) {
     }
 
     for (const item of sample.items || []) {
-      const name = cleanOrderText(item.name, 160);
+      const name = getCanonicalDrinkName(cleanOrderText(item.name, 160));
       if (!name) continue;
       const qty = Math.max(Number(item.qty || item.quantity || 1) || 1, 1);
       const existing = byDrinkName.get(name) || [];
@@ -4040,7 +4076,7 @@ function getDisplayDrinkItems(ticket) {
   return (ticket.items || [])
     .filter((item) => getItemDrinkCategory(item))
     .map((item) => ({
-      name: item.name || "Drink",
+      name: getCanonicalDrinkName(item.name || "Drink"),
       qty: Number(item.qty || item.quantity || 1) || 1,
       modifiers: Array.isArray(item.modifiers) ? item.modifiers.filter(Boolean) : [],
       note: item.note || "",
@@ -4175,7 +4211,7 @@ async function getDrinkMakingTimeReport(range = "today") {
     if (!category) continue;
     const existing = drinkItemsByOrderId.get(item.order_id) || [];
     existing.push({
-      name: item.name,
+      name: getCanonicalDrinkName(item.name),
       qty: item.quantity || 1,
       category,
     });
@@ -4221,7 +4257,8 @@ function buildDrinkReport(reportTickets, start, end = new Date()) {
       if (!category) continue;
 
       const qty = Number(item.qty || 1);
-      totalsByName.set(item.name, (totalsByName.get(item.name) || 0) + qty);
+      const displayName = getCanonicalDrinkName(item.name);
+      totalsByName.set(displayName, (totalsByName.get(displayName) || 0) + qty);
       totalsByCategory[category] = (totalsByCategory[category] || 0) + qty;
     }
   }

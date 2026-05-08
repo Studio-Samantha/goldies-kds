@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.8";
+const APP_VERSION = "v1.10.9";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -22,11 +22,11 @@ const DINING_OPTIONS = ["HANGIN' OUT", "TAKING OFF", "Pickup", "Delivery", "Driv
 const DAILY_UPDATE_NOTICE = {
   id: APP_VERSION,
   eyebrow: "Today on the KDS",
-  title: "Orders Up display now follows day lookup",
+  title: "Drink names are cleaned up across the app",
   message:
-    "Recently completed drink orders now come from the same saved day lookup that already powers owner stats and order history, so the Orders Up display keeps showing finished tickets after service updates.",
+    "Today's Count, Drink Stats, Average Drink Time, display boards, Online Ordering, and Self Order Kiosk now show readable drink names even when Square sends edited all-caps labels.",
   note:
-    "For service today: keep using Orders Up normally. Look up orders by day, View Stats, and Today's Drink Count remain the backup checks when the counter is busy.",
+    "Square checkout still uses the original Square item IDs and variation IDs behind the scenes.",
 };
 const OWNER_PORTAL_RECENT_CHANGES = [
   {
@@ -40,6 +40,16 @@ const OWNER_PORTAL_RECENT_CHANGES = [
       "Self Order Kiosk and Online Ordering now share a cleaner photo-menu style, with better drink photos and a more polished checkout flow.",
   },
   {
+    title: "Responsive cleanup",
+    body:
+      "Connection reports, release notes, owner login, item details, and ordering checkout panels now scroll cleanly on phones, iPads, and desktop screens.",
+  },
+  {
+    title: "Owner portal cleanup",
+    body:
+      "Customer insights and Today's Snapshot are now collapsible so the owner report is easier to scan during service.",
+  },
+  {
     title: "Connection tracking",
     body:
       "The dashboard Connection box can open a report with Square health, sync state, and downtime tracking notes.",
@@ -47,8 +57,20 @@ const OWNER_PORTAL_RECENT_CHANGES = [
 ];
 const RELEASE_NOTES = [
   {
-    version: "v1.10.8",
+    version: "v1.10.9",
     date: "Current build",
+    summary: "Cleaned up edited drink names across dashboards and ordering.",
+    items: [
+      "Today's Count, Drink Stats, Average Drink Time, display boards, Online Ordering, and Self Order Kiosk now use readable drink names instead of raw all-caps Square names.",
+      "Kids-size smoothie variants roll into the main smoothie name so counts stay readable.",
+      "Connection reports, release notes, owner login, item details, and ordering checkout panels now scroll cleanly on phones, iPads, and desktop screens.",
+      "Owner Portal now keeps Customer insights and Today's Snapshot collapsible so the report is easier to scan.",
+      "Square checkout still uses the original Square item IDs and variation IDs.",
+    ],
+  },
+  {
+    version: "v1.10.8",
+    date: "Previous build",
     summary: "Restored smoothie items to drink workflows.",
     items: [
       "Smoothies now count as drink items even when Square sends all-caps names or kids-size labels.",
@@ -927,7 +949,7 @@ function CelebrationDialog({ open, onClose, celebration }) {
   if (!open || !celebration) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/45 p-3 backdrop-blur-[2px] sm:p-4">
       <style>{`
         @keyframes confetti-fall {
           0% {
@@ -943,7 +965,7 @@ function CelebrationDialog({ open, onClose, celebration }) {
           }
         }
       `}</style>
-      <div className="relative w-full max-w-lg rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)] overflow-hidden">
+      <div className="relative mx-auto my-4 w-full max-w-lg overflow-hidden rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)] sm:my-10">
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           {confetti.map((piece) => (
             <span
@@ -1022,7 +1044,7 @@ function WebServicesReminderDialog({ open, onClose }) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/45 p-3 backdrop-blur-[2px] sm:p-4">
       <style>{`
         @keyframes soft-pop {
           0% { transform: translateY(10px) scale(0.98); opacity: 0; }
@@ -1032,7 +1054,7 @@ function WebServicesReminderDialog({ open, onClose }) {
 
       <div className="absolute inset-0" onClick={onClose} />
 
-      <div className="relative w-full max-w-lg rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)] overflow-hidden animate-[soft-pop_220ms_ease-out]">
+      <div className="relative mx-auto my-4 w-full max-w-lg overflow-hidden rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)] animate-[soft-pop_220ms_ease-out] sm:my-10">
         <div className="border-b border-[#CA862B]/18 px-5 py-4 bg-[#EEE0C5]/35">
           <div className="text-sm font-black uppercase tracking-[0.18em] text-[#6A614F]">
             Studio Samantha
@@ -1078,10 +1100,10 @@ function OwnerReportsNoticeDialog({ open, onClose, onOpenOwnerLogin }) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/45 p-3 backdrop-blur-[2px] sm:p-4">
       <div className="absolute inset-0" onClick={onClose} />
 
-      <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)]">
+      <div className="relative mx-auto my-4 w-full max-w-lg overflow-hidden rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)] sm:my-10">
         <div className="border-b border-[#CA862B]/18 bg-[#EEE0C5]/35 px-5 py-4">
           <div className="text-sm font-black uppercase tracking-[0.18em] text-[#6A614F]">
             Goldie&apos;s KDS Update
@@ -1132,9 +1154,9 @@ function ReleaseNotesDialog({ open, onClose, onHideForNow }) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)] overflow-hidden">
-        <div className="flex items-center justify-between gap-4 border-b border-[#CA862B]/18 px-5 py-4">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/45 p-3 backdrop-blur-[2px] sm:p-4">
+      <div className="mx-auto my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)] sm:my-10">
+        <div className="flex flex-col gap-3 border-b border-[#CA862B]/18 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <div>
             <div className="text-sm font-black uppercase tracking-[0.18em] text-[#6A614F]">
               Release Notes
@@ -1142,7 +1164,7 @@ function ReleaseNotesDialog({ open, onClose, onHideForNow }) {
             <h2 className="text-2xl font-black text-[#0F4036]">What&apos;s changed</h2>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={onHideForNow}
@@ -1161,7 +1183,7 @@ function ReleaseNotesDialog({ open, onClose, onHideForNow }) {
           </div>
         </div>
 
-        <div className="max-h-[70vh] overflow-y-auto px-5 py-4 space-y-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 space-y-4">
           {RELEASE_NOTES.map((release) => (
             <section
               key={release.version}
@@ -1195,8 +1217,8 @@ function HelpDialog({ open, title, body, onClose }) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] flex items-center justify-center p-4">
-      <div className="w-full max-w-lg rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)] overflow-hidden">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/45 p-3 backdrop-blur-[2px] sm:p-4">
+      <div className="mx-auto my-4 w-full max-w-lg overflow-hidden rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)] sm:my-10">
         <div className="border-b border-[#CA862B]/18 px-5 py-4 bg-[#EEE0C5]/35">
           <div className="text-sm font-black uppercase tracking-[0.18em] text-[#6A614F]">
             Help
@@ -1238,8 +1260,8 @@ function ConnectionReportDialog({ open, report, loading, error, onClose, onRefre
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]">
-      <div className="w-full max-w-2xl overflow-hidden rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)]">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/45 p-3 backdrop-blur-[2px] sm:p-4">
+      <div className="mx-auto my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)] sm:my-10">
         <div className="border-b border-[#CA862B]/18 bg-[#EEE0C5]/35 px-5 py-4">
           <div className="text-sm font-black uppercase tracking-[0.18em] text-[#6A614F]">
             Connection report
@@ -1248,7 +1270,7 @@ function ConnectionReportDialog({ open, report, loading, error, onClose, onRefre
             Square and system health
           </h2>
         </div>
-        <div className="space-y-4 px-5 py-5">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5">
           {error ? (
             <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-red-900">
               {error}
@@ -1605,8 +1627,9 @@ function buildDrinkReportFromTickets(tickets, rangeKey) {
       drinkItems.forEach((item) => {
         const qty = Number(item.qty || 1);
         const category = getBeverageCategory(item.name);
+        const displayName = getCanonicalDrinkName(item.name);
 
-        names[item.name] = (names[item.name] || 0) + qty;
+        names[displayName] = (names[displayName] || 0) + qty;
         if (category) {
           categories[category] = (categories[category] || 0) + qty;
         }
@@ -2014,6 +2037,31 @@ function getBeverageCategory(itemName = "") {
   return null;
 }
 
+function getCanonicalDrinkName(itemName = "") {
+  const name = String(itemName || "").trim();
+  const lower = normalizeDrinkText(name);
+  const compact = lower.replace(/\s+/g, "");
+  const withoutSize = lower
+    .replace(/\b12\s*oz\b/g, "")
+    .replace(/\bkids?\b/g, "")
+    .replace(/\bsmall\b/g, "")
+    .trim();
+
+  if (compact.includes("chocolatepbbanana") || withoutSize === "chocolate p b banana" || withoutSize === "chocolate pb banana") return "Chocolate P/B Banana";
+  if (compact.includes("strawberrybanana") || withoutSize === "strawberry banana") return "Strawberry Banana";
+  if (withoutSize === "greens" || compact.includes("greens")) return "Greens";
+  if (withoutSize === "mango") return "Mango";
+  if (withoutSize === "strawberry") return "Strawberry";
+  if (lower.includes("refresher") && lower.includes("strawberry") && lower.includes("mango")) return "Refresher - Strawberry Mango";
+  if (lower.includes("decaf") && lower.includes("americano")) return "Americano (DECAF)";
+
+  if (name && (name === name.toUpperCase() || name === name.toLowerCase())) {
+    return lower.replace(/\b\w/g, (char) => char.toUpperCase());
+  }
+
+  return name;
+}
+
 function getTimeClass(createdAt) {
   const mins = getMinutesElapsed(createdAt);
 
@@ -2185,7 +2233,8 @@ function getDailyDrinkCounts(tickets) {
         if (!getBeverageCategory(item.name)) return;
 
         const qty = Number(item.qty || 1);
-        counts[item.name] = (counts[item.name] || 0) + qty;
+        const displayName = getCanonicalDrinkName(item.name);
+        counts[displayName] = (counts[displayName] || 0) + qty;
       });
     });
 
@@ -2195,9 +2244,9 @@ function getDailyDrinkCounts(tickets) {
 }
 
 function normalizeTicket(ticket) {
-  const items = (ticket.items || []).map((item, index) => ({
+const items = (ticket.items || []).map((item, index) => ({
     id: item.id || item.itemId || item.square_line_item_uid || String(index),
-    name: item.name || "Unnamed item",
+    name: getCanonicalDrinkName(item.name || "Unnamed item"),
     qty: item.qty || item.quantity || 1,
     modifiers: item.modifiers || [],
     note: item.note || "",
@@ -5028,7 +5077,7 @@ function getTodayServiceWindowRead(now = new Date()) {
 
 const OWNER_SNAPSHOT_COPY = {
   today: {
-    eyebrow: "Today Snapshot",
+    eyebrow: "Today's Snapshot",
     question: "What needs attention during service?",
     empty:
       "No drink revenue is showing for today yet. If the shop is open, watch Square syncing and make sure live drink orders are appearing in the KDS.",
@@ -5334,10 +5383,10 @@ function OwnerLoginDialog({ open, onClose, onLogin, themeMode }) {
   }
 
   return (
-    <div className={`fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] flex items-center justify-center p-4 ${themeMode === "dark" ? "goldies-dark" : ""}`}>
+    <div className={`fixed inset-0 z-50 overflow-y-auto bg-black/45 p-3 backdrop-blur-[2px] sm:p-4 ${themeMode === "dark" ? "goldies-dark" : ""}`}>
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-md rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)] p-5 space-y-4"
+        className="mx-auto my-4 w-full max-w-md space-y-4 rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] p-5 shadow-[0_30px_90px_rgba(0,0,0,0.22)] sm:my-10"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -5446,6 +5495,8 @@ function OwnerReportsView({
   const [showTimingDetails, setShowTimingDetails] = useState(false);
   const [showCategoryDetails, setShowCategoryDetails] = useState(false);
   const [showAccessLog, setShowAccessLog] = useState(false);
+  const [showOwnerSnapshot, setShowOwnerSnapshot] = useState(false);
+  const [showCustomerInsights, setShowCustomerInsights] = useState(false);
   const [accessLogs, setAccessLogs] = useState([]);
   const [accessLogError, setAccessLogError] = useState("");
   const [accessLogLoading, setAccessLogLoading] = useState(false);
@@ -6135,8 +6186,32 @@ function OwnerReportsView({
                 )}
               </div>
 
-              <div className="mt-4">
-                <OwnerSnapshotCard report={report} range={range} />
+              <div className="mt-4 rounded-2xl border border-[#CA862B]/16 bg-white p-4 shadow-sm">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="text-xs font-black uppercase tracking-[0.16em] text-[#8B5A1D]">
+                      Owner read
+                    </div>
+                    <h2 className="mt-1 text-xl font-black text-[#0F4036]">
+                      Today&apos;s Snapshot
+                    </h2>
+                    <p className="mt-1 text-sm font-semibold text-[#6A614F]">
+                      Collapsed so the main report stays easy to scan.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowOwnerSnapshot((current) => !current)}
+                    className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                  >
+                    {showOwnerSnapshot ? "Hide Today's Snapshot" : "Show Today's Snapshot"}
+                  </button>
+                </div>
+                {showOwnerSnapshot && (
+                  <div className="mt-4">
+                    <OwnerSnapshotCard report={report} range={range} />
+                  </div>
+                )}
               </div>
 
               <div className="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
@@ -6205,7 +6280,35 @@ function OwnerReportsView({
           )}
         </section>
 
-        {!demoMode && <CustomerInsightsHistory />}
+        {!demoMode && (
+          <section className="rounded-3xl border border-white/70 bg-[rgba(255,253,248,0.92)] p-4 shadow-sm">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
+                  Customer insights
+                </div>
+                <h2 className="mt-1 text-2xl font-black text-[#0F4036]">
+                  Notes from the counter
+                </h2>
+                <p className="mt-1 text-sm font-semibold text-[#6A614F]">
+                  Collapsed so the owner portal stays focused during service.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCustomerInsights((current) => !current)}
+                className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+              >
+                {showCustomerInsights ? "Hide customer insights" : "Show customer insights"}
+              </button>
+            </div>
+            {showCustomerInsights && (
+              <div className="mt-4">
+                <CustomerInsightsHistory />
+              </div>
+            )}
+          </section>
+        )}
       </div>
 
       <PasswordSettingsDialog
@@ -6830,7 +6933,7 @@ function ticketToCustomerDisplayOrder(ticket) {
     createdAt: ticket.createdAt || null,
     updatedAt: ticket.completedAt || ticket.createdAt || null,
     items: getDrinkItems(ticket).map((item) => ({
-      name: item.name || "Drink",
+      name: getCanonicalDrinkName(item.name || "Drink"),
       qty: Number(item.qty || 1) || 1,
       modifiers: Array.isArray(item.modifiers) ? item.modifiers.filter(Boolean) : [],
       note: item.note || "",
@@ -8172,6 +8275,17 @@ const ONLINE_ORDERING_BETA_MENU = [
   },
 ];
 
+function normalizeOnlineOrderMenuGroups(groups = []) {
+  return (groups || []).map((group) => ({
+    ...group,
+    items: (group.items || []).map((item) => ({
+      ...item,
+      squareName: item.squareName || item.name,
+      name: getCanonicalDrinkName(item.name),
+    })),
+  }));
+}
+
 const KIOSK_STOCK_IMAGE_URLS = {
   "latte":
     "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=900&q=80",
@@ -8301,7 +8415,7 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 80);
-  const [menuGroups, setMenuGroups] = useState(ONLINE_ORDERING_BETA_MENU);
+  const [menuGroups, setMenuGroups] = useState(() => normalizeOnlineOrderMenuGroups(ONLINE_ORDERING_BETA_MENU));
   const [menuSource, setMenuSource] = useState("static");
   const [orderingHours, setOrderingHours] = useState(null);
   const [serverPickupSlots, setServerPickupSlots] = useState([]);
@@ -8348,7 +8462,11 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
         const response = await fetch(apiUrl("/api/beta/online-order/menu"));
         const data = await response.json().catch(() => ({}));
         if (!mounted || !response.ok || !Array.isArray(data.categories)) return;
-        setMenuGroups(data.categories.length ? data.categories : ONLINE_ORDERING_BETA_MENU);
+        setMenuGroups(
+          normalizeOnlineOrderMenuGroups(
+            data.categories.length ? data.categories : ONLINE_ORDERING_BETA_MENU
+          )
+        );
         setMenuSource(data.source || "static");
         setOrderingHours(data.hours || null);
         setServerPickupSlots(data.pickupSlots || []);
@@ -8657,36 +8775,38 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
           </section>
 
           {showCartDrawer && (
-            <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/40 p-3 backdrop-blur-sm md:items-center">
+            <div className="fixed inset-0 z-[70] overflow-y-auto bg-black/40 p-3 backdrop-blur-sm">
               <button
                 type="button"
                 aria-label="Close cart"
                 className="absolute inset-0 cursor-default"
                 onClick={() => setShowCartDrawer(false)}
               />
-          <aside className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-white/70 bg-[rgba(255,253,248,0.98)] p-4 shadow-[0_24px_70px_rgba(15,64,54,0.24)]">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">Your pickup</div>
-                <h2 className="mt-1 text-2xl font-black text-[#0F4036]">Review order</h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowCartDrawer(false)}
-                className="rounded-full border border-[#CA862B]/18 bg-white px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-              >
-                Close
-              </button>
-              <div className="rounded-2xl bg-[#0F4036] px-3 py-2 text-right text-white">
-                <div className="text-xs font-black uppercase tracking-[0.12em] text-white/70">{cartItemCount} items</div>
-                <div className="text-lg font-black">${(cartTotalCents / 100).toFixed(2)}</div>
-              </div>
-            </div>
-            <div className="mt-3 grid gap-2">
-              {cart.length ? (
-                cart.map((item) => (
-                  <div key={item.id} className="rounded-2xl border border-[#CA862B]/16 bg-white p-3">
-                    <div className="flex items-start justify-between gap-3">
+              <aside className="relative mx-auto my-3 w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/70 bg-[rgba(255,253,248,0.98)] p-4 shadow-[0_24px_70px_rgba(15,64,54,0.24)] md:my-8">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">Your pickup</div>
+                    <h2 className="mt-1 text-2xl font-black text-[#0F4036]">Review order</h2>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowCartDrawer(false)}
+                      className="rounded-full border border-[#CA862B]/18 bg-white px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                    >
+                      Close
+                    </button>
+                    <div className="rounded-2xl bg-[#0F4036] px-3 py-2 text-right text-white">
+                      <div className="text-xs font-black uppercase tracking-[0.12em] text-white/70">{cartItemCount} items</div>
+                      <div className="text-lg font-black">${(cartTotalCents / 100).toFixed(2)}</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 grid gap-2">
+                  {cart.length ? (
+                    cart.map((item) => (
+                      <div key={item.id} className="rounded-2xl border border-[#CA862B]/16 bg-white p-3">
+                        <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="font-black text-[#111111]">
                           {item.name}
@@ -8869,9 +8989,9 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
       ) : null}
 
       {detailItem ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/45 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/45 p-3 backdrop-blur-sm sm:p-4">
           <div className="absolute inset-0" onClick={() => setDetailItem(null)} />
-          <div className="relative w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/70 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.24)]">
+          <div className="relative mx-auto my-3 w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/70 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.24)] md:my-8">
             <div
               className="relative grid gap-4 overflow-hidden bg-[#0F4036] p-5 text-white md:grid-cols-[0.9fr_1.1fr] md:items-center"
             >
@@ -11155,16 +11275,20 @@ export default function GoldiesKDS() {
               <div>
                 <h2 className="text-lg md:text-2xl font-black text-[#0F4036]">Ticket columns</h2>
                 <p className="text-sm text-[#6A614F]">
-                  New, making, and ready stay open by default. Collapse them here if you want a cleaner view.
+                  {showFocusBoard
+                    ? "New and making tickets stay front and center during a rush."
+                    : "New, making, and ready stay open by default. Collapse them here if you want a cleaner view."}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowTicketColumns(false)}
-                className="rounded-xl bg-[#0F4036] px-4 py-2 text-sm font-black text-white transition hover:bg-[#0b352d]"
-              >
-                Collapse ticket columns
-              </button>
+              {!showFocusBoard ? (
+                <button
+                  type="button"
+                  onClick={() => setShowTicketColumns(false)}
+                  className="rounded-xl bg-[#0F4036] px-4 py-2 text-sm font-black text-white transition hover:bg-[#0b352d]"
+                >
+                  Collapse ticket columns
+                </button>
+              ) : null}
             </div>
 
             <div className={`grid grid-cols-1 gap-3 ${
