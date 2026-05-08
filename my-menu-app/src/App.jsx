@@ -9121,6 +9121,8 @@ export default function GoldiesKDS() {
   const [lastPoll, setLastPoll] = useState(new Date());
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
   const [lastError, setLastError] = useState("");
+  const [systemNotice, setSystemNotice] = useState("");
+  const [showSystemPopup, setShowSystemPopup] = useState(false);
   const [defaultLookupDate] = useState(() => getLocalDateInputValue());
   const dashboardReportPanel = getDashboardReportPanel();
   const isTodayCountWindow = dashboardReportPanel === "today-count";
@@ -9345,7 +9347,7 @@ export default function GoldiesKDS() {
 
     async function fetchBoardAndTodayCounts() {
       try {
-        const [ticketsResponse, drinkResponse, makingTimeResponse] = await Promise.all([
+        const [ticketsResponse, drinkResponse, makingTimeResponse, healthResponse] = await Promise.all([
           fetch(apiUrl("/api/tickets"), {
             credentials: "include",
           }),
@@ -9353,6 +9355,9 @@ export default function GoldiesKDS() {
             credentials: "include",
           }),
           fetch(apiUrl("/api/reports/drink-making-time?range=today"), {
+            credentials: "include",
+          }),
+          fetch(apiUrl("/api/health"), {
             credentials: "include",
           }),
         ]);
@@ -9366,7 +9371,33 @@ export default function GoldiesKDS() {
           return;
         }
 
+        const health = healthResponse.ok ? await healthResponse.json() : null;
+        const squareApi = health?.squareApi || {};
+        let currentSystemNotice = "";
+        if (squareApi.online === false || squareApi.lastSyncError) {
+          const notice =
+            squareApi.lastSyncError ||
+            squareApi.lastError ||
+            "Square is not reporting healthy right now.";
+          currentSystemNotice = `Square sync is being checked. The dashboard may show stored tickets while the connection catches up. Detail: ${notice}`;
+          setSystemNotice(currentSystemNotice);
+          setShowSystemPopup(true);
+        } else {
+          setSystemNotice("");
+        }
+
         if (!ticketsResponse.ok) {
+          let detail = "";
+          try {
+            const payload = await ticketsResponse.json();
+            detail = payload?.error || "";
+          } catch {
+            detail = "";
+          }
+          setSystemNotice(
+            `Ticket sync is having trouble. Keep taking orders in Square and use any tickets already visible here while we reconnect. ${detail ? `Detail: ${detail}` : ""}`
+          );
+          setShowSystemPopup(true);
           throw new Error(`Failed to fetch tickets: ${ticketsResponse.status}`);
         }
 
@@ -9413,13 +9444,20 @@ export default function GoldiesKDS() {
           sampleSize: makingTimeReport.sampleSize || 0,
         });
         setLastPoll(new Date());
-        setConnectionStatus("Connected");
+        setConnectionStatus(currentSystemNotice ? "Checking Square" : "Connected");
         setLastError("");
       } catch (error) {
         if (!mounted) return;
 
         setConnectionStatus("Offline");
-        setLastError(error.message || "Unknown polling error");
+        const message = error.message || "Unknown polling error";
+        setLastError(message);
+        if (message.includes("Failed to fetch tickets")) {
+          setSystemNotice(
+            "Ticket sync is temporarily unavailable. Square itself may still be taking orders. We are checking the Square connection and stored dashboard tickets."
+          );
+          setShowSystemPopup(true);
+        }
       }
     }
 
@@ -9988,6 +10026,30 @@ export default function GoldiesKDS() {
           darkMode={themeMode === "dark"}
           demoMode={isDemoRoute}
         />
+        {showSystemPopup && systemNotice && (
+          <div className="fixed inset-x-4 top-4 z-[80] mx-auto max-w-3xl rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950 shadow-[0_18px_55px_rgba(120,53,15,0.22)]">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <div className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">
+                  Square connection notice
+                </div>
+                <div className="mt-1 text-sm font-bold leading-relaxed">
+                  {systemNotice}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setShowSystemPopup(false);
+                }}
+                className="rounded-xl bg-amber-700 px-3 py-2 text-sm font-black text-white transition hover:bg-amber-800"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        )}
       <div className="relative z-10">
       <header className="relative z-40 border-b border-white/70 bg-[rgba(255,253,248,0.9)] backdrop-blur-xl px-4 md:px-6 py-4 shadow-[0_12px_30px_rgba(15,64,54,0.06)]">
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
@@ -10383,6 +10445,15 @@ export default function GoldiesKDS() {
             reports={displayedDrinkTimeReports}
             onClose={() => setShowDrinkTimeStats(false)}
           />
+        )}
+
+        {systemNotice && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950 shadow-sm">
+            <div className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">
+              Square connection notice
+            </div>
+            <div className="mt-1 text-sm font-bold leading-relaxed">{systemNotice}</div>
+          </div>
         )}
 
         {lastError && (
