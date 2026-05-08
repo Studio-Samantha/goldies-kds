@@ -3327,6 +3327,12 @@ async function getActiveTickets() {
     console.error("Auto-complete check failed; serving active tickets:", error.message);
   }
 
+  return getStoredActiveTickets();
+}
+
+async function getStoredActiveTickets() {
+  if (!supabase) return getLocalActiveTickets();
+
   const { data: orders, error: orderError } = await supabase
     .from("kds_orders")
     .select("*")
@@ -6527,7 +6533,14 @@ app.get("/api/tickets", requireKdsAuth, async (req, res) => {
   } catch (error) {
     console.error("Error fetching tickets:", error);
     res.setHeader("X-Goldies-KDS-Fallback", "last-known-active-tickets");
-    res.json(lastKnownActiveTickets);
+    try {
+      const storedTickets = await getStoredActiveTickets();
+      res.setHeader("X-Goldies-KDS-Fallback", "stored-active-tickets");
+      res.json(storedTickets);
+    } catch (fallbackError) {
+      console.error("Error fetching stored fallback tickets:", fallbackError);
+      res.json(lastKnownActiveTickets);
+    }
   }
 });
 
