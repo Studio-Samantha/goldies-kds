@@ -3349,7 +3349,7 @@ async function getStoredActiveTickets() {
     .from("kds_orders")
     .select("square_order_id, order_number, customer_name, created_at, updated_at, source, status, dining_option, raw_order")
     .gte("created_at", activeStart.toISOString())
-    .neq("status", "done")
+    .in("status", ["new", "making", "ready"])
     .order("created_at", { ascending: false });
 
   if (orderError) throw orderError;
