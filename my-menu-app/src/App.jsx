@@ -37,7 +37,7 @@ const OWNER_PORTAL_RECENT_CHANGES = [
   {
     title: "Ordering screens",
     body:
-      "Online Ordering now follows the same polished visual direction as Self Order Kiosk.",
+      "Self Order Kiosk and Online Ordering now share a cleaner photo-menu style, with better drink photos and a more polished checkout flow.",
   },
   {
     title: "Connection tracking",
@@ -55,7 +55,8 @@ const RELEASE_NOTES = [
       "A compact portal menu gives owners quick access to recent changes, report tools, exports, beta tools, and access checks.",
       "Owner Portal now has one clear exit button instead of separate Back and Sign out buttons doing the same thing.",
       "The dashboard Connection box now opens a connection report with Square health, sync state, cached ticket count, and downtime tracking notes.",
-      "Online Ordering now uses the same refined photo-menu style as the Self Order Kiosk.",
+      "Self Order Kiosk and Online Ordering now share the same refined Goldie's photo-menu style.",
+      "Owner Portal recent changes now call out the improved self-order and online ordering screens for owners.",
       "Smoothie fallback images now vary by drink title instead of reusing one generic smoothie photo.",
       "Periodic system checks can now write a local downtime and recovery log when GOLDIES_TRACK_UPTIME=1 is enabled.",
       "The production update rules now require downtime/recovery tracking for operational incidents.",
@@ -8573,7 +8574,6 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
                         </div>
                         <span className="mt-1 block text-sm font-semibold text-[#6A614F]">
                           {item.price}
-                          {menuSource === "square" ? " · Square menu" : ""}
                         </span>
                         <button
                           type="button"
