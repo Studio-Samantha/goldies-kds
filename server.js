@@ -509,11 +509,13 @@ function getDrinkImageSlug(itemName = "") {
   if (normalized.includes("hot") && normalized.includes("chocolate")) return "chai-latte";
   if (normalized.includes("refresher")) return "strawberry-banana";
   if (normalized.includes("steamer")) return "london-fog";
+  if (normalized.includes("strawberry") && normalized.includes("mango")) return "strawberry-mango";
+  if (normalized.includes("pineapple") && normalized.includes("mango")) return "mango-pineapple";
   if (normalized.includes("chocolate") && normalized.includes("banana")) return "chocolate-pb-banana";
-  if (normalized.includes("mango")) return "strawberry-banana";
-  if (normalized.includes("strawberry")) return "strawberry-banana";
   if (normalized.includes("greens") || normalized.includes("green")) return "green-smoothie";
   if (normalized.includes("strawberry") && normalized.includes("banana")) return "strawberry-banana";
+  if (normalized.includes("mango")) return "strawberry-mango";
+  if (normalized.includes("strawberry")) return "strawberry-banana";
   if (normalized.includes("green") && normalized.includes("smoothie")) return "green-smoothie";
   if (normalized.includes("latte")) return "latte";
   return normalized || "latte";
@@ -537,7 +539,11 @@ const KIOSK_STOCK_IMAGE_URLS = {
   "matcha-latte":
     "https://images.unsplash.com/photo-1515823064-d6e0c04616a7?auto=format&fit=crop&w=900&q=80",
   "strawberry-banana":
-    "https://images.unsplash.com/photo-1502741224143-90386d7f8c82?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1553530666-ba11a7da3888?auto=format&fit=crop&w=900&q=80",
+  "strawberry-mango":
+    "https://images.unsplash.com/photo-1622597467836-f3285f2131b8?auto=format&fit=crop&w=900&q=80",
+  "mango-pineapple":
+    "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?auto=format&fit=crop&w=900&q=80",
   "chocolate-pb-banana":
     "https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=900&q=80",
   "green-smoothie":

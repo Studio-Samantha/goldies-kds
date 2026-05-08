@@ -5,11 +5,73 @@ BASE_URL="${GOLDIES_BASE_URL:-https://goldieskds.com}"
 COOKIE_JAR="$(mktemp)"
 STATUS=0
 TODAY="$(TZ="${KDS_TIME_ZONE:-America/Chicago}" date +%F)"
+TRACK_UPTIME="${GOLDIES_TRACK_UPTIME:-0}"
+UPTIME_STATE_DIR="${GOLDIES_UPTIME_STATE_DIR:-${HOME}/Library/Application Support/GoldiesKDS}"
+UPTIME_STATE_FILE="${UPTIME_STATE_DIR}/system-health-state"
+UPTIME_LOG_FILE="${UPTIME_STATE_DIR}/system-health-events.jsonl"
 
 cleanup() {
   rm -f "$COOKIE_JAR"
 }
 trap cleanup EXIT
+
+record_uptime_event() {
+  if [ "$TRACK_UPTIME" != "1" ]; then
+    return
+  fi
+
+  mkdir -p "$UPTIME_STATE_DIR"
+
+  local current_state="up"
+  local reason="system-check-passed"
+  if [ "$STATUS" -ne 0 ]; then
+    current_state="down"
+    reason="system-check-failed"
+  fi
+
+  local now
+  now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+
+  local previous_state="unknown"
+  local previous_since="$now"
+  if [ -f "$UPTIME_STATE_FILE" ]; then
+    previous_state="$(node -e 'const fs=require("fs");try{const s=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));process.stdout.write(s.state||"unknown")}catch{process.stdout.write("unknown")}' "$UPTIME_STATE_FILE")"
+    previous_since="$(node -e 'const fs=require("fs");try{const s=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));process.stdout.write(s.since||process.argv[2])}catch{process.stdout.write(process.argv[2])}' "$UPTIME_STATE_FILE" "$now")"
+  fi
+
+  if [ "$current_state" != "$previous_state" ]; then
+    STATE="$current_state" PREVIOUS_STATE="$previous_state" SINCE="$previous_since" NOW="$now" REASON="$reason" BASE_URL="$BASE_URL" LOG_FILE="$UPTIME_LOG_FILE" node - <<'NODE'
+const fs = require("fs");
+const event = {
+  at: process.env.NOW,
+  service: "goldies-kds",
+  baseUrl: process.env.BASE_URL,
+  state: process.env.STATE,
+  previousState: process.env.PREVIOUS_STATE,
+  previousSince: process.env.SINCE,
+  reason: process.env.REASON,
+};
+if (event.state === "up" && event.previousState === "down") {
+  const started = Date.parse(event.previousSince);
+  const ended = Date.parse(event.at);
+  if (Number.isFinite(started) && Number.isFinite(ended)) {
+    event.downtimeMs = Math.max(0, ended - started);
+    event.downtimeMinutes = Math.round((event.downtimeMs / 60000) * 10) / 10;
+  }
+}
+fs.appendFileSync(process.env.LOG_FILE, `${JSON.stringify(event)}\n`);
+NODE
+  fi
+
+  STATE="$current_state" SINCE="$now" PREVIOUS_STATE="$previous_state" PREVIOUS_SINCE="$previous_since" STATE_FILE="$UPTIME_STATE_FILE" node - <<'NODE'
+const fs = require("fs");
+const state = process.env.STATE;
+const previousState = process.env.PREVIOUS_STATE;
+const previousSince = process.env.PREVIOUS_SINCE;
+const since = state === previousState && previousSince ? previousSince : process.env.SINCE;
+fs.writeFileSync(process.env.STATE_FILE, JSON.stringify({ state, since, updatedAt: process.env.SINCE }, null, 2));
+NODE
+}
 
 check_public_health() {
   echo "== Public health =="
@@ -159,5 +221,7 @@ if [ "$STATUS" -eq 0 ]; then
 else
   echo "SYSTEM CHECK FAILED"
 fi
+
+record_uptime_event
 
 exit "$STATUS"

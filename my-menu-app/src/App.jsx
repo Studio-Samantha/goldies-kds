@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.1";
+const APP_VERSION = "v1.10.3";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -28,10 +28,42 @@ const DAILY_UPDATE_NOTICE = {
   note:
     "For service today: keep using Orders Up normally. Look up orders by day, View Stats, and Today's Drink Count remain the backup checks when the counter is busy.",
 };
+const OWNER_PORTAL_RECENT_CHANGES = [
+  {
+    title: "Orders Up and owner view",
+    body:
+      "Completed drink tickets now use the same saved service-day lookup as owner stats, and the owner portal has a cleaner menu.",
+  },
+  {
+    title: "Ordering screens",
+    body:
+      "Online Ordering now follows the same polished visual direction as Self Order Kiosk.",
+  },
+  {
+    title: "Connection tracking",
+    body:
+      "The dashboard Connection box can open a report with Square health, sync state, and downtime tracking notes.",
+  },
+];
 const RELEASE_NOTES = [
   {
-    version: "v1.10.1",
+    version: "v1.10.3",
     date: "Current build",
+    summary: "Cleaned up Owner Portal, connection reporting, and customer ordering visuals.",
+    items: [
+      "Owner Portal now opens with the main report first and keeps recent changes and owner tools collapsible.",
+      "A compact portal menu gives owners quick access to recent changes, report tools, exports, beta tools, and access checks.",
+      "Owner Portal now has one clear exit button instead of separate Back and Sign out buttons doing the same thing.",
+      "The dashboard Connection box now opens a connection report with Square health, sync state, cached ticket count, and downtime tracking notes.",
+      "Online Ordering now uses the same refined photo-menu style as the Self Order Kiosk.",
+      "Smoothie fallback images now vary by drink title instead of reusing one generic smoothie photo.",
+      "Periodic system checks can now write a local downtime and recovery log when GOLDIES_TRACK_UPTIME=1 is enabled.",
+      "The production update rules now require downtime/recovery tracking for operational incidents.",
+    ],
+  },
+  {
+    version: "v1.10.1",
+    date: "Previous build",
     summary: "Fixed the Orders Up recently completed list for live service.",
     items: [
       "Orders Up now pulls completed drink tickets from today's saved order lookup before falling back to active tickets.",
@@ -1128,6 +1160,75 @@ function HelpDialog({ open, title, body, onClose }) {
               type="button"
               onClick={onClose}
               className="rounded-xl bg-[#0F4036] text-white px-4 py-2.5 font-black transition hover:bg-[#0b352d]"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConnectionReportDialog({ open, report, loading, error, onClose, onRefresh }) {
+  if (!open) return null;
+
+  const square = report?.squareApi || {};
+  const rows = [
+    ["App status", report?.ok ? "Online" : "Unknown"],
+    ["Storage", report?.storage || "Unknown"],
+    ["Square API", square.online === false ? "Offline" : "Online"],
+    ["Last healthy", square.lastHealthyAt ? new Date(square.lastHealthyAt).toLocaleString() : "Not recorded"],
+    ["Last sync", square.lastSyncSuccessAt ? new Date(square.lastSyncSuccessAt).toLocaleString() : "Not recorded"],
+    ["Last sync error", square.lastSyncError || "None"],
+    ["Cached active tickets", String(square.cachedActiveTicketCount ?? "Unknown")],
+    ["Alerts configured", square.alertsConfigured ? "Yes" : "No"],
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]">
+      <div className="w-full max-w-2xl overflow-hidden rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.22)]">
+        <div className="border-b border-[#CA862B]/18 bg-[#EEE0C5]/35 px-5 py-4">
+          <div className="text-sm font-black uppercase tracking-[0.18em] text-[#6A614F]">
+            Connection report
+          </div>
+          <h2 className="mt-1 text-2xl font-black text-[#0F4036]">
+            Square and system health
+          </h2>
+        </div>
+        <div className="space-y-4 px-5 py-5">
+          {error ? (
+            <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-red-900">
+              {error}
+            </div>
+          ) : null}
+          <div className="grid gap-2 sm:grid-cols-2">
+            {rows.map(([label, value]) => (
+              <div key={label} className="rounded-2xl border border-[#CA862B]/14 bg-white px-4 py-3">
+                <div className="text-xs font-black uppercase tracking-[0.14em] text-[#8B5A1D]">
+                  {label}
+                </div>
+                <div className="mt-1 text-sm font-black text-[#0F4036]">
+                  {loading ? "Checking..." : value}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="rounded-2xl border border-[#0F4036]/10 bg-[#0F4036]/8 px-4 py-3 text-sm font-semibold leading-6 text-[#0F4036]">
+            Downtime and recovery duration are tracked by scheduled system checks when they run with GOLDIES_TRACK_UPTIME=1.
+          </div>
+          <div className="flex flex-wrap justify-end gap-2">
+            <button
+              type="button"
+              onClick={onRefresh}
+              className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2.5 font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+            >
+              Refresh
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl bg-[#0F4036] px-4 py-2.5 font-black text-white transition hover:bg-[#0b352d]"
             >
               Close
             </button>
@@ -5230,6 +5331,8 @@ function OwnerReportsView({
   const [accessLogs, setAccessLogs] = useState([]);
   const [accessLogError, setAccessLogError] = useState("");
   const [accessLogLoading, setAccessLogLoading] = useState(false);
+  const [showRecentChanges, setShowRecentChanges] = useState(true);
+  const [showOwnerTools, setShowOwnerTools] = useState(false);
   const demoQuery = demoMode ? "?demo=training" : "";
 
   useEffect(() => {
@@ -5536,16 +5639,9 @@ function OwnerReportsView({
             <button
               type="button"
               onClick={handleLogout}
-              className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-            >
-              Back
-            </button>
-            <button
-              type="button"
-              onClick={handleLogout}
               className="rounded-xl bg-[#0F4036] px-4 py-2 text-sm font-black text-white transition hover:bg-[#0b352d]"
             >
-              Sign out
+              Back to dashboard
             </button>
           </div>
         </header>
@@ -5554,6 +5650,93 @@ function OwnerReportsView({
           <div className="rounded-2xl border border-[#0F4036]/12 bg-[#0F4036]/8 px-4 py-3 text-sm font-bold text-[#0F4036]">
             {ownerPasswordNotice}
           </div>
+        )}
+
+        <nav className="rounded-2xl border border-white/70 bg-[rgba(255,253,248,0.9)] p-2 shadow-sm" aria-label="Owner portal menu">
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+            <button
+              type="button"
+              onClick={() => setShowRecentChanges((current) => !current)}
+              className={`rounded-xl px-3 py-2 text-sm font-black transition ${
+                showRecentChanges
+                  ? "bg-[#0F4036] text-white"
+                  : "border border-[#CA862B]/22 bg-white text-[#0F4036] hover:bg-[#EEE0C5]/45"
+              }`}
+            >
+              Recent changes
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowOwnerTools((current) => !current)}
+              className={`rounded-xl px-3 py-2 text-sm font-black transition ${
+                showOwnerTools
+                  ? "bg-[#0F4036] text-white"
+                  : "border border-[#CA862B]/22 bg-white text-[#0F4036] hover:bg-[#EEE0C5]/45"
+              }`}
+            >
+              Owner tools
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowOwnerTools(true);
+                setReportExportMenuOpen((current) => !current);
+              }}
+              disabled={loading || Boolean(error)}
+              className="rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45 disabled:cursor-not-allowed disabled:text-neutral-400"
+            >
+              Export
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowOwnerTools(true);
+                setShowAccessLog(true);
+              }}
+              className="rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+            >
+              Access check
+            </button>
+          </div>
+        </nav>
+
+        {!demoMode && (
+          <section className="rounded-3xl border border-[#CA862B]/18 bg-[rgba(255,253,248,0.94)] p-4 shadow-sm">
+            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+              <div>
+                <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
+                  Recent production changes
+                </div>
+                <h2 className="mt-1 text-xl font-black text-[#0F4036]">
+                  What changed in {APP_VERSION}
+                </h2>
+                <p className="mt-1 text-sm font-semibold leading-6 text-[#6A614F]">
+                  Owner-facing notes for live service fixes, dashboard behavior, and operational tracking.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowRecentChanges((current) => !current)}
+                className="rounded-xl border border-[#CA862B]/18 bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+              >
+                {showRecentChanges ? "Hide notes" : "Show notes"}
+              </button>
+            </div>
+            {showRecentChanges && (
+            <div className="mt-3 grid gap-2 md:grid-cols-3">
+              {OWNER_PORTAL_RECENT_CHANGES.map((change) => (
+                <div key={change.title} className="rounded-2xl border border-[#CA862B]/12 bg-white px-4 py-3">
+                  <div className="text-sm font-black text-[#0F4036]">
+                    {change.title}
+                  </div>
+                  <p className="mt-1 text-sm font-semibold leading-6 text-[#6A614F]">
+                    {change.body}
+                  </p>
+                </div>
+              ))}
+            </div>
+            )}
+          </section>
         )}
 
         <section className="rounded-3xl border border-white/70 bg-[rgba(255,253,248,0.92)] p-4 shadow-sm">
@@ -5624,7 +5807,7 @@ function OwnerReportsView({
             </div>
           </div>
 
-          {!demoMode && (
+          {!demoMode && showOwnerTools && (
             <form
               onSubmit={handleEmailOwnerReport}
               className="mb-4 rounded-2xl border border-[#CA862B]/18 bg-white/80 p-3 shadow-sm"
@@ -5668,7 +5851,7 @@ function OwnerReportsView({
             </form>
           )}
 
-          {!demoMode && (
+          {!demoMode && showOwnerTools && (
             <section className="mb-4 rounded-2xl border border-[#CA862B]/18 bg-white/80 p-3 shadow-sm">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -5748,6 +5931,7 @@ function OwnerReportsView({
             </div>
           )}
 
+          {showOwnerTools && (
           <div className="mb-4 rounded-2xl border border-[#CA862B]/18 bg-white/80 p-3 shadow-sm">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
@@ -5780,6 +5964,7 @@ function OwnerReportsView({
               </div>
             </div>
           </div>
+          )}
 
           {loading ? (
             <div className="rounded-2xl border border-dashed border-[#CA862B]/22 bg-white/70 p-8 text-center font-semibold text-[#6A614F]">
@@ -7938,7 +8123,11 @@ const KIOSK_STOCK_IMAGE_URLS = {
   "matcha-latte":
     "https://images.unsplash.com/photo-1515823064-d6e0c04616a7?auto=format&fit=crop&w=900&q=80",
   "strawberry-banana":
-    "https://images.unsplash.com/photo-1502741224143-90386d7f8c82?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1553530666-ba11a7da3888?auto=format&fit=crop&w=900&q=80",
+  "strawberry-mango":
+    "https://images.unsplash.com/photo-1622597467836-f3285f2131b8?auto=format&fit=crop&w=900&q=80",
+  "mango-pineapple":
+    "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?auto=format&fit=crop&w=900&q=80",
   "chocolate-pb-banana":
     "https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=900&q=80",
   "green-smoothie":
@@ -7959,9 +8148,13 @@ function getKioskImageSlug(item = {}) {
   if (text.includes("london-fog") || text.includes("steamer")) return "london-fog";
   if (text.includes("chai")) return "chai-latte";
   if (text.includes("matcha")) return "matcha-latte";
+  if (text.includes("strawberry") && text.includes("mango")) return "strawberry-mango";
+  if (text.includes("pineapple") && text.includes("mango")) return "mango-pineapple";
   if (text.includes("chocolate") && text.includes("banana")) return "chocolate-pb-banana";
   if (text.includes("green") || text.includes("greens")) return "green-smoothie";
-  if (text.includes("strawberry") || text.includes("mango") || text.includes("refresher")) return "strawberry-banana";
+  if (text.includes("strawberry") && text.includes("banana")) return "strawberry-banana";
+  if (text.includes("mango")) return "strawberry-mango";
+  if (text.includes("strawberry") || text.includes("refresher")) return "strawberry-banana";
   return "latte";
 }
 
@@ -9452,6 +9645,10 @@ export default function GoldiesKDS() {
   const [lastPoll, setLastPoll] = useState(new Date());
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
   const [connectionDetail, setConnectionDetail] = useState("Square API");
+  const [showConnectionReport, setShowConnectionReport] = useState(false);
+  const [connectionReport, setConnectionReport] = useState(null);
+  const [connectionReportLoading, setConnectionReportLoading] = useState(false);
+  const [connectionReportError, setConnectionReportError] = useState("");
   const [lastError, setLastError] = useState("");
   const [defaultLookupDate] = useState(() => getLocalDateInputValue());
   const dashboardReportPanel = getDashboardReportPanel();
@@ -9526,6 +9723,23 @@ export default function GoldiesKDS() {
   const [trainingTickets, setTrainingTickets] = useState(() =>
     createTrainingTickets()
   );
+
+  async function fetchConnectionReport() {
+    setConnectionReportLoading(true);
+    setConnectionReportError("");
+    try {
+      const response = await fetch(apiUrl("/api/health"), {
+        credentials: "include",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || `Health check failed: ${response.status}`);
+      setConnectionReport(data);
+    } catch (error) {
+      setConnectionReportError(error.message || "Connection report unavailable.");
+    } finally {
+      setConnectionReportLoading(false);
+    }
+  }
 
   useEffect(() => {
     try {
@@ -10683,6 +10897,11 @@ export default function GoldiesKDS() {
             label="Connection"
             value={displayedConnectionStatus}
             detail={displayedConnectionDetail}
+            actionLabel="Open report"
+            onClick={() => {
+              setShowConnectionReport(true);
+              fetchConnectionReport();
+            }}
           />
 
           <StatCard
@@ -10978,6 +11197,14 @@ export default function GoldiesKDS() {
         title={settingsHelp?.title || ""}
         body={settingsHelp?.body || ""}
         onClose={() => setSettingsHelp(null)}
+      />
+      <ConnectionReportDialog
+        open={showConnectionReport}
+        report={connectionReport}
+        loading={connectionReportLoading}
+        error={connectionReportError}
+        onClose={() => setShowConnectionReport(false)}
+        onRefresh={fetchConnectionReport}
       />
       <OwnerLoginDialog
         open={showOwnerLogin}
