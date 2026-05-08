@@ -360,6 +360,17 @@ function getShopDateParts(date = new Date()) {
   };
 }
 
+function getShopDateString(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: SHOP_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const getPart = (type) => parts.find((part) => part.type === type)?.value || "";
+  return `${getPart("year")}-${getPart("month")}-${getPart("day")}`;
+}
+
 function getShopHoursForDate(date = new Date()) {
   const { weekday } = getShopDateParts(date);
   return SHOP_HOURS[weekday] || null;
@@ -6541,7 +6552,17 @@ app.get("/api/tickets", requireKdsAuth, async (req, res) => {
       res.json(storedTickets);
     } catch (fallbackError) {
       console.error("Error fetching stored fallback tickets:", fallbackError);
-      res.json(lastKnownActiveTickets);
+      try {
+        const dayTickets = await getTicketsForDay(getShopDateString());
+        const activeDayTickets = dayTickets.filter((ticket) =>
+          ["new", "making", "ready"].includes(sanitizeStatus(ticket.status))
+        );
+        res.setHeader("X-Goldies-KDS-Fallback", "day-active-tickets");
+        res.json(activeDayTickets);
+      } catch (dayFallbackError) {
+        console.error("Error fetching day fallback tickets:", dayFallbackError);
+        res.json(lastKnownActiveTickets);
+      }
     }
   }
 });
