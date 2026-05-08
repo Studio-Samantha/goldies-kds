@@ -57,10 +57,15 @@ jobs:
         run: bash scripts/system_check.sh
 
       - name: Trigger safe Render redeploy after repeated failure
-        if: steps.system-check.outcome == 'failure' && steps.retry-system-check.outcome == 'failure' && secrets.GOLDIES_RENDER_DEPLOY_HOOK_URL != ''
+        if: steps.system-check.outcome == 'failure' && steps.retry-system-check.outcome == 'failure'
         env:
           GOLDIES_RENDER_DEPLOY_HOOK_URL: ${{ secrets.GOLDIES_RENDER_DEPLOY_HOOK_URL }}
-        run: curl -fsS "$GOLDIES_RENDER_DEPLOY_HOOK_URL"
+        run: |
+          if [ -z "$GOLDIES_RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "No Render deploy hook secret is configured; skipping automatic redeploy."
+            exit 0
+          fi
+          curl -fsS "$GOLDIES_RENDER_DEPLOY_HOOK_URL"
 
       - name: Fail workflow after repeated failure
         if: steps.system-check.outcome == 'failure' && steps.retry-system-check.outcome == 'failure'
