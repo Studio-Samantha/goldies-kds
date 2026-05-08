@@ -10,11 +10,22 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.12";
+const APP_VERSION = "v1.10.13";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
 const SUPPORT_EMAIL = "samantha@studiosamantha.com";
+const POLICY_VERSION = "2026-05-08";
+const POLICY_TYPE = "drinkflow_kds_privacy_data_handling_policy";
+const POLICY_ACK_STORAGE_KEY = "goldies-kds-policy-acknowledgment";
+const POLICY_REMINDER_STORAGE_KEY = `goldies-kds-policy-reminder-${POLICY_VERSION}`;
+const GOLDIES_POLICY_CONTEXT = {
+  businessName: "Goldie's",
+  productName: "DrinkFlow Kitchen Display Systems (KDS)",
+  policyType: POLICY_TYPE,
+  policyVersion: POLICY_VERSION,
+  policyScope: "Goldie's KDS owner/admin dashboard",
+};
 const SOFT_OPENING_DATE = "2026-04-29";
 const SETTINGS_HELP_TEXT =
   "Settings has the app tools: theme, password change, support, and release notes.";
@@ -87,8 +98,19 @@ const OWNER_PORTAL_RECENT_CHANGES = [
 ];
 const RELEASE_NOTES = [
   {
-    version: "v1.10.12",
+    version: "v1.10.13",
     date: "Current build",
+    summary: "Added Goldie's owner privacy acknowledgment and a safe demo owner portal.",
+    items: [
+      "Goldie's owner/admin dashboard now has a lightweight policy acknowledgment flow for the 2026-05-08 Privacy & Data Handling Policy.",
+      "Owner Portal includes a Privacy & Agreements card for policy status, case study boundaries, domain reminders, and daily checks.",
+      "The /demo/owner portal uses fake sample data only and is clearly labeled for school projects, public demos, screenshots, portfolio use, and walkthroughs.",
+      "Demo owner reports now use generic DrinkFlow Demo Cafe branding and never use Goldie's live Square data, logo, recipes, customer/order data, or private financials.",
+    ],
+  },
+  {
+    version: "v1.10.12",
+    date: "Previous build",
     summary: "Added sync audit details to the Connection report.",
     items: [
       "Connection report now shows the last Square sync context, orders found, created, updated, saved, and failed.",
@@ -1427,7 +1449,7 @@ function PitchPage({ open, onBack }) {
               Studio Samantha
             </h1>
             <p className="mt-3 max-w-2xl text-lg leading-8 text-[#2D261C]">
-              Custom Square® tools for coffee shops, smoothie shops, and drink
+              Custom Square tools for coffee shops, smoothie shops, and drink
               counters that need a clean display, simple staff workflows,
               and useful owner reporting.
             </p>
@@ -1537,7 +1559,7 @@ function PitchPage({ open, onBack }) {
                 What it can do
               </div>
               <ul className="mt-3 space-y-2 text-sm leading-6 text-[#2D261C]">
-                <li>Live Square® orders in a simple drink board</li>
+                <li>Live Square orders in a simple drink board</li>
                 <li>Customer names and employee tracking when available</li>
                 <li>Drink revenue, hourly volume, history, and daily order lookup</li>
                 <li>Training mode for practice without live data</li>
@@ -1590,10 +1612,27 @@ function isDemoTrainingRoute() {
 
   try {
     const params = new URLSearchParams(window.location.search);
-    return params.get("demo") === "training" || window.location.hash === "#demo";
+    const path = window.location.pathname.replace(/\/+$/, "");
+    return (
+      path === "/demo/owner" ||
+      params.get("demo") === "training" ||
+      window.location.hash === "#demo"
+    );
   } catch {
     return false;
   }
+}
+
+function isDemoOwnerRoute() {
+  if (typeof window === "undefined") return false;
+  const path = window.location.pathname.replace(/\/+$/, "");
+  return path === "/demo/owner";
+}
+
+function isPolicyAcknowledgmentRoute() {
+  if (typeof window === "undefined") return false;
+  const path = window.location.pathname.replace(/\/+$/, "");
+  return path === "/goldies/policy-acknowledgment" || path === "/policy-acknowledgment";
 }
 
 function isDeveloperDashboardRoute() {
@@ -1612,6 +1651,46 @@ function isSelfOrderKioskRoute() {
   if (typeof window === "undefined") return false;
   const path = window.location.pathname.replace(/\/+$/, "");
   return path === "/self-order-kiosk" || path === "/kiosk";
+}
+
+function isRollerRollerCoasterRoute() {
+  if (typeof window === "undefined") return false;
+  const path = window.location.pathname.replace(/\/+$/, "");
+  return (
+    path === "/roller-roller-coaster" ||
+    path === "/roller-coaster" ||
+    path === "/rollerrollercoaster"
+  );
+}
+
+function isRollerRollerCoasterThreeRoute() {
+  if (typeof window === "undefined") return false;
+  const path = window.location.pathname.replace(/\/+$/, "");
+  return path === "/roller-roller-coaster-3d" || path === "/roller-coaster-3d";
+}
+
+function RollerResetPlaceholderPage() {
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "grid",
+        placeItems: "center",
+        background: "linear-gradient(180deg, #9be7f5 0%, #fff8df 45%, #f6d2f0 100%)",
+        color: "#334155",
+        padding: "32px",
+        textAlign: "center",
+      }}
+    >
+      <div style={{ maxWidth: 640, width: "100%" }}>
+        <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: 0, marginBottom: 12 }}>Roller Roller Coaster</div>
+        <h1 style={{ fontSize: 48, lineHeight: 1.05, margin: "0 0 16px" }}>Fresh start</h1>
+        <p style={{ fontSize: 18, lineHeight: 1.5, margin: 0 }}>
+          The coaster game has been wiped and will be rebuilt from a clean baseline.
+        </p>
+      </div>
+    </div>
+  );
 }
 
 function getLocalDayBounds(date = new Date()) {
@@ -1717,116 +1796,136 @@ function buildDrinkReportFromTickets(tickets, rangeKey) {
   };
 }
 
-function buildDemoOwnerReport(tickets, rangeKey) {
+const DEMO_OWNER_SEED = {
+  today: { orders: 86, units: 112, revenueCents: 64240, multi: 29 },
+  yesterday: { orders: 74, units: 96, revenueCents: 54890, multi: 22 },
+  last7: { orders: 524, units: 681, revenueCents: 389640, multi: 168 },
+  last30: { orders: 2184, units: 2839, revenueCents: 1627820, multi: 704 },
+  thisMonth: { orders: 697, units: 906, revenueCents: 519320, multi: 219 },
+  thisYear: { orders: 6948, units: 9032, revenueCents: 5161280, multi: 2260 },
+};
+
+const DEMO_TOP_DRINKS = [
+  { name: "Iced Vanilla Latte", category: "Coffee", qty: 24, unitCents: 625 },
+  { name: "Strawberry Smoothie", category: "Smoothies", qty: 18, unitCents: 725 },
+  { name: "Hot Americano", category: "Coffee", qty: 15, unitCents: 475 },
+  { name: "Honey Chai", category: "Not Coffee", qty: 13, unitCents: 650 },
+  { name: "Mango Lemonade", category: "Not Coffee", qty: 11, unitCents: 575 },
+  { name: "Blueberry Banana Smoothie", category: "Smoothies", qty: 9, unitCents: 725 },
+];
+
+const DEMO_RECENT_ORDERS = [
+  { orderNumber: "1042", item: "Iced Vanilla Latte", status: "Ready", time: "8:14 AM" },
+  { orderNumber: "1043", item: "Strawberry Smoothie", status: "Making", time: "8:17 AM" },
+  { orderNumber: "1044", item: "Hot Americano", status: "New", time: "8:20 AM" },
+];
+
+function buildDemoOwnerReport(_tickets, rangeKey) {
+  const seed = DEMO_OWNER_SEED[rangeKey] || DEMO_OWNER_SEED.today;
   const { start, end } = getRangeBounds(rangeKey);
-  const categories = {
+  const scale = seed.units / DEMO_OWNER_SEED.today.units;
+  const scaledTopDrinks = DEMO_TOP_DRINKS.map((item) => ({
+    ...item,
+    qty: Math.max(1, Math.round(item.qty * scale)),
+  }));
+  const categoryBuckets = {
     Coffee: { category: "Coffee", revenueCents: 0, taxCents: 0, totalCents: 0, units: 0 },
     "Not Coffee": { category: "Not Coffee", revenueCents: 0, taxCents: 0, totalCents: 0, units: 0 },
     Smoothies: { category: "Smoothies", revenueCents: 0, taxCents: 0, totalCents: 0, units: 0 },
   };
-  const hourly = Array.from({ length: 24 }, (_value, hour) => ({
-    hour,
-    label: new Date(2024, 0, 1, hour).toLocaleTimeString("en-US", {
-      hour: "numeric",
-      hour12: true,
-    }),
-    orderCount: 0,
-    units: 0,
-    revenueCents: 0,
-    revenue: "$0.00",
-  }));
-  const unitPrices = {
-    Coffee: 575,
-    "Not Coffee": 625,
-    Smoothies: 700,
-  };
-  let orderCount = 0;
-  let multiDrinkOrderCount = 0;
 
-  tickets
-    .filter((ticket) => ticket.createdAt >= start && ticket.createdAt < end)
-    .forEach((ticket) => {
-      const drinkItems = (ticket.items || []).filter((item) =>
-        isDrinkItem(item.name)
-      );
-      if (!drinkItems.length) return;
+  scaledTopDrinks.forEach((item) => {
+    const revenueCents = item.qty * item.unitCents;
+    const taxCents = Math.round(revenueCents * 0.0825);
+    categoryBuckets[item.category].units += item.qty;
+    categoryBuckets[item.category].revenueCents += revenueCents;
+    categoryBuckets[item.category].taxCents += taxCents;
+    categoryBuckets[item.category].totalCents += revenueCents + taxCents;
+  });
 
-      orderCount += 1;
-      let orderUnits = 0;
-      let orderRevenueCents = 0;
-
-      drinkItems.forEach((item) => {
-        const category = getBeverageCategory(item.name);
-        if (!category || !categories[category]) return;
-
-        const qty = Number(item.qty || 1);
-        const revenueCents = qty * (unitPrices[category] || 600);
-        const taxCents = Math.round(revenueCents * 0.0825);
-
-        categories[category].units += qty;
-        categories[category].revenueCents += revenueCents;
-        categories[category].taxCents += taxCents;
-        categories[category].totalCents += revenueCents + taxCents;
-        orderUnits += qty;
-        orderRevenueCents += revenueCents;
-      });
-
-      if (orderUnits >= 2) multiDrinkOrderCount += 1;
-
-      const hour = new Date(ticket.createdAt).getHours();
-      hourly[hour].orderCount += 1;
-      hourly[hour].units += orderUnits;
-      hourly[hour].revenueCents += orderRevenueCents;
-    });
-
-  const hourlyOrders = hourly.map((bucket) => ({
-    ...bucket,
-    revenue: formatCurrencyCents(bucket.revenueCents),
-  }));
-  const totalsByCategory = Object.values(categories).map((item) => ({
-    ...item,
-    revenue: formatCurrencyCents(item.revenueCents),
-    tax: formatCurrencyCents(item.taxCents),
-    total: formatCurrencyCents(item.totalCents),
-  }));
-  const totalRevenueCents = totalsByCategory.reduce(
+  const generatedRevenueCents = Object.values(categoryBuckets).reduce(
     (sum, item) => sum + item.revenueCents,
     0
   );
-  const totalTaxCents = totalsByCategory.reduce(
-    (sum, item) => sum + item.taxCents,
-    0
-  );
-  const totalCollectedCents = totalsByCategory.reduce(
-    (sum, item) => sum + item.totalCents,
-    0
-  );
-  const totalUnits = totalsByCategory.reduce((sum, item) => sum + item.units, 0);
-  const multiDrinkOrderRate = orderCount
-    ? Math.round((multiDrinkOrderCount / orderCount) * 100)
-    : 0;
+  const adjustment = generatedRevenueCents
+    ? seed.revenueCents / generatedRevenueCents
+    : 1;
+  const totalsByCategory = Object.values(categoryBuckets).map((item) => {
+    const revenueCents = Math.round(item.revenueCents * adjustment);
+    const taxCents = Math.round(revenueCents * 0.0825);
+    return {
+      ...item,
+      revenueCents,
+      taxCents,
+      totalCents: revenueCents + taxCents,
+      revenue: formatCurrencyCents(revenueCents),
+      tax: formatCurrencyCents(taxCents),
+      total: formatCurrencyCents(revenueCents + taxCents),
+    };
+  });
+  const hourlyPattern = {
+    7: 9,
+    8: 18,
+    9: 14,
+    10: 11,
+    11: 10,
+    12: 13,
+    13: 7,
+    14: 4,
+  };
+  const hourlyOrders = Array.from({ length: 24 }, (_value, hour) => {
+    const share = (hourlyPattern[hour] || 0) / DEMO_OWNER_SEED.today.orders;
+    const orderCount = Math.round(seed.orders * share);
+    const units = Math.round(seed.units * share);
+    const revenueCents = Math.round(seed.revenueCents * share);
+    return {
+      hour,
+      label: new Date(2024, 0, 1, hour).toLocaleTimeString("en-US", {
+        hour: "numeric",
+        hour12: true,
+      }),
+      orderCount,
+      units,
+      revenueCents,
+      revenue: formatCurrencyCents(revenueCents),
+    };
+  });
+  const totalTaxCents = Math.round(seed.revenueCents * 0.0825);
+  const totalCollectedCents = seed.revenueCents + totalTaxCents;
 
   return {
+    demoDataOnly: true,
+    businessName: "DrinkFlow Demo Cafe",
+    reportSubtitle: "Sample Report - Demo Data Only",
     startAt: new Date(start).toISOString(),
     endAt: new Date(end).toISOString(),
-    orderCount,
-    multiDrinkOrderCount,
-    multiDrinkOrderRate,
-    totalUnits,
-    totalRevenueCents,
-    totalRevenue: formatCurrencyCents(totalRevenueCents),
+    orderCount: seed.orders,
+    multiDrinkOrderCount: seed.multi,
+    multiDrinkOrderRate: Math.round((seed.multi / seed.orders) * 100),
+    totalUnits: seed.units,
+    totalRevenueCents: seed.revenueCents,
+    totalRevenue: formatCurrencyCents(seed.revenueCents),
     totalTaxCents,
     totalTax: formatCurrencyCents(totalTaxCents),
     totalCollectedCents,
     totalCollected: formatCurrencyCents(totalCollectedCents),
-    averageDrinkOrderValueCents: orderCount
-      ? Math.round(totalCollectedCents / orderCount)
-      : 0,
-    averageDrinkOrderValue: formatCurrencyCents(
-      orderCount ? Math.round(totalCollectedCents / orderCount) : 0
-    ),
+    averageDrinkOrderValueCents: Math.round(totalCollectedCents / seed.orders),
+    averageDrinkOrderValue: formatCurrencyCents(Math.round(totalCollectedCents / seed.orders)),
+    busiestHour: "8:00 AM",
+    topDrink: "Iced Vanilla Latte",
+    topCategory: "Coffee",
+    totalsByName: scaledTopDrinks.map(({ name, qty }) => ({ name, qty })),
     totalsByCategory,
     hourlyOrders,
+    recentOrders: DEMO_RECENT_ORDERS,
+    systemChecks: [
+      { label: "Square connection", status: "Passed - Demo Mode" },
+      { label: "Dashboard health", status: "Passed" },
+      { label: "Analytics update", status: "Passed" },
+      { label: "Domain renewal status", status: "Skipped - Demo Mode" },
+      { label: "Privacy policy status", status: "Passed" },
+      { label: "Case study permission", status: "Demo Data Only" },
+    ],
   };
 }
 
@@ -4060,12 +4159,14 @@ function DemoBrandMark({ size = "md" }) {
   const dimensions = size === "lg" ? "h-28 w-56" : "h-16 w-36";
 
   return (
-    <div
-      className={`${dimensions} flex items-center justify-center rounded-2xl border border-[#0F4036]/15 bg-white/80 shadow-sm`}
-      aria-label="DrinkFlow Demo"
-    >
-      <div className="text-center leading-none">
-        <div className="text-3xl font-black text-[#0F4036]">DF</div>
+    <div className={`${dimensions} flex items-center justify-center gap-2 rounded-2xl border border-[#0F4036]/15 bg-white/80 px-3 shadow-sm`}>
+      <img
+        src="/demo/demo-cafe-logo.svg"
+        alt="DrinkFlow Demo Cafe"
+        className="h-11 w-11 rounded-xl"
+      />
+      <div className="text-left leading-none">
+        <div className="text-base font-black text-[#0F4036]">DF</div>
         <div className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#CA862B]">
           Demo Cafe
         </div>
@@ -4185,8 +4286,66 @@ function PoweredByDrinkFlow({ className = "" }) {
         href="https://drinkflowkds.com"
         className="text-[#0F4036] transition hover:text-[#CA862B]"
       >
-        DrinkFlowKDS
+        DrinkFlow KDS
       </a>
+    </div>
+  );
+}
+
+function PolicyAcknowledgmentPage() {
+  const [record, setRecord] = useState(readPolicyAcknowledgment);
+  const [showDialog, setShowDialog] = useState(!record);
+
+  return (
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,253,248,0.98),_rgba(238,224,197,1)_58%,_rgba(230,210,173,1)_100%)] px-4 py-6 text-[#2D261C]">
+      <main className="mx-auto max-w-3xl rounded-3xl border border-[#CA862B]/18 bg-[#FFFDF8]/95 p-5 shadow-[0_24px_70px_rgba(15,64,54,0.1)]">
+        <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
+          Goldie&apos;s KDS Policy Acknowledgment
+        </div>
+        <h1 className="mt-2 text-3xl font-black text-[#0F4036]">
+          Review and Acknowledge Policy
+        </h1>
+        <p className="mt-3 text-sm font-semibold leading-6 text-[#6A614F]">
+          This page is for the Goldie&apos;s DrinkFlow KDS owner/admin dashboard
+          acknowledgment workflow. It is not a full e-signature integration.
+        </p>
+
+        <PrivacyAgreementsCard
+          policyAcknowledgment={record}
+          policyReminder={readPolicyReminder()}
+        />
+
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <a
+            href="/policy.html"
+            className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2.5 text-center font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+          >
+            Read Policy
+          </a>
+          <button
+            type="button"
+            onClick={() => setShowDialog(true)}
+            className="rounded-xl bg-[#0F4036] px-4 py-2.5 font-black text-white transition hover:bg-[#0b352d]"
+          >
+            Acknowledge Policy
+          </button>
+          <a
+            href="/"
+            className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2.5 text-center font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+          >
+            Back to KDS
+          </a>
+        </div>
+      </main>
+      <PolicyAcknowledgmentDialog
+        open={showDialog}
+        ownerName={record?.user_name || "Owner"}
+        onRecorded={(nextRecord) => {
+          setRecord(nextRecord || readPolicyAcknowledgment());
+          setShowDialog(false);
+        }}
+        onRemindLater={() => setShowDialog(false)}
+      />
     </div>
   );
 }
@@ -5548,6 +5707,427 @@ function OwnerLoginDialog({ open, onClose, onLogin, themeMode }) {
   );
 }
 
+function readPolicyAcknowledgment() {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const parsed = JSON.parse(
+      window.localStorage.getItem(POLICY_ACK_STORAGE_KEY) || "null"
+    );
+    return parsed?.policy_version === POLICY_VERSION ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function readPolicyReminder() {
+  if (typeof window === "undefined") {
+    return { reminder_count: 0, last_reminded_timestamp: "" };
+  }
+
+  try {
+    return (
+      JSON.parse(window.localStorage.getItem(POLICY_REMINDER_STORAGE_KEY) || "null") || {
+        reminder_count: 0,
+        last_reminded_timestamp: "",
+      }
+    );
+  } catch {
+    return { reminder_count: 0, last_reminded_timestamp: "" };
+  }
+}
+
+function writePolicyReminder(record) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(POLICY_REMINDER_STORAGE_KEY, JSON.stringify(record));
+}
+
+function formatPolicyTimestamp(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function PolicyAcknowledgmentDialog({
+  open,
+  ownerName,
+  onRecorded,
+  onRemindLater,
+}) {
+  const [mode, setMode] = useState("notice");
+  const [checked, setChecked] = useState(false);
+  const [userName, setUserName] = useState(ownerName || "Owner");
+  const [userEmail, setUserEmail] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    setMode("notice");
+    setChecked(false);
+    setUserName(ownerName || "Owner");
+  }, [open, ownerName]);
+
+  if (!open) return null;
+
+  function handleAcknowledge() {
+    const acknowledged_timestamp = new Date().toISOString();
+    const reminder = readPolicyReminder();
+    const record = {
+      business_name: GOLDIES_POLICY_CONTEXT.businessName,
+      user_name: userName.trim() || ownerName || "Owner",
+      user_email: userEmail.trim(),
+      product_name: GOLDIES_POLICY_CONTEXT.productName,
+      policy_type: GOLDIES_POLICY_CONTEXT.policyType,
+      policy_version: GOLDIES_POLICY_CONTEXT.policyVersion,
+      policy_scope: GOLDIES_POLICY_CONTEXT.policyScope,
+      acknowledged_timestamp,
+      dismissed_timestamp: reminder.dismissed_timestamp || "",
+      reminder_count: Number(reminder.reminder_count || 0),
+      last_reminded_timestamp: reminder.last_reminded_timestamp || "",
+    };
+
+    window.localStorage.setItem(POLICY_ACK_STORAGE_KEY, JSON.stringify(record));
+    onRecorded(record);
+    setMode("thanks");
+  }
+
+  return (
+    <div className="fixed inset-0 z-[90] overflow-y-auto bg-black/45 p-4 backdrop-blur-[2px]">
+      <div className="mx-auto flex min-h-full max-w-2xl items-center justify-center">
+        <div className="w-full overflow-hidden rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.24)]">
+          <div className="border-b border-[#CA862B]/18 bg-[#EEE0C5]/35 px-5 py-4">
+            <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
+              Goldie&apos;s KDS Owner/Admin Dashboard
+            </div>
+            <h2 className="mt-1 text-2xl font-black text-[#0F4036]">
+              {mode === "review"
+                ? "Review and Acknowledge Policy"
+                : mode === "thanks"
+                  ? "Thank you."
+                  : "Privacy & Data Handling Policy Update"}
+            </h2>
+          </div>
+
+          {mode === "notice" && (
+            <div className="space-y-4 px-5 py-5 text-[#2D261C]">
+              <p className="text-base leading-7">
+                We&apos;ve updated the Privacy & Data Handling Policy for DrinkFlow
+                Kitchen Display Systems (KDS) to clearly explain how Square data,
+                order information, dashboard analytics, daily checks, case study
+                information, and domain reminders are handled for the Goldie&apos;s KDS
+                pilot.
+              </p>
+              <p className="text-sm font-semibold leading-6 text-[#6A614F]">
+                Please review and acknowledge the current policy version when you have a
+                chance. This acknowledgment helps us keep the Goldie&apos;s pilot clear,
+                professional, and respectful of private business information.
+              </p>
+              <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <a
+                  href="/policy.html"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2.5 text-center font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                >
+                  Read Policy
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setMode("review")}
+                  className="rounded-xl bg-[#0F4036] px-4 py-2.5 font-black text-white transition hover:bg-[#0b352d]"
+                >
+                  Acknowledge Policy
+                </button>
+                <button
+                  type="button"
+                  onClick={onRemindLater}
+                  className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2.5 font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                >
+                  Remind Me Later
+                </button>
+              </div>
+            </div>
+          )}
+
+          {mode === "review" && (
+            <div className="max-h-[72vh] space-y-4 overflow-y-auto px-5 py-5 text-[#2D261C]">
+              <div>
+                <h3 className="text-xl font-black text-[#0F4036]">
+                  DrinkFlow KDS Privacy & Data Handling Policy
+                </h3>
+                <p className="mt-2 text-sm font-semibold leading-6 text-[#6A614F]">
+                  This policy explains how DrinkFlow KDS may handle Square data,
+                  order information, dashboard analytics, daily checks, case study
+                  information, and domain reminders. For Goldie&apos;s, this applies
+                  only to the Goldie&apos;s KDS owner/admin dashboard and pilot.
+                </p>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block">
+                  <span className="text-xs font-black uppercase tracking-[0.14em] text-[#6A614F]">
+                    Name
+                  </span>
+                  <input
+                    value={userName}
+                    onChange={(event) => setUserName(event.target.value)}
+                    className="mt-1 w-full rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-bold outline-none focus:border-[#0F4036]"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-xs font-black uppercase tracking-[0.14em] text-[#6A614F]">
+                    Email
+                  </span>
+                  <input
+                    type="email"
+                    value={userEmail}
+                    onChange={(event) => setUserEmail(event.target.value)}
+                    placeholder="owner@email.com"
+                    className="mt-1 w-full rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-bold outline-none focus:border-[#0F4036]"
+                  />
+                </label>
+              </div>
+
+              <ul className="space-y-2 text-sm font-semibold leading-6 text-[#2D261C]">
+                <li>Goldie&apos;s owns its business data, recipes, menu information, Square account, customer/order information, financial data, and business assets.</li>
+                <li>Studio Samantha / DrinkFlow KDS owns the software, dashboard, code, analytics structure, branding, documentation, workflows, and product concepts.</li>
+                <li>DrinkFlow KDS may access Square, order, menu, and analytics data only as needed to provide, test, troubleshoot, support, and improve the KDS and owner dashboard.</li>
+                <li>DrinkFlow KDS may run daily or recurring checks to support app reliability, Square connection status, dashboard functionality, analytics updates, domain renewal reminders, policy reminders, and service troubleshooting.</li>
+                <li>Goldie&apos;s private live dashboard data should not be used for public demos, school projects, portfolio materials, marketing, or case study materials unless approved.</li>
+                <li>Public use should rely on approved information, anonymized data, aggregated data, blurred screenshots, fake/sample data, or demo/test environment data.</li>
+                <li>DrinkFlow KDS does not sell Goldie&apos;s business data, customer/order data, Square data, recipes, financial information, or operational analytics.</li>
+              </ul>
+
+              <label className="flex gap-3 rounded-2xl border border-[#CA862B]/18 bg-white px-4 py-3 text-sm font-bold leading-6 text-[#2D261C]">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={(event) => setChecked(event.target.checked)}
+                  className="mt-1 h-5 w-5 shrink-0 accent-[#0F4036]"
+                />
+                <span>
+                  I have reviewed and acknowledge the current Privacy & Data Handling
+                  Policy for the Goldie&apos;s DrinkFlow KDS pilot.
+                </span>
+              </label>
+
+              <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={handleAcknowledge}
+                  disabled={!checked}
+                  className="rounded-xl bg-[#0F4036] px-4 py-2.5 font-black text-white transition hover:bg-[#0b352d] disabled:cursor-not-allowed disabled:bg-neutral-300"
+                >
+                  Acknowledge Policy
+                </button>
+                <button
+                  type="button"
+                  onClick={onRemindLater}
+                  className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2.5 font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                >
+                  Remind Me Later
+                </button>
+              </div>
+            </div>
+          )}
+
+          {mode === "thanks" && (
+            <div className="space-y-4 px-5 py-5 text-[#2D261C]">
+              <p className="text-base font-bold leading-7">
+                Your acknowledgment has been recorded.
+              </p>
+              <div className="rounded-2xl border border-[#CA862B]/18 bg-white px-4 py-3 text-sm font-black text-[#0F4036]">
+                Policy version acknowledged: {POLICY_VERSION}
+              </div>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => onRecorded(readPolicyAcknowledgment())}
+                  className="rounded-xl bg-[#0F4036] px-4 py-2.5 font-black text-white transition hover:bg-[#0b352d]"
+                >
+                  Continue to dashboard
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PrivacyAgreementsCard({
+  demoMode = false,
+  policyAcknowledgment,
+  policyReminder,
+  onOpenPolicy,
+}) {
+  const acknowledged = Boolean(policyAcknowledgment);
+  const lastDailyCheck = demoMode
+    ? "Sample timestamp"
+    : "Scheduled checks active when cloud monitoring runs";
+  const lastSquareSync = demoMode ? "Demo Mode" : "Shown in the Square and System Health box";
+
+  return (
+    <section className="rounded-2xl border border-[#CA862B]/18 bg-white/85 p-4 shadow-sm">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
+            Privacy & Agreements
+          </div>
+          <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-[#6A614F]">
+            {demoMode
+              ? "This is a demo version of the owner portal using sample data only. No live Goldie's business data, Square data, customer/order data, recipes, or private dashboard information is shown here."
+              : "This section tracks privacy policy acknowledgment, case study permission, domain renewal details, and daily check status for the Goldie's DrinkFlow KDS pilot."}
+          </p>
+          {!demoMode && (
+            <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-[#6A614F]">
+              Goldie&apos;s live dashboard data should not be used for public demos,
+              school projects, portfolio materials, marketing, or public case studies
+              unless approved. Use demo/test data, anonymized data, aggregated data,
+              blurred screenshots, or approved screenshots instead.
+            </p>
+          )}
+        </div>
+        <a
+          href="/policy.html"
+          target="_blank"
+          rel="noreferrer"
+          className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-center text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+          onClick={onOpenPolicy}
+        >
+          View Policy
+        </a>
+      </div>
+
+      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {[
+          ["Privacy Policy", acknowledged || demoMode ? "Acknowledged" : "Needs Acknowledgment"],
+          ["Policy Version", POLICY_VERSION],
+          ["Acknowledged By", demoMode ? "Demo Owner" : policyAcknowledgment?.user_name || ""],
+          ["Acknowledged On", demoMode ? "Sample timestamp" : formatPolicyTimestamp(policyAcknowledgment?.acknowledged_timestamp)],
+          ["Last Dismissed", demoMode ? "Sample timestamp" : formatPolicyTimestamp(policyReminder?.dismissed_timestamp)],
+          ["Reminder Count", demoMode ? "2" : String(policyReminder?.reminder_count || 0)],
+          ["Case Study Permission", demoMode ? "Demo Data Only" : "Approved with restrictions"],
+          ["Custom Domain", demoMode ? "demo.drinkflowkds.com" : "goldieskds.com"],
+          ["Fallback Domain", demoMode ? "goldies-demo.drinkflowkds.com" : "goldies.drinkflowkds.com or goldieskds.drinkflowkds.com"],
+          ["Domain Status", demoMode ? "Demo Mode" : "Managed by Studio Samantha / DrinkFlow KDS"],
+          ["Domain Renewal Date", demoMode ? "Sample future date" : "First-year renewal reminder pending"],
+          ["Daily Checks", demoMode ? "Active" : "Active"],
+          ["Last Daily Check", lastDailyCheck],
+          ["Last Square Sync Check", lastSquareSync],
+          ["Last Dashboard Health Check", demoMode ? "Sample timestamp" : "Tracked by scheduled system checks"],
+        ].map(([label, value]) => (
+          <div key={label} className="rounded-xl border border-[#CA862B]/12 bg-[#FFFDF8] px-3 py-3">
+            <div className="text-[11px] font-black uppercase tracking-[0.14em] text-[#6A614F]">
+              {label}
+            </div>
+            <div className="mt-1 text-sm font-black text-[#111111]">
+              {value || "Not recorded yet"}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function buildDemoReportCsv(report, range) {
+  const rows = [
+    ["DEMO DATA ONLY"],
+    ["Business", "DrinkFlow Demo Cafe"],
+    ["Report", getOwnerRangeLabel(range)],
+    ["Generated", new Date().toLocaleString()],
+    [],
+    ["Metric", "Value"],
+    ["Total orders", report?.orderCount || 0],
+    ["Total drink units", report?.totalUnits || 0],
+    ["Total revenue", report?.totalRevenue || "$0.00"],
+    ["Average prep time", "3m 42s"],
+    ["Busiest hour", report?.busiestHour || "8:00 AM"],
+    ["Top drink", report?.topDrink || "Iced Vanilla Latte"],
+    [],
+    ["Category", "Units", "Revenue"],
+    ...(report?.totalsByCategory || []).map((item) => [
+      item.category,
+      item.units,
+      item.revenue,
+    ]),
+  ];
+
+  return rows
+    .map((row) =>
+      row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(",")
+    )
+    .join("\n");
+}
+
+function downloadDemoReportCsv(report, range) {
+  const blob = new Blob([buildDemoReportCsv(report, range)], {
+    type: "text/csv;charset=utf-8",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `drinkflow-demo-${range}-report.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function openDemoReportPreview(report, timingReport, range) {
+  const preview = window.open("", "_blank", "noopener,noreferrer");
+  if (!preview) return;
+  const categories = (report?.totalsByCategory || [])
+    .map(
+      (item) =>
+        `<tr><td>${item.category}</td><td>${item.units}</td><td>${item.revenue}</td></tr>`
+    )
+    .join("");
+  const topDrinks = (report?.totalsByName || [])
+    .map((item) => `<li>${item.name}: ${item.qty}</li>`)
+    .join("");
+  preview.document.write(`<!doctype html>
+<html>
+  <head>
+    <title>DrinkFlow Demo Cafe Report</title>
+    <style>
+      body { font-family: Inter, Arial, sans-serif; color: #222; margin: 32px; }
+      .mark { width: 64px; height: 64px; border-radius: 18px; background: #0f4036; color: white; display: grid; place-items: center; font-weight: 900; font-size: 24px; }
+      .banner { margin: 18px 0; padding: 12px 14px; border: 2px solid #0f4036; background: #eef7f2; font-weight: 800; }
+      table { width: 100%; border-collapse: collapse; margin-top: 14px; }
+      th, td { border: 1px solid #ddd; padding: 9px; text-align: left; }
+      th { background: #eee0c5; }
+      footer { margin-top: 32px; font-size: 12px; color: #555; }
+      @media print { button { display: none; } }
+    </style>
+  </head>
+  <body>
+    <button onclick="window.print()">Print / Save PDF</button>
+    <div class="mark">DF</div>
+    <h1>DrinkFlow Demo Cafe</h1>
+    <h2>Sample Report - Demo Data Only</h2>
+    <div class="banner">DEMO DATA ONLY. This report uses fictional sample data for training, school projects, public demos, and product walkthroughs. No live Goldie's data is included.</div>
+    <h3>${getOwnerRangeLabel(range)} Summary</h3>
+    <p>Total drinks/orders: ${report?.orderCount || 0}. Drink units: ${report?.totalUnits || 0}. Average prep time: ${timingReport?.label || "3m 42s"}. Busiest hour: ${report?.busiestHour || "8:00 AM"}.</p>
+    <table><thead><tr><th>Category</th><th>Units</th><th>Revenue</th></tr></thead><tbody>${categories}</tbody></table>
+    <h3>Top Drinks</h3>
+    <ul>${topDrinks}</ul>
+    <h3>System Health</h3>
+    <p>Square sync status: Demo Mode. Daily checks status: Active. Privacy policy status: Passed. Case study permission: Demo Data Only.</p>
+    <footer>Generated by DrinkFlow Kitchen Display Systems (KDS). This demo report uses fictional sample data only. No live Goldie's data is included.</footer>
+  </body>
+</html>`);
+  preview.document.close();
+}
+
 function OwnerReportsView({
   ownerName,
   onClose,
@@ -5585,6 +6165,11 @@ function OwnerReportsView({
   const [accessLogError, setAccessLogError] = useState("");
   const [accessLogLoading, setAccessLogLoading] = useState(false);
   const [showRecentChanges, setShowRecentChanges] = useState(false);
+  const [policyAcknowledgment, setPolicyAcknowledgment] = useState(readPolicyAcknowledgment);
+  const [policyReminder, setPolicyReminder] = useState(readPolicyReminder);
+  const [showPolicyAcknowledgment, setShowPolicyAcknowledgment] = useState(
+    () => !demoMode && !readPolicyAcknowledgment()
+  );
   const demoQuery = demoMode ? "?demo=training" : "";
 
   useEffect(() => {
@@ -5708,6 +6293,19 @@ function OwnerReportsView({
     fetchOwnerAccessLog();
   }, [demoMode, showAccessLog]);
 
+  useEffect(() => {
+    if (demoMode || !showPolicyAcknowledgment || policyAcknowledgment) return;
+    const reminder = {
+      ...policyReminder,
+      reminder_count: Number(policyReminder?.reminder_count || 0) + 1,
+      last_reminded_timestamp: new Date().toISOString(),
+      policy_version: POLICY_VERSION,
+    };
+    writePolicyReminder(reminder);
+    setPolicyReminder(reminder);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demoMode, showPolicyAcknowledgment, policyAcknowledgment]);
+
   async function handleSaveSnapshot() {
     if (!report) return;
 
@@ -5757,6 +6355,11 @@ function OwnerReportsView({
   }
 
   async function handleLogout() {
+    if (demoMode) {
+      onClose();
+      return;
+    }
+
     await fetch(apiUrl("/api/owner/logout"), {
       method: "POST",
       credentials: "include",
@@ -5791,6 +6394,26 @@ function OwnerReportsView({
     } finally {
       setEmailReportSending(false);
     }
+  }
+
+  function handlePolicyRemindLater() {
+    const reminder = {
+      ...policyReminder,
+      dismissed_timestamp: new Date().toISOString(),
+      policy_version: POLICY_VERSION,
+    };
+    writePolicyReminder(reminder);
+    setPolicyReminder(reminder);
+    setShowPolicyAcknowledgment(false);
+    setOwnerPasswordNotice(
+      "No problem. We'll remind you again later so the current policy version can be acknowledged when convenient."
+    );
+  }
+
+  function handlePolicyRecorded(record) {
+    const nextRecord = record || readPolicyAcknowledgment();
+    setPolicyAcknowledgment(nextRecord);
+    setShowPolicyAcknowledgment(false);
   }
 
   async function handleOwnerPasswordChange({
@@ -5860,14 +6483,14 @@ function OwnerReportsView({
             </div>
             <div className="min-w-0">
               <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
-                {demoMode ? "DF Demo Cafe" : "Owner Reports"}
+                {demoMode ? "DrinkFlow Demo Cafe" : "Owner Reports"}
               </div>
               <h1 className="mt-1 text-3xl font-black text-[#0F4036]">
-                {demoMode ? "Owner Reports Demo" : "Drink Revenue"}
+                {demoMode ? "Demo Owner Portal" : "Drink Revenue"}
               </h1>
               <p className="mt-1 text-sm text-[#6A614F]">
                 {demoMode
-                  ? "Sample drink analytics for a demo cafe"
+                  ? "Sample analytics and reports for DrinkFlow Kitchen Display Systems (KDS)"
                   : "Coffee, Not Coffee, and Smoothies only"}
               </p>
             </div>
@@ -5893,7 +6516,7 @@ function OwnerReportsView({
               onClick={handleLogout}
               className="rounded-xl bg-[#0F4036] px-4 py-2 text-sm font-black text-white transition hover:bg-[#0b352d]"
             >
-              Back to dashboard
+              {demoMode ? "Exit demo" : "Back to dashboard"}
             </button>
           </div>
         </header>
@@ -5943,6 +6566,23 @@ function OwnerReportsView({
           </section>
         )}
 
+        {demoMode && (
+          <div className="rounded-3xl border-2 border-[#0F4036] bg-[#eaf7f1] px-5 py-4 text-[#0F4036] shadow-sm">
+            <div className="text-xs font-black uppercase tracking-[0.18em]">
+              Demo Mode
+            </div>
+            <div className="mt-1 text-lg font-black">
+              This dashboard uses sample data only. No live Goldie&apos;s Square data
+              is shown.
+            </div>
+            <p className="mt-2 text-sm font-semibold leading-6">
+              Data shown here is fictional and intended for training, school
+              projects, public demos, screenshots, portfolio use, customer
+              conversations, and product walkthroughs.
+            </p>
+          </div>
+        )}
+
         <section className="rounded-3xl border border-white/70 bg-[rgba(255,253,248,0.92)] p-4 shadow-sm">
           <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap gap-2">
@@ -5978,9 +6618,28 @@ function OwnerReportsView({
               {reportExportMenuOpen && !loading && !error && (
                 <div className="absolute right-0 z-20 mt-2 w-60 overflow-hidden rounded-2xl border border-[#CA862B]/18 bg-white shadow-[0_18px_45px_rgba(15,64,54,0.16)]">
                   {demoMode ? (
-                    <div className="px-4 py-3 text-sm font-bold leading-5 text-[#6A614F]">
-                      CSV, Excel, and PDF downloads are enabled in a live shop setup.
-                    </div>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          openDemoReportPreview(report, timingReport, range);
+                          setReportExportMenuOpen(false);
+                        }}
+                        className="block w-full px-4 py-3 text-left text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                      >
+                        Preview / Print PDF
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          downloadDemoReportCsv(report, range);
+                          setReportExportMenuOpen(false);
+                        }}
+                        className="block w-full px-4 py-3 text-left text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                      >
+                        Download CSV
+                      </button>
+                    </>
                   ) : (
                     <>
                       <a
@@ -6010,6 +6669,12 @@ function OwnerReportsView({
               )}
             </div>
           </div>
+
+          <PrivacyAgreementsCard
+            demoMode={demoMode}
+            policyAcknowledgment={policyAcknowledgment}
+            policyReminder={policyReminder}
+          />
 
           {!demoMode && (
             <form
@@ -6164,9 +6829,51 @@ function OwnerReportsView({
                 >
                   Self Order Kiosk
                 </a>
+                {!demoMode && (
+                  <a
+                    href="/demo/owner"
+                    className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                  >
+                    Demo Owner Portal
+                  </a>
+                )}
               </div>
             </div>
           </div>
+
+          {demoMode && (
+            <section className="mb-4 rounded-2xl border border-[#CA862B]/18 bg-white/80 p-3 shadow-sm">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
+                Demo reports
+              </div>
+              <p className="mt-1 text-sm font-semibold leading-6 text-[#6A614F]">
+                Reports generated here use fake sample data and generic branding. They
+                are safe for school projects, screenshots, public demos, and customer
+                walkthroughs.
+              </p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                {[
+                  "Daily Summary",
+                  "Last 7 Days Report",
+                  "Last 30 Days Report",
+                  "Monthly Report",
+                  "Category Breakdown",
+                  "Rush Hour Report",
+                  "System Health Report",
+                  "Workflow Report",
+                ].map((label) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => openDemoReportPreview(report, timingReport, range)}
+                    className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-3 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
 
           {loading ? (
             <div className="rounded-2xl border border-dashed border-[#CA862B]/22 bg-white/70 p-8 text-center font-semibold text-[#6A614F]">
@@ -6360,6 +7067,45 @@ function OwnerReportsView({
                   </div>
                 )}
               </div>
+
+              {demoMode && (
+                <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                  <section className="rounded-2xl border border-[#CA862B]/16 bg-white p-4 shadow-sm">
+                    <div className="text-xs font-black uppercase tracking-[0.16em] text-[#8B5A1D]">
+                      Recent demo orders
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      {(report?.recentOrders || []).map((order) => (
+                        <div key={order.orderNumber} className="flex items-center justify-between gap-3 rounded-xl border border-[#CA862B]/10 bg-[#FFFDF8] px-3 py-2 text-sm">
+                          <div className="font-black text-[#111111]">
+                            Order #{order.orderNumber} - {order.item}
+                          </div>
+                          <div className="shrink-0 font-bold text-[#0F4036]">
+                            {order.status} - {order.time}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                  <section className="rounded-2xl border border-[#CA862B]/16 bg-white p-4 shadow-sm">
+                    <div className="text-xs font-black uppercase tracking-[0.16em] text-[#8B5A1D]">
+                      Demo system checks
+                    </div>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {(report?.systemChecks || []).map((check) => (
+                        <div key={check.label} className="rounded-xl border border-[#CA862B]/10 bg-[#FFFDF8] px-3 py-2">
+                          <div className="text-xs font-black uppercase tracking-[0.12em] text-[#6A614F]">
+                            {check.label}
+                          </div>
+                          <div className="mt-1 text-sm font-black text-[#0F4036]">
+                            {check.status}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </div>
+              )}
             </>
           )}
         </section>
@@ -6409,6 +7155,12 @@ function OwnerReportsView({
         onSubmit={handleOwnerPasswordChange}
         saving={ownerPasswordSaving}
         error={ownerPasswordError}
+      />
+      <PolicyAcknowledgmentDialog
+        open={showPolicyAcknowledgment}
+        ownerName={ownerName}
+        onRecorded={handlePolicyRecorded}
+        onRemindLater={handlePolicyRemindLater}
       />
     </div>
   );
@@ -8330,6 +9082,1246 @@ function OnlineOrdersDisplay() {
   );
 }
 
+function RollerRollerCoasterGameLegacy() {
+  const canvasRef = useRef(null);
+  const sceneRef = useRef(null);
+  const rafRef = useRef(0);
+  const lastFrameRef = useRef(0);
+  const hudFrameRef = useRef(0);
+  const audioRef = useRef(null);
+  const worldRef = useRef(null);
+  const GAME_MESSAGE = "Tap jump or press Space to help Zahra collect stars and Mango treats.";
+  const [hud, setHud] = useState({
+    score: 0,
+    stars: 0,
+    treats: 0,
+    crashes: 0,
+    shield: 0,
+    best: 0,
+    speed: 0,
+    message: GAME_MESSAGE,
+  });
+  const [musicOn, setMusicOn] = useState(true);
+  const [showIntro, setShowIntro] = useState(true);
+  const [canvasSize, setCanvasSize] = useState({ width: 960, height: 640 });
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  async function playNotes(notes = [], baseGain = 0.07) {
+    if (!musicOn || typeof window === "undefined") return;
+
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+
+      if (!audioRef.current) {
+        audioRef.current = new AudioContextClass();
+      }
+
+      const ctx = audioRef.current;
+      if (ctx.state === "suspended") {
+        await ctx.resume().catch(() => {});
+      }
+
+      const now = ctx.currentTime;
+      notes.forEach((note, index) => {
+        const oscillator = ctx.createOscillator();
+        const gain = ctx.createGain();
+        oscillator.type = index === 0 ? "triangle" : "sine";
+        oscillator.frequency.value = note;
+        gain.gain.value = 0.0001;
+        oscillator.connect(gain);
+        gain.connect(ctx.destination);
+        oscillator.start(now + index * 0.03);
+        gain.gain.exponentialRampToValueAtTime(baseGain, now + index * 0.03 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + index * 0.03 + 0.22);
+        oscillator.stop(now + index * 0.03 + 0.24);
+      });
+    } catch {
+      // ignore audio failures
+    }
+  }
+
+  async function unlockAudio() {
+    if (!musicOn || typeof window === "undefined") return;
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+      if (!audioRef.current) {
+        audioRef.current = new AudioContextClass();
+      }
+      const ctx = audioRef.current;
+      if (ctx.state === "suspended") {
+        await ctx.resume().catch(() => {});
+      }
+    } catch {
+      // ignore unlock failures
+    }
+  }
+
+  function createScene(width, height) {
+    const groundY = Math.round(height * 0.78);
+    const laneBase = groundY - 70;
+    const obstacleKinds = ["loop", "spark", "bump", "rainbow", "puff", "banner"];
+    const stars = Array.from({ length: 10 }, (_, index) => ({
+      id: `star-${index}`,
+      x: width + 120 + index * 180 + Math.random() * 160,
+      y: laneBase - 40 - (index % 4) * 34,
+      size: 12 + (index % 3) * 4,
+      twinkle: Math.random() * Math.PI * 2,
+    }));
+    const treats = Array.from({ length: 8 }, (_, index) => ({
+      id: `treat-${index}`,
+      x: width + 180 + index * 210 + Math.random() * 180,
+      y: laneBase - 8 - (index % 3) * 22,
+      size: 14 + (index % 2) * 2,
+      kind: "fish",
+      twinkle: Math.random() * Math.PI * 2,
+    }));
+    const powerups = Array.from({ length: 3 }, (_, index) => ({
+      id: `powerup-${index}`,
+      x: width + 420 + index * 460 + Math.random() * 160,
+      y: laneBase - 56 - (index % 2) * 10,
+      size: 18,
+      kind: "shield",
+      twinkle: Math.random() * Math.PI * 2,
+    }));
+    const platforms = Array.from({ length: 5 }, (_, index) => ({
+      id: `platform-${index}`,
+      x: width + 260 + index * 300 + Math.random() * 160,
+      y: laneBase - 28 - (index % 3) * 18,
+      width: 78 + (index % 3) * 24,
+      bounce: 720 + (index % 2) * 60,
+      kind: index % 2 === 0 ? "spring" : "cloud",
+    }));
+    const obstacles = Array.from({ length: 6 }, (_, index) => ({
+      id: `obstacle-${index}`,
+      x: width + 220 + index * 220 + Math.random() * 120,
+      y: index % 2 === 0 ? laneBase + (index % 3 === 0 ? 0 : -18) : laneBase - 82,
+      kind: obstacleKinds[index % obstacleKinds.length],
+      size: 28 + (index % 3) * 10,
+      avoidance: index % 2 === 0 ? "jump" : "duck",
+    }));
+    const clouds = Array.from({ length: 5 }, (_, index) => ({
+      id: `cloud-${index}`,
+      x: 60 + index * (width / 4),
+      y: 48 + (index % 2) * 38,
+      size: 52 + index * 8,
+    }));
+
+    return {
+      width,
+      height,
+      groundY,
+      laneBase,
+      distance: 0,
+      speed: 240,
+      jumpHeight: 0,
+      jumpVelocity: 0,
+      ducking: false,
+      starsCollected: 0,
+      treatsCollected: 0,
+      crashesTaken: 0,
+      score: 0,
+      best: 0,
+      message: GAME_MESSAGE,
+      obstacles,
+      stars,
+      treats,
+      clouds,
+      platforms,
+      powerups,
+      sparklePhase: 0,
+      hitCooldown: 0,
+      lastStarMessage: 0,
+      lastTreatMessage: 0,
+      shieldTime: 0,
+      shieldPulse: 0,
+      platformCooldown: 0,
+    };
+  }
+
+  function resetGame(message = GAME_MESSAGE) {
+    const { width, height } = canvasSize;
+    worldRef.current = createScene(width, height);
+    worldRef.current.message = message;
+    setHud((current) => ({
+      ...current,
+      score: 0,
+      stars: 0,
+      treats: 0,
+      crashes: 0,
+      shield: 0,
+      speed: 0,
+      message,
+    }));
+  }
+
+  function setDucking(active) {
+    const world = worldRef.current;
+    if (!world) return;
+    world.ducking = active;
+    world.message = active ? "Duck under it!" : "Up again!";
+  }
+
+  function jump() {
+    const world = worldRef.current;
+    if (!world) return;
+    if (world.jumpHeight > 0.5) return;
+
+    setDucking(false);
+    unlockAudio();
+    world.jumpVelocity = 920;
+    world.jumpHeight = 1;
+    world.message = "Sparkle jump!";
+    playNotes([523, 659, 784], 0.035);
+  }
+
+  function startGame() {
+    setShowIntro(false);
+    unlockAudio();
+    playNotes([523, 659, 784, 1046], 0.05);
+  }
+
+  async function copyShareLink() {
+    try {
+      await unlockAudio();
+      await window.navigator.clipboard.writeText(window.location.href);
+      const world = worldRef.current;
+      if (world) {
+        world.message = "Link copied. Zahra can share the coaster!";
+      }
+      playNotes([659, 784, 1046], 0.04);
+    } catch {
+      const world = worldRef.current;
+      if (world) {
+        world.message = "Sharing is ready once the browser allows copy.";
+      }
+    }
+  }
+
+  useEffect(() => {
+    const world = createScene(canvasSize.width, canvasSize.height);
+    world.best = Number(window.localStorage?.getItem("roller-roller-coaster-best") || 0) || 0;
+    worldRef.current = world;
+    setHud({
+      score: 0,
+      stars: 0,
+      treats: 0,
+      crashes: 0,
+      shield: 0,
+      best: world.best,
+      speed: 0,
+      message: GAME_MESSAGE,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    function syncSize() {
+      const node = sceneRef.current;
+      if (!node) return;
+      const rect = node.getBoundingClientRect();
+      const width = Math.max(320, Math.round(rect.width));
+      const height = Math.max(520, Math.round(rect.height));
+      setCanvasSize({ width, height });
+    }
+
+    syncSize();
+    const observer = typeof ResizeObserver !== "undefined" && sceneRef.current
+      ? new ResizeObserver(syncSize)
+      : null;
+    if (observer && sceneRef.current) observer.observe(sceneRef.current);
+    window.addEventListener("resize", syncSize);
+
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", syncSize);
+    };
+  }, []);
+
+  useEffect(() => {
+    resetGame();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canvasSize.width, canvasSize.height]);
+
+  useEffect(() => {
+    function onKeyDown(event) {
+      if (event.code === "Space" || event.code === "ArrowUp") {
+        event.preventDefault();
+        jump();
+      } else if (event.code === "ArrowDown" || event.code === "ShiftLeft" || event.code === "ShiftRight") {
+        event.preventDefault();
+        setDucking(true);
+      }
+    }
+
+    function onKeyUp(event) {
+      if (event.code === "ArrowDown" || event.code === "ShiftLeft" || event.code === "ShiftRight") {
+        event.preventDefault();
+        setDucking(false);
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [musicOn, canvasSize.width, canvasSize.height]);
+
+  useEffect(() => {
+    let active = true;
+
+    function drawStar(ctx, x, y, radius, points, innerRadius, color, rotation = 0) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rotation);
+      ctx.beginPath();
+      for (let index = 0; index < points * 2; index += 1) {
+        const step = Math.PI / points;
+        const dist = index % 2 === 0 ? radius : innerRadius;
+        const px = Math.cos(index * step - Math.PI / 2) * dist;
+        const py = Math.sin(index * step - Math.PI / 2) * dist;
+        if (index === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawCloud(ctx, x, y, size, tint, alpha = 0.6) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = tint;
+      ctx.beginPath();
+      ctx.ellipse(x, y, size * 0.44, size * 0.28, 0, 0, Math.PI * 2);
+      ctx.ellipse(x + size * 0.18, y - size * 0.08, size * 0.34, size * 0.24, 0, 0, Math.PI * 2);
+      ctx.ellipse(x - size * 0.18, y - size * 0.05, size * 0.3, size * 0.22, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawMango(ctx, x, y, scale, bounce) {
+      const sway = Math.sin(bounce * 0.04) * 2;
+      ctx.save();
+      ctx.translate(x, y + sway);
+      ctx.scale(scale, scale);
+      ctx.fillStyle = "#B86A3C";
+      ctx.strokeStyle = "#6A3C21";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(-18, -12, 36, 24, 10);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#F7D9BD";
+      ctx.beginPath();
+      ctx.arc(0, -2, 9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#1d120c";
+      ctx.beginPath();
+      ctx.arc(-5, -4, 1.7, 0, Math.PI * 2);
+      ctx.arc(5, -4, 1.7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(-2, 0);
+      ctx.lineTo(0, 2);
+      ctx.lineTo(2, 0);
+      ctx.fillStyle = "#7C2D12";
+      ctx.fill();
+      ctx.fillStyle = "#B86A3C";
+      ctx.beginPath();
+      ctx.moveTo(-14, -10);
+      ctx.lineTo(-22, -20);
+      ctx.lineTo(-11, -16);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(14, -10);
+      ctx.lineTo(22, -20);
+      ctx.lineTo(11, -16);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawTreat(ctx, x, y, scale, kind, twinkle) {
+      ctx.save();
+      ctx.translate(x, y + Math.sin(twinkle) * 2);
+      ctx.rotate(Math.sin(twinkle * 0.6) * 0.12);
+      ctx.scale(scale, scale);
+
+      if (kind === "bone") {
+        ctx.fillStyle = "#F7E6C7";
+        ctx.strokeStyle = "#9A6B2C";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(-10, -5, 20, 10, 5);
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(-12, -1, 5.5, 0, Math.PI * 2);
+        ctx.arc(12, -1, 5.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      } else if (kind === "heart") {
+        ctx.fillStyle = "#FF8CCB";
+        ctx.strokeStyle = "#B83D82";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, 9);
+        ctx.bezierCurveTo(-12, 1, -10, -10, -1, -10);
+        ctx.bezierCurveTo(7, -10, 8, -2, 0, 4);
+        ctx.bezierCurveTo(-8, -2, -7, -10, 1, -10);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = "#FFB84D";
+        ctx.strokeStyle = "#9A6B2C";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-14, 0);
+        ctx.quadraticCurveTo(-6, -10, 8, -7);
+        ctx.lineTo(15, 0);
+        ctx.lineTo(8, 7);
+        ctx.quadraticCurveTo(-6, 10, -14, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = "#6A3C21";
+        ctx.beginPath();
+        ctx.arc(-3, -1, 1.6, 0, Math.PI * 2);
+        ctx.arc(3, -1, 1.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    function drawRider(ctx, x, baseY, jumpHeight, pulse, time, ducking = false) {
+      const y = baseY - jumpHeight;
+      const bob = Math.sin(time * 0.01) * 2;
+      const cartY = y + bob;
+      const cartW = 128;
+      const cartH = 56;
+      ctx.save();
+      ctx.translate(x, cartY);
+
+      ctx.fillStyle = "rgba(255,255,255,0.33)";
+      ctx.strokeStyle = "#F3D39B";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.roundRect(-cartW / 2, -cartH / 2, cartW, cartH, 18);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.strokeStyle = "#FF8CCB";
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(-36, -22);
+      ctx.quadraticCurveTo(0, -34, 36, -22);
+      ctx.stroke();
+
+      ctx.strokeStyle = "#CA862B";
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(-54, 14);
+      ctx.quadraticCurveTo(-12, 40, 42, 20);
+      ctx.stroke();
+
+      const wheelY = 30;
+      const wheelX = -42;
+      ctx.fillStyle = "#0F4036";
+      [wheelX, wheelX + 70].forEach((offset) => {
+        ctx.beginPath();
+        ctx.arc(offset, wheelY, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#CA862B";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      });
+
+      ctx.save();
+      ctx.translate(-8, ducking ? -36 - pulse : -48 - pulse);
+      ctx.scale(ducking ? 1.0 : 1.05, ducking ? 0.88 : 1.05);
+
+      // hair
+      ctx.fillStyle = "#3E251B";
+      ctx.beginPath();
+      ctx.arc(0, -10, 20, Math.PI, 0);
+      ctx.fill();
+      if (!ducking) {
+        ctx.beginPath();
+        ctx.moveTo(-18, -6);
+        ctx.quadraticCurveTo(-24, -22, -10, -18);
+        ctx.quadraticCurveTo(-2, -16, -4, -2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(18, -6);
+        ctx.quadraticCurveTo(24, -22, 10, -18);
+        ctx.quadraticCurveTo(2, -16, 4, -2);
+        ctx.fill();
+      }
+
+      // face
+      ctx.fillStyle = "#F3C8B1";
+      ctx.beginPath();
+      ctx.arc(0, ducking ? 4 : 0, 17, 0, Math.PI * 2);
+      ctx.fill();
+
+      // eyes and smile
+      ctx.fillStyle = "#2C1D16";
+      ctx.beginPath();
+      ctx.arc(-6, ducking ? 2 : -2, 1.9, 0, Math.PI * 2);
+      ctx.arc(6, ducking ? 2 : -2, 1.9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#7C2D12";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, ducking ? 8 : 5, 5, 0.15 * Math.PI, 0.85 * Math.PI);
+      ctx.stroke();
+
+      // rainbow shirt
+      ctx.fillStyle = "#7BE0C4";
+      ctx.beginPath();
+      ctx.roundRect(-18, ducking ? 16 : 12, 36, ducking ? 20 : 24, 10);
+      ctx.fill();
+      ctx.fillStyle = "#FF4D9D";
+      ctx.fillRect(-18, ducking ? 16 : 12, 36, 5);
+      ctx.fillStyle = "#FFD84D";
+      ctx.fillRect(-18, ducking ? 21 : 17, 36, 5);
+      ctx.fillStyle = "#70A8FF";
+      ctx.fillRect(-18, ducking ? 26 : 22, 36, 5);
+
+      // arms
+      ctx.strokeStyle = "#F3C8B1";
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(-16, ducking ? 24 : 18);
+      ctx.lineTo(-28, ducking ? 30 : 32);
+      ctx.moveTo(16, ducking ? 24 : 18);
+      ctx.lineTo(28, ducking ? 30 : 32);
+      ctx.stroke();
+
+      // legs
+      ctx.strokeStyle = "#6A3C21";
+      ctx.lineWidth = 7;
+      ctx.beginPath();
+      ctx.moveTo(-8, ducking ? 32 : 35);
+      ctx.lineTo(-12, ducking ? 42 : 48);
+      ctx.moveTo(8, ducking ? 32 : 35);
+      ctx.lineTo(12, ducking ? 42 : 48);
+      ctx.stroke();
+
+      // shoes
+      ctx.fillStyle = "#FFF7EA";
+      ctx.beginPath();
+      ctx.roundRect(-16, ducking ? 40 : 46, 12, 6, 3);
+      ctx.roundRect(4, ducking ? 40 : 46, 12, 6, 3);
+      ctx.fill();
+
+      // sparkle bow / halo
+      ctx.fillStyle = "#B18BFF";
+      ctx.beginPath();
+      ctx.arc(-11, ducking ? -14 : -16, 4, 0, Math.PI * 2);
+      ctx.arc(11, ducking ? -14 : -16, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#FFFFFF";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-2, -16);
+      ctx.lineTo(2, -16);
+      ctx.stroke();
+      ctx.restore();
+
+      drawMango(ctx, 50, -16, 0.82, time);
+      ctx.restore();
+    }
+
+    function drawObstacle(ctx, obstacle, time) {
+      const bob = Math.sin((time + obstacle.x) * 0.02) * 2;
+      const x = obstacle.x;
+      const y = obstacle.y + bob;
+      ctx.save();
+      ctx.translate(x, y);
+
+      if (obstacle.avoidance === "duck") {
+        ctx.strokeStyle = "#CA862B";
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(-42, -20);
+        ctx.lineTo(-18, 0);
+        ctx.lineTo(18, 0);
+        ctx.lineTo(42, -20);
+        ctx.stroke();
+        ctx.fillStyle = "#FF8CCB";
+        ctx.beginPath();
+        ctx.roundRect(-36, -44, 72, 18, 8);
+        ctx.fill();
+        ctx.strokeStyle = "#7A2F72";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      } else if (obstacle.kind === "loop") {
+        ctx.strokeStyle = "#CA862B";
+        ctx.lineWidth = 12;
+        ctx.beginPath();
+        ctx.arc(0, 8, obstacle.size * 0.6, Math.PI, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = "#FCE7A1";
+        ctx.beginPath();
+        ctx.arc(0, 8, obstacle.size * 0.26, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (obstacle.kind === "spark") {
+        drawStar(ctx, 0, 0, obstacle.size, 5, obstacle.size * 0.42, "#fff3a8", time * 0.002);
+      } else if (obstacle.kind === "rainbow") {
+        ctx.fillStyle = "#FF7CC9";
+        ctx.beginPath();
+        ctx.roundRect(-18, -obstacle.size * 0.7, 36, obstacle.size * 0.9, 10);
+        ctx.fill();
+        ctx.strokeStyle = "#7A2F72";
+        ctx.lineWidth = 4;
+        ctx.stroke();
+      } else if (obstacle.kind === "puff") {
+        ctx.fillStyle = "#FFFFFF";
+        ctx.beginPath();
+        ctx.arc(-10, 4, obstacle.size * 0.32, 0, Math.PI * 2);
+        ctx.arc(0, -6, obstacle.size * 0.42, 0, Math.PI * 2);
+        ctx.arc(12, 4, obstacle.size * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#D7A8F0";
+        ctx.lineWidth = 4;
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = "#8C4CFF";
+        ctx.beginPath();
+        ctx.roundRect(-obstacle.size * 0.42, -obstacle.size * 0.8, obstacle.size * 0.84, obstacle.size, 12);
+        ctx.fill();
+        ctx.strokeStyle = "#4C1D95";
+        ctx.lineWidth = 4;
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    function drawPlatform(ctx, platform, time) {
+      ctx.save();
+      ctx.translate(platform.x, platform.y + Math.sin(time * 0.01 + platform.x * 0.02) * 1.5);
+      if (platform.kind === "spring") {
+        ctx.fillStyle = "#FFF7EA";
+        ctx.strokeStyle = "#CA862B";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.roundRect(-8, -8, platform.width, 16, 10);
+        ctx.fill();
+        ctx.stroke();
+        ctx.strokeStyle = "#FF4D9D";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(6, 0);
+        ctx.lineTo(platform.width - 14, 0);
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = "#C7F9EA";
+        ctx.strokeStyle = "#0F4036";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.roundRect(-10, -7, platform.width + 20, 14, 8);
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawPowerup(ctx, powerup, time, shieldActive) {
+      const glow = 0.6 + Math.sin(time * 0.01 + powerup.twinkle) * 0.15;
+      ctx.save();
+      ctx.translate(powerup.x, powerup.y + Math.sin(time * 0.012 + powerup.twinkle) * 2);
+      ctx.globalAlpha = 0.95;
+      ctx.fillStyle = shieldActive ? "#7DD3FC" : "#93C5FD";
+      ctx.beginPath();
+      ctx.arc(0, 0, 18 + Math.sin(powerup.twinkle + time * 0.005) * 1.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = glow;
+      ctx.strokeStyle = "#FDE68A";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(0, 0, 24 + Math.sin(powerup.twinkle + time * 0.005) * 1.5, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = "#FFFFFF";
+      ctx.beginPath();
+      ctx.arc(0, 0, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#FF4D9D";
+      ctx.beginPath();
+      ctx.moveTo(0, -8);
+      ctx.lineTo(4, -1);
+      ctx.lineTo(11, 0);
+      ctx.lineTo(4, 1);
+      ctx.lineTo(0, 8);
+      ctx.lineTo(-4, 1);
+      ctx.lineTo(-11, 0);
+      ctx.lineTo(-4, -1);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawTrack(ctx, width, baseY, time, phase) {
+      const rainbow = ["#FF4D9D", "#FF8B4D", "#FFD84D", "#7BE0C4", "#70A8FF", "#B18BFF"];
+      const yShift = Math.sin(time * 0.0015) * 8;
+      const wave = (x) => trackYAtX(x, baseY, time, phase);
+
+      rainbow.forEach((color, index) => {
+        ctx.beginPath();
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 14 - index * 1.3;
+        for (let x = -40; x <= width + 40; x += 16) {
+          const y = wave(x) + index * 2 - 12;
+          if (x === -40) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      });
+
+      ctx.strokeStyle = "#FFF7EA";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      for (let x = -40; x <= width + 40; x += 16) {
+        const y = wave(x) + 26;
+        if (x === -40) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    function trackYAtX(x, baseY, time, phase) {
+      const yShift = Math.sin(time * 0.0015) * 4;
+      return baseY + yShift + Math.sin((x + phase) / 92) * 10 + Math.sin((x + phase) / 44) * 4;
+    }
+
+    function frame(now) {
+      if (!active) return;
+      const canvas = canvasRef.current;
+      const world = worldRef.current;
+      if (!canvas || !world) {
+        rafRef.current = window.requestAnimationFrame(frame);
+        return;
+      }
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        rafRef.current = window.requestAnimationFrame(frame);
+        return;
+      }
+
+      if (!lastFrameRef.current) lastFrameRef.current = now;
+      const delta = Math.min(0.035, (now - lastFrameRef.current) / 1000);
+      lastFrameRef.current = now;
+
+      const width = canvas.width / (window.devicePixelRatio || 1);
+      const height = canvas.height / (window.devicePixelRatio || 1);
+      const groundY = world.groundY;
+      const riderX = Math.round(width * 0.24);
+      const riderTrackY = trackYAtX(riderX, groundY, now, world.distance * 0.92);
+
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, width, height);
+      ctx.restore();
+
+      world.distance += world.speed * delta;
+      world.speed = clamp(240 + world.distance / 1800 + world.starsCollected * 2, 240, 430);
+      world.sparklePhase += delta * 9;
+
+      if (world.jumpHeight > 0 || world.jumpVelocity > 0) {
+        world.jumpVelocity -= 2100 * delta;
+        world.jumpHeight += world.jumpVelocity * delta;
+        if (world.jumpHeight <= 0) {
+          world.jumpHeight = 0;
+          world.jumpVelocity = 0;
+        }
+      }
+
+      world.hitCooldown = Math.max(0, world.hitCooldown - delta);
+      world.lastStarMessage = Math.max(0, world.lastStarMessage - delta);
+      world.lastTreatMessage = Math.max(0, world.lastTreatMessage - delta);
+      world.crashFlash = Math.max(0, (world.crashFlash || 0) - delta);
+      world.shieldTime = Math.max(0, world.shieldTime - delta);
+      world.shieldPulse = Math.max(0, world.shieldPulse - delta);
+      world.platformCooldown = Math.max(0, world.platformCooldown - delta);
+
+      const riderY = riderTrackY - 84 - world.jumpHeight;
+      const riderDuckOffset = world.ducking ? 16 : 0;
+      const riderDuckHeight = world.ducking ? 62 : 86;
+      const riderRect = {
+        x: riderX - 28,
+        y: riderY - 54 + riderDuckOffset,
+        width: 84,
+        height: riderDuckHeight,
+      };
+
+      world.obstacles.forEach((obstacle) => {
+        obstacle.x -= world.speed * delta;
+        if (obstacle.x < -120) {
+          const farthest = Math.max(...world.obstacles.map((entry) => entry.x));
+          obstacle.x = farthest + 180 + Math.random() * 120;
+          obstacle.avoidance = Math.random() > 0.45 ? "jump" : "duck";
+          obstacle.kind = obstacle.avoidance === "duck"
+            ? ["rainbow", "puff", "banner"][Math.floor(Math.random() * 3)]
+            : ["loop", "spark", "bump"][Math.floor(Math.random() * 3)];
+          obstacle.size = 28 + Math.floor(Math.random() * 18);
+          obstacle.y = obstacle.avoidance === "duck"
+            ? world.laneBase - 82 - Math.floor(Math.random() * 18)
+            : world.laneBase + (Math.random() > 0.55 ? 0 : -20);
+        }
+
+        const overlap =
+          obstacle.x > riderRect.x - 10 &&
+          obstacle.x < riderRect.x + riderRect.width;
+        const jumpCollision =
+          obstacle.avoidance === "jump" &&
+          overlap &&
+          riderRect.y + riderRect.height > obstacle.y - 16 &&
+          riderRect.y < obstacle.y + 80;
+        const duckCollision =
+          obstacle.avoidance === "duck" &&
+          overlap &&
+          !world.ducking &&
+          riderY < obstacle.y + 10 &&
+          riderY > obstacle.y - 70;
+        if ((jumpCollision || duckCollision) && world.jumpHeight < 42 && world.hitCooldown <= 0) {
+          if (world.shieldTime > 0) {
+            world.shieldTime = 0;
+            world.shieldPulse = 0.9;
+            world.message = "Shield popped! Keep rolling.";
+            playNotes([784, 1046, 1318], 0.05);
+            obstacle.x = Math.max(...world.obstacles.map((entry) => entry.x)) + 240 + Math.random() * 160;
+            obstacle.avoidance = Math.random() > 0.45 ? "jump" : "duck";
+            obstacle.kind = obstacle.avoidance === "duck"
+              ? ["rainbow", "puff", "banner"][Math.floor(Math.random() * 3)]
+              : ["loop", "spark", "bump"][Math.floor(Math.random() * 3)];
+            obstacle.y = obstacle.avoidance === "duck"
+              ? world.laneBase - 82 - Math.floor(Math.random() * 18)
+              : world.laneBase + (Math.random() > 0.55 ? 0 : -20);
+            return;
+          }
+          world.hitCooldown = 1;
+          world.crashesTaken += 1;
+          world.crashFlash = 0.8;
+          world.message = obstacle.avoidance === "duck" ? "Duck it next time!" : "Crash! Dodge the next one.";
+          world.speed = Math.max(220, world.speed - 24);
+          playNotes([196, 220], 0.025);
+          if (world.crashesTaken >= 3) {
+            resetGame("Too many crashes. Starting a fresh ride.");
+            return;
+          }
+        }
+      });
+
+      world.stars.forEach((star, index) => {
+        star.x -= world.speed * delta;
+        if (star.x < -120) {
+          const farthest = Math.max(...world.stars.map((entry) => entry.x));
+          star.x = farthest + 120 + Math.random() * 220;
+          star.y = world.laneBase - 34 - ((index + Math.round(world.distance / 250)) % 4) * 36;
+          star.size = 12 + ((index + Math.round(world.distance / 400)) % 3) * 4;
+          star.twinkle = Math.random() * Math.PI * 2;
+        }
+
+        const hitX = Math.abs(star.x - riderX) < 36;
+        const hitY = Math.abs(star.y - (riderY - 78)) < 48;
+        if (hitX && hitY) {
+          world.starsCollected += 1;
+          world.score += 25;
+          world.lastStarMessage = 1.5;
+          world.message = world.starsCollected % 5 === 0 ? "Mango found a mega sparkle!" : "Star collected!";
+          star.x = Math.max(...world.stars.map((entry) => entry.x)) + 180 + Math.random() * 140;
+          star.y = world.laneBase - 42 - Math.floor(Math.random() * 4) * 30;
+          playNotes([523, 659, 784, 1046], 0.05);
+        }
+      });
+
+      world.treats.forEach((treat, index) => {
+        treat.x -= world.speed * delta;
+        if (treat.x < -120) {
+          const farthest = Math.max(...world.treats.map((entry) => entry.x));
+          treat.x = farthest + 160 + Math.random() * 200;
+          treat.y = world.laneBase - 6 - ((index + Math.round(world.distance / 220)) % 3) * 24;
+          treat.kind = "fish";
+          treat.size = 14 + Math.floor(Math.random() * 4);
+          treat.twinkle = Math.random() * Math.PI * 2;
+        }
+
+        const hitTreatX = Math.abs(treat.x - riderX) < 34;
+        const hitTreatY = Math.abs(treat.y - (riderY - 66)) < 42;
+        if (hitTreatX && hitTreatY) {
+          world.treatsCollected += 1;
+          world.score += 12;
+          world.lastTreatMessage = 1.4;
+          world.message = "Mango got a fish treat!";
+          treat.x = Math.max(...world.treats.map((entry) => entry.x)) + 180 + Math.random() * 140;
+          treat.y = world.laneBase - 8 - Math.floor(Math.random() * 3) * 24;
+          treat.kind = "fish";
+          playNotes([392, 523, 659], 0.045);
+        }
+      });
+
+      world.platforms.forEach((platform, index) => {
+        platform.x -= world.speed * delta * 0.98;
+        if (platform.x < -160) {
+          const farthest = Math.max(...world.platforms.map((entry) => entry.x));
+          platform.x = farthest + 240 + Math.random() * 180;
+          platform.y = world.laneBase - 28 - ((index + Math.round(world.distance / 180)) % 3) * 18;
+          platform.width = 78 + Math.floor(Math.random() * 34);
+          platform.bounce = 720 + Math.floor(Math.random() * 120);
+          platform.kind = Math.random() > 0.5 ? "spring" : "cloud";
+        }
+
+        const onPlatform =
+          riderX > platform.x - 32 &&
+          riderX < platform.x + platform.width + 32 &&
+          Math.abs((riderY + 28) - platform.y) < 16 &&
+          world.jumpHeight < 16 &&
+          world.platformCooldown <= 0;
+
+        if (onPlatform) {
+          world.platformCooldown = 0.35;
+          world.jumpVelocity = Math.max(world.jumpVelocity, platform.bounce);
+          world.jumpHeight = Math.max(world.jumpHeight, 2);
+          world.message = "Bounce!";
+          playNotes([659, 784, 988], 0.04);
+        }
+      });
+
+      world.powerups.forEach((powerup, index) => {
+        powerup.x -= world.speed * delta * 0.96;
+        if (powerup.x < -140) {
+          const farthest = Math.max(...world.powerups.map((entry) => entry.x));
+          powerup.x = farthest + 320 + Math.random() * 220;
+          powerup.y = world.laneBase - 56 - ((index + Math.round(world.distance / 300)) % 2) * 16;
+          powerup.twinkle = Math.random() * Math.PI * 2;
+        }
+
+        const hitPowerupX = Math.abs(powerup.x - riderX) < 36;
+        const hitPowerupY = Math.abs(powerup.y - (riderY - 72)) < 48;
+        if (hitPowerupX && hitPowerupY) {
+          world.shieldTime = 5;
+          world.message = "Star power shield!";
+          powerup.x = Math.max(...world.powerups.map((entry) => entry.x)) + 360 + Math.random() * 200;
+          powerup.y = world.laneBase - 56 - Math.floor(Math.random() * 2) * 16;
+          playNotes([523, 784, 1046, 1318], 0.05);
+        }
+      });
+
+      world.clouds.forEach((cloud, index) => {
+        cloud.x -= delta * (world.speed * 0.14);
+        if (cloud.x < -120) {
+          cloud.x = width + 120 + index * 180;
+          cloud.y = 36 + Math.random() * 84;
+          cloud.size = 46 + Math.random() * 34;
+        }
+      });
+
+      world.score = Math.round(world.distance / 8 + world.starsCollected * 22 + Math.max(0, (world.speed - 240) * 0.4));
+      world.best = Math.max(world.best || 0, world.score);
+      try {
+        window.localStorage.setItem("roller-roller-coaster-best", String(world.best));
+      } catch {
+        // ignore storage failures
+      }
+
+      if (now - hudFrameRef.current > 110) {
+        hudFrameRef.current = now;
+        setHud({
+          score: world.score,
+          stars: world.starsCollected,
+          treats: world.treatsCollected,
+          crashes: world.crashesTaken,
+          shield: Math.ceil(world.shieldTime),
+          best: world.best,
+          speed: Math.round(world.speed),
+          message: world.message,
+        });
+      }
+
+      const bg = ctx.createLinearGradient(0, 0, 0, height);
+      bg.addColorStop(0, "#fff7fd");
+      bg.addColorStop(0.4, "#ffe8f7");
+      bg.addColorStop(0.7, "#dffaf4");
+      bg.addColorStop(1, "#eef6ff");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, width, height);
+
+      for (let i = 0; i < 12; i += 1) {
+        const sparkleX = ((i * 137) + world.distance * 0.12) % (width + 120) - 60;
+        const sparkleY = 50 + (i % 5) * 54 + Math.sin((world.sparklePhase + i) * 0.9) * 8;
+        drawStar(ctx, sparkleX, sparkleY, 5 + (i % 3), 5, 2.3, i % 2 === 0 ? "#FFFFFF" : "#FCE7A1", world.sparklePhase + i * 0.3);
+      }
+
+      world.clouds.forEach((cloud) => drawCloud(ctx, cloud.x, cloud.y, cloud.size, "#FFFFFF", 0.72));
+
+      drawTrack(ctx, width, groundY, now, world.distance * 0.58);
+
+      if (world.crashFlash > 0) {
+        ctx.save();
+        ctx.fillStyle = `rgba(255, 72, 120, ${Math.min(0.24, world.crashFlash * 0.3)})`;
+        ctx.fillRect(0, 0, width, height);
+        ctx.strokeStyle = `rgba(255, 72, 120, ${Math.min(0.8, world.crashFlash)})`;
+        ctx.lineWidth = 10;
+        ctx.strokeRect(6, 6, width - 12, height - 12);
+        ctx.fillStyle = `rgba(255, 72, 120, ${Math.min(1, world.crashFlash * 1.2)})`;
+        ctx.font = "900 28px Inter, system-ui, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Crash!", width / 2, 76);
+        ctx.restore();
+      }
+
+      if (world.shieldTime > 0) {
+        ctx.save();
+        ctx.globalAlpha = 0.18 + Math.min(0.22, world.shieldTime * 0.03);
+        ctx.fillStyle = "#7DD3FC";
+        ctx.beginPath();
+        ctx.arc(riderX, riderTrackY - 24, 82 + Math.sin(now * 0.01) * 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 0.7;
+        ctx.strokeStyle = "#FDE68A";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(riderX, riderTrackY - 24, 82 + Math.sin(now * 0.01) * 3, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      ctx.save();
+      ctx.fillStyle = "rgba(255,255,255,0.56)";
+      ctx.fillRect(0, groundY + 34, width, height - groundY);
+      ctx.restore();
+
+      world.stars.forEach((star) => {
+        drawStar(
+          ctx,
+          star.x,
+          star.y,
+          star.size,
+          5,
+          star.size * 0.45,
+          "#FFF08A",
+          world.sparklePhase + star.twinkle
+        );
+      });
+
+      world.obstacles.forEach((obstacle) => drawObstacle(ctx, obstacle, now));
+      world.platforms.forEach((platform) => drawPlatform(ctx, platform, now));
+      world.powerups.forEach((powerup) => drawPowerup(ctx, powerup, now, world.shieldTime > 0));
+
+      drawRider(
+        ctx,
+        riderX,
+        riderTrackY,
+        world.jumpHeight,
+        Math.sin(world.distance * 0.1) * 6,
+        now,
+        world.ducking
+      );
+
+      ctx.save();
+      ctx.fillStyle = "#0F4036";
+      ctx.font = "900 16px Inter, system-ui, sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText("Roller Roller Coaster", 24, 34);
+      ctx.fillStyle = "#6A614F";
+      ctx.font = "700 13px Inter, system-ui, sans-serif";
+      ctx.fillText("Zahra rides forever. Mango rides too.", 24, 56);
+      ctx.restore();
+
+      rafRef.current = window.requestAnimationFrame(frame);
+    }
+
+    rafRef.current = window.requestAnimationFrame(frame);
+    return () => {
+      active = false;
+      window.cancelAnimationFrame(rafRef.current);
+    };
+  }, [canvasSize.height, musicOn]);
+
+  useEffect(() => {
+    function startAudioOnFirstTouch() {
+      unlockAudio();
+    }
+
+    window.addEventListener("pointerdown", startAudioOnFirstTouch);
+    return () => window.removeEventListener("pointerdown", startAudioOnFirstTouch);
+  }, [musicOn]);
+
+  return (
+    <div className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.95),_rgba(236,219,255,1)_36%,_rgba(215,245,255,1)_68%,_rgba(211,247,221,1)_100%)] text-[#1b1730]">
+      <div className="mx-auto max-w-7xl px-4 py-4 md:px-6 md:py-6">
+        <header className="rounded-[32px] border border-white/70 bg-white/85 p-4 shadow-[0_24px_80px_rgba(109,76,165,0.14)] backdrop-blur md:p-6">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="inline-flex rounded-full bg-[#0F4036] px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-white">
+              For Zahra
+            </div>
+            <h1 className="text-3xl font-black leading-none text-[#0F4036] md:text-6xl">
+              Roller Roller Coaster
+            </h1>
+            <div className="grid w-full max-w-[700px] gap-3 sm:grid-cols-[1.2fr_0.8fr]">
+              <div className="flex min-h-[220px] items-center justify-center rounded-[30px] border border-dashed border-[#7A5CF5]/25 bg-white/70 px-6 py-8 text-center text-sm font-black uppercase tracking-[0.2em] text-[#6D4CA5]">
+                Roller art reset
+              </div>
+              <div className="flex min-h-[220px] items-center justify-center rounded-[30px] border border-dashed border-[#FF4D9D]/25 bg-white/70 px-6 py-8 text-center text-sm font-black uppercase tracking-[0.2em] text-[#B13373]">
+                Fresh start
+              </div>
+            </div>
+            <p className="max-w-3xl text-base font-semibold leading-7 text-[#5f4d79] md:text-lg">
+              Free to play, rainbow track, unicorn sparkle, endless stars, Mango treats, and easy tap controls.
+            </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              <button
+                type="button"
+                onClick={startGame}
+                className="rounded-[24px] bg-[#FF4D9D] px-5 py-3 text-sm font-black text-white shadow-[0_16px_30px_rgba(255,77,157,0.24)] transition hover:-translate-y-0.5 hover:bg-[#ec2c87]"
+              >
+                Start the ride
+              </button>
+              <button
+                type="button"
+                onClick={copyShareLink}
+                className="rounded-[24px] border border-[#CA862B]/18 bg-[#FFF7EA] px-5 py-3 text-sm font-black text-[#0F4036] transition hover:-translate-y-0.5 hover:bg-white"
+              >
+                Copy share link
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <main className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px] xl:items-start">
+          <section
+            ref={sceneRef}
+            className="relative min-h-[580px] overflow-hidden rounded-[34px] border border-white/80 bg-white/70 shadow-[0_28px_90px_rgba(109,76,165,0.16)]"
+          >
+            <canvas
+              ref={canvasRef}
+              width={canvasSize.width}
+              height={canvasSize.height}
+              className="absolute inset-0 h-full w-full"
+            />
+            <div className="pointer-events-none absolute inset-x-0 top-0 p-4 md:p-6">
+              <div className="flex flex-wrap gap-2">
+                <div className="rounded-full bg-white/90 px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#0F4036] shadow-sm">
+                  Stars {hud.stars}
+                </div>
+                <div className="rounded-full bg-white/90 px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#0F4036] shadow-sm">
+                  Mango treats {hud.treats}
+                </div>
+                <div className="rounded-full bg-white/90 px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#0F4036] shadow-sm">
+                  Crashes {hud.crashes}/3
+                </div>
+                <div className="rounded-full bg-white/90 px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#0F4036] shadow-sm">
+                  Shield {hud.shield}s
+                </div>
+                <div className="rounded-full bg-white/90 px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#0F4036] shadow-sm">
+                  Score {hud.score}
+                </div>
+                <div className="rounded-full bg-white/90 px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#0F4036] shadow-sm">
+                  Best {hud.best}
+                </div>
+                <div className="rounded-full bg-white/90 px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#0F4036] shadow-sm">
+                  Speed {hud.speed}
+                </div>
+              </div>
+            </div>
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 p-4 md:p-6">
+              <div className="rounded-[28px] border border-white/72 bg-white/90 px-4 py-3 shadow-[0_12px_40px_rgba(109,76,165,0.12)]">
+                <div className="text-sm font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
+                  {hud.message}
+                </div>
+                <div className="mt-1 text-sm font-semibold text-[#5f4d79]">
+                  Space or the Jump button helps Zahra hop obstacles, collect stars, and scoop Mango fish treats.
+                </div>
+              </div>
+            </div>
+            <div className="absolute inset-x-0 bottom-4 z-10 flex justify-center px-4 md:bottom-5">
+              <div className="pointer-events-auto flex w-full max-w-[520px] gap-3 rounded-[28px] border border-white/80 bg-white/92 p-3 shadow-[0_18px_50px_rgba(109,76,165,0.18)]">
+                <button
+                  type="button"
+                  onClick={jump}
+                  className="flex-1 rounded-[22px] bg-[#FF4D9D] px-5 py-4 text-base font-black text-white shadow-[0_16px_30px_rgba(255,77,157,0.24)]"
+                >
+                  Jump
+                </button>
+                <button
+                  type="button"
+                  onPointerDown={() => {
+                    unlockAudio();
+                    setDucking(true);
+                  }}
+                  onPointerUp={() => setDucking(false)}
+                  onPointerCancel={() => setDucking(false)}
+                  onPointerLeave={() => setDucking(false)}
+                  className="flex-1 rounded-[22px] bg-[#0F4036] px-5 py-4 text-base font-black text-white shadow-[0_16px_30px_rgba(15,64,54,0.18)]"
+                >
+                  Duck
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMusicOn((current) => !current)}
+                  className="rounded-[22px] border border-[#7A5CF5]/18 bg-[#7A5CF5] px-4 py-4 text-sm font-black text-white transition hover:bg-[#6842f0]"
+                >
+                  Sound
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <aside className="rounded-[28px] border border-white/80 bg-white/88 p-4 shadow-[0_24px_70px_rgba(109,76,165,0.12)]">
+            <div className="text-[11px] font-black uppercase tracking-[0.24em] text-[#8B5A1D]">
+              Cartoon preview
+            </div>
+            <h2 className="mt-2 text-2xl font-black text-[#0F4036]">
+              Zahra, Samantha, and Mango
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[#5f4d79]">
+              Free to play. The coaster is being rebuilt from a clean baseline.
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="flex min-h-[160px] items-center justify-center rounded-[24px] border border-dashed border-[#7A5CF5]/25 bg-white/70 px-4 py-6 text-center text-xs font-black uppercase tracking-[0.22em] text-[#6D4CA5]">
+                Reset art slot
+              </div>
+              <div className="flex min-h-[160px] items-center justify-center rounded-[24px] border border-dashed border-[#FF4D9D]/25 bg-white/70 px-4 py-6 text-center text-xs font-black uppercase tracking-[0.22em] text-[#B13373]">
+                Placeholder slot
+              </div>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={jump}
+                className="rounded-[22px] bg-[#FF4D9D] px-4 py-4 text-sm font-black text-white shadow-[0_18px_30px_rgba(255,77,157,0.22)] transition hover:-translate-y-0.5 hover:bg-[#ec2c87]"
+              >
+                Jump now
+              </button>
+              <button
+                type="button"
+                onClick={copyShareLink}
+                className="rounded-[22px] border border-[#CA862B]/18 bg-[#FFF7EA] px-4 py-4 text-sm font-black text-[#0F4036] transition hover:bg-white"
+              >
+                Copy share link
+              </button>
+            </div>
+          </aside>
+        </main>
+      </div>
+    </div>
+  );
+}
+
 const ONLINE_ORDERING_BETA_MENU = [
   {
     category: "Coffee",
@@ -9827,8 +11819,24 @@ function DeveloperDiaryDashboard() {
 
 export default function GoldiesKDS() {
   if (isDeveloperDashboardRoute()) return <DeveloperDiaryDashboard />;
+  if (isPolicyAcknowledgmentRoute()) return <PolicyAcknowledgmentPage />;
+  if (isDemoOwnerRoute()) {
+    return (
+      <OwnerReportsView
+        ownerName="Demo Owner"
+        themeMode={getSavedThemeMode()}
+        demoMode
+        demoTickets={createTrainingTickets()}
+        onClose={() => {
+          window.location.href = "/?demo=training";
+        }}
+      />
+    );
+  }
   if (isOnlineOrderingBetaRoute()) return <OnlineOrderingBetaPage />;
   if (isSelfOrderKioskRoute()) return <OnlineOrderingBetaPage kioskMode />;
+  if (isRollerRollerCoasterThreeRoute()) return <RollerResetPlaceholderPage />;
+  if (isRollerRollerCoasterRoute()) return <RollerResetPlaceholderPage />;
 
   const displayRoute = getDisplayRoute();
   if (displayRoute === "menu") return <MenuBoardDisplay />;
@@ -9920,6 +11928,8 @@ export default function GoldiesKDS() {
   const [connectionReportLoading, setConnectionReportLoading] = useState(false);
   const [connectionReportError, setConnectionReportError] = useState("");
   const [lastError, setLastError] = useState("");
+  const [systemNotice, setSystemNotice] = useState("");
+  const [showSystemPopup, setShowSystemPopup] = useState(false);
   const [defaultLookupDate] = useState(() => getLocalDateInputValue());
   const dashboardReportPanel = getDashboardReportPanel();
   const isTodayCountWindow = dashboardReportPanel === "today-count";
@@ -10163,7 +12173,7 @@ export default function GoldiesKDS() {
 
     async function fetchBoardAndTodayCounts() {
       try {
-        const [ticketsResponse, drinkResponse, makingTimeResponse] = await Promise.all([
+        const [ticketsResponse, drinkResponse, makingTimeResponse, healthResponse] = await Promise.all([
           fetch(apiUrl("/api/tickets"), {
             credentials: "include",
           }),
@@ -10171,6 +12181,9 @@ export default function GoldiesKDS() {
             credentials: "include",
           }),
           fetch(apiUrl("/api/reports/drink-making-time?range=today"), {
+            credentials: "include",
+          }),
+          fetch(apiUrl("/api/health"), {
             credentials: "include",
           }),
         ]);
@@ -10184,7 +12197,33 @@ export default function GoldiesKDS() {
           return;
         }
 
+        const health = healthResponse.ok ? await healthResponse.json() : null;
+        const squareApi = health?.squareApi || {};
+        let currentSystemNotice = "";
+        if (squareApi.online === false || squareApi.lastSyncError) {
+          const notice =
+            squareApi.lastSyncError ||
+            squareApi.lastError ||
+            "Square is not reporting healthy right now.";
+          currentSystemNotice = `Square sync is being checked. The dashboard may show stored tickets while the connection catches up. Detail: ${notice}`;
+          setSystemNotice(currentSystemNotice);
+          setShowSystemPopup(true);
+        } else {
+          setSystemNotice("");
+        }
+
         if (!ticketsResponse.ok) {
+          let detail = "";
+          try {
+            const payload = await ticketsResponse.json();
+            detail = payload?.error || "";
+          } catch {
+            detail = "";
+          }
+          setSystemNotice(
+            `Ticket sync is having trouble. Keep taking orders in Square and use any tickets already visible here while we reconnect. ${detail ? `Detail: ${detail}` : ""}`
+          );
+          setShowSystemPopup(true);
           throw new Error(`Failed to fetch tickets: ${ticketsResponse.status}`);
         }
 
@@ -10233,7 +12272,7 @@ export default function GoldiesKDS() {
           sampleSize: makingTimeReport.sampleSize || 0,
         });
         setLastPoll(new Date());
-        setConnectionStatus("Connected");
+        setConnectionStatus(currentSystemNotice ? "Checking Square" : "Connected");
         setConnectionDetail(nextConnectionDetail);
         setLastError("");
       } catch (error) {
@@ -10241,7 +12280,14 @@ export default function GoldiesKDS() {
 
         setConnectionStatus("Offline");
         setConnectionDetail("Check connection");
-        setLastError(error.message || "Unknown polling error");
+        const message = error.message || "Unknown polling error";
+        setLastError(message);
+        if (message.includes("Failed to fetch tickets")) {
+          setSystemNotice(
+            "Ticket sync is temporarily unavailable. Square itself may still be taking orders. We are checking the Square connection and stored dashboard tickets."
+          );
+          setShowSystemPopup(true);
+        }
       }
     }
 
@@ -10811,6 +12857,30 @@ export default function GoldiesKDS() {
           darkMode={themeMode === "dark"}
           demoMode={isDemoRoute}
         />
+        {showSystemPopup && systemNotice && (
+          <div className="fixed inset-x-4 top-4 z-[80] mx-auto max-w-3xl rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950 shadow-[0_18px_55px_rgba(120,53,15,0.22)]">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <div className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">
+                  Square connection notice
+                </div>
+                <div className="mt-1 text-sm font-bold leading-relaxed">
+                  {systemNotice}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setShowSystemPopup(false);
+                }}
+                className="rounded-xl bg-amber-700 px-3 py-2 text-sm font-black text-white transition hover:bg-amber-800"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        )}
       <div className="relative z-10">
       <header className="relative z-40 border-b border-white/70 bg-[rgba(255,253,248,0.9)] backdrop-blur-xl px-4 md:px-6 py-4 shadow-[0_12px_30px_rgba(15,64,54,0.06)]">
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
@@ -11211,6 +13281,15 @@ export default function GoldiesKDS() {
             reports={displayedDrinkTimeReports}
             onClose={() => setShowDrinkTimeStats(false)}
           />
+        )}
+
+        {systemNotice && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950 shadow-sm">
+            <div className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">
+              Square connection notice
+            </div>
+            <div className="mt-1 text-sm font-bold leading-relaxed">{systemNotice}</div>
+          </div>
         )}
 
         {lastError && (

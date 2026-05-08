@@ -84,6 +84,18 @@
       "destination": "/index.html"
     },
     {
+      "source": "/roller-roller-coaster",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/roller-roller-coaster/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/roller-coaster",
+      "destination": "/index.html"
+    },
+    {
       "source": "/self-order-kiosk",
       "destination": "/index.html"
     },
@@ -101,6 +113,18 @@
     },
     {
       "source": "/studio-dashboard",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/demo/owner",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/policy-acknowledgment",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/goldies/policy-acknowledgment",
       "destination": "/index.html"
     },
     {
