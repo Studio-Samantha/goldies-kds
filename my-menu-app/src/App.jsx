@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.17";
+const APP_VERSION = "v1.10.18";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -33,13 +33,18 @@ const DINING_OPTIONS = ["HANGIN' OUT", "TAKING OFF", "Pickup", "Delivery", "Driv
 const DAILY_UPDATE_NOTICE = {
   id: APP_VERSION,
   eyebrow: "Today on the KDS",
-  title: "Owner Reports label is cleaned up",
+  title: "Owner Reports wording is aligned",
   message:
-    "Owner Reports is now the visible label for the owner-facing reports area, View Stats is more compact, and menu data has fewer duplicated sources.",
+    "The app, policy page, public case study, and DrinkFlow public pages now use Owner Reports as the visible owner-facing label.",
   note:
-    "Square service labels like Hangin' Out and Taking Off no longer show as drink add-ons in customer ordering.",
+    "The demo/training reports policy wording now states that demo Owner Reports use fake/sample data only.",
 };
 const OWNER_PORTAL_RECENT_CHANGES = [
+  {
+    title: "Policy wording alignment",
+    body:
+      "The public policy and DrinkFlow pages now use Owner Reports wording, including the demo/training reports section that confirms sample data only.",
+  },
   {
     title: "Owner Reports button",
     body:
@@ -148,8 +153,19 @@ const OWNER_PORTAL_RECENT_CHANGES = [
 ];
 const RELEASE_NOTES = [
   {
-    version: "v1.10.17",
+    version: "v1.10.18",
     date: "Current build",
+    summary: "Aligned Owner Reports wording across policy and public pages.",
+    items: [
+      "The public policy now calls the demo/training area Owner Reports instead of Owner Portal.",
+      "The DrinkFlow public page now uses Owner Reports across pricing, feature copy, and demo screenshots.",
+      "The policy wording continues to state that demo/training reports use fake/sample data only and do not connect to Goldie's live Square data.",
+      "The v1.10.17 Owner Reports, View Stats, menu-source cleanup, and Square service-label filtering changes remain in place.",
+    ],
+  },
+  {
+    version: "v1.10.17",
+    date: "Previous build",
     summary: "Renamed the visible owner area to Owner Reports.",
     items: [
       "Owner Reports is now the visible label on the login screen, dashboard button, settings action, and training-mode reports entry.",
