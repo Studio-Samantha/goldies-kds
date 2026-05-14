@@ -47,9 +47,10 @@ const {
 } = require("../server");
 
 test("canonical drink names clean up Square edits without changing display style", () => {
-  assert.equal(getCanonicalDrinkName("STRAWBERRY BANANA"), "Strawberry Banana");
+  assert.equal(getCanonicalDrinkName("STRAWBERRY BANANA (16 OZ)"), "Strawberry Banana (16 oz)");
+  assert.equal(getCanonicalDrinkName("STRAWBERRY MANGO (12 OZ KIDS)"), "Strawberry Mango (12 oz Kids)");
   assert.equal(getCanonicalDrinkName("STRAWMANGO"), "Refresher - Strawberry Mango");
-  assert.equal(getCanonicalDrinkName("12 oz kids chocolate pb banana"), "Chocolate P/B Banana");
+  assert.equal(getCanonicalDrinkName("CHOCOLATE P/B BANANA (12 OZ KIDS)"), "Chocolate P/B Banana (12 oz Kids)");
   assert.equal(getCanonicalDrinkName("AMERICANO DECAF"), "Americano (DECAF)");
 });
 
@@ -95,8 +96,13 @@ test("customer-name note fallback only accepts explicit customer labels", () => 
 });
 
 test("drink classification keeps smoothies and refreshers in drink reporting", () => {
-  assert.equal(getItemDrinkCategory({ name: "STRAWBERRY" }), "Smoothies");
-  assert.equal(getItemDrinkCategory({ name: "STRAWBERRY BANANA" }), "Smoothies");
+  assert.equal(getItemDrinkCategory({ name: "STRAWBERRY (16 OZ)" }), "Smoothies");
+  assert.equal(getItemDrinkCategory({ name: "STRAWBERRY BANANA (12 OZ KIDS)" }), "Smoothies");
+  assert.equal(getItemDrinkCategory({ name: "STRAWBERRY MANGO (16 OZ)" }), "Smoothies");
+  assert.equal(getItemDrinkCategory({ name: "MANGO (16 OZ)" }), "Smoothies");
+  assert.equal(getItemDrinkCategory({ name: "anything", category: "SMOOTHIES" }), "Smoothies");
+  assert.equal(getItemDrinkCategory({ name: "MATCHA LATTE" }), "Not Coffee");
+  assert.equal(getItemDrinkCategory({ name: "CHAI LATTE" }), "Not Coffee");
   assert.equal(getItemDrinkCategory({ name: "STRAWMANGO" }), "Not Coffee");
   assert.equal(getItemDrinkCategory({ name: "Muffin" }), null);
 });
@@ -113,7 +119,7 @@ test("owner report separates drink revenue from non-drink add-on signals", () =>
           lineItems: [
             {
               uid: "line-1",
-              name: "STRAWBERRY BANANA",
+              name: "STRAWBERRY BANANA (16 OZ)",
               quantity: "1",
               totalMoney: { amount: 700 },
               totalTaxMoney: { amount: 50 },

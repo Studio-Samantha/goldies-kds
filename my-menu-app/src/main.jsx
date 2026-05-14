@@ -8,6 +8,13 @@ const fallback = document.getElementById('startup-fallback')
 const rootElement = document.getElementById('root')
 if (fallback) {
   document.documentElement.classList.add('app-loading')
+  const titleNode = fallback.querySelector('strong')
+  const messageNode = fallback.querySelector('span')
+  if (titleNode) titleNode.textContent = "Goldie's KDS"
+  if (messageNode) {
+    messageNode.textContent =
+      "Loading the kitchen display. If this screen stays here, refresh once after clearing site data for goldieskds.com."
+  }
 }
 
 class StartupErrorBoundary extends React.Component {

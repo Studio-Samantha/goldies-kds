@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.13";
+const APP_VERSION = "v1.10.14";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -33,13 +33,18 @@ const DINING_OPTIONS = ["HANGIN' OUT", "TAKING OFF", "Pickup", "Delivery", "Driv
 const DAILY_UPDATE_NOTICE = {
   id: APP_VERSION,
   eyebrow: "Today on the KDS",
-  title: "Connection report has sync audit details",
+  title: "Smoothie names now follow Square",
   message:
-    "The Connection report now shows how many Square orders were found, created, updated, or failed during the last sync.",
+    "Smoothies renamed in Square now stay visible on the KDS and display with readable casing.",
   note:
-    "It also flags suspicious pickup names so bad Square labels are easier to catch.",
+    "System checks now compare Square's Coffee, Not Coffee, and Smoothies categories against KDS drink classification.",
 };
 const OWNER_PORTAL_RECENT_CHANGES = [
+  {
+    title: "Smoothie category check",
+    body:
+      "The KDS now checks Square's Coffee, Not Coffee, and Smoothies categories so renamed smoothie items do not disappear from service tickets.",
+  },
   {
     title: "Square sync audit",
     body:
@@ -98,8 +103,19 @@ const OWNER_PORTAL_RECENT_CHANGES = [
 ];
 const RELEASE_NOTES = [
   {
-    version: "v1.10.13",
+    version: "v1.10.14",
     date: "Current build",
+    summary: "Kept Square-renamed smoothies visible in KDS.",
+    items: [
+      "Smoothie names from Square, including STRAWBERRY MANGO and size labels like 16 OZ or 12 OZ KIDS, now classify as Smoothies.",
+      "The KDS keeps the current Square item names and only cleans the casing for display, such as Strawberry Mango (16 oz).",
+      "System checks now audit Square's Coffee, Not Coffee, and Smoothies categories against KDS drink classification.",
+      "Roller Roller Coaster dependencies were removed from the Goldie's app package because that game is a separate project.",
+    ],
+  },
+  {
+    version: "v1.10.13",
+    date: "Previous build",
     summary: "Added Goldie's owner privacy acknowledgment and a safe demo owner portal.",
     items: [
       "Goldie's owner/admin dashboard now has a lightweight policy acknowledgment flow for the 2026-05-08 Privacy & Data Handling Policy.",
@@ -1653,46 +1669,6 @@ function isSelfOrderKioskRoute() {
   return path === "/self-order-kiosk" || path === "/kiosk";
 }
 
-function isRollerRollerCoasterRoute() {
-  if (typeof window === "undefined") return false;
-  const path = window.location.pathname.replace(/\/+$/, "");
-  return (
-    path === "/roller-roller-coaster" ||
-    path === "/roller-coaster" ||
-    path === "/rollerrollercoaster"
-  );
-}
-
-function isRollerRollerCoasterThreeRoute() {
-  if (typeof window === "undefined") return false;
-  const path = window.location.pathname.replace(/\/+$/, "");
-  return path === "/roller-roller-coaster-3d" || path === "/roller-coaster-3d";
-}
-
-function RollerResetPlaceholderPage() {
-  return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "grid",
-        placeItems: "center",
-        background: "linear-gradient(180deg, #9be7f5 0%, #fff8df 45%, #f6d2f0 100%)",
-        color: "#334155",
-        padding: "32px",
-        textAlign: "center",
-      }}
-    >
-      <div style={{ maxWidth: 640, width: "100%" }}>
-        <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: 0, marginBottom: 12 }}>Roller Roller Coaster</div>
-        <h1 style={{ fontSize: 48, lineHeight: 1.05, margin: "0 0 16px" }}>Fresh start</h1>
-        <p style={{ fontSize: 18, lineHeight: 1.5, margin: 0 }}>
-          The coaster game has been wiped and will be rebuilt from a clean baseline.
-        </p>
-      </div>
-    </div>
-  );
-}
-
 function getLocalDayBounds(date = new Date()) {
   const start = new Date(date);
   start.setHours(0, 0, 0, 0);
@@ -2081,6 +2057,27 @@ function normalizeDrinkText(name = "") {
     .toLowerCase();
 }
 
+function stripDrinkSizeDescriptors(value = "") {
+  return normalizeDrinkText(value)
+    .replace(/\([^)]*\b(?:oz|ounce|ounces|kid|kids|small|medium|large|regular)\b[^)]*\)/g, " ")
+    .replace(/\b\d+\s*(?:oz|ounce|ounces)\b/g, " ")
+    .replace(/\b(?:kid|kids|small|medium|large|regular)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function formatDrinkDisplayName(itemName = "") {
+  const name = String(itemName || "").trim().replace(/\s+/g, " ");
+  if (!name) return "";
+
+  return name
+    .toLowerCase()
+    .replace(/\b[a-z]/g, (char) => char.toUpperCase())
+    .replace(/\bP\/B\b/g, "P/B")
+    .replace(/\bOz\b/g, "oz")
+    .replace(/\bDecaf\b/g, "DECAF");
+}
+
 function isNonDrinkItem(itemName = "") {
   const lower = normalizeDrinkText(itemName);
 
@@ -2103,8 +2100,40 @@ function getBeverageCategory(itemName = "") {
   const name = String(itemName || "").trim();
   const lower = normalizeDrinkText(name);
   const compact = lower.replace(/\s+/g, "");
+  const smoothieName = stripDrinkSizeDescriptors(name);
+  const smoothieCompact = smoothieName.replace(/\s+/g, "");
 
   if (isNonDrinkItem(name)) return null;
+
+  if (
+    [
+      "Chai Latte",
+      "Hot Chocolate",
+      "London Fog",
+      "Matcha Latte",
+      "Steamer",
+      "Teas",
+      "Refresher-Strawberry Mango",
+    ].includes(name)
+  ) {
+    return "Not Coffee";
+  }
+
+  if (
+    matchesAnyPattern(lower, [
+      /\bmatcha\b/i,
+      /\bchai\b/i,
+      /\btea\b/i,
+      /\bteas\b/i,
+      /\bsteamer\b/i,
+      /\brefresher\b/i,
+      /\bhot chocolate\b/i,
+      /\bfog\b/i,
+      /\bboba\b/i,
+    ])
+  ) {
+    return "Not Coffee";
+  }
 
   if (
     [
@@ -2149,33 +2178,12 @@ function getBeverageCategory(itemName = "") {
   }
 
   if (
-    [
-      "Chai Latte",
-      "Hot Chocolate",
-      "London Fog",
-      "Matcha Latte",
-      "Steamer",
-      "Teas",
-      "Refresher-Strawberry Mango",
-    ].includes(name)
+    smoothieCompact.includes("strawberrybanana") ||
+    smoothieCompact.includes("strawberrymango") ||
+    smoothieCompact.includes("chocolatepbbanana") ||
+    ["mango", "strawberry", "greens", "chocolate p b banana", "chocolate pb banana", "strawberry banana", "strawberry mango"].includes(smoothieName)
   ) {
-    return "Not Coffee";
-  }
-
-  if (
-    matchesAnyPattern(lower, [
-      /\bmatcha\b/i,
-      /\bchai\b/i,
-      /\btea\b/i,
-      /\bteas\b/i,
-      /\bsteamer\b/i,
-      /\brefresher\b/i,
-      /\bhot chocolate\b/i,
-      /\bfog\b/i,
-      /\bboba\b/i,
-    ])
-  ) {
-    return "Not Coffee";
+    return "Smoothies";
   }
 
   if (
@@ -2185,22 +2193,10 @@ function getBeverageCategory(itemName = "") {
       "Mango",
       "Strawberry",
       "Strawberry Banana",
+      "Strawberry Mango",
     ].includes(name) ||
     /smoothie/i.test(lower) ||
     compact.includes("greens")
-  ) {
-    return "Smoothies";
-  }
-
-  const smoothieName = lower
-    .replace(/\b12\s*oz\b/g, "")
-    .replace(/\bkids?\b/g, "")
-    .replace(/\bsmall\b/g, "")
-    .trim();
-  if (
-    compact.includes("strawberrybanana") ||
-    compact.includes("chocolatepbbanana") ||
-    ["mango", "strawberry", "greens", "chocolate p b banana", "chocolate pb banana", "strawberry banana"].includes(smoothieName)
   ) {
     return "Smoothies";
   }
@@ -2212,22 +2208,23 @@ function getCanonicalDrinkName(itemName = "") {
   const name = String(itemName || "").trim();
   const lower = normalizeDrinkText(name);
   const compact = lower.replace(/\s+/g, "");
-  const withoutSize = lower
-    .replace(/\b12\s*oz\b/g, "")
-    .replace(/\bkids?\b/g, "")
-    .replace(/\bsmall\b/g, "")
-    .trim();
+  const smoothieName = stripDrinkSizeDescriptors(name);
 
-  if (compact.includes("chocolatepbbanana") || withoutSize === "chocolate p b banana" || withoutSize === "chocolate pb banana") return "Chocolate P/B Banana";
-  if (compact.includes("strawberrybanana") || withoutSize === "strawberry banana") return "Strawberry Banana";
-  if (withoutSize === "greens" || compact.includes("greens")) return "Greens";
-  if (withoutSize === "mango") return "Mango";
-  if (withoutSize === "strawberry") return "Strawberry";
+  if (
+    compact.includes("chocolatepbbanana") ||
+    compact.includes("strawberrybanana") ||
+    compact.includes("strawberrymango") ||
+    smoothieName === "mango" ||
+    smoothieName === "strawberry" ||
+    smoothieName === "greens"
+  ) {
+    return formatDrinkDisplayName(name);
+  }
   if (lower.includes("refresher") && lower.includes("strawberry") && lower.includes("mango")) return "Refresher - Strawberry Mango";
   if (lower.includes("decaf") && lower.includes("americano")) return "Americano (DECAF)";
 
   if (name && (name === name.toUpperCase() || name === name.toLowerCase())) {
-    return lower.replace(/\b\w/g, (char) => char.toUpperCase());
+    return formatDrinkDisplayName(name);
   }
 
   return name;
@@ -11835,8 +11832,6 @@ export default function GoldiesKDS() {
   }
   if (isOnlineOrderingBetaRoute()) return <OnlineOrderingBetaPage />;
   if (isSelfOrderKioskRoute()) return <OnlineOrderingBetaPage kioskMode />;
-  if (isRollerRollerCoasterThreeRoute()) return <RollerResetPlaceholderPage />;
-  if (isRollerRollerCoasterRoute()) return <RollerResetPlaceholderPage />;
 
   const displayRoute = getDisplayRoute();
   if (displayRoute === "menu") return <MenuBoardDisplay />;

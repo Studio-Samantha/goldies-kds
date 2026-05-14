@@ -1452,6 +1452,7 @@ const SMOOTHIE_DRINKS = new Set([
   "Mango",
   "Strawberry",
   "Strawberry Banana",
+  "Strawberry Mango",
 ]);
 
 const GOLDIES_MENU_CATEGORIES = [
@@ -1460,6 +1461,11 @@ const GOLDIES_MENU_CATEGORIES = [
   { key: "Smoothies", label: "Smoothies", items: Array.from(SMOOTHIE_DRINKS) },
 ];
 let menuCatalogCache = { fetchedAt: 0, items: [] };
+let squareCatalogCategoryCache = {
+  fetchedAt: 0,
+  audit: null,
+  categoryByCatalogObjectId: new Map(),
+};
 let localMenuAvailability = [];
 
 function normalizeName(name = "") {
@@ -1509,6 +1515,25 @@ function normalizeDrinkText(name = "") {
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
+}
+
+function stripDrinkSizeDescriptors(value = "") {
+  return normalizeDrinkText(value)
+    .replace(/\([^)]*\b(?:oz|ounce|ounces|kid|kids|small|medium|large|regular)\b[^)]*\)/g, " ")
+    .replace(/\b\d+\s*(?:oz|ounce|ounces)\b/g, " ")
+    .replace(/\b(?:kid|kids|small|medium|large|regular)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function normalizeGoldiesDrinkCategory(value = "") {
+  const compact = normalizeDrinkText(value).replace(/\s+/g, "");
+
+  if (compact === "coffee") return "Coffee";
+  if (compact === "notcoffee" || compact === "noncoffee") return "Not Coffee";
+  if (compact === "smoothie" || compact === "smoothies") return "Smoothies";
+
+  return "";
 }
 
 function normalizeDiningOptionValue(value = "") {
@@ -1572,41 +1597,48 @@ function isNonDrinkItem(itemName = "") {
 }
 
 function isSmoothieDrinkName(itemName = "") {
-  const lower = normalizeDrinkText(itemName);
+  const lower = stripDrinkSizeDescriptors(itemName);
   const compact = lower.replace(/\s+/g, "");
 
   if (lower.includes("smoothie")) return true;
   if (compact.includes("greens")) return true;
   if (compact.includes("strawberrybanana")) return true;
+  if (compact.includes("strawberrymango")) return true;
   if (compact.includes("chocolatepbbanana")) return true;
 
-  const withoutSize = lower
-    .replace(/\b12\s*oz\b/g, "")
-    .replace(/\bkids?\b/g, "")
-    .replace(/\bsmall\b/g, "")
-    .trim();
+  return [
+    "mango",
+    "strawberry",
+    "greens",
+    "chocolate p b banana",
+    "chocolate pb banana",
+    "strawberry banana",
+    "strawberry mango",
+  ].includes(lower);
+}
 
-  return ["mango", "strawberry", "greens", "chocolate p b banana", "chocolate pb banana", "strawberry banana"].includes(withoutSize);
+function formatDrinkDisplayName(itemName = "") {
+  const name = normalizeName(itemName).replace(/\s+/g, " ");
+  if (!name) return "";
+
+  return name
+    .toLowerCase()
+    .replace(/\b[a-z]/g, (char) => char.toUpperCase())
+    .replace(/\bP\/B\b/g, "P/B")
+    .replace(/\bOz\b/g, "oz")
+    .replace(/\bDecaf\b/g, "DECAF");
 }
 
 function getCanonicalDrinkName(itemName = "") {
   const name = normalizeName(itemName);
   const lower = normalizeDrinkText(name);
   const compact = lower.replace(/\s+/g, "");
-  const withoutSize = lower
-    .replace(/\b12\s*oz\b/g, "")
-    .replace(/\bkids?\b/g, "")
-    .replace(/\bsmall\b/g, "")
-    .trim();
 
-  if (compact.includes("chocolatepbbanana") || withoutSize === "chocolate p b banana" || withoutSize === "chocolate pb banana") return "Chocolate P/B Banana";
-  if (compact.includes("strawberrybanana") || withoutSize === "strawberry banana") return "Strawberry Banana";
-  if (withoutSize === "greens" || compact.includes("greens")) return "Greens";
-  if (withoutSize === "mango") return "Mango";
-  if (withoutSize === "strawberry") return "Strawberry";
-  if (compact.includes("strawmango") || compact.includes("strawberrymango")) return "Refresher - Strawberry Mango";
+  if (compact.includes("strawmango")) return "Refresher - Strawberry Mango";
   if (lower.includes("refresher") && lower.includes("strawberry") && lower.includes("mango")) return "Refresher - Strawberry Mango";
   if (lower.includes("decaf") && lower.includes("americano")) return "Americano (DECAF)";
+
+  if (isSmoothieDrinkName(name)) return formatDrinkDisplayName(name);
 
   const knownNames = [
     ...COFFEE_DRINKS,
@@ -1617,7 +1649,7 @@ function getCanonicalDrinkName(itemName = "") {
   if (matched) return matched;
 
   if (name && (name === name.toUpperCase() || name === name.toLowerCase())) {
-    return lower.replace(/\b\w/g, (char) => char.toUpperCase());
+    return formatDrinkDisplayName(name);
   }
 
   return name;
@@ -1627,16 +1659,34 @@ function getDrinkCategory(itemName = "") {
   const name = normalizeName(itemName);
   const lower = normalizeDrinkText(name);
   const compact = lower.replace(/\s+/g, "");
+  const normalizedCategory = normalizeGoldiesDrinkCategory(itemName);
 
   if (isNonDrinkItem(name)) return null;
+  if (normalizedCategory) return normalizedCategory;
 
-  if (compact.includes("strawmango") || compact.includes("strawberrymango")) {
+  if (compact.includes("strawmango")) {
     return "Not Coffee";
   }
 
   if (COFFEE_DRINKS.has(name)) return "Coffee";
   if (NOT_COFFEE_DRINKS.has(name)) return "Not Coffee";
   if (SMOOTHIE_DRINKS.has(name)) return "Smoothies";
+
+  if (
+    matchesAnyPattern(lower, [
+      /\bmatcha\b/,
+      /\bchai\b/,
+      /\btea\b/,
+      /\bteas\b/,
+      /\bsteamer\b/,
+      /\brefresher\b/,
+      /\bhot chocolate\b/,
+      /\bfog\b/,
+      /\bboba\b/,
+    ])
+  ) {
+    return "Not Coffee";
+  }
 
   if (
     matchesAnyPattern(lower, [
@@ -1661,22 +1711,6 @@ function getDrinkCategory(itemName = "") {
     return "Coffee";
   }
 
-  if (
-    matchesAnyPattern(lower, [
-      /\bmatcha\b/,
-      /\bchai\b/,
-      /\btea\b/,
-      /\bteas\b/,
-      /\bsteamer\b/,
-      /\brefresher\b/,
-      /\bhot chocolate\b/,
-      /\bfog\b/,
-      /\bboba\b/,
-    ])
-  ) {
-    return "Not Coffee";
-  }
-
   if (isSmoothieDrinkName(name)) return "Smoothies";
 
   return null;
@@ -1685,12 +1719,8 @@ function getDrinkCategory(itemName = "") {
 function getItemDrinkCategory(item = {}) {
   if (isNonDrinkItem(item.name)) return null;
 
-  const savedCategory = normalizeName(item.category);
-  if (
-    savedCategory === "Coffee" ||
-    savedCategory === "Not Coffee" ||
-    savedCategory === "Smoothies"
-  ) {
+  const savedCategory = normalizeGoldiesDrinkCategory(item.category);
+  if (savedCategory) {
     return savedCategory;
   }
 
@@ -1733,6 +1763,113 @@ function normalizeMenuAvailabilityKey(name = "") {
 
 function isMenuItemAvailable(item = {}, unavailableKeys = new Set()) {
   return !unavailableKeys.has(normalizeMenuAvailabilityKey(item.name));
+}
+
+function getCatalogCategoryIds(itemData = {}) {
+  return [
+    itemData.reporting_category?.id,
+    itemData.reportingCategory?.id,
+    itemData.category_id,
+    itemData.categoryId,
+    ...(itemData.categories || []).map((category) => category.id),
+  ].filter(Boolean);
+}
+
+async function fetchSquareDrinkCategoryAudit({ force = false } = {}) {
+  if (!SQUARE_ACCESS_TOKEN) {
+    return {
+      ok: false,
+      error: "Square access token is not configured.",
+      categories: { Coffee: [], "Not Coffee": [], Smoothies: [] },
+      missingCategories: ["Coffee", "Not Coffee", "Smoothies"],
+      mismatches: [],
+      categoryByCatalogObjectId: new Map(),
+      checkedAt: new Date().toISOString(),
+    };
+  }
+
+  const now = Date.now();
+  if (!force && squareCatalogCategoryCache.audit && now - squareCatalogCategoryCache.fetchedAt < 10 * 60 * 1000) {
+    return squareCatalogCategoryCache.audit;
+  }
+
+  const objects = await fetchSquareCatalogObjects(["ITEM", "ITEM_VARIATION", "CATEGORY"]);
+  const categoryNamesById = new Map(
+    objects
+      .filter((object) => object.type === "CATEGORY" && !object.is_deleted)
+      .map((object) => {
+        const categoryData = object.category_data || object.categoryData || {};
+        return [object.id, categoryData.name || ""];
+      })
+  );
+  const categoryByCatalogObjectId = new Map();
+  const categories = { Coffee: [], "Not Coffee": [], Smoothies: [] };
+  const missingCategorySet = new Set(["Coffee", "Not Coffee", "Smoothies"]);
+  const mismatches = [];
+
+  for (const name of categoryNamesById.values()) {
+    const normalizedCategory = normalizeGoldiesDrinkCategory(name);
+    if (normalizedCategory) missingCategorySet.delete(normalizedCategory);
+  }
+
+  for (const object of objects) {
+    if (object.type !== "ITEM" || object.is_deleted) continue;
+
+    const itemData = object.item_data || object.itemData || {};
+    const squareCategory = getCatalogCategoryIds(itemData)
+      .map((id) => normalizeGoldiesDrinkCategory(categoryNamesById.get(id)))
+      .find(Boolean);
+
+    if (!squareCategory) continue;
+
+    const itemName = itemData.name || "";
+    const kdsCategory = getDrinkCategory(itemName);
+    const displayName = getCanonicalDrinkName(itemName);
+    const record = {
+      id: object.id,
+      name: displayName,
+      squareName: itemName,
+      squareCategory,
+      kdsCategory: kdsCategory || "",
+    };
+
+    categories[squareCategory].push(record);
+    categoryByCatalogObjectId.set(object.id, squareCategory);
+
+    for (const variationRef of itemData.variations || []) {
+      if (variationRef?.id) categoryByCatalogObjectId.set(variationRef.id, squareCategory);
+    }
+
+    if (kdsCategory !== squareCategory) {
+      mismatches.push(record);
+    }
+  }
+
+  for (const category of Object.keys(categories)) {
+    categories[category].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  const audit = {
+    ok: missingCategorySet.size === 0 && mismatches.length === 0,
+    categories,
+    missingCategories: Array.from(missingCategorySet),
+    mismatches,
+    categoryByCatalogObjectId,
+    checkedAt: new Date().toISOString(),
+  };
+
+  squareCatalogCategoryCache = {
+    fetchedAt: now,
+    audit,
+    categoryByCatalogObjectId,
+  };
+
+  return audit;
+}
+
+async function getSquareCatalogDrinkCategoryMap() {
+  const audit = await fetchSquareDrinkCategoryAudit();
+  return audit.categoryByCatalogObjectId || new Map();
 }
 
 async function getMenuAvailabilityRows() {
@@ -3371,20 +3508,27 @@ async function getSquareEmployeeName(order, payment = null) {
 
 async function normalizeSquareOrder(order, payment = null) {
   const items = [];
+  const catalogCategoryByObjectId = await getSquareCatalogDrinkCategoryMap().catch((error) => {
+    console.warn(`WARNING: Unable to check Square drink categories: ${error.message}`);
+    return new Map();
+  });
 
   for (const lineItem of order.lineItems || []) {
     const modifiers = (lineItem.modifiers || []).map(
       (modifier) => modifier.name || "Unknown modifier"
     );
     const name = lineItem.name || "Unnamed item";
+    const catalogObjectId = lineItem.catalogObjectId || lineItem.catalog_object_id || "";
+    const category = catalogCategoryByObjectId.get(catalogObjectId) || getDrinkCategory(name);
 
     items.push({
-      id: lineItem.uid || lineItem.catalogObjectId || null,
+      id: lineItem.uid || catalogObjectId || null,
+      catalogObjectId,
       name,
       qty: Number.parseInt(lineItem.quantity, 10) || 1,
       modifiers,
       note: lineItem.note || "",
-      category: getDrinkCategory(name),
+      category,
     });
   }
 
@@ -7310,6 +7454,20 @@ app.get("/api/tickets", requireKdsAuth, async (req, res) => {
   }
 });
 
+app.get("/api/system/catalog-category-audit", requireKdsAuth, async (req, res) => {
+  try {
+    const audit = await fetchSquareDrinkCategoryAudit({
+      force: String(req.query.refresh || "") === "1",
+    });
+    const { categoryByCatalogObjectId, ...publicAudit } = audit;
+
+    res.json(publicAudit);
+  } catch (error) {
+    console.error("Error checking Square catalog drink categories:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get("/api/tickets/completed", requireKdsAuth, async (req, res) => {
   try {
     const completedTickets = await getCompletedTicketsToday();
@@ -8265,6 +8423,7 @@ module.exports = {
   __testExports: {
     buildOwnerDrinkRevenueReport,
     cleanCustomerName,
+    fetchSquareDrinkCategoryAudit,
     getCanonicalDrinkName,
     getDrinkCategory,
     getItemDrinkCategory,

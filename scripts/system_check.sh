@@ -183,6 +183,30 @@ check_authenticated_workflows() {
   check_json_endpoint "drink-time" "$BASE_URL/api/reports/drink-making-time?range=today" "object"
   check_json_endpoint "tickets-day" "$BASE_URL/api/tickets/day?date=$TODAY" "object"
   check_json_endpoint "menu-availability" "$BASE_URL/api/menu/availability" "object"
+  check_json_endpoint "catalog-category-audit" "$BASE_URL/api/system/catalog-category-audit" "object"
+  node - <<'NODE'
+const fs = require("fs");
+const audit = JSON.parse(fs.readFileSync("/tmp/goldies-check-catalog-category-audit.json", "utf8"));
+const categories = audit.categories || {};
+const expected = ["Coffee", "Not Coffee", "Smoothies"];
+const missing = audit.missingCategories || [];
+const mismatches = audit.mismatches || [];
+for (const category of expected) {
+  console.log(`catalog${category.replace(/\s+/g, "")}Items=${(categories[category] || []).length}`);
+}
+console.log(`catalogMissingCategories=${missing.length}`);
+console.log(`catalogCategoryMismatches=${mismatches.length}`);
+if (!audit.ok || missing.length || mismatches.length) {
+  if (missing.length) console.log(`missing=${missing.join(", ")}`);
+  mismatches.slice(0, 10).forEach((item) => {
+    console.log(`mismatch=${item.squareName || item.name}: square=${item.squareCategory || "none"} kds=${item.kdsCategory || "none"}`);
+  });
+  process.exit(2);
+}
+NODE
+  if [ "$?" -ne 0 ]; then
+    STATUS=1
+  fi
   check_json_endpoint "display-menu" "$BASE_URL/api/display/menu" "object"
   check_json_endpoint "display-orders-up" "$BASE_URL/api/display/orders-up" "object"
   check_json_endpoint "display-online-orders" "$BASE_URL/api/display/online-orders" "object"
