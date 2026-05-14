@@ -95,17 +95,35 @@ const ONLINE_ORDERING_CATEGORY_NAMES = (
   .map((name) => name.trim().toLowerCase())
   .filter(Boolean);
 const ONLINE_ORDERING_BETA_MENU = [
-  { id: "latte", name: "Latte", category: "Coffee", priceCents: 575 },
-  { id: "americano", name: "Americano", category: "Coffee", priceCents: 425 },
-  { id: "decaf-americano", name: "Decaf (Americano)", category: "Coffee", priceCents: 425 },
-  { id: "cold-brew", name: "Cold Brew", category: "Coffee", priceCents: 550 },
-  { id: "cappuccino", name: "Cappuccino", category: "Coffee", priceCents: 525 },
-  { id: "london-fog", name: "London Fog", category: "Not Coffee", priceCents: 575 },
-  { id: "chai-latte", name: "Chai Latte", category: "Not Coffee", priceCents: 575 },
-  { id: "matcha-latte", name: "Matcha Latte", category: "Not Coffee", priceCents: 625 },
-  { id: "strawberry-banana", name: "Strawberry Banana", category: "Smoothies", priceCents: 700 },
-  { id: "chocolate-pb-banana", name: "Chocolate P/B Banana", category: "Smoothies", priceCents: 700 },
-  { id: "green-smoothie", name: "Green Smoothie", category: "Smoothies", priceCents: 700 },
+  { id: "americano", name: "Americano", category: "Coffee", priceCents: 325 },
+  { id: "americano-decaf", name: "Americano (DECAF)", category: "Coffee", priceCents: 325 },
+  { id: "cappuccino", name: "Cappuccino", category: "Coffee", priceCents: 425 },
+  { id: "cold-brew", name: "Cold Brew", category: "Coffee", priceCents: 500 },
+  { id: "drip", name: "Drip", category: "Coffee", priceCents: 325 },
+  { id: "drip-refill", name: "Drip Refill", category: "Coffee", priceCents: 100 },
+  { id: "espresso", name: "Espresso", category: "Coffee", priceCents: 300 },
+  { id: "flat-white", name: "Flat White", category: "Coffee", priceCents: 450 },
+  { id: "gibraltar", name: "Gibraltar", category: "Coffee", priceCents: 350 },
+  { id: "latte", name: "Latte", category: "Coffee", priceCents: 500 },
+  { id: "pour-over", name: "Pour Over", category: "Coffee", priceCents: 550 },
+  { id: "chai-latte", name: "Chai Latte", category: "Not Coffee", priceCents: 500 },
+  { id: "hot-chocolate", name: "Hot Chocolate", category: "Not Coffee", priceCents: 450 },
+  { id: "london-fog", name: "London Fog", category: "Not Coffee", priceCents: 500 },
+  { id: "matcha-latte", name: "Matcha Latte", category: "Not Coffee", priceCents: 525 },
+  { id: "refresher-strawberry-mango", name: "Refresher - Strawberry Mango", category: "Not Coffee", priceCents: 600 },
+  { id: "steamer-or-cold", name: "Steamer (Or Cold)", category: "Not Coffee", priceCents: 400 },
+  { id: "chocolate-pb-banana-12-oz-kids", name: "Chocolate P/B Banana (12 oz Kids)", category: "Smoothies", priceCents: 500 },
+  { id: "chocolate-pb-banana-16-oz", name: "Chocolate P/B Banana (16 oz)", category: "Smoothies", priceCents: 700 },
+  { id: "greens-12-oz-kids", name: "Greens (12 oz Kids)", category: "Smoothies", priceCents: 500 },
+  { id: "greens-16-oz", name: "Greens (16 oz)", category: "Smoothies", priceCents: 700 },
+  { id: "mango-12-oz-kids", name: "Mango (12 oz Kids)", category: "Smoothies", priceCents: 500 },
+  { id: "mango-16-oz", name: "Mango (16 oz)", category: "Smoothies", priceCents: 700 },
+  { id: "strawberry-12-oz-kids", name: "Strawberry (12 oz Kids)", category: "Smoothies", priceCents: 500 },
+  { id: "strawberry-16-oz", name: "Strawberry (16 oz)", category: "Smoothies", priceCents: 700 },
+  { id: "strawberry-banana-12-oz-kids", name: "Strawberry Banana (12 oz Kids)", category: "Smoothies", priceCents: 500 },
+  { id: "strawberry-banana-16-oz", name: "Strawberry Banana (16 oz)", category: "Smoothies", priceCents: 700 },
+  { id: "strawberry-mango-12-oz-kids", name: "Strawberry Mango (12 oz Kids)", category: "Smoothies", priceCents: 500 },
+  { id: "strawberry-mango-16-oz", name: "Strawberry Mango (16 oz)", category: "Smoothies", priceCents: 700 },
 ];
 const ONLINE_ORDERING_BETA_MENU_BY_ID = new Map(
   ONLINE_ORDERING_BETA_MENU.map((item) => [item.id, item])
@@ -574,13 +592,15 @@ function getDrinkImageSlug(itemName = "") {
   if (normalized.includes("decaf") && normalized.includes("americano")) return "decaf-americano";
   if (normalized.includes("americano")) return "americano";
   if (normalized.includes("drip") || normalized.includes("pour-over") || normalized.includes("pour-over")) return "americano";
+  if (normalized.includes("espresso")) return "americano";
   if (normalized.includes("flat") && normalized.includes("white")) return "latte";
+  if (normalized.includes("gibraltar")) return "latte";
   if (normalized.includes("cold") && normalized.includes("brew")) return "cold-brew";
   if (normalized.includes("cappuccino")) return "cappuccino";
   if (normalized.includes("london") && normalized.includes("fog")) return "london-fog";
   if (normalized.includes("chai")) return "chai-latte";
+  if (normalized.includes("hot") && normalized.includes("chocolate")) return "hot-chocolate";
   if (normalized.includes("matcha")) return "matcha-latte";
-  if (normalized.includes("hot") && normalized.includes("chocolate")) return "chai-latte";
   if (normalized.includes("refresher")) return "strawberry-banana";
   if (normalized.includes("steamer")) return "london-fog";
   if (normalized.includes("strawberry") && normalized.includes("mango")) return "strawberry-mango";
@@ -594,6 +614,14 @@ function getDrinkImageSlug(itemName = "") {
   if (normalized.includes("latte")) return "latte";
   return normalized || "latte";
 }
+
+const KIOSK_LOCAL_IMAGE_PATHS = {
+  americano: "/assets/drinks/photos/americano.png",
+  "decaf-americano": "/assets/drinks/photos/americano.png",
+  cappuccino: "/assets/drinks/photos/cappuccino.png",
+  "chai-latte": "/assets/drinks/photos/chai-latte.png",
+  "hot-chocolate": "/assets/drinks/photos/hot-chocolate.png",
+};
 
 const KIOSK_STOCK_IMAGE_URLS = {
   latte:
@@ -610,6 +638,8 @@ const KIOSK_STOCK_IMAGE_URLS = {
     "https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&w=900&q=80",
   "chai-latte":
     "https://images.unsplash.com/photo-1571934811356-5cc061b6821f?auto=format&fit=crop&w=900&q=80",
+  "hot-chocolate":
+    "https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?auto=format&fit=crop&w=900&q=80",
   "matcha-latte":
     "https://images.unsplash.com/photo-1515823064-d6e0c04616a7?auto=format&fit=crop&w=900&q=80",
   "strawberry-banana":
@@ -624,11 +654,16 @@ const KIOSK_STOCK_IMAGE_URLS = {
     "https://images.unsplash.com/photo-1610970881699-44a5587cabec?auto=format&fit=crop&w=900&q=80",
 };
 
+function resolveKioskAssetPath(path) {
+  return KIOSK_ASSET_BASE_URL ? `${KIOSK_ASSET_BASE_URL}${path}` : path;
+}
+
 function getFallbackDrinkImageUrl(itemName = "") {
   const slug = getDrinkImageSlug(itemName);
+  if (KIOSK_LOCAL_IMAGE_PATHS[slug]) return resolveKioskAssetPath(KIOSK_LOCAL_IMAGE_PATHS[slug]);
   if (KIOSK_STOCK_IMAGE_URLS[slug]) return KIOSK_STOCK_IMAGE_URLS[slug];
   const path = `/assets/drinks/${slug}.svg`;
-  return KIOSK_ASSET_BASE_URL ? `${KIOSK_ASSET_BASE_URL}${path}` : path;
+  return resolveKioskAssetPath(path);
 }
 
 function formatCatalogMoney(cents) {
@@ -876,9 +911,12 @@ function filterModifierGroupsForVariation(modifierGroups, itemName, variationNam
   return mergeOnlineModifierGroups(groups);
 }
 
-function buildStaticOnlineOrderingMenu() {
+function buildStaticOnlineOrderingMenu({ includeForHereOnly = false, unavailableKeys = new Set() } = {}) {
   const grouped = new Map();
   for (const item of ONLINE_ORDERING_BETA_MENU) {
+    const itemRule = getOnlineOrderingDrinkRule(item.name);
+    if (!includeForHereOnly && !itemRule.online) continue;
+    if (!isMenuItemAvailable(item, unavailableKeys)) continue;
     if (!grouped.has(item.category)) grouped.set(item.category, []);
     grouped.get(item.category).push({
       id: item.id,
@@ -899,7 +937,7 @@ function buildStaticOnlineOrderingMenu() {
   return Array.from(grouped, ([category, items]) => ({ category, items }));
 }
 
-async function getSquareOnlineOrderingMenu() {
+async function getSquareOnlineOrderingMenu({ includeForHereOnly = false } = {}) {
   const unavailableKeys = await getUnavailableMenuKeys();
   const objects = await fetchSquareCatalogObjects([
     "ITEM",
@@ -939,8 +977,9 @@ async function getSquareOnlineOrderingMenu() {
       itemData.category_id ||
       itemData.categories?.[0]?.id ||
       "";
-    const categoryName = categoriesById.get(categoryId) || itemData.category_name || "Drinks";
-    const categoryAllowed = ONLINE_ORDERING_CATEGORY_NAMES.includes(categoryName.toLowerCase());
+    const squareCategoryName = categoriesById.get(categoryId) || itemData.category_name || "Drinks";
+    const categoryName = normalizeGoldiesDrinkCategory(squareCategoryName) || squareCategoryName;
+    const categoryAllowed = ONLINE_ORDERING_CATEGORY_NAMES.includes(squareCategoryName.toLowerCase());
     const staticNameAllowed = ONLINE_ORDERING_BETA_MENU_BY_ID.has(
       String(itemData.name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
     );
@@ -950,7 +989,7 @@ async function getSquareOnlineOrderingMenu() {
     }
 
     const itemRule = getOnlineOrderingDrinkRule(itemData.name || "");
-    if (!itemRule.online) continue;
+    if (!includeForHereOnly && !itemRule.online) continue;
     const catalogImageUrl =
       (itemData.image_ids || [])
         .map((imageId) => imagesById.get(imageId))
@@ -997,10 +1036,15 @@ async function getSquareOnlineOrderingMenu() {
       const priceCents = Number(variationData.price_money?.amount || 0);
       if (!priceCents) continue;
       const itemName = itemData.name || variationData.name || "Drink";
-      if (!isMenuItemAvailable({ name: itemName }, unavailableKeys)) continue;
       const variationName =
         variationData.name && variationData.name !== "Regular" ? variationData.name : "";
       const displayName = getCanonicalDrinkName(itemName);
+      if (
+        !isMenuItemAvailable({ name: displayName }, unavailableKeys) ||
+        !isMenuItemAvailable({ name: itemName }, unavailableKeys)
+      ) {
+        continue;
+      }
       const variationModifierGroups = filterModifierGroupsForVariation(
         modifierGroups,
         itemName,
@@ -1030,7 +1074,7 @@ async function getSquareOnlineOrderingMenu() {
     items: items.sort((a, b) => a.name.localeCompare(b.name)),
   })).sort((a, b) => a.category.localeCompare(b.category));
 
-  return menu.length ? menu : buildStaticOnlineOrderingMenu();
+  return menu.length ? menu : buildStaticOnlineOrderingMenu({ includeForHereOnly, unavailableKeys });
 }
 
 function flattenOnlineOrderingMenu(menu) {
@@ -1044,11 +1088,12 @@ function flattenOnlineOrderingMenu(menu) {
   return map;
 }
 
-async function buildOnlineOrderingBetaLineItems(rawItems) {
+async function buildOnlineOrderingBetaLineItems(rawItems, { includeForHereOnly = false } = {}) {
   if (!Array.isArray(rawItems)) return [];
-  const menu = await getSquareOnlineOrderingMenu().catch((error) => {
+  const menu = await getSquareOnlineOrderingMenu({ includeForHereOnly }).catch(async (error) => {
     console.error("Square catalog menu unavailable, using static beta menu:", error.message);
-    return buildStaticOnlineOrderingMenu();
+    const unavailableKeys = await getUnavailableMenuKeys();
+    return buildStaticOnlineOrderingMenu({ includeForHereOnly, unavailableKeys });
   });
   const menuById = flattenOnlineOrderingMenu(menu);
 
@@ -1424,7 +1469,7 @@ let tickets = [
 
 const COFFEE_DRINKS = new Set([
   "Americano",
-  "Decaf (Americano)",
+  "Americano (DECAF)",
   "Cappuccino",
   "Cold Brew",
   "Drip",
@@ -1441,18 +1486,23 @@ const NOT_COFFEE_DRINKS = new Set([
   "Hot Chocolate",
   "London Fog",
   "Matcha Latte",
-  "Steamer",
-  "Teas",
-  "Refresher-Strawberry Mango",
+  "Refresher - Strawberry Mango",
+  "Steamer (Or Cold)",
 ]);
 
 const SMOOTHIE_DRINKS = new Set([
-  "Chocolate P/B Banana",
-  "Greens",
-  "Mango",
-  "Strawberry",
-  "Strawberry Banana",
-  "Strawberry Mango",
+  "Chocolate P/B Banana (12 oz Kids)",
+  "Chocolate P/B Banana (16 oz)",
+  "Greens (12 oz Kids)",
+  "Greens (16 oz)",
+  "Mango (12 oz Kids)",
+  "Mango (16 oz)",
+  "Strawberry (12 oz Kids)",
+  "Strawberry (16 oz)",
+  "Strawberry Banana (12 oz Kids)",
+  "Strawberry Banana (16 oz)",
+  "Strawberry Mango (12 oz Kids)",
+  "Strawberry Mango (16 oz)",
 ]);
 
 const GOLDIES_MENU_CATEGORIES = [
@@ -1460,6 +1510,37 @@ const GOLDIES_MENU_CATEGORIES = [
   { key: "Not Coffee", label: "Not Coffee", items: Array.from(NOT_COFFEE_DRINKS) },
   { key: "Smoothies", label: "Smoothies", items: Array.from(SMOOTHIE_DRINKS) },
 ];
+const GOLDIES_STATIC_MENU_PRICE_CENTS = new Map([
+  ["Americano", 325],
+  ["Americano (DECAF)", 325],
+  ["Cappuccino", 425],
+  ["Cold Brew", 500],
+  ["Drip", 325],
+  ["Drip Refill", 100],
+  ["Espresso", 300],
+  ["Flat White", 450],
+  ["Gibraltar", 350],
+  ["Latte", 500],
+  ["Pour Over", 550],
+  ["Chai Latte", 500],
+  ["Hot Chocolate", 450],
+  ["London Fog", 500],
+  ["Matcha Latte", 525],
+  ["Refresher - Strawberry Mango", 600],
+  ["Steamer (Or Cold)", 400],
+  ["Chocolate P/B Banana (12 oz Kids)", 500],
+  ["Chocolate P/B Banana (16 oz)", 700],
+  ["Greens (12 oz Kids)", 500],
+  ["Greens (16 oz)", 700],
+  ["Mango (12 oz Kids)", 500],
+  ["Mango (16 oz)", 700],
+  ["Strawberry (12 oz Kids)", 500],
+  ["Strawberry (16 oz)", 700],
+  ["Strawberry Banana (12 oz Kids)", 500],
+  ["Strawberry Banana (16 oz)", 700],
+  ["Strawberry Mango (12 oz Kids)", 500],
+  ["Strawberry Mango (16 oz)", 700],
+]);
 let menuCatalogCache = { fetchedAt: 0, items: [] };
 let squareCatalogCategoryCache = {
   fetchedAt: 0,
@@ -1636,6 +1717,7 @@ function getCanonicalDrinkName(itemName = "") {
 
   if (compact.includes("strawmango")) return "Refresher - Strawberry Mango";
   if (lower.includes("refresher") && lower.includes("strawberry") && lower.includes("mango")) return "Refresher - Strawberry Mango";
+  if (lower === "steamer") return "Steamer (Or Cold)";
   if (lower.includes("decaf") && lower.includes("americano")) return "Americano (DECAF)";
 
   if (isSmoothieDrinkName(name)) return formatDrinkDisplayName(name);
@@ -1753,8 +1835,112 @@ function buildStaticMenuItems() {
     items: category.items
       .slice()
       .sort((a, b) => a.localeCompare(b))
-      .map((name) => ({ name, priceCents: null, price: "Ask" })),
+      .map((name) => {
+        const priceCents = GOLDIES_STATIC_MENU_PRICE_CENTS.get(name) || null;
+        return {
+          name,
+          priceCents,
+          price: priceCents ? formatCurrency(priceCents) : "Ask",
+        };
+      }),
   }));
+}
+
+function getGoldiesMenuCategoryOrder(category = "") {
+  const index = GOLDIES_MENU_CATEGORIES.findIndex((entry) => entry.key === category);
+  return index >= 0 ? index : GOLDIES_MENU_CATEGORIES.length;
+}
+
+function sortGoldiesMenuItems(a = {}, b = {}) {
+  const categoryOrder = getGoldiesMenuCategoryOrder(a.category) - getGoldiesMenuCategoryOrder(b.category);
+  if (categoryOrder !== 0) return categoryOrder;
+  return String(a.itemName || a.name || "").localeCompare(String(b.itemName || b.name || ""));
+}
+
+function applyMenuAvailabilityRows(items = [], availabilityRows = []) {
+  const availabilityByKey = new Map(
+    (availabilityRows || []).map((row) => [
+      normalizeMenuAvailabilityKey(row.item_key || row.item_name),
+      row,
+    ])
+  );
+
+  return items.map((item) => {
+    const row = availabilityByKey.get(item.itemKey);
+    return {
+      ...item,
+      available: row ? Boolean(row.available) : true,
+      updatedAt: row?.updated_at || null,
+    };
+  });
+}
+
+function groupAvailabilityItemsForMenu(items = []) {
+  const grouped = new Map();
+
+  for (const item of items) {
+    if (item.available === false) continue;
+    if (!grouped.has(item.category)) grouped.set(item.category, []);
+    grouped.get(item.category).push({
+      name: item.itemName,
+      squareName: item.squareName || item.itemName,
+      priceCents: item.priceCents || null,
+      price: item.price || (item.priceCents ? formatCurrency(item.priceCents) : "Ask"),
+    });
+  }
+
+  return GOLDIES_MENU_CATEGORIES.map((category) => ({
+    key: category.key,
+    label: category.label,
+    items: (grouped.get(category.key) || []).sort((a, b) => a.name.localeCompare(b.name)),
+  }));
+}
+
+function buildStaticMenuAvailabilityItems() {
+  return buildStaticMenuItems()
+    .flatMap((category) =>
+      (category.items || []).map((item) => ({
+        itemKey: normalizeMenuAvailabilityKey(item.name),
+        itemName: item.name,
+        squareName: item.name,
+        category: category.label,
+        price: item.price,
+        priceCents: item.priceCents || null,
+        source: "static",
+      }))
+    )
+    .sort(sortGoldiesMenuItems);
+}
+
+function buildCatalogMenuAvailabilityItems(catalogItems = [], recentPrices = new Map()) {
+  const itemsByKey = new Map();
+
+  for (const item of catalogItems) {
+    const itemName = item.displayName || getCanonicalDrinkName(item.name);
+    const category = normalizeGoldiesDrinkCategory(item.category) || getDrinkCategory(itemName);
+    if (!itemName || !category) continue;
+
+    const itemKey = normalizeMenuAvailabilityKey(itemName);
+    if (!itemKey || itemsByKey.has(itemKey)) continue;
+
+    const priceCents =
+      item.priceCents ||
+      recentPrices.get(normalizeDrinkText(item.name)) ||
+      recentPrices.get(normalizeDrinkText(itemName)) ||
+      GOLDIES_STATIC_MENU_PRICE_CENTS.get(itemName) ||
+      null;
+    itemsByKey.set(itemKey, {
+      itemKey,
+      itemName,
+      squareName: item.name || itemName,
+      category,
+      price: priceCents ? formatCurrency(priceCents) : "Ask",
+      priceCents,
+      source: "square",
+    });
+  }
+
+  return Array.from(itemsByKey.values()).sort(sortGoldiesMenuItems);
 }
 
 function normalizeMenuAvailabilityKey(name = "") {
@@ -1939,38 +2125,53 @@ async function fetchSquareMenuCatalogItems() {
     return menuCatalogCache.items;
   }
 
-  const response = await fetch(`${getSquareRestBaseUrl()}/v2/catalog/search`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${SQUARE_ACCESS_TOKEN}`,
-      "Content-Type": "application/json",
-      "Square-Version": "2026-01-22",
-    },
-    body: JSON.stringify({
-      object_types: ["ITEM"],
-      include_deleted_objects: false,
-      include_related_objects: true,
-      limit: 1000,
-    }),
-  });
+  const objects = await fetchSquareCatalogObjects(["ITEM", "ITEM_VARIATION", "CATEGORY"]);
+  const byId = new Map(objects.map((object) => [object.id, object]));
+  const categoryNamesById = new Map(
+    objects
+      .filter((object) => object.type === "CATEGORY" && !object.is_deleted)
+      .map((object) => {
+        const categoryData = object.category_data || object.categoryData || {};
+        return [object.id, categoryData.name || ""];
+      })
+  );
 
-  if (!response.ok) {
-    throw new Error(`Square menu catalog unavailable: ${response.status}`);
-  }
-
-  const data = await response.json();
   menuCatalogCache = {
     fetchedAt: now,
-    items: (data.objects || [])
-      .filter((object) => object.type === "ITEM")
+    items: objects
+      .filter((object) => object.type === "ITEM" && !object.is_deleted)
       .map((object) => {
         const itemData = object.itemData || object.item_data || {};
+        if (!isCatalogObjectPresentAtLocation(itemData)) return null;
+
+        const category = getCatalogCategoryIds(itemData)
+          .map((id) => normalizeGoldiesDrinkCategory(categoryNamesById.get(id)))
+          .find(Boolean);
+        if (!category) return null;
+
+        const prices = (itemData.variations || [])
+          .map((variationRef) => byId.get(variationRef.id) || variationRef)
+          .filter((variation) => {
+            const variationData = variation?.itemVariationData || variation?.item_variation_data || {};
+            return variation && !variation.is_deleted && isCatalogObjectPresentAtLocation(variationData);
+          })
+          .map((variation) => {
+            const variationData = variation.itemVariationData || variation.item_variation_data || {};
+            return Number(
+              variationData.priceMoney?.amount ?? variationData.price_money?.amount
+            );
+          })
+          .filter((price) => Number.isFinite(price) && price > 0);
+
         return {
           id: object.id,
           name: itemData.name || "",
-          priceCents: getCatalogItemPrice(object),
+          displayName: getCanonicalDrinkName(itemData.name || ""),
+          category,
+          priceCents: prices.length ? Math.min(...prices) : null,
         };
       })
+      .filter(Boolean)
       .filter((item) => item.name && getDrinkCategory(item.name)),
   };
 
@@ -1981,33 +2182,34 @@ async function getGoldiesMenuBoard() {
   const staticMenu = buildStaticMenuItems();
 
   try {
-    const [catalogItems, recentPrices, unavailableKeys] = await Promise.all([
+    const [catalogItems, recentPrices, availabilityRows] = await Promise.all([
       fetchSquareMenuCatalogItems(),
       fetchRecentMenuPrices(),
-      getUnavailableMenuKeys(),
+      getMenuAvailabilityRows(),
     ]);
-    const catalogByName = new Map(
-      catalogItems.map((item) => [normalizeDrinkText(item.name), item])
-    );
 
-    return staticMenu.map((category) => ({
-      ...category,
-      items: category.items
-        .filter((item) => isMenuItemAvailable(item, unavailableKeys))
-        .map((item) => {
-          const catalogItem = catalogByName.get(normalizeDrinkText(item.name));
-          const priceCents =
-            catalogItem?.priceCents || recentPrices.get(normalizeDrinkText(item.name)) || null;
-          return {
-            ...item,
-            priceCents,
-            price: priceCents ? formatCurrency(priceCents) : "Ask",
-          };
-        }),
-    }));
+    if (catalogItems.length) {
+      return groupAvailabilityItemsForMenu(
+        applyMenuAvailabilityRows(
+          buildCatalogMenuAvailabilityItems(catalogItems, recentPrices),
+          availabilityRows
+        )
+      );
+    }
+
+    return groupAvailabilityItemsForMenu(
+      applyMenuAvailabilityRows(buildStaticMenuAvailabilityItems(), availabilityRows)
+    );
   } catch (error) {
     console.error("Error building menu board from Square catalog:", error.message);
-    return staticMenu;
+    try {
+      const availabilityRows = await getMenuAvailabilityRows();
+      return groupAvailabilityItemsForMenu(
+        applyMenuAvailabilityRows(buildStaticMenuAvailabilityItems(), availabilityRows)
+      );
+    } catch (_availabilityError) {
+      return staticMenu;
+    }
   }
 }
 
@@ -4467,6 +4669,7 @@ async function getDrinkMakingTimeReport(range = "today") {
     return {
       ...summary,
       range,
+      measurement: "staff_start_to_ready",
       ...getDurationBreakdowns(samples),
     };
   }
@@ -4523,6 +4726,7 @@ async function getDrinkMakingTimeReport(range = "today") {
   return {
     ...summary,
     range,
+    measurement: "staff_start_to_ready",
     ...getDurationBreakdowns(samples),
   };
 }
@@ -7638,36 +7842,33 @@ app.get("/api/display/menu", requireKdsAuth, async (_req, res) => {
 
 app.get("/api/menu/availability", requireKdsOrOwnerAuth, async (_req, res) => {
   try {
-    const [categories, availability] = await Promise.all([
-      getGoldiesMenuBoard(),
-      getMenuAvailabilityRows(),
-    ]);
-    const availabilityByKey = new Map(
-      (availability || []).map((row) => [
-        normalizeMenuAvailabilityKey(row.item_key || row.item_name),
-        row,
-      ])
-    );
+    let catalogItems = [];
+    let recentPrices = new Map();
+    let catalogError = "";
 
-    const items = [];
-    for (const category of buildStaticMenuItems()) {
-      for (const item of category.items || []) {
-        const itemKey = normalizeMenuAvailabilityKey(item.name);
-        const row = availabilityByKey.get(itemKey);
-        items.push({
-          itemKey,
-          itemName: item.name,
-          category: category.label,
-          available: row ? Boolean(row.available) : true,
-          updatedAt: row?.updated_at || null,
-        });
-      }
+    try {
+      [catalogItems, recentPrices] = await Promise.all([
+        fetchSquareMenuCatalogItems(),
+        fetchRecentMenuPrices(),
+      ]);
+    } catch (error) {
+      catalogError = error.message || "Square catalog unavailable.";
+      console.error("Square catalog availability toggles unavailable, using static menu:", catalogError);
     }
+
+    const availability = await getMenuAvailabilityRows();
+
+    const baseItems = catalogItems.length
+      ? buildCatalogMenuAvailabilityItems(catalogItems, recentPrices)
+      : buildStaticMenuAvailabilityItems();
+    const items = applyMenuAvailabilityRows(baseItems, availability);
 
     res.json({
       ok: true,
       items,
-      visibleCategories: categories,
+      visibleCategories: groupAvailabilityItemsForMenu(items),
+      source: catalogItems.length ? "square" : "static",
+      catalogError,
       updatedAt: new Date().toISOString(),
     });
   } catch (error) {
@@ -7753,12 +7954,16 @@ app.get("/api/display/online-orders", requireKdsAuth, async (_req, res) => {
   }
 });
 
-app.get("/api/beta/online-order/menu", async (_req, res) => {
+app.get("/api/beta/online-order/menu", async (req, res) => {
+  const mode = normalizeName(req.query.mode || req.query.source || "").toLowerCase();
+  const includeForHereOnly = mode === "kiosk" || mode === "self_order_kiosk";
+
   try {
-    const menu = await getSquareOnlineOrderingMenu();
+    const menu = await getSquareOnlineOrderingMenu({ includeForHereOnly });
     const hours = getOnlineOrderingHoursStatus();
     res.json({
       ok: true,
+      mode: includeForHereOnly ? "kiosk" : "online",
       source: menu.some((group) => group.items?.some((item) => item.source === "square"))
         ? "square"
         : "static",
@@ -7769,10 +7974,12 @@ app.get("/api/beta/online-order/menu", async (_req, res) => {
     });
   } catch (error) {
     console.error("Error fetching online ordering beta menu:", error);
+    const unavailableKeys = await getUnavailableMenuKeys();
     res.json({
       ok: true,
+      mode: includeForHereOnly ? "kiosk" : "online",
       source: "static",
-      categories: buildStaticOnlineOrderingMenu(),
+      categories: buildStaticOnlineOrderingMenu({ includeForHereOnly, unavailableKeys }),
       hours: getOnlineOrderingHoursStatus(),
       pickupSlots: generatePickupSlots(),
       updatedAt: new Date().toISOString(),
@@ -7846,6 +8053,8 @@ app.get("/api/beta/online-order/quote", async (req, res) => {
 app.post("/api/beta/online-order/checkout", async (req, res) => {
   try {
     const hours = getOnlineOrderingHoursStatus();
+    const source = cleanOrderText(req.body?.source, 80);
+    const includeForHereOnly = source === "self_order_kiosk";
     const customerName = cleanOrderText(req.body?.customerName, 80);
     const customerEmail = normalizeLeadEmail(req.body?.customerEmail || req.body?.email);
     const rawPickupTime = cleanOrderText(req.body?.pickupTime, 120);
@@ -7873,7 +8082,9 @@ app.post("/api/beta/online-order/checkout", async (req, res) => {
         })
       : rawPickupTime;
     const notes = cleanOrderText(req.body?.notes, 300);
-    const lineItems = await buildOnlineOrderingBetaLineItems(req.body?.items);
+    const lineItems = await buildOnlineOrderingBetaLineItems(req.body?.items, {
+      includeForHereOnly,
+    });
 
     if (!customerName) {
       return res.status(400).json({ error: "Pickup name is required." });
@@ -7888,7 +8099,7 @@ app.post("/api/beta/online-order/checkout", async (req, res) => {
     }
 
     const pickupNote = [
-      "DrinkFlow online ordering beta",
+      includeForHereOnly ? "DrinkFlow self-order kiosk" : "DrinkFlow online ordering beta",
       pickupTime ? `Requested pickup: ${pickupTime}` : "",
       notes ? `Customer notes: ${notes}` : "",
     ]
@@ -7909,7 +8120,7 @@ app.post("/api/beta/online-order/checkout", async (req, res) => {
           order: {
             location_id: SQUARE_LOCATION_ID,
             source: {
-              name: "DrinkFlow Online Beta",
+              name: includeForHereOnly ? "DrinkFlow Self Order Kiosk" : "DrinkFlow Online Beta",
             },
             pricing_options: {
               auto_apply_taxes: true,
@@ -7930,7 +8141,7 @@ app.post("/api/beta/online-order/checkout", async (req, res) => {
               },
             ],
             metadata: {
-              drinkflow_source: "online_ordering_beta",
+              drinkflow_source: source || "online_ordering_beta",
               customer_name: customerName,
               customer_email: customerEmail,
               pickup_time: pickupTime,
@@ -8430,6 +8641,8 @@ module.exports = {
   app,
   __testExports: {
     buildOwnerDrinkRevenueReport,
+    buildCatalogMenuAvailabilityItems,
+    buildStaticOnlineOrderingMenu,
     cleanCustomerName,
     fetchSquareDrinkCategoryAudit,
     getCanonicalDrinkName,

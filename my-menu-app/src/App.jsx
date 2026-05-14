@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.15";
+const APP_VERSION = "v1.10.16";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -24,7 +24,7 @@ const GOLDIES_POLICY_CONTEXT = {
   productName: "DrinkFlow Kitchen Display Systems (KDS)",
   policyType: POLICY_TYPE,
   policyVersion: POLICY_VERSION,
-  policyScope: "Goldie's KDS owner/admin dashboard",
+  policyScope: "Goldie's KDS and owner/admin dashboard",
 };
 const SOFT_OPENING_DATE = "2026-04-29";
 const SETTINGS_HELP_TEXT =
@@ -33,13 +33,43 @@ const DINING_OPTIONS = ["HANGIN' OUT", "TAKING OFF", "Pickup", "Delivery", "Driv
 const DAILY_UPDATE_NOTICE = {
   id: APP_VERSION,
   eyebrow: "Today on the KDS",
-  title: "Recipe cards are locked down",
+  title: "Owner Portal and menus are cleaned up",
   message:
-    "Private staff recipe cards now open inside the signed-in KDS instead of exposing reusable direct links.",
+    "Owner Portal is now a top-level button, privacy agreements are compact, and the drink menus, availability toggles, kiosk, and online ordering match Square's current drink categories.",
   note:
-    "Orders Up also shows individual drinks checked off on Focus Board.",
+    "Volume Board now shows drinks made beside drink orders, and timing reports call out staff Start-to-Ready tap timing.",
 };
 const OWNER_PORTAL_RECENT_CHANGES = [
+  {
+    title: "Owner Portal button",
+    body:
+      "Owner Portal now lives as a top-level KDS button instead of being hidden inside Settings. Training mode opens a demo owner portal directly without the owner password prompt.",
+  },
+  {
+    title: "Compact privacy card",
+    body:
+      "Privacy & Agreements now opens collapsed in Owner Portal, and the policy acknowledgment prompt happens after KDS sign-in instead of reopening inside Owner Portal.",
+  },
+  {
+    title: "Current Square drink menu",
+    body:
+      "Menu Board, availability toggles, self-order kiosk, online pickup, and fallback drink lists now match Square's current Coffee, Not Coffee, and Smoothies names and prices.",
+  },
+  {
+    title: "Ordering photos and details",
+    body:
+      "Self Order Kiosk and Online Ordering now use the added drink photos for Americano, Cappuccino, Chai Latte, and Hot Chocolate, plus drink-specific detail copy instead of generic checkout text.",
+  },
+  {
+    title: "Timing report clarity",
+    body:
+      "Timing reports now state that they measure staff Start-to-Ready taps, so unusually short handcrafted-drink samples point to workflow timing rather than actual prep speed.",
+  },
+  {
+    title: "Volume Board drinks made",
+    body:
+      "Volume Board now shows drink orders and drinks made side by side, plus average drinks per order and peak-hour drink units.",
+  },
   {
     title: "Private recipe cards",
     body:
@@ -118,8 +148,24 @@ const OWNER_PORTAL_RECENT_CHANGES = [
 ];
 const RELEASE_NOTES = [
   {
-    version: "v1.10.15",
+    version: "v1.10.16",
     date: "Current build",
+    summary: "Cleaned up Owner Portal, policy acknowledgments, menus, ordering photos, and Volume Board totals.",
+    items: [
+      "Owner Portal now has its own top-level KDS button and the user-facing label no longer says Owner Login.",
+      "Training mode now opens a demo Owner Portal directly with sample owner numbers and no owner password prompt.",
+      "Privacy & Agreements opens collapsed in Owner Portal and only shows detailed policy/status rows when expanded.",
+      "The policy acknowledgment dialog now appears after KDS sign-in when the current policy version has not been acknowledged, instead of reopening from Owner Portal.",
+      "Menu Board and menu availability toggles now build directly from Square's current Coffee, Not Coffee, and Smoothies categories with current names and prices.",
+      "Self-order kiosk uses the full in-shop Square drink menu, while online pickup keeps hang-out-only drinks filtered out.",
+      "Self-order kiosk and online ordering now use the added drink photos and drink-specific detail text for the supported drink names.",
+      "Timing reports now clarify that the numbers measure staff Start-to-Ready taps.",
+      "Volume Board now shows Drinks made beside Drink orders, with peak-hour drink units included.",
+    ],
+  },
+  {
+    version: "v1.10.15",
+    date: "Previous build",
     summary: "Showed Focus Board drink checkoffs on Orders Up.",
     items: [
       "Orders Up now receives individual drink done state from the KDS backend.",
@@ -963,12 +1009,12 @@ function buildSupportMailto() {
 }
 
 function buildOwnerPasswordResetMailto(ownerName = "Owner") {
-  const subject = encodeURIComponent("Goldie's KDS owner password reset");
+  const subject = encodeURIComponent("Goldie's KDS Owner Portal password reset");
   const body = encodeURIComponent(
     [
       "Hi Samantha,",
       "",
-      "Please reset the Goldie's KDS Owner Login password.",
+      "Please reset the Goldie's KDS Owner Portal password.",
       "",
       `Requested by: ${ownerName || "Owner"}`,
       "",
@@ -1251,8 +1297,8 @@ function OwnerReportsNoticeDialog({ open, onClose, onOpenOwnerLogin }) {
               Where to find everything
             </div>
             <p className="mt-1 text-sm font-semibold leading-6 text-[#6A614F]">
-              Reports are in Settings under Owner Login. Menu Board and Orders Up are in the top
-              dashboard buttons and can be opened on a customer-facing screen.
+              Owner Portal is now a top dashboard button. Menu Board and Orders Up are in the
+              Displays menu and can be opened on a customer-facing screen.
             </p>
           </div>
 
@@ -1269,7 +1315,7 @@ function OwnerReportsNoticeDialog({ open, onClose, onOpenOwnerLogin }) {
               onClick={onOpenOwnerLogin}
               className="rounded-xl bg-[#0F4036] px-4 py-2.5 font-black text-white transition hover:bg-[#0b352d]"
             >
-              Open Owner Login
+              Open Owner Portal
             </button>
           </div>
         </div>
@@ -1981,30 +2027,48 @@ const REPORT_RANGES = [
   { key: "thisYear", label: "This Year" },
 ];
 
-const DRINK_MENU_ITEMS = new Set([
+const COFFEE_MENU_ITEMS = new Set([
   "Americano",
-  "Decaf (Americano)",
+  "Americano (DECAF)",
   "Cappuccino",
   "Cold Brew",
   "Drip",
+  "Drip Refill",
   "Espresso",
   "Flat White",
   "Gibraltar",
   "Latte",
   "Pour Over",
-  "Drip Refill",
+]);
+
+const NOT_COFFEE_MENU_ITEMS = new Set([
   "Chai Latte",
   "Hot Chocolate",
   "London Fog",
   "Matcha Latte",
-  "Steamer",
-  "Teas",
-  "Refresher-Strawberry Mango",
-  "Chocolate P/B Banana",
-  "Greens",
-  "Mango",
-  "Strawberry",
-  "Strawberry Banana",
+  "Refresher - Strawberry Mango",
+  "Steamer (Or Cold)",
+]);
+
+const SMOOTHIE_MENU_ITEMS = new Set([
+  "Chocolate P/B Banana (12 oz Kids)",
+  "Chocolate P/B Banana (16 oz)",
+  "Greens (12 oz Kids)",
+  "Greens (16 oz)",
+  "Mango (12 oz Kids)",
+  "Mango (16 oz)",
+  "Strawberry (12 oz Kids)",
+  "Strawberry (16 oz)",
+  "Strawberry Banana (12 oz Kids)",
+  "Strawberry Banana (16 oz)",
+  "Strawberry Mango (12 oz Kids)",
+  "Strawberry Mango (16 oz)",
+]);
+
+const DRINK_MENU_ITEMS = new Set([
+  ...COFFEE_MENU_ITEMS,
+  ...NOT_COFFEE_MENU_ITEMS,
+  ...SMOOTHIE_MENU_ITEMS,
 ]);
 
 function getMinutesElapsed(createdAt) {
@@ -2134,19 +2198,7 @@ function getBeverageCategory(itemName = "") {
 
   if (isNonDrinkItem(name)) return null;
 
-  if (
-    [
-      "Chai Latte",
-      "Hot Chocolate",
-      "London Fog",
-      "Matcha Latte",
-      "Steamer",
-      "Teas",
-      "Refresher-Strawberry Mango",
-    ].includes(name)
-  ) {
-    return "Not Coffee";
-  }
+  if (NOT_COFFEE_MENU_ITEMS.has(name)) return "Not Coffee";
 
   if (
     matchesAnyPattern(lower, [
@@ -2164,24 +2216,7 @@ function getBeverageCategory(itemName = "") {
     return "Not Coffee";
   }
 
-  if (
-    [
-      "Americano",
-      "Decaf (Americano)",
-      "Cappuccino",
-      "Cold Brew",
-      "Drip",
-      "Drip Refill",
-      "Espresso",
-      "Flat White",
-      "Gibraltar",
-      "Latte",
-      "Pour Over",
-      "Drip Refill",
-    ].includes(name)
-  ) {
-    return "Coffee";
-  }
+  if (COFFEE_MENU_ITEMS.has(name)) return "Coffee";
 
   if (
     matchesAnyPattern(lower, [
@@ -2215,18 +2250,7 @@ function getBeverageCategory(itemName = "") {
     return "Smoothies";
   }
 
-  if (
-    [
-      "Chocolate P/B Banana",
-      "Greens",
-      "Mango",
-      "Strawberry",
-      "Strawberry Banana",
-      "Strawberry Mango",
-    ].includes(name) ||
-    /smoothie/i.test(lower) ||
-    compact.includes("greens")
-  ) {
+  if (SMOOTHIE_MENU_ITEMS.has(name) || /smoothie/i.test(lower) || compact.includes("greens")) {
     return "Smoothies";
   }
 
@@ -2250,7 +2274,9 @@ function getCanonicalDrinkName(itemName = "") {
     return formatDrinkDisplayName(name);
   }
   if (lower.includes("refresher") && lower.includes("strawberry") && lower.includes("mango")) return "Refresher - Strawberry Mango";
+  if (lower === "steamer") return "Steamer (Or Cold)";
   if (lower.includes("decaf") && lower.includes("americano")) return "Americano (DECAF)";
+  if (DRINK_MENU_ITEMS.has(name)) return name;
 
   if (name && (name === name.toUpperCase() || name === name.toLowerCase())) {
     return formatDrinkDisplayName(name);
@@ -2578,7 +2604,7 @@ function createTrainingTickets() {
       diningOption: "Delivery",
       items: [
         { name: "Chai Latte", qty: 1, modifiers: ["Extra cinnamon"], note: "" },
-        { name: "Refresher-Strawberry Mango", qty: 1, modifiers: [], note: "" },
+        { name: "Refresher - Strawberry Mango", qty: 1, modifiers: [], note: "" },
         { name: "Scone", qty: 1, modifiers: [], note: "" },
       ],
     },
@@ -2594,7 +2620,7 @@ function createTrainingTickets() {
       diningOption: "Drive thru",
       items: [
         { name: "Cold Brew", qty: 1, modifiers: [], note: "" },
-        { name: "Chocolate P/B Banana", qty: 1, modifiers: [], note: "" },
+        { name: "Chocolate P/B Banana (16 oz)", qty: 1, modifiers: [], note: "" },
       ],
     },
     {
@@ -2623,8 +2649,8 @@ function createTrainingTickets() {
       status: "done",
       diningOption: "TAKING OFF",
       items: [
-        { name: "Strawberry Banana", qty: 1, modifiers: [], note: "" },
-        { name: "Teas", qty: 1, modifiers: [], note: "" },
+        { name: "Strawberry Banana (16 oz)", qty: 1, modifiers: [], note: "" },
+        { name: "London Fog", qty: 1, modifiers: [], note: "" },
       ],
     },
     {
@@ -4423,6 +4449,7 @@ function PolicyAcknowledgmentPage() {
         <PrivacyAgreementsCard
           policyAcknowledgment={record}
           policyReminder={readPolicyReminder()}
+          defaultExpanded
         />
 
         <div className="mt-4 flex flex-col gap-2 sm:flex-row">
@@ -4502,7 +4529,7 @@ function SettingsPopover({
   suggestFixHref,
   onVersionClick,
   showPasswordAction = true,
-  ownerActionLabel = "Owner Login",
+  ownerActionLabel = "Owner Portal",
 }) {
   if (!open) return null;
   if (typeof document === "undefined") return null;
@@ -4753,7 +4780,7 @@ function DrinkTimeStatsPanel({ reports, onClose }) {
             Average drink time
           </h2>
           <p className="mt-1 max-w-3xl text-sm font-semibold text-[#6A614F]">
-              Timing now follows the bar from Making to Ready, so pickup lag does not make the team look slower than they were. Drink-name timing is estimated from tickets that included that drink.
+            Timing follows staff Start-to-Ready taps. Very short samples usually mean Start was tapped after the drink was already underway, so the report doubles as a workflow-coaching signal.
           </p>
         </div>
         <button
@@ -5744,7 +5771,7 @@ function OwnerLoginDialog({ open, onClose, onLogin, themeMode }) {
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
-              Owner Login
+              Owner Portal
             </div>
             <h2 className="mt-1 text-2xl font-black text-[#0F4036]">
               Financial Reports
@@ -5799,7 +5826,7 @@ function OwnerLoginDialog({ open, onClose, onLogin, themeMode }) {
           disabled={submitting}
           className="w-full rounded-2xl bg-[#0F4036] text-white px-4 py-3 font-black transition hover:bg-[#0b352d] disabled:cursor-not-allowed disabled:bg-neutral-300"
         >
-          {submitting ? "Signing in..." : "Open Owner Reports"}
+          {submitting ? "Signing in..." : "Open Owner Portal"}
         </button>
 
         <div className="flex justify-center">
@@ -5913,7 +5940,7 @@ function PolicyAcknowledgmentDialog({
         <div className="w-full overflow-hidden rounded-3xl border border-[#CA862B]/22 bg-[#FFFDF8] shadow-[0_30px_90px_rgba(0,0,0,0.24)]">
           <div className="border-b border-[#CA862B]/18 bg-[#EEE0C5]/35 px-5 py-4">
             <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
-              Goldie&apos;s KDS Owner/Admin Dashboard
+              Goldie&apos;s KDS
             </div>
             <h2 className="mt-1 text-2xl font-black text-[#0F4036]">
               {mode === "review"
@@ -5975,7 +6002,7 @@ function PolicyAcknowledgmentDialog({
                   This policy explains how DrinkFlow KDS may handle Square data,
                   order information, dashboard analytics, daily checks, case study
                   information, and domain reminders. For Goldie&apos;s, this applies
-                  only to the Goldie&apos;s KDS owner/admin dashboard and pilot.
+                  to the Goldie&apos;s KDS, owner/admin dashboard, and pilot.
                 </p>
               </div>
 
@@ -6077,7 +6104,9 @@ function PrivacyAgreementsCard({
   policyAcknowledgment,
   policyReminder,
   onOpenPolicy,
+  defaultExpanded = false,
 }) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const acknowledged = Boolean(policyAcknowledgment);
   const lastDailyCheck = demoMode
     ? "Sample timestamp"
@@ -6087,35 +6116,54 @@ function PrivacyAgreementsCard({
   return (
     <section className="rounded-2xl border border-[#CA862B]/18 bg-white/85 p-4 shadow-sm">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div>
+        <div className="min-w-0">
           <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
             Privacy & Agreements
           </div>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.12em] ${
+                acknowledged || demoMode
+                  ? "bg-emerald-50 text-emerald-800"
+                  : "bg-amber-50 text-amber-900"
+              }`}
+            >
+              {acknowledged || demoMode ? "Acknowledged" : "Needs acknowledgment"}
+            </span>
+            <span className="rounded-full bg-[#EEE0C5]/55 px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-[#6A614F]">
+              Policy {POLICY_VERSION}
+            </span>
+          </div>
           <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-[#6A614F]">
             {demoMode
-              ? "This is a demo version of the owner portal using sample data only. No live Goldie's business data, Square data, customer/order data, recipes, or private dashboard information is shown here."
-              : "This section tracks privacy policy acknowledgment, case study permission, domain renewal details, and daily check status for the Goldie's DrinkFlow KDS pilot."}
+              ? "Demo owner portal privacy notes are collapsed because the demo uses sample data only."
+              : acknowledged
+                ? `Acknowledged by ${policyAcknowledgment?.user_name || "Owner"}${policyAcknowledgment?.acknowledged_timestamp ? ` on ${formatPolicyTimestamp(policyAcknowledgment.acknowledged_timestamp)}` : ""}.`
+                : "The acknowledgment prompt now appears after KDS sign-in and stays dismissed once the current policy version is acknowledged."}
           </p>
-          {!demoMode && (
-            <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-[#6A614F]">
-              Goldie&apos;s live dashboard data should not be used for public demos,
-              school projects, portfolio materials, marketing, or public case studies
-              unless approved. Use demo/test data, anonymized data, aggregated data,
-              blurred screenshots, or approved screenshots instead.
-            </p>
-          )}
         </div>
-        <a
-          href="/policy.html"
-          target="_blank"
-          rel="noreferrer"
-          className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-center text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-          onClick={onOpenPolicy}
-        >
-          View Policy
-        </a>
+        <div className="flex flex-wrap gap-2">
+          <a
+            href="/policy.html"
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-center text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+            onClick={onOpenPolicy}
+          >
+            View Policy
+          </a>
+          <button
+            type="button"
+            onClick={() => setExpanded((current) => !current)}
+            className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
+            aria-expanded={expanded}
+          >
+            {expanded ? "Hide Details" : "Show Details"}
+          </button>
+        </div>
       </div>
 
+      {expanded && (
       <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {[
           ["Privacy Policy", acknowledged || demoMode ? "Acknowledged" : "Needs Acknowledgment"],
@@ -6144,6 +6192,7 @@ function PrivacyAgreementsCard({
           </div>
         ))}
       </div>
+      )}
     </section>
   );
 }
@@ -6275,11 +6324,8 @@ function OwnerReportsView({
   const [accessLogError, setAccessLogError] = useState("");
   const [accessLogLoading, setAccessLogLoading] = useState(false);
   const [showRecentChanges, setShowRecentChanges] = useState(false);
-  const [policyAcknowledgment, setPolicyAcknowledgment] = useState(readPolicyAcknowledgment);
-  const [policyReminder, setPolicyReminder] = useState(readPolicyReminder);
-  const [showPolicyAcknowledgment, setShowPolicyAcknowledgment] = useState(
-    () => !demoMode && !readPolicyAcknowledgment()
-  );
+  const [policyAcknowledgment] = useState(readPolicyAcknowledgment);
+  const [policyReminder] = useState(readPolicyReminder);
   const demoQuery = demoMode ? "?demo=training" : "";
 
   useEffect(() => {
@@ -6403,19 +6449,6 @@ function OwnerReportsView({
     fetchOwnerAccessLog();
   }, [demoMode, showAccessLog]);
 
-  useEffect(() => {
-    if (demoMode || !showPolicyAcknowledgment || policyAcknowledgment) return;
-    const reminder = {
-      ...policyReminder,
-      reminder_count: Number(policyReminder?.reminder_count || 0) + 1,
-      last_reminded_timestamp: new Date().toISOString(),
-      policy_version: POLICY_VERSION,
-    };
-    writePolicyReminder(reminder);
-    setPolicyReminder(reminder);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [demoMode, showPolicyAcknowledgment, policyAcknowledgment]);
-
   async function handleSaveSnapshot() {
     if (!report) return;
 
@@ -6504,26 +6537,6 @@ function OwnerReportsView({
     } finally {
       setEmailReportSending(false);
     }
-  }
-
-  function handlePolicyRemindLater() {
-    const reminder = {
-      ...policyReminder,
-      dismissed_timestamp: new Date().toISOString(),
-      policy_version: POLICY_VERSION,
-    };
-    writePolicyReminder(reminder);
-    setPolicyReminder(reminder);
-    setShowPolicyAcknowledgment(false);
-    setOwnerPasswordNotice(
-      "No problem. We'll remind you again later so the current policy version can be acknowledged when convenient."
-    );
-  }
-
-  function handlePolicyRecorded(record) {
-    const nextRecord = record || readPolicyAcknowledgment();
-    setPolicyAcknowledgment(nextRecord);
-    setShowPolicyAcknowledgment(false);
   }
 
   async function handleOwnerPasswordChange({
@@ -7028,6 +7041,9 @@ function OwnerReportsView({
                     <h2 className="mt-1 text-2xl font-black text-[#0F4036]">
                       Average drink time: {timingReport?.label || "Collecting"}
                     </h2>
+                    <p className="mt-1 max-w-3xl text-sm font-semibold leading-6 text-[#6A614F]">
+                      Based on staff Start-to-Ready taps. A one-second handcrafted drink usually means the Start button was tapped late, not that the drink was actually made in one second.
+                    </p>
                   </div>
                   <button
                     type="button"
@@ -7266,12 +7282,6 @@ function OwnerReportsView({
         saving={ownerPasswordSaving}
         error={ownerPasswordError}
       />
-      <PolicyAcknowledgmentDialog
-        open={showPolicyAcknowledgment}
-        ownerName={ownerName}
-        onRecorded={handlePolicyRecorded}
-        onRemindLater={handlePolicyRemindLater}
-      />
     </div>
   );
 }
@@ -7289,6 +7299,7 @@ function LoginScreen({
   onOwnerLogin,
   suggestFixHref,
   onVersionClickMenu,
+  isTrainingMode = false,
 }) {
   const [employeeName, setEmployeeName] = useState("Employee");
   const [password, setPassword] = useState("");
@@ -7371,7 +7382,14 @@ function LoginScreen({
       />
       <WatermarkLayer trainingMode={false} darkMode={themeMode === "dark"} />
       <div className="absolute right-4 top-6 sm:top-4">
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center justify-end gap-1.5">
+          <button
+            type="button"
+            onClick={onOwnerLogin}
+            className="rounded-xl border border-[#CA862B]/22 bg-[#0F4036] px-3 py-2 text-sm font-black text-white transition hover:bg-[#0b352d]"
+          >
+            {isTrainingMode ? "Training Owner Portal" : "Owner Portal"}
+          </button>
           <button
             type="button"
             onClick={onToggleSettings}
@@ -9009,7 +9027,11 @@ function VolumeBoardDisplay() {
                 <strong className={`mt-2 block text-3xl font-semibold leading-none ${headingClass}`}>{orderCount}</strong>
               </div>
               <div className={`rounded-[18px] border p-4 sm:rounded-[22px] ${cardClass}`}>
-                <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${mutedClass}`}>Avg drinks</span>
+                <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${mutedClass}`}>Drinks made</span>
+                <strong className={`mt-2 block text-3xl font-semibold leading-none ${headingClass}`}>{totalUnits}</strong>
+              </div>
+              <div className={`rounded-[18px] border p-4 sm:rounded-[22px] ${cardClass}`}>
+                <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${mutedClass}`}>Avg drinks/order</span>
                 <strong className={`mt-2 block text-3xl font-semibold leading-none ${headingClass}`}>{averageDrinks}</strong>
               </div>
               <div className={`rounded-[18px] border p-4 sm:rounded-[22px] ${cardClass}`}>
@@ -9020,6 +9042,12 @@ function VolumeBoardDisplay() {
                 <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${mutedClass}`}>Peak hour</span>
                 <strong className={`mt-2 block text-2xl font-semibold leading-none ${headingClass}`}>
                   {hourlyStats.peak ? formatHourRange(hourlyStats.peak.hour) : "Collecting"}
+                </strong>
+              </div>
+              <div className={`rounded-[18px] border p-4 sm:rounded-[22px] ${cardClass}`}>
+                <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${mutedClass}`}>Peak drinks</span>
+                <strong className={`mt-2 block text-3xl font-semibold leading-none ${headingClass}`}>
+                  {hourlyStats.peak ? Number(hourlyStats.peak.units || 0) : 0}
                 </strong>
               </div>
             </div>
@@ -10464,35 +10492,64 @@ const ONLINE_ORDERING_BETA_MENU = [
   {
     category: "Coffee",
     items: [
-      { id: "latte", name: "Latte", price: "$5.75", imageUrl: "/assets/drinks/latte.svg" },
-      { id: "americano", name: "Americano", price: "$4.25", imageUrl: "/assets/drinks/americano.svg" },
-      { id: "decaf-americano", name: "Decaf (Americano)", price: "$4.25", imageUrl: "/assets/drinks/decaf-americano.svg" },
-      { id: "cold-brew", name: "Cold Brew", price: "$5.50", imageUrl: "/assets/drinks/cold-brew.svg" },
-      { id: "cappuccino", name: "Cappuccino", price: "$5.25", imageUrl: "/assets/drinks/cappuccino.svg" },
+      { id: "americano", name: "Americano", price: "$3.25", priceCents: 325, imageUrl: "/assets/drinks/photos/americano.png" },
+      { id: "americano-decaf", name: "Americano (DECAF)", price: "$3.25", priceCents: 325, imageUrl: "/assets/drinks/photos/americano.png" },
+      { id: "cappuccino", name: "Cappuccino", price: "$4.25", priceCents: 425, imageUrl: "/assets/drinks/photos/cappuccino.png" },
+      { id: "cold-brew", name: "Cold Brew", price: "$5.00", priceCents: 500, imageUrl: "/assets/drinks/cold-brew.svg" },
+      { id: "drip", name: "Drip", price: "$3.25", priceCents: 325, imageUrl: "/assets/drinks/americano.svg" },
+      { id: "drip-refill", name: "Drip Refill", price: "$1.00", priceCents: 100, imageUrl: "/assets/drinks/americano.svg" },
+      { id: "espresso", name: "Espresso", price: "$3.00", priceCents: 300, imageUrl: "/assets/drinks/americano.svg" },
+      { id: "flat-white", name: "Flat White", price: "$4.50", priceCents: 450, imageUrl: "/assets/drinks/latte.svg" },
+      { id: "gibraltar", name: "Gibraltar", price: "$3.50", priceCents: 350, imageUrl: "/assets/drinks/latte.svg" },
+      { id: "latte", name: "Latte", price: "$5.00", priceCents: 500, imageUrl: "/assets/drinks/latte.svg" },
+      { id: "pour-over", name: "Pour Over", price: "$5.50", priceCents: 550, imageUrl: "/assets/drinks/americano.svg" },
     ],
   },
   {
     category: "Not Coffee",
     items: [
-      { id: "london-fog", name: "London Fog", price: "$5.75", imageUrl: "/assets/drinks/london-fog.svg" },
-      { id: "chai-latte", name: "Chai Latte", price: "$5.75", imageUrl: "/assets/drinks/chai-latte.svg" },
-      { id: "matcha-latte", name: "Matcha Latte", price: "$6.25", imageUrl: "/assets/drinks/matcha-latte.svg" },
+      { id: "chai-latte", name: "Chai Latte", price: "$5.00", priceCents: 500, imageUrl: "/assets/drinks/photos/chai-latte.png" },
+      { id: "hot-chocolate", name: "Hot Chocolate", price: "$4.50", priceCents: 450, imageUrl: "/assets/drinks/photos/hot-chocolate.png" },
+      { id: "london-fog", name: "London Fog", price: "$5.00", priceCents: 500, imageUrl: "/assets/drinks/london-fog.svg" },
+      { id: "matcha-latte", name: "Matcha Latte", price: "$5.25", priceCents: 525, imageUrl: "/assets/drinks/matcha-latte.svg" },
+      { id: "refresher-strawberry-mango", name: "Refresher - Strawberry Mango", price: "$6.00", priceCents: 600, imageUrl: "/assets/drinks/strawberry-banana.svg" },
+      { id: "steamer-or-cold", name: "Steamer (Or Cold)", price: "$4.00", priceCents: 400, imageUrl: "/assets/drinks/london-fog.svg" },
     ],
   },
   {
     category: "Smoothies",
     items: [
-      { id: "strawberry-banana", name: "Strawberry Banana", price: "$7.00", imageUrl: "/assets/drinks/strawberry-banana.svg" },
-      { id: "chocolate-pb-banana", name: "Chocolate P/B Banana", price: "$7.00", imageUrl: "/assets/drinks/chocolate-pb-banana.svg" },
-      { id: "green-smoothie", name: "Green Smoothie", price: "$7.00", imageUrl: "/assets/drinks/green-smoothie.svg" },
+      { id: "chocolate-pb-banana-12-oz-kids", name: "Chocolate P/B Banana (12 oz Kids)", price: "$5.00", priceCents: 500, imageUrl: "/assets/drinks/chocolate-pb-banana.svg" },
+      { id: "chocolate-pb-banana-16-oz", name: "Chocolate P/B Banana (16 oz)", price: "$7.00", priceCents: 700, imageUrl: "/assets/drinks/chocolate-pb-banana.svg" },
+      { id: "greens-12-oz-kids", name: "Greens (12 oz Kids)", price: "$5.00", priceCents: 500, imageUrl: "/assets/drinks/green-smoothie.svg" },
+      { id: "greens-16-oz", name: "Greens (16 oz)", price: "$7.00", priceCents: 700, imageUrl: "/assets/drinks/green-smoothie.svg" },
+      { id: "mango-12-oz-kids", name: "Mango (12 oz Kids)", price: "$5.00", priceCents: 500, imageUrl: "/assets/drinks/strawberry-banana.svg" },
+      { id: "mango-16-oz", name: "Mango (16 oz)", price: "$7.00", priceCents: 700, imageUrl: "/assets/drinks/strawberry-banana.svg" },
+      { id: "strawberry-12-oz-kids", name: "Strawberry (12 oz Kids)", price: "$5.00", priceCents: 500, imageUrl: "/assets/drinks/strawberry-banana.svg" },
+      { id: "strawberry-16-oz", name: "Strawberry (16 oz)", price: "$7.00", priceCents: 700, imageUrl: "/assets/drinks/strawberry-banana.svg" },
+      { id: "strawberry-banana-12-oz-kids", name: "Strawberry Banana (12 oz Kids)", price: "$5.00", priceCents: 500, imageUrl: "/assets/drinks/strawberry-banana.svg" },
+      { id: "strawberry-banana-16-oz", name: "Strawberry Banana (16 oz)", price: "$7.00", priceCents: 700, imageUrl: "/assets/drinks/strawberry-banana.svg" },
+      { id: "strawberry-mango-12-oz-kids", name: "Strawberry Mango (12 oz Kids)", price: "$5.00", priceCents: 500, imageUrl: "/assets/drinks/strawberry-banana.svg" },
+      { id: "strawberry-mango-16-oz", name: "Strawberry Mango (16 oz)", price: "$7.00", priceCents: 700, imageUrl: "/assets/drinks/strawberry-banana.svg" },
     ],
   },
 ];
 
-function normalizeOnlineOrderMenuGroups(groups = []) {
+function isOnlinePickupStaticItem(item = {}) {
+  const text = String(item.name || "").toLowerCase();
+  return !(
+    text === "espresso" ||
+    text.includes("gibraltar") ||
+    text.includes("pour over")
+  );
+}
+
+function normalizeOnlineOrderMenuGroups(groups = [], { includeForHereOnly = false } = {}) {
   return (groups || []).map((group) => ({
     ...group,
-    items: (group.items || []).map((item) => ({
+    items: (group.items || [])
+      .filter((item) => includeForHereOnly || isOnlinePickupStaticItem(item))
+      .map((item) => ({
       ...item,
       squareName: item.squareName || item.name,
       name: getCanonicalDrinkName(item.name),
@@ -10515,6 +10572,8 @@ const KIOSK_STOCK_IMAGE_URLS = {
     "https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&w=900&q=80",
   "chai-latte":
     "https://images.unsplash.com/photo-1571934811356-5cc061b6821f?auto=format&fit=crop&w=900&q=80",
+  "hot-chocolate":
+    "https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?auto=format&fit=crop&w=900&q=80",
   "matcha-latte":
     "https://images.unsplash.com/photo-1515823064-d6e0c04616a7?auto=format&fit=crop&w=900&q=80",
   "strawberry-banana":
@@ -10527,6 +10586,14 @@ const KIOSK_STOCK_IMAGE_URLS = {
     "https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=900&q=80",
   "green-smoothie":
     "https://images.unsplash.com/photo-1610970881699-44a5587cabec?auto=format&fit=crop&w=900&q=80",
+};
+
+const KIOSK_LOCAL_IMAGE_URLS = {
+  americano: "/assets/drinks/photos/americano.png",
+  "decaf-americano": "/assets/drinks/photos/americano.png",
+  cappuccino: "/assets/drinks/photos/cappuccino.png",
+  "chai-latte": "/assets/drinks/photos/chai-latte.png",
+  "hot-chocolate": "/assets/drinks/photos/hot-chocolate.png",
 };
 
 function getKioskImageSlug(item = {}) {
@@ -10542,6 +10609,7 @@ function getKioskImageSlug(item = {}) {
   if (text.includes("cappuccino")) return "cappuccino";
   if (text.includes("london-fog") || text.includes("steamer")) return "london-fog";
   if (text.includes("chai")) return "chai-latte";
+  if (text.includes("hot-chocolate")) return "hot-chocolate";
   if (text.includes("matcha")) return "matcha-latte";
   if (text.includes("strawberry") && text.includes("mango")) return "strawberry-mango";
   if (text.includes("pineapple") && text.includes("mango")) return "mango-pineapple";
@@ -10554,19 +10622,51 @@ function getKioskImageSlug(item = {}) {
 }
 
 function getOnlineOrderItemDescription(item = {}) {
-  if (item.description) return item.description;
+  const explicitDescription = String(item.description || "").trim();
+  const isOldFillerDescription =
+    /goldie's drink option|prepared for pickup|square checkout/i.test(explicitDescription);
+  if (explicitDescription && !isOldFillerDescription) return explicitDescription;
 
   const name = String(item.name || "drink").toLowerCase();
-  if (name.includes("cappuccino")) return "A classic espresso drink with a soft, foamy finish.";
-  if (name.includes("latte")) return "Smooth espresso with steamed milk, ready for the flavor or milk option you like.";
-  if (name.includes("americano")) return "Espresso with hot water for a clean, simple coffee profile.";
-  if (name.includes("cold brew")) return "Cold coffee with a smooth finish for an easy pickup drink.";
-  if (name.includes("london fog")) return "A cozy tea latte style drink with soft vanilla-forward comfort.";
-  if (name.includes("chai")) return "Spiced, warm, and comforting with room for milk or flavor choices.";
-  if (name.includes("matcha")) return "Green tea latte style drink with a creamy, earthy finish.";
-  if (name.includes("smoothie")) return "A blended fruit-forward drink for a quick, cold pickup.";
+  const category = String(item.category || "").toLowerCase();
+  if (name.includes("refresher")) return "Cold strawberry mango refresher; bright, fruity, and coffee-free.";
+  if (name.includes("chocolate") && name.includes("banana")) {
+    return "Chocolate, peanut butter, and banana smoothie; rich, cold, and filling.";
+  }
+  if (name.includes("strawberry") && name.includes("banana")) {
+    return "Strawberry and banana smoothie with a classic fruit blend profile.";
+  }
+  if (name.includes("strawberry") && name.includes("mango")) {
+    return "Strawberry and mango smoothie with a bright tropical fruit profile.";
+  }
+  if (name.includes("greens") || name.includes("green")) {
+    return "Green smoothie option with a cold, produce-forward profile.";
+  }
+  if (name.includes("mango")) return "Mango smoothie; sweet, cold, and fruit-forward.";
+  if (name.includes("strawberry")) return "Strawberry smoothie; sweet, cold, and fruit-forward.";
+  if (name.includes("decaf") && name.includes("americano")) {
+    return "Decaf espresso with hot water for a clean Americano flavor without regular caffeine.";
+  }
+  if (name.includes("americano")) return "Espresso with hot water for a clean, lighter-bodied coffee.";
+  if (name.includes("cappuccino")) return "Espresso with steamed milk and a thicker foam cap than a latte.";
+  if (name.includes("cold brew")) return "Cold-steeped coffee served chilled for a smooth, lower-acid sip.";
+  if (name.includes("drip refill")) return "A refill of Goldie's brewed drip coffee.";
+  if (name.includes("drip")) return "Goldie's brewed coffee, served straightforward and easy to customize.";
+  if (name.includes("espresso")) return "A concentrated espresso shot, served small and strong.";
+  if (name.includes("flat white")) return "Espresso with steamed milk and a thin microfoam texture.";
+  if (name.includes("gibraltar")) return "A small espresso and milk drink with a balanced cortado-style profile.";
+  if (name.includes("pour over")) return "A hand-poured coffee brewed to order for a clear, slower-sipped cup.";
+  if (name.includes("hot chocolate")) return "Creamy chocolate drink with steamed milk and a cozy dessert-style profile.";
+  if (name.includes("london fog")) return "Earl Grey tea latte style drink with steamed milk and vanilla notes.";
+  if (name.includes("chai")) return "Spiced chai with steamed milk; warm, sweet, and aromatic.";
+  if (name.includes("matcha")) return "Matcha green tea with milk for a creamy, earthy drink.";
+  if (name.includes("steamer")) return "Steamed or cold milk-based drink for a simple non-coffee option.";
+  if (name.includes("latte")) return "Espresso with steamed milk and a light layer of foam.";
 
-  return "A Goldie's drink option prepared for pickup. Choose any available options, then send it through Square checkout.";
+  if (category.includes("smoothie")) return "Cold blended drink from Goldie's smoothie menu.";
+  if (category.includes("not coffee")) return "Non-coffee drink with the available milk, flavor, and temperature choices.";
+  if (category.includes("coffee")) return "Coffee drink with the available milk, flavor, and temperature choices.";
+  return "Made to order from Goldie's current drink menu.";
 }
 
 function getOnlineOrderVisualStyle(item = {}) {
@@ -10593,11 +10693,14 @@ function getOnlineOrderVisualStyle(item = {}) {
 }
 
 function getOnlineOrderImageUrl(item = {}) {
+  const slug = getKioskImageSlug(item);
+  if (KIOSK_LOCAL_IMAGE_URLS[slug]) return KIOSK_LOCAL_IMAGE_URLS[slug];
+
   if (item.imageUrl && !String(item.imageUrl).startsWith("/assets/drinks/")) {
     return item.imageUrl;
   }
 
-  return KIOSK_STOCK_IMAGE_URLS[getKioskImageSlug(item)] || KIOSK_STOCK_IMAGE_URLS.latte;
+  return KIOSK_STOCK_IMAGE_URLS[slug] || KIOSK_STOCK_IMAGE_URLS.latte;
 }
 
 function DrinkProductImage({ item, className = "" }) {
@@ -10629,7 +10732,11 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 80);
-  const [menuGroups, setMenuGroups] = useState(() => normalizeOnlineOrderMenuGroups(ONLINE_ORDERING_BETA_MENU));
+  const [menuGroups, setMenuGroups] = useState(() =>
+    normalizeOnlineOrderMenuGroups(ONLINE_ORDERING_BETA_MENU, {
+      includeForHereOnly: kioskMode,
+    })
+  );
   const [menuSource, setMenuSource] = useState("static");
   const [orderingHours, setOrderingHours] = useState(null);
   const [serverPickupSlots, setServerPickupSlots] = useState([]);
@@ -10673,12 +10780,15 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
 
     async function fetchMenu() {
       try {
-        const response = await fetch(apiUrl("/api/beta/online-order/menu"));
+        const response = await fetch(
+          apiUrl(`/api/beta/online-order/menu${kioskMode ? "?mode=kiosk" : ""}`)
+        );
         const data = await response.json().catch(() => ({}));
         if (!mounted || !response.ok || !Array.isArray(data.categories)) return;
         setMenuGroups(
           normalizeOnlineOrderMenuGroups(
-            data.categories.length ? data.categories : ONLINE_ORDERING_BETA_MENU
+            data.categories.length ? data.categories : ONLINE_ORDERING_BETA_MENU,
+            { includeForHereOnly: kioskMode }
           )
         );
         setMenuSource(data.source || "static");
@@ -10693,7 +10803,7 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [kioskMode]);
 
   useEffect(() => {
     let mounted = true;
@@ -12014,6 +12124,9 @@ export default function GoldiesKDS() {
   const [showOwnerLogin, setShowOwnerLogin] = useState(false);
   const [showOwnerReports, setShowOwnerReports] = useState(false);
   const [signedInOwner, setSignedInOwner] = useState("");
+  const [policyAcknowledgment, setPolicyAcknowledgment] = useState(readPolicyAcknowledgment);
+  const [policyReminder, setPolicyReminder] = useState(readPolicyReminder);
+  const [showPolicyAcknowledgment, setShowPolicyAcknowledgment] = useState(false);
   const [showReleaseNotes, setShowReleaseNotes] = useState(false);
   const [showReportsMenu, setShowReportsMenu] = useState(false);
   const [showPitch, setShowPitch] = useState(false);
@@ -12086,6 +12199,20 @@ export default function GoldiesKDS() {
     setPitchHash("");
     setModeHelp(null);
     setSettingsHelp(null);
+  }
+
+  function openOwnerPortal() {
+    setShowSettingsMenu(false);
+    if (isDemoRoute || isTrainingMode) {
+      setSignedInOwner(isDemoRoute ? "Demo Owner" : "Training Owner");
+      setShowOwnerLogin(false);
+      setShowOwnerReports(true);
+      return;
+    }
+
+    setSignedInOwner("");
+    setShowOwnerReports(false);
+    setShowOwnerLogin(true);
   }
 
   const todayDateKey = getTodayDateKey();
@@ -12248,6 +12375,17 @@ export default function GoldiesKDS() {
     window.addEventListener("hashchange", syncPitchHash);
     return () => window.removeEventListener("hashchange", syncPitchHash);
   }, []);
+
+  useEffect(() => {
+    if (authStatus !== "authenticated" || isDemoRoute || isTrainingMode) return;
+
+    const record = readPolicyAcknowledgment();
+    setPolicyAcknowledgment(record);
+    if (!record) {
+      setPolicyReminder(readPolicyReminder());
+      setShowPolicyAcknowledgment(true);
+    }
+  }, [authStatus, isDemoRoute, isTrainingMode]);
 
   useEffect(() => {
     if (!passwordNotice) return undefined;
@@ -12854,6 +12992,25 @@ export default function GoldiesKDS() {
     setSignedInEmployee("");
   }
 
+  function handlePolicyRemindLater() {
+    const reminder = {
+      ...policyReminder,
+      dismissed_timestamp: new Date().toISOString(),
+      last_reminded_timestamp: new Date().toISOString(),
+      reminder_count: Number(policyReminder?.reminder_count || 0) + 1,
+      policy_version: POLICY_VERSION,
+    };
+    writePolicyReminder(reminder);
+    setPolicyReminder(reminder);
+    setShowPolicyAcknowledgment(false);
+  }
+
+  function handlePolicyRecorded(record) {
+    const nextRecord = record || readPolicyAcknowledgment();
+    setPolicyAcknowledgment(nextRecord);
+    setShowPolicyAcknowledgment(false);
+  }
+
   if (authStatus === "authenticated") {
     if (isTodayCountWindow) {
       return (
@@ -12936,13 +13093,9 @@ export default function GoldiesKDS() {
             setPasswordNotice("");
             setShowPasswordModal(true);
           }}
-          onOwnerLogin={() => {
-            setShowSettingsMenu(false);
-            setSignedInOwner("");
-            setShowOwnerReports(false);
-            setShowOwnerLogin(true);
-          }}
+          onOwnerLogin={openOwnerPortal}
           suggestFixHref={buildSupportMailto()}
+          isTrainingMode={isTrainingMode}
           onVersionClickMenu={() => {
             setShowSettingsMenu(false);
             setShowReleaseNotes(true);
@@ -13184,13 +13337,21 @@ export default function GoldiesKDS() {
                 </a>
               )}
 
+              <button
+                type="button"
+                onClick={openOwnerPortal}
+                className="rounded-2xl border border-[#CA862B]/14 bg-[#0F4036] px-4 py-2 text-sm font-black text-white shadow-sm transition hover:bg-[#0b352d]"
+              >
+                {isTrainingMode ? "Training Owner Portal" : "Owner Portal"}
+              </button>
+
             <div className="relative" onClick={(event) => event.stopPropagation()}>
                 {isDemoRoute && (
                   <div className="absolute right-0 top-full z-20 mt-2 w-72 rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 text-sm font-bold leading-5 text-[#0F4036] shadow-[0_18px_45px_rgba(15,64,54,0.16)]">
                     <div className="text-xs font-black uppercase tracking-[0.16em] text-[#CA862B]">
                       Demo tip
                     </div>
-                    Click Settings, then Owner Reports Demo.
+                    Click Training Owner Portal for the demo reports.
                   </div>
                 )}
                 <div className="flex items-center gap-1.5 rounded-2xl border border-[#CA862B]/14 bg-white/75 px-1.5 py-1 shadow-sm">
@@ -13234,19 +13395,8 @@ export default function GoldiesKDS() {
                   onToggleDiningOnTickets={() =>
                     setShowDiningOnTickets((current) => !current)
                   }
-                  onOwnerLogin={() => {
-                    setShowSettingsMenu(false);
-                    if (isDemoRoute) {
-                      setSignedInOwner("Demo Owner");
-                      setShowOwnerLogin(false);
-                      setShowOwnerReports(true);
-                    } else {
-                      setSignedInOwner("");
-                      setShowOwnerReports(false);
-                      setShowOwnerLogin(true);
-                    }
-                  }}
-                  ownerActionLabel={isDemoRoute ? "Owner Reports Demo" : "Owner Login"}
+                  onOwnerLogin={openOwnerPortal}
+                  ownerActionLabel={isDemoRoute || isTrainingMode ? "Training Owner Portal" : "Owner Portal"}
                   showPasswordAction={true}
                   onChangePassword={() => {
                     setShowSettingsMenu(false);
@@ -13548,7 +13698,7 @@ export default function GoldiesKDS() {
 
           {!showFocusBoard && <CustomerInsightsPanel />}
 
-          {!showFocusBoard && <MenuAvailabilityPanel demoMode={isDemoRoute} />}
+          {!showFocusBoard && <MenuAvailabilityPanel demoMode={isDemoRoute || isTrainingMode} />}
 
         {!showFocusBoard && !showTicketColumns ? (
           <section className="rounded-2xl border border-white/70 bg-[rgba(255,253,248,0.9)] p-4 shadow-sm backdrop-blur-sm">
@@ -13668,6 +13818,18 @@ export default function GoldiesKDS() {
   return (
     <>
       {content}
+      <PolicyAcknowledgmentDialog
+        open={
+          authStatus === "authenticated" &&
+          !isDemoRoute &&
+          !isTrainingMode &&
+          showPolicyAcknowledgment &&
+          !policyAcknowledgment
+        }
+        ownerName={signedInEmployee || "Goldie's"}
+        onRecorded={handlePolicyRecorded}
+        onRemindLater={handlePolicyRemindLater}
+      />
       <ReleaseNotesDialog
         open={showReleaseNotes}
         onClose={() => setShowReleaseNotes(false)}
@@ -13710,7 +13872,7 @@ export default function GoldiesKDS() {
         <OwnerReportsView
           ownerName={signedInOwner || "Owner"}
           themeMode={themeMode}
-          demoMode={isDemoRoute}
+          demoMode={isDemoRoute || isTrainingMode}
           demoTickets={trainingTickets}
           onClose={() => {
             setSignedInOwner("");

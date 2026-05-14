@@ -38,6 +38,8 @@ Module._load = function loadWithTestStubs(request, parent, isMain) {
 const {
   __testExports: {
     buildOwnerDrinkRevenueReport,
+    buildCatalogMenuAvailabilityItems,
+    buildStaticOnlineOrderingMenu,
     cleanCustomerName,
     getSuspiciousPickupNameTickets,
     getCanonicalDrinkName,
@@ -53,6 +55,7 @@ test("canonical drink names clean up Square edits without changing display style
   assert.equal(getCanonicalDrinkName("STRAWMANGO"), "Refresher - Strawberry Mango");
   assert.equal(getCanonicalDrinkName("CHOCOLATE P/B BANANA (12 OZ KIDS)"), "Chocolate P/B Banana (12 oz Kids)");
   assert.equal(getCanonicalDrinkName("AMERICANO DECAF"), "Americano (DECAF)");
+  assert.equal(getCanonicalDrinkName("Steamer"), "Steamer (Or Cold)");
 });
 
 test("sync audit flags active tickets with drink labels as pickup names", () => {
@@ -104,8 +107,33 @@ test("drink classification keeps smoothies and refreshers in drink reporting", (
   assert.equal(getItemDrinkCategory({ name: "anything", category: "SMOOTHIES" }), "Smoothies");
   assert.equal(getItemDrinkCategory({ name: "MATCHA LATTE" }), "Not Coffee");
   assert.equal(getItemDrinkCategory({ name: "CHAI LATTE" }), "Not Coffee");
+  assert.equal(getItemDrinkCategory({ name: "Steamer" }), "Not Coffee");
   assert.equal(getItemDrinkCategory({ name: "STRAWMANGO" }), "Not Coffee");
   assert.equal(getItemDrinkCategory({ name: "Muffin" }), null);
+});
+
+test("availability and online ordering menus use current display names", () => {
+  const availabilityItems = buildCatalogMenuAvailabilityItems([
+    { name: "STRAWMANGO", displayName: "Refresher - Strawberry Mango", category: "Not Coffee", priceCents: 600 },
+    { name: "STRAWBERRY BANANA (16 OZ)", displayName: "Strawberry Banana (16 oz)", category: "Smoothies", priceCents: 700 },
+    { name: "AMERICANO DECAF", displayName: "Americano (DECAF)", category: "Coffee", priceCents: 325 },
+  ]);
+
+  assert.deepEqual(
+    availabilityItems.map((item) => [item.itemName, item.category, item.price]),
+    [
+      ["Americano (DECAF)", "Coffee", "$3.25"],
+      ["Refresher - Strawberry Mango", "Not Coffee", "$6.00"],
+      ["Strawberry Banana (16 oz)", "Smoothies", "$7.00"],
+    ]
+  );
+
+  const unavailableKeys = new Set(["refresher strawberry mango"]);
+  const staticOnlineMenu = buildStaticOnlineOrderingMenu({ unavailableKeys, includeForHereOnly: true });
+  const staticNames = staticOnlineMenu.flatMap((group) => group.items.map((item) => item.name));
+
+  assert.equal(staticNames.includes("Refresher - Strawberry Mango"), false);
+  assert.equal(staticNames.includes("Steamer (Or Cold)"), true);
 });
 
 test("orders-up display keeps individual drink done state", () => {
