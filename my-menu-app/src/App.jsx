@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.18";
+const APP_VERSION = "v1.10.19";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -33,13 +33,28 @@ const DINING_OPTIONS = ["HANGIN' OUT", "TAKING OFF", "Pickup", "Delivery", "Driv
 const DAILY_UPDATE_NOTICE = {
   id: APP_VERSION,
   eyebrow: "Today on the KDS",
-  title: "Owner Reports wording is aligned",
+  title: "Owner Reports exports are cleaner",
   message:
-    "The app, policy page, public case study, and DrinkFlow public pages now use Owner Reports as the visible owner-facing label.",
+    "Owner Reports now supports quarter and custom date-range downloads, and the old end-of-day email form has been removed.",
   note:
-    "The demo/training reports policy wording now states that demo Owner Reports use fake/sample data only.",
+    "Online Orders and Self Order Kiosk now use unique drink images for each menu item instead of shared placeholder photos.",
 };
 const OWNER_PORTAL_RECENT_CHANGES = [
+  {
+    title: "Report downloads",
+    body:
+      "End-of-day report email has been removed. CSV, Excel, and PDF downloads are the supported report path, now with This Quarter and Custom date ranges for tax and owner review periods.",
+  },
+  {
+    title: "Unique ordering photos",
+    body:
+      "Self Order Kiosk and Online Orders now use a different generated photo for every current drink menu item.",
+  },
+  {
+    title: "Customer tools wording",
+    body:
+      "The ordering and display links now read as customer tools, while the internal route stays compatible with existing links.",
+  },
   {
     title: "Policy wording alignment",
     body:
@@ -116,11 +131,6 @@ const OWNER_PORTAL_RECENT_CHANGES = [
       "The View Stats report, range toggles, drink breakdown, and timing report now fit better on phones, iPads, and desktop screens.",
   },
   {
-    title: "Owner report email",
-    body:
-      "End-of-day PDF email now prefers the Resend email path when configured and explains Microsoft SMTP blocks in plain English.",
-  },
-  {
     title: "Deeper owner downloads",
     body:
       "Owner report downloads now include CPA, inventory, hourly, order-detail, and non-drink add-on signals while keeping the PDF polished.",
@@ -153,8 +163,20 @@ const OWNER_PORTAL_RECENT_CHANGES = [
 ];
 const RELEASE_NOTES = [
   {
-    version: "v1.10.18",
+    version: "v1.10.19",
     date: "Current build",
+    summary: "Cleaned up report exports and customer ordering images.",
+    items: [
+      "Owner Reports now includes This Quarter and Custom date ranges for the main report, timing report, CSV, Excel, and PDF exports.",
+      "The old end-of-day report email form has been removed so downloads stay the reliable reporting path.",
+      "Customer tools now uses Online Orders wording in the visible owner and ordering screens.",
+      "Self Order Kiosk and Online Orders now use a unique generated image for each current drink menu item.",
+      "The v1.10.18 Owner Reports policy wording alignment remains in place.",
+    ],
+  },
+  {
+    version: "v1.10.18",
+    date: "Previous build",
     summary: "Aligned Owner Reports wording across policy and public pages.",
     items: [
       "The public policy now calls the demo/training area Owner Reports instead of Owner Portal.",
@@ -327,7 +349,7 @@ const RELEASE_NOTES = [
     summary: "Cleaned up Owner Reports, connection reporting, and customer ordering visuals.",
     items: [
       "Owner Reports now opens with the main report first and keeps recent changes and owner tools collapsible.",
-      "Owner Reports recent changes can collapse, while exports, email reports, beta links, and access checks stay in the main report area where they already worked.",
+      "Owner Reports recent changes can collapse, while exports, customer-ordering links, and access checks stay in the main report area where they already worked.",
       "Owner Reports now has one clear exit button instead of separate Back and Sign out buttons doing the same thing.",
       "The dashboard Connection box now opens a connection report with Square health, sync state, cached ticket count, and downtime tracking notes.",
       "Self Order Kiosk and Online Ordering now share the same refined Goldie's photo-menu style.",
@@ -430,34 +452,34 @@ const RELEASE_NOTES = [
       "Online Orders display now filters to true online pickup orders only.",
       "Orders Up keeps a clear Online or In person label on customer-facing order cards.",
       "Mixed Square modifier lists are separated into Temperature, Size, and Drink additions for customer ordering.",
-      "The public pages now reflect online ordering, kiosk beta, and a la carte customer-facing display options.",
+      "The public pages now reflect online ordering, self-order kiosk, and a la carte customer-facing display options.",
     ],
   },
   {
     version: "v1.9.1",
     date: "Previous build",
-    summary: "Cleaned up drink choices and added a kiosk beta path.",
+    summary: "Cleaned up drink choices and added a kiosk ordering path.",
     items: [
-      "Online Ordering Beta now removes for-here-only espresso, gibraltar, and pour over drinks.",
+      "Online Ordering now removes for-here-only espresso, gibraltar, and pour over drinks.",
       "Americano and latte now require a hot or iced choice when ordered online.",
       "Hot-only drinks such as drip, drip refill, flat white, and cappuccino stay hot in the online flow.",
       "Temperature and size choices are shown separately from drink additions in the cart.",
-      "A Self Order Kiosk beta route now uses the same menu and checkout flow as online ordering.",
+      "A Self Order Kiosk route now uses the same menu and checkout flow as online ordering.",
     ],
   },
   {
     version: "v1.9.0",
     date: "Previous build",
-    summary: "Added the first real online ordering beta path.",
+    summary: "Added the first real online ordering path.",
     items: [
-      "Owner Reports now links to a customer-facing Online Ordering Beta where testers can build a drink pickup order.",
-      "The beta order page sends selected drinks to Square Checkout so a paid test order can flow back into the KDS.",
+      "Owner Reports now links to a customer-facing Online Ordering page where testers can build a drink pickup order.",
+      "The order page sends selected drinks to Square Checkout so a paid test order can flow back into the KDS.",
       "New online pickup tickets now show a red pending-order alert with placed time and drink details.",
       "Orders Up now labels Online versus In person orders.",
       "Orders Up now shows drinks currently being made, not just orders that are ready.",
       "The dashboard now has a Customer insights note area for small customer/menu requests.",
-      "The Online Ordering Beta can read Square catalog drink options and estimate ASAP pickup time from queue depth.",
-      "The ordering beta keeps menu prices controlled by the backend instead of trusting browser-entered prices.",
+      "Online Ordering can read Square catalog drink options and estimate ASAP pickup time from queue depth.",
+      "The ordering flow keeps menu prices controlled by the backend instead of trusting browser-entered prices.",
       "The sign-in update message now tells owners what changed in the KDS before they start service.",
     ],
   },
@@ -1812,6 +1834,12 @@ function getRangeBounds(rangeKey) {
     return { start: start.getTime(), end };
   }
 
+  if (rangeKey === "thisQuarter") {
+    const quarterStartMonth = Math.floor(today.getMonth() / 3) * 3;
+    const start = new Date(today.getFullYear(), quarterStartMonth, 1);
+    return { start: start.getTime(), end };
+  }
+
   if (rangeKey === "thisYear") {
     const start = new Date(today.getFullYear(), 0, 1);
     return { start: start.getTime(), end };
@@ -1880,6 +1908,7 @@ const DEMO_OWNER_SEED = {
   yesterday: { orders: 74, units: 96, revenueCents: 54890, multi: 22 },
   last7: { orders: 524, units: 681, revenueCents: 389640, multi: 168 },
   last30: { orders: 2184, units: 2839, revenueCents: 1627820, multi: 704 },
+  thisQuarter: { orders: 6120, units: 7956, revenueCents: 4559600, multi: 1984 },
   thisMonth: { orders: 697, units: 906, revenueCents: 519320, multi: 219 },
   thisYear: { orders: 6948, units: 9032, revenueCents: 5161280, multi: 2260 },
 };
@@ -1908,9 +1937,15 @@ function buildEmptyOwnerCategoryBuckets() {
   );
 }
 
-function buildDemoOwnerReport(_tickets, rangeKey) {
-  const seed = DEMO_OWNER_SEED[rangeKey] || DEMO_OWNER_SEED.today;
-  const { start, end } = getRangeBounds(rangeKey);
+function buildDemoOwnerReport(_tickets, rangeKey, customRange = {}) {
+  const seed =
+    rangeKey === "custom"
+      ? DEMO_OWNER_SEED.last30
+      : DEMO_OWNER_SEED[rangeKey] || DEMO_OWNER_SEED.today;
+  const { start, end } =
+    rangeKey === "custom" && customRange.startDate && customRange.endDate
+      ? getCustomRangeBounds(customRange.startDate, customRange.endDate)
+      : getRangeBounds(rangeKey);
   const scale = seed.units / DEMO_OWNER_SEED.today.units;
   const scaledTopDrinks = DEMO_TOP_DRINKS.map((item) => ({
     ...item,
@@ -2061,37 +2096,42 @@ const REPORT_RANGES = [
 ];
 
 const GOLDIES_MENU_CATEGORY_LABELS = ["Coffee", "Not Coffee", "Smoothies"];
+const GENERATED_DRINK_IMAGE_BASE = "/assets/drinks/generated";
+
+function getGeneratedDrinkImageUrl(id) {
+  return `${GENERATED_DRINK_IMAGE_BASE}/${id}.png`;
+}
 
 const GOLDIES_STATIC_DRINK_MENU_ITEMS = [
-  { id: "americano", name: "Americano", category: "Coffee", priceCents: 325, imageUrl: "/assets/drinks/photos/americano.png" },
-  { id: "americano-decaf", name: "Americano (DECAF)", category: "Coffee", priceCents: 325, imageUrl: "/assets/drinks/photos/americano.png" },
-  { id: "cappuccino", name: "Cappuccino", category: "Coffee", priceCents: 425, imageUrl: "/assets/drinks/photos/cappuccino.png" },
-  { id: "cold-brew", name: "Cold Brew", category: "Coffee", priceCents: 500, imageUrl: "/assets/drinks/cold-brew.svg" },
-  { id: "drip", name: "Drip", category: "Coffee", priceCents: 325, imageUrl: "/assets/drinks/americano.svg" },
-  { id: "drip-refill", name: "Drip Refill", category: "Coffee", priceCents: 100, imageUrl: "/assets/drinks/americano.svg" },
-  { id: "espresso", name: "Espresso", category: "Coffee", priceCents: 300, imageUrl: "/assets/drinks/americano.svg" },
-  { id: "flat-white", name: "Flat White", category: "Coffee", priceCents: 450, imageUrl: "/assets/drinks/latte.svg" },
-  { id: "gibraltar", name: "Gibraltar", category: "Coffee", priceCents: 350, imageUrl: "/assets/drinks/latte.svg" },
-  { id: "latte", name: "Latte", category: "Coffee", priceCents: 500, imageUrl: "/assets/drinks/latte.svg" },
-  { id: "pour-over", name: "Pour Over", category: "Coffee", priceCents: 550, imageUrl: "/assets/drinks/americano.svg" },
-  { id: "chai-latte", name: "Chai Latte", category: "Not Coffee", priceCents: 500, imageUrl: "/assets/drinks/photos/chai-latte.png" },
-  { id: "hot-chocolate", name: "Hot Chocolate", category: "Not Coffee", priceCents: 450, imageUrl: "/assets/drinks/photos/hot-chocolate.png" },
-  { id: "london-fog", name: "London Fog", category: "Not Coffee", priceCents: 500, imageUrl: "/assets/drinks/london-fog.svg" },
-  { id: "matcha-latte", name: "Matcha Latte", category: "Not Coffee", priceCents: 525, imageUrl: "/assets/drinks/matcha-latte.svg" },
-  { id: "refresher-strawberry-mango", name: "Refresher - Strawberry Mango", category: "Not Coffee", priceCents: 600, imageUrl: "/assets/drinks/strawberry-banana.svg" },
-  { id: "steamer-or-cold", name: "Steamer (Or Cold)", category: "Not Coffee", priceCents: 400, imageUrl: "/assets/drinks/london-fog.svg" },
-  { id: "chocolate-pb-banana-12-oz-kids", name: "Chocolate P/B Banana (12 oz Kids)", category: "Smoothies", priceCents: 500, imageUrl: "/assets/drinks/chocolate-pb-banana.svg" },
-  { id: "chocolate-pb-banana-16-oz", name: "Chocolate P/B Banana (16 oz)", category: "Smoothies", priceCents: 700, imageUrl: "/assets/drinks/chocolate-pb-banana.svg" },
-  { id: "greens-12-oz-kids", name: "Greens (12 oz Kids)", category: "Smoothies", priceCents: 500, imageUrl: "/assets/drinks/green-smoothie.svg" },
-  { id: "greens-16-oz", name: "Greens (16 oz)", category: "Smoothies", priceCents: 700, imageUrl: "/assets/drinks/green-smoothie.svg" },
-  { id: "mango-12-oz-kids", name: "Mango (12 oz Kids)", category: "Smoothies", priceCents: 500, imageUrl: "/assets/drinks/strawberry-banana.svg" },
-  { id: "mango-16-oz", name: "Mango (16 oz)", category: "Smoothies", priceCents: 700, imageUrl: "/assets/drinks/strawberry-banana.svg" },
-  { id: "strawberry-12-oz-kids", name: "Strawberry (12 oz Kids)", category: "Smoothies", priceCents: 500, imageUrl: "/assets/drinks/strawberry-banana.svg" },
-  { id: "strawberry-16-oz", name: "Strawberry (16 oz)", category: "Smoothies", priceCents: 700, imageUrl: "/assets/drinks/strawberry-banana.svg" },
-  { id: "strawberry-banana-12-oz-kids", name: "Strawberry Banana (12 oz Kids)", category: "Smoothies", priceCents: 500, imageUrl: "/assets/drinks/strawberry-banana.svg" },
-  { id: "strawberry-banana-16-oz", name: "Strawberry Banana (16 oz)", category: "Smoothies", priceCents: 700, imageUrl: "/assets/drinks/strawberry-banana.svg" },
-  { id: "strawberry-mango-12-oz-kids", name: "Strawberry Mango (12 oz Kids)", category: "Smoothies", priceCents: 500, imageUrl: "/assets/drinks/strawberry-banana.svg" },
-  { id: "strawberry-mango-16-oz", name: "Strawberry Mango (16 oz)", category: "Smoothies", priceCents: 700, imageUrl: "/assets/drinks/strawberry-banana.svg" },
+  { id: "americano", name: "Americano", category: "Coffee", priceCents: 325, imageUrl: getGeneratedDrinkImageUrl("americano") },
+  { id: "americano-decaf", name: "Americano (DECAF)", category: "Coffee", priceCents: 325, imageUrl: getGeneratedDrinkImageUrl("americano-decaf") },
+  { id: "cappuccino", name: "Cappuccino", category: "Coffee", priceCents: 425, imageUrl: getGeneratedDrinkImageUrl("cappuccino") },
+  { id: "cold-brew", name: "Cold Brew", category: "Coffee", priceCents: 500, imageUrl: getGeneratedDrinkImageUrl("cold-brew") },
+  { id: "drip", name: "Drip", category: "Coffee", priceCents: 325, imageUrl: getGeneratedDrinkImageUrl("drip") },
+  { id: "drip-refill", name: "Drip Refill", category: "Coffee", priceCents: 100, imageUrl: getGeneratedDrinkImageUrl("drip-refill") },
+  { id: "espresso", name: "Espresso", category: "Coffee", priceCents: 300, imageUrl: getGeneratedDrinkImageUrl("espresso") },
+  { id: "flat-white", name: "Flat White", category: "Coffee", priceCents: 450, imageUrl: getGeneratedDrinkImageUrl("flat-white") },
+  { id: "gibraltar", name: "Gibraltar", category: "Coffee", priceCents: 350, imageUrl: getGeneratedDrinkImageUrl("gibraltar") },
+  { id: "latte", name: "Latte", category: "Coffee", priceCents: 500, imageUrl: getGeneratedDrinkImageUrl("latte") },
+  { id: "pour-over", name: "Pour Over", category: "Coffee", priceCents: 550, imageUrl: getGeneratedDrinkImageUrl("pour-over") },
+  { id: "chai-latte", name: "Chai Latte", category: "Not Coffee", priceCents: 500, imageUrl: getGeneratedDrinkImageUrl("chai-latte") },
+  { id: "hot-chocolate", name: "Hot Chocolate", category: "Not Coffee", priceCents: 450, imageUrl: getGeneratedDrinkImageUrl("hot-chocolate") },
+  { id: "london-fog", name: "London Fog", category: "Not Coffee", priceCents: 500, imageUrl: getGeneratedDrinkImageUrl("london-fog") },
+  { id: "matcha-latte", name: "Matcha Latte", category: "Not Coffee", priceCents: 525, imageUrl: getGeneratedDrinkImageUrl("matcha-latte") },
+  { id: "refresher-strawberry-mango", name: "Refresher - Strawberry Mango", category: "Not Coffee", priceCents: 600, imageUrl: getGeneratedDrinkImageUrl("refresher-strawberry-mango") },
+  { id: "steamer-or-cold", name: "Steamer (Or Cold)", category: "Not Coffee", priceCents: 400, imageUrl: getGeneratedDrinkImageUrl("steamer-or-cold") },
+  { id: "chocolate-pb-banana-12-oz-kids", name: "Chocolate P/B Banana (12 oz Kids)", category: "Smoothies", priceCents: 500, imageUrl: getGeneratedDrinkImageUrl("chocolate-pb-banana-12-oz-kids") },
+  { id: "chocolate-pb-banana-16-oz", name: "Chocolate P/B Banana (16 oz)", category: "Smoothies", priceCents: 700, imageUrl: getGeneratedDrinkImageUrl("chocolate-pb-banana-16-oz") },
+  { id: "greens-12-oz-kids", name: "Greens (12 oz Kids)", category: "Smoothies", priceCents: 500, imageUrl: getGeneratedDrinkImageUrl("greens-12-oz-kids") },
+  { id: "greens-16-oz", name: "Greens (16 oz)", category: "Smoothies", priceCents: 700, imageUrl: getGeneratedDrinkImageUrl("greens-16-oz") },
+  { id: "mango-12-oz-kids", name: "Mango (12 oz Kids)", category: "Smoothies", priceCents: 500, imageUrl: getGeneratedDrinkImageUrl("mango-12-oz-kids") },
+  { id: "mango-16-oz", name: "Mango (16 oz)", category: "Smoothies", priceCents: 700, imageUrl: getGeneratedDrinkImageUrl("mango-16-oz") },
+  { id: "strawberry-12-oz-kids", name: "Strawberry (12 oz Kids)", category: "Smoothies", priceCents: 500, imageUrl: getGeneratedDrinkImageUrl("strawberry-12-oz-kids") },
+  { id: "strawberry-16-oz", name: "Strawberry (16 oz)", category: "Smoothies", priceCents: 700, imageUrl: getGeneratedDrinkImageUrl("strawberry-16-oz") },
+  { id: "strawberry-banana-12-oz-kids", name: "Strawberry Banana (12 oz Kids)", category: "Smoothies", priceCents: 500, imageUrl: getGeneratedDrinkImageUrl("strawberry-banana-12-oz-kids") },
+  { id: "strawberry-banana-16-oz", name: "Strawberry Banana (16 oz)", category: "Smoothies", priceCents: 700, imageUrl: getGeneratedDrinkImageUrl("strawberry-banana-16-oz") },
+  { id: "strawberry-mango-12-oz-kids", name: "Strawberry Mango (12 oz Kids)", category: "Smoothies", priceCents: 500, imageUrl: getGeneratedDrinkImageUrl("strawberry-mango-12-oz-kids") },
+  { id: "strawberry-mango-16-oz", name: "Strawberry Mango (16 oz)", category: "Smoothies", priceCents: 700, imageUrl: getGeneratedDrinkImageUrl("strawberry-mango-16-oz") },
 ];
 
 function getStaticDrinkNamesByCategory(category) {
@@ -5366,8 +5406,10 @@ const OWNER_REPORT_RANGES = [
   { key: "yesterday", label: "Yesterday" },
   { key: "last7", label: "7 Days" },
   { key: "last30", label: "30 Days" },
+  { key: "thisQuarter", label: "This Quarter" },
   { key: "thisMonth", label: "This Month" },
   { key: "thisYear", label: "This Year" },
+  { key: "custom", label: "Custom" },
 ];
 
 function getOwnerRangeLabel(rangeKey) {
@@ -5375,6 +5417,46 @@ function getOwnerRangeLabel(rangeKey) {
     OWNER_REPORT_RANGES.find((option) => option.key === rangeKey)?.label ||
     "Selected Range"
   );
+}
+
+function getCustomRangeBounds(startDate, endDate) {
+  const start = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T00:00:00`);
+  end.setDate(end.getDate() + 1);
+  return { start: start.getTime(), end: end.getTime() };
+}
+
+function getOwnerReportDateLabel(value) {
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function getSelectedOwnerRangeLabel(rangeKey, customRange = {}) {
+  if (rangeKey !== "custom") return getOwnerRangeLabel(rangeKey);
+  if (!customRange.startDate || !customRange.endDate) return "Custom Range";
+  return `${getOwnerReportDateLabel(customRange.startDate)} - ${getOwnerReportDateLabel(customRange.endDate)}`;
+}
+
+function buildOwnerReportQuery(rangeKey, customRange = {}) {
+  const params = new URLSearchParams();
+  params.set("range", rangeKey);
+
+  if (rangeKey === "custom") {
+    params.set("startDate", customRange.startDate || "");
+    params.set("endDate", customRange.endDate || "");
+  }
+
+  return params.toString();
+}
+
+function isCustomOwnerRangeReady(customRange = {}) {
+  if (!customRange.startDate || !customRange.endDate) return false;
+  return new Date(`${customRange.startDate}T00:00:00`) <= new Date(`${customRange.endDate}T00:00:00`);
 }
 
 const SHOP_TIME_ZONE = "America/Chicago";
@@ -5525,6 +5607,16 @@ const OWNER_SNAPSHOT_COPY = {
     action:
       "Use the 30-day view for stronger decisions about prep, promos, menu focus, and which drink lane deserves attention.",
   },
+  thisQuarter: {
+    eyebrow: "Quarter Snapshot",
+    question: "What does this quarter show?",
+    empty:
+      "No drink revenue is showing for this quarter. Check the data connection before using this for tax or planning work.",
+    quiet:
+      "This quarter is reading light. Use it as a planning period and compare it against month-to-date before changing the menu.",
+    action:
+      "Use the quarter view for taxes, owner planning, purchasing habits, and category-level decisions.",
+  },
   thisMonth: {
     eyebrow: "Month-to-Date Snapshot",
     question: "How is this month shaping up?",
@@ -5544,6 +5636,16 @@ const OWNER_SNAPSHOT_COPY = {
       "The year-to-date view is still modest. Focus on the drink categories that repeatedly show demand over time.",
     action:
       "Use the year-to-date view for higher-level decisions: menu direction, staffing patterns, and what the shop is becoming known for.",
+  },
+  custom: {
+    eyebrow: "Custom Range Snapshot",
+    question: "What does this selected period show?",
+    empty:
+      "No drink revenue is showing for this selected date range. Check the dates and Square syncing before using the report.",
+    quiet:
+      "This selected range is reading light. Use it for context, then compare it to a stronger period before making big changes.",
+    action:
+      "Use custom ranges for quarterly taxes, owner review periods, or any date window that needs a clean export.",
   },
 };
 
@@ -6334,6 +6436,15 @@ function OwnerReportsView({
   demoTickets = [],
 }) {
   const [range, setRange] = useState("today");
+  const [customRange, setCustomRange] = useState(() => {
+    const end = getTodayDateKey();
+    const startDate = new Date(`${end}T00:00:00`);
+    startDate.setDate(startDate.getDate() - 89);
+    return {
+      startDate: getLocalDateInputValue(startDate),
+      endDate: end,
+    };
+  });
   const [report, setReport] = useState(null);
   const [timingReport, setTimingReport] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -6350,10 +6461,6 @@ function OwnerReportsView({
   const [snapshotError, setSnapshotError] = useState("");
   const [snapshotSaving, setSnapshotSaving] = useState(false);
   const [reportExportMenuOpen, setReportExportMenuOpen] = useState(false);
-  const [emailReportTo, setEmailReportTo] = useState("");
-  const [emailReportSending, setEmailReportSending] = useState(false);
-  const [emailReportNotice, setEmailReportNotice] = useState("");
-  const [emailReportError, setEmailReportError] = useState("");
   const [showTimingDetails, setShowTimingDetails] = useState(false);
   const [showCategoryDetails, setShowCategoryDetails] = useState(false);
   const [showAccessLog, setShowAccessLog] = useState(false);
@@ -6366,13 +6473,24 @@ function OwnerReportsView({
   const [policyAcknowledgment] = useState(readPolicyAcknowledgment);
   const [policyReminder] = useState(readPolicyReminder);
   const demoQuery = demoMode ? "?demo=training" : "";
+  const selectedRangeLabel = getSelectedOwnerRangeLabel(range, customRange);
+  const reportQuery = buildOwnerReportQuery(range, customRange);
+  const canLoadSelectedRange = range !== "custom" || isCustomOwnerRangeReady(customRange);
 
   useEffect(() => {
     let mounted = true;
 
     async function fetchReport() {
+      if (!canLoadSelectedRange) {
+        setReport(null);
+        setTimingReport(null);
+        setError("Choose a valid start and end date for the custom report.");
+        setLoading(false);
+        return;
+      }
+
       if (demoMode) {
-        setReport(buildDemoOwnerReport(demoTickets, range));
+        setReport(buildDemoOwnerReport(demoTickets, range, customRange));
         setTimingReport({
           label: "3m 12s",
           sampleSize: 4,
@@ -6394,10 +6512,10 @@ function OwnerReportsView({
         setLoading(true);
         setError("");
         const [response, timingResponse] = await Promise.all([
-          fetch(apiUrl(`/api/owner/reports/drink-revenue?range=${range}`), {
+          fetch(apiUrl(`/api/owner/reports/drink-revenue?${reportQuery}`), {
             credentials: "include",
           }),
-          fetch(apiUrl(`/api/owner/reports/drink-making-time?range=${range}`), {
+          fetch(apiUrl(`/api/owner/reports/drink-making-time?${reportQuery}`), {
             credentials: "include",
           }),
         ]);
@@ -6428,7 +6546,7 @@ function OwnerReportsView({
     return () => {
       mounted = false;
     };
-  }, [range, demoMode, demoTickets]);
+  }, [range, customRange, demoMode, demoTickets, reportQuery, canLoadSelectedRange]);
 
   async function fetchSnapshots(month = snapshotMonth) {
     try {
@@ -6509,7 +6627,7 @@ function OwnerReportsView({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           range,
-          rangeLabel: getOwnerRangeLabel(range),
+          rangeLabel: selectedRangeLabel,
           snapshotDate: getTodayDateKey(),
           summary: snapshot.summary,
           moneySignal,
@@ -6547,35 +6665,6 @@ function OwnerReportsView({
       credentials: "include",
     }).catch(() => {});
     onClose();
-  }
-
-  async function handleEmailOwnerReport(event) {
-    event.preventDefault();
-    if (demoMode) return;
-
-    setEmailReportSending(true);
-    setEmailReportNotice("");
-    setEmailReportError("");
-
-    try {
-      const response = await fetch(apiUrl("/api/owner/reports/drink-revenue/email"), {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: emailReportTo, range }),
-      });
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(data.error || `Report email failed: ${response.status}`);
-      }
-
-      setEmailReportNotice(data.message || "Owner report email sent.");
-    } catch (emailError) {
-      setEmailReportError(emailError.message || "Report email failed");
-    } finally {
-      setEmailReportSending(false);
-    }
   }
 
   async function handleOwnerPasswordChange({
@@ -6805,21 +6894,21 @@ function OwnerReportsView({
                   ) : (
                     <>
                       <a
-                        href={apiUrl(`/api/owner/reports/drink-revenue.csv?range=${range}`)}
+                        href={apiUrl(`/api/owner/reports/drink-revenue.csv?${reportQuery}`)}
                         className="block px-4 py-3 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
                         onClick={() => setReportExportMenuOpen(false)}
                       >
                         CSV
                       </a>
                       <a
-                        href={apiUrl(`/api/owner/reports/drink-revenue.xlsx?range=${range}`)}
+                        href={apiUrl(`/api/owner/reports/drink-revenue.xlsx?${reportQuery}`)}
                         className="block px-4 py-3 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
                         onClick={() => setReportExportMenuOpen(false)}
                       >
                         Excel workbook
                       </a>
                       <a
-                        href={apiUrl(`/api/owner/reports/drink-revenue.pdf?range=${range}`)}
+                        href={apiUrl(`/api/owner/reports/drink-revenue.pdf?${reportQuery}`)}
                         className="block px-4 py-3 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
                         onClick={() => setReportExportMenuOpen(false)}
                       >
@@ -6832,55 +6921,51 @@ function OwnerReportsView({
             </div>
           </div>
 
+          {range === "custom" && (
+            <div className="mb-4 grid gap-3 rounded-2xl border border-[#CA862B]/18 bg-white/80 p-3 shadow-sm md:grid-cols-[1fr_1fr_auto] md:items-end">
+              <label className="block">
+                <span className="text-xs font-black uppercase tracking-[0.16em] text-[#8B5A1D]">
+                  Start date
+                </span>
+                <input
+                  type="date"
+                  value={customRange.startDate}
+                  onChange={(event) =>
+                    setCustomRange((current) => ({
+                      ...current,
+                      startDate: event.target.value,
+                    }))
+                  }
+                  className="mt-2 w-full rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2.5 text-sm font-bold text-[#111111] outline-none focus:border-[#0F4036]"
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs font-black uppercase tracking-[0.16em] text-[#8B5A1D]">
+                  End date
+                </span>
+                <input
+                  type="date"
+                  value={customRange.endDate}
+                  onChange={(event) =>
+                    setCustomRange((current) => ({
+                      ...current,
+                      endDate: event.target.value,
+                    }))
+                  }
+                  className="mt-2 w-full rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2.5 text-sm font-bold text-[#111111] outline-none focus:border-[#0F4036]"
+                />
+              </label>
+              <div className="rounded-xl border border-[#0F4036]/10 bg-[#FFFDF8] px-4 py-3 text-sm font-bold leading-5 text-[#0F4036]">
+                {selectedRangeLabel}
+              </div>
+            </div>
+          )}
+
           <PrivacyAgreementsCard
             demoMode={demoMode}
             policyAcknowledgment={policyAcknowledgment}
             policyReminder={policyReminder}
           />
-
-          {!demoMode && (
-            <form
-              onSubmit={handleEmailOwnerReport}
-              className="mb-4 rounded-2xl border border-[#CA862B]/18 bg-white/80 p-3 shadow-sm"
-            >
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
-                    End-of-day wrap-up email
-                  </div>
-                  <label className="mt-2 block">
-                    <span className="text-sm font-semibold text-[#6A614F]">
-                      Send PDF report for the selected range.
-                    </span>
-                    <input
-                      type="email"
-                      value={emailReportTo}
-                      onChange={(event) => setEmailReportTo(event.target.value)}
-                      placeholder="owner@email.com"
-                      className="mt-2 w-full rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2.5 text-sm font-bold text-[#111111] outline-none focus:border-[#0F4036]"
-                    />
-                  </label>
-                </div>
-                <button
-                  type="submit"
-                  disabled={emailReportSending || !emailReportTo.trim()}
-                  className="rounded-xl bg-[#0F4036] px-4 py-2.5 text-sm font-black text-white transition hover:bg-[#0b352d] disabled:cursor-not-allowed disabled:bg-neutral-300"
-                >
-                  {emailReportSending ? "Sending..." : "Email PDF"}
-                </button>
-              </div>
-              {emailReportNotice ? (
-                <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-900">
-                  {emailReportNotice}
-                </div>
-              ) : null}
-              {emailReportError ? (
-                <div className="mt-3 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-bold text-red-900">
-                  {emailReportError}
-                </div>
-              ) : null}
-            </form>
-          )}
 
           {!demoMode && (
             <section className="mb-4 rounded-2xl border border-[#CA862B]/18 bg-white/80 p-3 shadow-sm">
@@ -6966,10 +7051,10 @@ function OwnerReportsView({
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
-                  Beta tools
+                  Customer tools
                 </div>
                 <div className="mt-1 text-sm font-semibold leading-6 text-[#6A614F]">
-                  Owner-facing boards for reviewing volume and optional future ordering tools.
+                  Customer-facing ordering and display screens connected to the KDS workflow.
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -6983,7 +7068,7 @@ function OwnerReportsView({
                   href={`/online-ordering-beta${demoQuery}`}
                   className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
                 >
-                  Online Orders Beta
+                  Online Orders
                 </a>
                 <a
                   href={`/self-order-kiosk${demoQuery}`}
@@ -7978,7 +8063,7 @@ function getDemoOnlineOrdersDisplay() {
     .slice(0, 3)
     .map((ticket) => ({
       ...ticketToCustomerDisplayOrder(ticket),
-      source: "Online Pickup Beta",
+      source: "Online Pickup",
       isOnlineOrder: true,
     }));
 }
@@ -9218,7 +9303,7 @@ function OnlineOrdersDisplay() {
             </div>
             <div>
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F3D39B] sm:text-xs sm:tracking-[0.24em]">
-                {demoMode ? "DF Demo Cafe" : "Online Pickup Beta"}
+                {demoMode ? "DF Demo Cafe" : "Online Pickup"}
               </div>
               <h1 className="mt-1 text-2xl font-semibold tracking-normal sm:text-3xl md:text-4xl">
                 Online Orders
@@ -9280,7 +9365,7 @@ function OnlineOrdersDisplay() {
         </main>
 
         <p className={`text-center text-xs font-semibold ${mutedClass}`}>
-          {updatedAt ? `Updated ${new Date(updatedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : "Online ordering beta board"}
+          {updatedAt ? `Updated ${new Date(updatedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : "Online orders board"}
         </p>
       </div>
     </DisplayBackground>
@@ -10591,35 +10676,51 @@ const KIOSK_STOCK_IMAGE_URLS = {
 };
 
 const KIOSK_LOCAL_IMAGE_URLS = {
-  americano: "/assets/drinks/photos/americano.png",
-  "decaf-americano": "/assets/drinks/photos/americano.png",
-  cappuccino: "/assets/drinks/photos/cappuccino.png",
-  "chai-latte": "/assets/drinks/photos/chai-latte.png",
-  "hot-chocolate": "/assets/drinks/photos/hot-chocolate.png",
+  ...Object.fromEntries(
+    GOLDIES_STATIC_DRINK_MENU_ITEMS.map((item) => [item.id, item.imageUrl])
+  ),
+  "neutral-cafe-drink": getGeneratedDrinkImageUrl("neutral-cafe-drink"),
 };
 
 function getKioskImageSlug(item = {}) {
-  const text = String(item.name || item.id || "latte")
+  const text = `${item.id || ""} ${item.name || ""} ${item.squareName || ""}`
     .toLowerCase()
     .replace(/&/g, "and")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 
-  if (text.includes("decaf") && text.includes("americano")) return "decaf-americano";
-  if (text.includes("americano") || text.includes("drip") || text.includes("pour") || text.includes("flat-white")) return "americano";
+  const isKidsSize = text.includes("12-oz") || text.includes("kids");
+
+  if (text.includes("decaf") && text.includes("americano")) return "americano-decaf";
+  if (text.includes("drip") && text.includes("refill")) return "drip-refill";
+  if (text.includes("drip")) return "drip";
+  if (text.includes("pour-over") || text.includes("pour")) return "pour-over";
+  if (text.includes("espresso")) return "espresso";
+  if (text.includes("flat-white") || (text.includes("flat") && text.includes("white"))) return "flat-white";
+  if (text.includes("gibraltar")) return "gibraltar";
   if (text.includes("cold-brew")) return "cold-brew";
   if (text.includes("cappuccino")) return "cappuccino";
-  if (text.includes("london-fog") || text.includes("steamer")) return "london-fog";
+  if (text.includes("americano")) return "americano";
+  if (text.includes("london-fog") || (text.includes("london") && text.includes("fog"))) return "london-fog";
   if (text.includes("chai")) return "chai-latte";
   if (text.includes("hot-chocolate")) return "hot-chocolate";
   if (text.includes("matcha")) return "matcha-latte";
-  if (text.includes("strawberry") && text.includes("mango")) return "strawberry-mango";
-  if (text.includes("pineapple") && text.includes("mango")) return "mango-pineapple";
-  if (text.includes("chocolate") && text.includes("banana")) return "chocolate-pb-banana";
-  if (text.includes("green") || text.includes("greens")) return "green-smoothie";
-  if (text.includes("strawberry") && text.includes("banana")) return "strawberry-banana";
-  if (text.includes("mango")) return "strawberry-mango";
-  if (text.includes("strawberry") || text.includes("refresher")) return "strawberry-banana";
+  if (text.includes("refresher")) return "refresher-strawberry-mango";
+  if (text.includes("steamer")) return "steamer-or-cold";
+  if (text.includes("chocolate") && text.includes("banana")) {
+    return isKidsSize ? "chocolate-pb-banana-12-oz-kids" : "chocolate-pb-banana-16-oz";
+  }
+  if (text.includes("green") || text.includes("greens")) {
+    return isKidsSize ? "greens-12-oz-kids" : "greens-16-oz";
+  }
+  if (text.includes("strawberry") && text.includes("banana")) {
+    return isKidsSize ? "strawberry-banana-12-oz-kids" : "strawberry-banana-16-oz";
+  }
+  if (text.includes("strawberry") && text.includes("mango")) {
+    return isKidsSize ? "strawberry-mango-12-oz-kids" : "strawberry-mango-16-oz";
+  }
+  if (text.includes("mango")) return isKidsSize ? "mango-12-oz-kids" : "mango-16-oz";
+  if (text.includes("strawberry")) return isKidsSize ? "strawberry-12-oz-kids" : "strawberry-16-oz";
   return "latte";
 }
 
@@ -10702,7 +10803,7 @@ function getOnlineOrderImageUrl(item = {}) {
     return item.imageUrl;
   }
 
-  return KIOSK_STOCK_IMAGE_URLS[slug] || KIOSK_STOCK_IMAGE_URLS.latte;
+  return KIOSK_STOCK_IMAGE_URLS[slug] || KIOSK_LOCAL_IMAGE_URLS["neutral-cafe-drink"];
 }
 
 function DrinkProductImage({ item, className = "" }) {
@@ -11286,7 +11387,7 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
               {submitting ? "Opening Square checkout..." : kioskMode ? "Checkout" : "Pay with Square"}
             </button>
             <p className="mt-3 text-xs font-semibold leading-5 text-[#6A614F]">
-              Beta behavior: payment opens in Square checkout. Once paid, Square sends the order back for KDS intake.
+              Checkout note: payment opens in Square checkout. Once paid, Square sends the order back for KDS intake.
             </p>
           </aside>
             </div>

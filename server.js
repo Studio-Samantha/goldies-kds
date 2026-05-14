@@ -190,18 +190,6 @@ function getAlertEmailConfigDiagnostics() {
   };
 }
 
-function hasReportEmailConfig() {
-  return Boolean((RESEND_API_KEY && DRINKFLOW_EMAIL_FROM) || hasAlertEmailConfig());
-}
-
-function getReportEmailConfigDiagnostics() {
-  return {
-    resendApiKeySet: Boolean(RESEND_API_KEY),
-    resendFromSet: Boolean(DRINKFLOW_EMAIL_FROM),
-    ...getAlertEmailConfigDiagnostics(),
-  };
-}
-
 function getDrinkFlowSquareOAuthDiagnostics() {
   return {
     applicationIdSet: Boolean(DRINKFLOW_SQUARE_APPLICATION_ID),
@@ -244,58 +232,6 @@ async function sendAlertEmail(subject, text) {
   });
 
   return true;
-}
-
-async function sendEmailWithAttachments({
-  to,
-  subject,
-  text,
-  attachments = [],
-  from = DRINKFLOW_EMAIL_FROM,
-}) {
-  const email = normalizeLeadEmail(to);
-  if (!email || !isValidLeadEmail(email) || !subject || !text) return false;
-
-  if (RESEND_API_KEY && from) {
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from,
-        to: email,
-        subject,
-        text,
-        attachments: attachments.map((attachment) => ({
-          filename: attachment.filename,
-          content: Buffer.isBuffer(attachment.content)
-            ? attachment.content.toString("base64")
-            : attachment.content,
-        })),
-      }),
-    });
-    if (!response.ok) {
-      const details = await response.text().catch(() => "");
-      throw new Error(`Resend email failed: ${response.status}${details ? ` ${details}` : ""}`);
-    }
-    const data = await response.json().catch(() => ({}));
-    return { provider: "resend", id: data.id || null };
-  }
-
-  const mailer = getAlertMailer();
-  if (!mailer) return false;
-
-  const info = await mailer.sendMail({
-    from: from || ALERT_EMAIL_FROM,
-    to: email,
-    subject,
-    text,
-    attachments,
-  });
-
-  return { provider: "smtp", id: info?.messageId || null };
 }
 
 async function sendTransactionalEmail({ to, subject, text, from = DRINKFLOW_EMAIL_FROM }) {
@@ -590,38 +526,88 @@ function getDrinkImageSlug(itemName = "") {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 
-  if (normalized.includes("decaf") && normalized.includes("americano")) return "decaf-americano";
+  if (normalized.includes("decaf") && normalized.includes("americano")) return "americano-decaf";
   if (normalized.includes("americano")) return "americano";
-  if (normalized.includes("drip") || normalized.includes("pour-over") || normalized.includes("pour-over")) return "americano";
-  if (normalized.includes("espresso")) return "americano";
-  if (normalized.includes("flat") && normalized.includes("white")) return "latte";
-  if (normalized.includes("gibraltar")) return "latte";
+  if (normalized.includes("drip") && normalized.includes("refill")) return "drip-refill";
+  if (normalized.includes("drip")) return "drip";
+  if (normalized.includes("pour-over") || normalized.includes("pour")) return "pour-over";
+  if (normalized.includes("espresso")) return "espresso";
+  if (normalized.includes("flat") && normalized.includes("white")) return "flat-white";
+  if (normalized.includes("gibraltar")) return "gibraltar";
   if (normalized.includes("cold") && normalized.includes("brew")) return "cold-brew";
   if (normalized.includes("cappuccino")) return "cappuccino";
   if (normalized.includes("london") && normalized.includes("fog")) return "london-fog";
   if (normalized.includes("chai")) return "chai-latte";
   if (normalized.includes("hot") && normalized.includes("chocolate")) return "hot-chocolate";
   if (normalized.includes("matcha")) return "matcha-latte";
-  if (normalized.includes("refresher")) return "strawberry-banana";
-  if (normalized.includes("steamer")) return "london-fog";
-  if (normalized.includes("strawberry") && normalized.includes("mango")) return "strawberry-mango";
+  if (normalized.includes("refresher")) return "refresher-strawberry-mango";
+  if (normalized.includes("steamer")) return "steamer-or-cold";
+  if (normalized.includes("strawberry") && normalized.includes("mango")) {
+    return normalized.includes("12-oz") || normalized.includes("kids")
+      ? "strawberry-mango-12-oz-kids"
+      : "strawberry-mango-16-oz";
+  }
   if (normalized.includes("pineapple") && normalized.includes("mango")) return "mango-pineapple";
-  if (normalized.includes("chocolate") && normalized.includes("banana")) return "chocolate-pb-banana";
-  if (normalized.includes("greens") || normalized.includes("green")) return "green-smoothie";
-  if (normalized.includes("strawberry") && normalized.includes("banana")) return "strawberry-banana";
-  if (normalized.includes("mango")) return "strawberry-mango";
-  if (normalized.includes("strawberry")) return "strawberry-banana";
-  if (normalized.includes("green") && normalized.includes("smoothie")) return "green-smoothie";
+  if (normalized.includes("chocolate") && normalized.includes("banana")) {
+    return normalized.includes("12-oz") || normalized.includes("kids")
+      ? "chocolate-pb-banana-12-oz-kids"
+      : "chocolate-pb-banana-16-oz";
+  }
+  if (normalized.includes("greens") || normalized.includes("green")) {
+    return normalized.includes("12-oz") || normalized.includes("kids")
+      ? "greens-12-oz-kids"
+      : "greens-16-oz";
+  }
+  if (normalized.includes("strawberry") && normalized.includes("banana")) {
+    return normalized.includes("12-oz") || normalized.includes("kids")
+      ? "strawberry-banana-12-oz-kids"
+      : "strawberry-banana-16-oz";
+  }
+  if (normalized.includes("mango")) {
+    return normalized.includes("12-oz") || normalized.includes("kids")
+      ? "mango-12-oz-kids"
+      : "mango-16-oz";
+  }
+  if (normalized.includes("strawberry")) {
+    return normalized.includes("12-oz") || normalized.includes("kids")
+      ? "strawberry-12-oz-kids"
+      : "strawberry-16-oz";
+  }
   if (normalized.includes("latte")) return "latte";
   return normalized || "latte";
 }
 
 const KIOSK_LOCAL_IMAGE_PATHS = {
-  americano: "/assets/drinks/photos/americano.png",
-  "decaf-americano": "/assets/drinks/photos/americano.png",
-  cappuccino: "/assets/drinks/photos/cappuccino.png",
-  "chai-latte": "/assets/drinks/photos/chai-latte.png",
-  "hot-chocolate": "/assets/drinks/photos/hot-chocolate.png",
+  americano: "/assets/drinks/generated/americano.png",
+  "americano-decaf": "/assets/drinks/generated/americano-decaf.png",
+  cappuccino: "/assets/drinks/generated/cappuccino.png",
+  "cold-brew": "/assets/drinks/generated/cold-brew.png",
+  drip: "/assets/drinks/generated/drip.png",
+  "drip-refill": "/assets/drinks/generated/drip-refill.png",
+  espresso: "/assets/drinks/generated/espresso.png",
+  "flat-white": "/assets/drinks/generated/flat-white.png",
+  gibraltar: "/assets/drinks/generated/gibraltar.png",
+  latte: "/assets/drinks/generated/latte.png",
+  "pour-over": "/assets/drinks/generated/pour-over.png",
+  "chai-latte": "/assets/drinks/generated/chai-latte.png",
+  "hot-chocolate": "/assets/drinks/generated/hot-chocolate.png",
+  "london-fog": "/assets/drinks/generated/london-fog.png",
+  "matcha-latte": "/assets/drinks/generated/matcha-latte.png",
+  "refresher-strawberry-mango": "/assets/drinks/generated/refresher-strawberry-mango.png",
+  "steamer-or-cold": "/assets/drinks/generated/steamer-or-cold.png",
+  "chocolate-pb-banana-12-oz-kids": "/assets/drinks/generated/chocolate-pb-banana-12-oz-kids.png",
+  "chocolate-pb-banana-16-oz": "/assets/drinks/generated/chocolate-pb-banana-16-oz.png",
+  "greens-12-oz-kids": "/assets/drinks/generated/greens-12-oz-kids.png",
+  "greens-16-oz": "/assets/drinks/generated/greens-16-oz.png",
+  "mango-12-oz-kids": "/assets/drinks/generated/mango-12-oz-kids.png",
+  "mango-16-oz": "/assets/drinks/generated/mango-16-oz.png",
+  "strawberry-12-oz-kids": "/assets/drinks/generated/strawberry-12-oz-kids.png",
+  "strawberry-16-oz": "/assets/drinks/generated/strawberry-16-oz.png",
+  "strawberry-banana-12-oz-kids": "/assets/drinks/generated/strawberry-banana-12-oz-kids.png",
+  "strawberry-banana-16-oz": "/assets/drinks/generated/strawberry-banana-16-oz.png",
+  "strawberry-mango-12-oz-kids": "/assets/drinks/generated/strawberry-mango-12-oz-kids.png",
+  "strawberry-mango-16-oz": "/assets/drinks/generated/strawberry-mango-16-oz.png",
+  "neutral-cafe-drink": "/assets/drinks/generated/neutral-cafe-drink.png",
 };
 
 const KIOSK_STOCK_IMAGE_URLS = {
@@ -663,8 +649,7 @@ function getFallbackDrinkImageUrl(itemName = "") {
   const slug = getDrinkImageSlug(itemName);
   if (KIOSK_LOCAL_IMAGE_PATHS[slug]) return resolveKioskAssetPath(KIOSK_LOCAL_IMAGE_PATHS[slug]);
   if (KIOSK_STOCK_IMAGE_URLS[slug]) return KIOSK_STOCK_IMAGE_URLS[slug];
-  const path = `/assets/drinks/${slug}.svg`;
-  return resolveKioskAssetPath(path);
+  return resolveKioskAssetPath(KIOSK_LOCAL_IMAGE_PATHS["neutral-cafe-drink"]);
 }
 
 function formatCatalogMoney(cents) {
@@ -1100,7 +1085,7 @@ function flattenOnlineOrderingMenu(menu) {
 async function buildOnlineOrderingBetaLineItems(rawItems, { includeForHereOnly = false } = {}) {
   if (!Array.isArray(rawItems)) return [];
   const menu = await getSquareOnlineOrderingMenu({ includeForHereOnly }).catch(async (error) => {
-    console.error("Square catalog menu unavailable, using static beta menu:", error.message);
+    console.error("Square catalog menu unavailable, using static customer ordering menu:", error.message);
     const unavailableKeys = await getUnavailableMenuKeys();
     return buildStaticOnlineOrderingMenu({ includeForHereOnly, unavailableKeys });
   });
@@ -1274,11 +1259,11 @@ async function sendDrinkFlowVerificationEmail(workspace) {
   const verifyUrl = `https://goldieskds.com/api/drinkflow-workspaces/verify-email?token=${encodeURIComponent(token)}`;
   await sendTransactionalEmail({
     to: email,
-    subject: "Verify your DrinkFlow beta workspace",
+    subject: "Verify your DrinkFlow workspace",
     text: [
       `Hi ${workspace.owner_name || "there"},`,
       "",
-      `Your DrinkFlow beta workspace is reserved: ${workspace.app_url}`,
+      `Your DrinkFlow workspace is reserved: ${workspace.app_url}`,
       "",
       "Verify this email before connecting live shop data:",
       verifyUrl,
@@ -2532,11 +2517,100 @@ function formatCurrency(cents) {
   }).format((Number(cents) || 0) / 100);
 }
 
+function parseDateKey(value = "") {
+  const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return { year, month, day };
+}
+
+function formatDateKeyFromParts({ year, month, day }) {
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function addDaysToDateKey(dateKey, days) {
+  const parts = parseDateKey(dateKey);
+  if (!parts) return "";
+
+  const date = new Date(Date.UTC(parts.year, parts.month - 1, parts.day + days));
+  return formatDateKeyFromParts({
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth() + 1,
+    day: date.getUTCDate(),
+  });
+}
+
+function getTimeZoneOffsetMs(date, timeZone = SHOP_TIME_ZONE) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const getPart = (type) => parts.find((part) => part.type === type)?.value || "0";
+  const localAsUtc = Date.UTC(
+    Number(getPart("year")),
+    Number(getPart("month")) - 1,
+    Number(getPart("day")),
+    Number(getPart("hour")),
+    Number(getPart("minute")),
+    Number(getPart("second"))
+  );
+
+  return localAsUtc - date.getTime();
+}
+
+function getShopDateTime(dateKey, hour = 0, minute = 0, second = 0, millisecond = 0) {
+  const parts = parseDateKey(dateKey);
+  if (!parts) return null;
+
+  const desiredUtc = Date.UTC(
+    parts.year,
+    parts.month - 1,
+    parts.day,
+    hour,
+    minute,
+    second,
+    millisecond
+  );
+  let timestamp = desiredUtc;
+
+  for (let index = 0; index < 3; index += 1) {
+    const offset = getTimeZoneOffsetMs(new Date(timestamp), SHOP_TIME_ZONE);
+    timestamp = desiredUtc - offset;
+  }
+
+  return new Date(timestamp);
+}
+
+function getShopDayRangeFromKey(dateKey) {
+  const start = getShopDateTime(dateKey);
+  const nextDateKey = addDaysToDateKey(dateKey, 1);
+  const nextStart = getShopDateTime(nextDateKey);
+
+  if (!start || !nextStart) return null;
+  return { start, end: new Date(nextStart.getTime() - 1) };
+}
+
 function getLocalDateKey(date = new Date()) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return getShopDateString(date);
 }
 
 function getMonthRange(monthValue = "") {
@@ -4334,25 +4408,40 @@ function getWebhookPaymentId(event) {
 
 function getRangeStart(range) {
   const now = new Date();
-  const start = new Date(now);
+  const todayKey = getShopDateString(now);
+  let startKey = todayKey;
 
   if (range === "yesterday") {
-    start.setDate(now.getDate() - 1);
+    startKey = addDaysToDateKey(todayKey, -1);
   } else if (range === "last7") {
-    start.setDate(now.getDate() - 6);
+    startKey = addDaysToDateKey(todayKey, -6);
+  } else if (range === "thisQuarter") {
+    const todayParts = parseDateKey(todayKey);
+    const quarterStartMonth = Math.floor((todayParts.month - 1) / 3) * 3 + 1;
+    startKey = formatDateKeyFromParts({
+      year: todayParts.year,
+      month: quarterStartMonth,
+      day: 1,
+    });
   } else if (range === "thisMonth") {
-    start.setDate(1);
+    const todayParts = parseDateKey(todayKey);
+    startKey = formatDateKeyFromParts({
+      year: todayParts.year,
+      month: todayParts.month,
+      day: 1,
+    });
   } else if (range === "last30") {
-    start.setDate(now.getDate() - 29);
+    startKey = addDaysToDateKey(todayKey, -29);
   } else if (range === "thisYear") {
-    start.setMonth(0, 1);
-  } else {
-    start.setHours(0, 0, 0, 0);
-    return start;
+    const todayParts = parseDateKey(todayKey);
+    startKey = formatDateKeyFromParts({
+      year: todayParts.year,
+      month: 1,
+      day: 1,
+    });
   }
 
-  start.setHours(0, 0, 0, 0);
-  return start;
+  return getShopDateTime(startKey) || new Date(now);
 }
 
 function getRangeEnd(range) {
@@ -4360,10 +4449,8 @@ function getRangeEnd(range) {
 
   if (range !== "yesterday") return now;
 
-  const end = new Date(now);
-  end.setDate(now.getDate() - 1);
-  end.setHours(23, 59, 59, 999);
-  return end;
+  const yesterdayKey = addDaysToDateKey(getShopDateString(now), -1);
+  return getShopDayRangeFromKey(yesterdayKey)?.end || now;
 }
 
 const DEFAULT_SHOP_HOURS = {
@@ -4395,16 +4482,123 @@ function isHourWithinShopHours(hour, shopHours = DEFAULT_SHOP_HOURS) {
 }
 
 function getDayRange(dateString) {
-  const parsed = new Date(`${dateString}T00:00:00`);
-  if (Number.isNaN(parsed.getTime())) return null;
+  return getShopDayRangeFromKey(dateString);
+}
 
-  const start = new Date(parsed);
-  start.setHours(0, 0, 0, 0);
+function isDateInputValue(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(value || ""));
+}
 
-  const end = new Date(parsed);
-  end.setHours(23, 59, 59, 999);
+function getCustomDateRange(startDate, endDate) {
+  if (!isDateInputValue(startDate) || !isDateInputValue(endDate)) {
+    const error = new Error("Choose a start date and end date.");
+    error.statusCode = 400;
+    throw error;
+  }
 
-  return { start, end };
+  const startParts = parseDateKey(startDate);
+  const endParts = parseDateKey(endDate);
+
+  if (!startParts || !endParts) {
+    const error = new Error("Choose a valid start date and end date.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const startOrdinal = Date.UTC(startParts.year, startParts.month - 1, startParts.day);
+  const endOrdinal = Date.UTC(endParts.year, endParts.month - 1, endParts.day);
+
+  if (endOrdinal < startOrdinal) {
+    const error = new Error("End date must be after the start date.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const spanDays = Math.floor((endOrdinal - startOrdinal) / 86400000) + 1;
+  if (spanDays > 400) {
+    const error = new Error("Custom reports can cover up to 400 days.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const start = getShopDateTime(startDate);
+  const end = getShopDayRangeFromKey(endDate)?.end;
+
+  if (!start || !end) {
+    const error = new Error("Choose a valid start date and end date.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return { start, end, spanDays };
+}
+
+function formatOwnerReportDateLabel(dateInput) {
+  if (isDateInputValue(dateInput)) {
+    const parts = parseDateKey(dateInput);
+    if (!parts) return "";
+    return new Date(Date.UTC(parts.year, parts.month - 1, parts.day)).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+  }
+
+  const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("en-US", {
+    timeZone: SHOP_TIME_ZONE,
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function buildOwnerReportPeriod(query = {}) {
+  const wantsCustom =
+    query.range === "custom" ||
+    Boolean(query.startDate || query.start || query.endDate || query.end);
+
+  if (wantsCustom) {
+    const startDate = String(query.startDate || query.start || "").trim();
+    const endDate = String(query.endDate || query.end || "").trim();
+    const { start, end, spanDays } = getCustomDateRange(startDate, endDate);
+    return {
+      range: "custom",
+      label: `${formatOwnerReportDateLabel(startDate)} - ${formatOwnerReportDateLabel(endDate)}`,
+      start,
+      end,
+      startDate,
+      endDate,
+      spanDays,
+      fileToken: `custom-${startDate}-to-${endDate}`,
+    };
+  }
+
+  const range = normalizeOwnerReportRange(query.range);
+  const start = getRangeStart(range);
+  const end = getRangeEnd(range);
+
+  return {
+    range,
+    label: getOwnerRangeLabel(range),
+    start,
+    end,
+    fileToken: range,
+  };
+}
+
+function resolveOwnerReportPeriod(input = "today") {
+  if (input && typeof input === "object" && input.start instanceof Date && input.end instanceof Date) {
+    return input;
+  }
+
+  if (input && typeof input === "object") {
+    return buildOwnerReportPeriod(input);
+  }
+
+  return buildOwnerReportPeriod({ range: input });
 }
 
 async function getTicketsForDay(dateString) {
@@ -4603,8 +4797,8 @@ function getMakingDurationSampleFromEvents(events, start, end, order = null) {
 }
 
 async function getDrinkMakingTimeReport(range = "today") {
-  const start = getRangeStart(range);
-  const end = getRangeEnd(range);
+  const period = resolveOwnerReportPeriod(range);
+  const { start, end } = period;
 
   if (!supabase) {
     const samples = tickets
@@ -4633,7 +4827,10 @@ async function getDrinkMakingTimeReport(range = "today") {
 
     return {
       ...summary,
-      range,
+      range: period.range,
+      rangeLabel: period.label,
+      startAt: start.toISOString(),
+      endAt: end.toISOString(),
       measurement: "staff_start_to_ready",
       ...getDurationBreakdowns(samples),
     };
@@ -4651,7 +4848,10 @@ async function getDrinkMakingTimeReport(range = "today") {
       averageSeconds: 0,
       label: "Collecting",
       sampleSize: 0,
-      range,
+      range: period.range,
+      rangeLabel: period.label,
+      startAt: start.toISOString(),
+      endAt: end.toISOString(),
       byHour: [],
       byDrinkName: [],
     };
@@ -4690,7 +4890,10 @@ async function getDrinkMakingTimeReport(range = "today") {
 
   return {
     ...summary,
-    range,
+    range: period.range,
+    rangeLabel: period.label,
+    startAt: start.toISOString(),
+    endAt: end.toISOString(),
     measurement: "staff_start_to_ready",
     ...getDurationBreakdowns(samples),
   };
@@ -4945,11 +5148,17 @@ function buildOwnerDrinkRevenueReport(orders = [], start, end) {
 }
 
 async function getOwnerDrinkRevenueReport(range = "today") {
-  const start = getRangeStart(range);
-  const end = getRangeEnd(range);
+  const period = resolveOwnerReportPeriod(range);
+  const { start, end } = period;
 
   if (!supabase) {
-    return buildOwnerDrinkRevenueReport([], start, end);
+    return {
+      ...buildOwnerDrinkRevenueReport([], start, end),
+      range: period.range,
+      rangeLabel: period.label,
+      startDate: period.startDate || null,
+      endDate: period.endDate || null,
+    };
   }
 
   await syncRecentSquareOrders();
@@ -4962,7 +5171,13 @@ async function getOwnerDrinkRevenueReport(range = "today") {
 
   if (error) throw error;
 
-  return buildOwnerDrinkRevenueReport(orders || [], start, end);
+  return {
+    ...buildOwnerDrinkRevenueReport(orders || [], start, end),
+    range: period.range,
+    rangeLabel: period.label,
+    startDate: period.startDate || null,
+    endDate: period.endDate || null,
+  };
 }
 
 async function getOwnerDrinkRevenueReportForDay(dateString = getLocalDateKey()) {
@@ -5098,6 +5313,7 @@ function normalizeOwnerReportRange(range) {
     "yesterday",
     "last7",
     "last30",
+    "thisQuarter",
     "thisMonth",
     "thisYear",
   ]);
@@ -5105,16 +5321,24 @@ function normalizeOwnerReportRange(range) {
 }
 
 function getOwnerRangeLabel(range = "today") {
+  if (range && typeof range === "object" && range.label) return range.label;
+
   return (
     {
       today: "Today",
       yesterday: "Yesterday",
       last7: "Last 7 Days",
       last30: "Last 30 Days",
+      thisQuarter: "This Quarter",
       thisMonth: "This Month",
       thisYear: "This Year",
     }[range] || "Today"
   );
+}
+
+function getOwnerReportFileToken(range = "today") {
+  if (range && typeof range === "object") return range.fileToken || range.range || "custom";
+  return String(range || "today").replace(/[^a-z0-9-]+/gi, "-").replace(/^-|-$/g, "") || "today";
 }
 
 function ownerReportToCsv(report = {}, range = "today") {
@@ -5727,28 +5951,16 @@ function chunkRows(rows = [], size = 18) {
 
 function writeOwnerDrinkReportPdf(res, report = {}, range = "today") {
   const doc = new PDFDocument({ size: "LETTER", margin: 42 });
+  const fileToken = getOwnerReportFileToken(range);
 
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader(
     "Content-Disposition",
-    `attachment; filename="goldies-owner-report-${range}.pdf"`
+    `attachment; filename="goldies-owner-report-${fileToken}.pdf"`
   );
 
   doc.pipe(res);
   drawOwnerDrinkReportPdf(doc, report, range);
-}
-
-function buildOwnerDrinkReportPdfBuffer(report = {}, range = "today") {
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ size: "LETTER", margin: 42 });
-    const chunks = [];
-
-    doc.on("data", (chunk) => chunks.push(chunk));
-    doc.on("end", () => resolve(Buffer.concat(chunks)));
-    doc.on("error", reject);
-
-    drawOwnerDrinkReportPdf(doc, report, range);
-  });
 }
 
 async function fetchOwnerSnapshotsForMonth(month, ascending = true) {
@@ -7188,12 +7400,12 @@ app.post("/api/owner/logout", (req, res) => {
 
 app.get("/api/owner/reports/drink-revenue", requireOwnerAuth, async (req, res) => {
   try {
-    const range = normalizeOwnerReportRange(req.query.range);
-    const report = await getOwnerDrinkRevenueReport(range).catch((error) => {
+    const period = buildOwnerReportPeriod(req.query);
+    const report = await getOwnerDrinkRevenueReport(period).catch((error) => {
       console.error("Error building owner drink revenue report:", error);
       return {
-        startAt: null,
-        endAt: null,
+        startAt: period.start.toISOString(),
+        endAt: period.end.toISOString(),
         orderCount: 0,
         multiDrinkOrderCount: 0,
         multiDrinkOrderRate: 0,
@@ -7214,23 +7426,30 @@ app.get("/api/owner/reports/drink-revenue", requireOwnerAuth, async (req, res) =
 
     res.json({
       ...report,
-      range,
+      range: period.range,
+      rangeLabel: period.label,
+      startDate: period.startDate || null,
+      endDate: period.endDate || null,
     });
   } catch (error) {
     console.error("Error fetching owner drink revenue report:", error);
-    res.status(500).json({ error: error.message });
+    res.status(error.statusCode || 500).json({ error: error.message });
   }
 });
 
 app.get("/api/owner/reports/drink-making-time", requireOwnerAuth, async (req, res) => {
   try {
-    const report = await getDrinkMakingTimeReport(req.query.range || "today").catch((error) => {
+    const period = buildOwnerReportPeriod(req.query);
+    const report = await getDrinkMakingTimeReport(period).catch((error) => {
       console.error("Error building owner drink making time report:", error);
       return {
         averageSeconds: 0,
         label: "Collecting",
         sampleSize: 0,
-        range: req.query.range || "today",
+        range: period.range,
+        rangeLabel: period.label,
+        startAt: period.start.toISOString(),
+        endAt: period.end.toISOString(),
         byHour: [],
         byDrinkName: [],
       };
@@ -7239,32 +7458,34 @@ app.get("/api/owner/reports/drink-making-time", requireOwnerAuth, async (req, re
     res.json(report);
   } catch (error) {
     console.error("Error fetching owner drink making time report:", error);
-    res.status(500).json({ error: error.message });
+    res.status(error.statusCode || 500).json({ error: error.message });
   }
 });
 
 app.get("/api/owner/reports/drink-revenue.csv", requireOwnerAuth, async (req, res) => {
   try {
-    const range = normalizeOwnerReportRange(req.query.range);
-    const report = await getOwnerDrinkRevenueReport(range);
+    const period = buildOwnerReportPeriod(req.query);
+    const report = await getOwnerDrinkRevenueReport(period);
+    const fileToken = getOwnerReportFileToken(period);
 
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="goldies-owner-report-${range}.csv"`
+      `attachment; filename="goldies-owner-report-${fileToken}.csv"`
     );
-    res.send(ownerReportToCsv(report, range));
+    res.send(ownerReportToCsv(report, period));
   } catch (error) {
     console.error("Error downloading owner report CSV:", error);
-    res.status(500).send(error.message);
+    res.status(error.statusCode || 500).send(error.message);
   }
 });
 
 app.get("/api/owner/reports/drink-revenue.xlsx", requireOwnerAuth, async (req, res) => {
   try {
-    const range = normalizeOwnerReportRange(req.query.range);
-    const report = await getOwnerDrinkRevenueReport(range);
-    const workbookBuffer = await buildOwnerReportWorkbook(report, range);
+    const period = buildOwnerReportPeriod(req.query);
+    const report = await getOwnerDrinkRevenueReport(period);
+    const workbookBuffer = await buildOwnerReportWorkbook(report, period);
+    const fileToken = getOwnerReportFileToken(period);
 
     res.setHeader(
       "Content-Type",
@@ -7272,88 +7493,23 @@ app.get("/api/owner/reports/drink-revenue.xlsx", requireOwnerAuth, async (req, r
     );
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="goldies-owner-report-${range}.xlsx"`
+      `attachment; filename="goldies-owner-report-${fileToken}.xlsx"`
     );
     res.send(Buffer.from(workbookBuffer));
   } catch (error) {
     console.error("Error downloading owner report workbook:", error);
-    res.status(500).send(error.message);
+    res.status(error.statusCode || 500).send(error.message);
   }
 });
 
 app.get("/api/owner/reports/drink-revenue.pdf", requireOwnerAuth, async (req, res) => {
   try {
-    const range = normalizeOwnerReportRange(req.query.range);
-    const report = await getOwnerDrinkRevenueReport(range);
-    writeOwnerDrinkReportPdf(res, report, range);
+    const period = buildOwnerReportPeriod(req.query);
+    const report = await getOwnerDrinkRevenueReport(period);
+    writeOwnerDrinkReportPdf(res, report, period);
   } catch (error) {
     console.error("Error downloading owner report PDF:", error);
-    res.status(500).send(error.message);
-  }
-});
-
-app.post("/api/owner/reports/drink-revenue/email", requireOwnerAuth, async (req, res) => {
-  try {
-    const email = normalizeLeadEmail(req.body?.email || ALERT_EMAIL_TO);
-    const range = normalizeOwnerReportRange(req.body?.range || "today");
-
-    if (!isValidLeadEmail(email)) {
-      return res.status(400).json({ error: "Enter a valid email address." });
-    }
-
-    if (!hasReportEmailConfig()) {
-      return res.status(503).json({
-        error: "Report email is not configured on the backend yet.",
-        diagnostics: getReportEmailConfigDiagnostics(),
-      });
-    }
-
-    const report = await getOwnerDrinkRevenueReport(range);
-    const pdfBuffer = await buildOwnerDrinkReportPdfBuffer(report, range);
-    const rangeLabel = getOwnerRangeLabel(range);
-    const text = [
-      `Attached is the Goldie's KDS ${rangeLabel.toLowerCase()} owner report.`,
-      "",
-      "Included:",
-      "- drink revenue",
-      "- drink units",
-      "- hourly volume chart",
-      "- category mix",
-      "- drink-by-drink inventory detail",
-      "- non-drink add-on percentage",
-      "- multi-drink order signal",
-      "",
-      "This is a practice report email from the Owner Reports.",
-    ].join("\n");
-
-    const sendResult = await sendEmailWithAttachments({
-      to: email,
-      subject: `Goldie's KDS ${rangeLabel} owner report`,
-      text,
-      attachments: [
-        {
-          filename: `goldies-owner-report-${range}.pdf`,
-          content: pdfBuffer,
-          contentType: "application/pdf",
-        },
-      ],
-    });
-
-    res.json({
-      ok: true,
-      message: `Sent ${rangeLabel.toLowerCase()} PDF report to ${email}.`,
-      provider: sendResult?.provider || "unknown",
-      messageId: sendResult?.id || null,
-    });
-  } catch (error) {
-    console.error("Error emailing owner report:", error);
-    if (isSmtpAuthDisabledError(error)) {
-      return res.status(503).json({
-        error:
-          "Email is blocked by Microsoft 365 because SMTP AUTH is disabled for this mailbox. Download the PDF for now, or switch report emails to Resend / enable SMTP AUTH for the sending mailbox.",
-      });
-    }
-    res.status(error.statusCode || 500).json({ error: error.message });
+    res.status(error.statusCode || 500).send(error.message);
   }
 });
 
@@ -7930,7 +8086,7 @@ app.get("/api/beta/online-order/menu", async (req, res) => {
       updatedAt: new Date().toISOString(),
     });
   } catch (error) {
-    console.error("Error fetching online ordering beta menu:", error);
+    console.error("Error fetching online ordering menu:", error);
     const unavailableKeys = await getUnavailableMenuKeys();
     res.json({
       ok: true,
@@ -8056,7 +8212,7 @@ app.post("/api/beta/online-order/checkout", async (req, res) => {
     }
 
     const pickupNote = [
-      includeForHereOnly ? "DrinkFlow self-order kiosk" : "DrinkFlow online ordering beta",
+      includeForHereOnly ? "DrinkFlow self-order kiosk" : "DrinkFlow online ordering",
       pickupTime ? `Requested pickup: ${pickupTime}` : "",
       notes ? `Customer notes: ${notes}` : "",
     ]
@@ -8077,7 +8233,7 @@ app.post("/api/beta/online-order/checkout", async (req, res) => {
           order: {
             location_id: SQUARE_LOCATION_ID,
             source: {
-              name: includeForHereOnly ? "DrinkFlow Self Order Kiosk" : "DrinkFlow Online Beta",
+              name: includeForHereOnly ? "DrinkFlow Self Order Kiosk" : "DrinkFlow Online Orders",
             },
             pricing_options: {
               auto_apply_taxes: true,
@@ -8144,7 +8300,7 @@ app.post("/api/beta/online-order/checkout", async (req, res) => {
       orderId: paymentLink.order_id || "",
     });
   } catch (error) {
-    console.error("Error creating online ordering beta checkout:", error);
+    console.error("Error creating online ordering checkout:", error);
     res.status(error.statusCode || 500).json({ error: error.message });
   }
 });
@@ -8594,12 +8750,14 @@ module.exports = {
   app,
   __testExports: {
     buildOwnerDrinkRevenueReport,
+    buildOwnerReportPeriod,
     buildCatalogMenuAvailabilityItems,
     buildStaticOnlineOrderingMenu,
     cleanCustomerName,
     fetchSquareDrinkCategoryAudit,
     getCanonicalDrinkName,
     getDrinkCategory,
+    getFallbackDrinkImageUrl,
     getDisplayDrinkItems,
     getItemDrinkCategory,
     getSuspiciousPickupNameTickets,

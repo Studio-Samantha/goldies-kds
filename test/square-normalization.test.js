@@ -38,11 +38,13 @@ Module._load = function loadWithTestStubs(request, parent, isMain) {
 const {
   __testExports: {
     buildOwnerDrinkRevenueReport,
+    buildOwnerReportPeriod,
     buildCatalogMenuAvailabilityItems,
     buildStaticOnlineOrderingMenu,
     cleanCustomerName,
     getSuspiciousPickupNameTickets,
     getCanonicalDrinkName,
+    getFallbackDrinkImageUrl,
     getDisplayDrinkItems,
     getItemDrinkCategory,
     parseCustomerNameFromNotes,
@@ -141,6 +143,40 @@ test("customer ordering filters Square service labels from drink additions", () 
   assert.equal(isServiceOption({ name: "Hangin' Out" }), true);
   assert.equal(isServiceOption({ name: "Taking Off" }), true);
   assert.equal(isServiceOption({ name: "Vanilla" }), false);
+});
+
+test("custom owner report periods use Goldie's shop day boundaries", () => {
+  const period = buildOwnerReportPeriod({
+    range: "custom",
+    startDate: "2026-05-01",
+    endDate: "2026-05-01",
+  });
+
+  assert.equal(period.label, "May 1, 2026 - May 1, 2026");
+  assert.equal(period.start.toISOString(), "2026-05-01T05:00:00.000Z");
+  assert.equal(period.end.toISOString(), "2026-05-02T04:59:59.999Z");
+  assert.equal(period.fileToken, "custom-2026-05-01-to-2026-05-01");
+});
+
+test("static customer ordering menu uses unique generated drink images", () => {
+  const staticOnlineMenu = buildStaticOnlineOrderingMenu({ includeForHereOnly: true });
+  const items = staticOnlineMenu.flatMap((group) => group.items);
+  const imageUrls = items.map((item) => item.imageUrl);
+
+  assert.equal(items.length, 29);
+  assert.equal(new Set(imageUrls).size, imageUrls.length);
+  assert.equal(
+    imageUrls.every((url) => url.startsWith("/assets/drinks/generated/")),
+    true
+  );
+  assert.equal(
+    getFallbackDrinkImageUrl("Strawberry Banana (12 oz Kids)"),
+    "/assets/drinks/generated/strawberry-banana-12-oz-kids.png"
+  );
+  assert.equal(
+    getFallbackDrinkImageUrl("Strawberry Banana (16 oz)"),
+    "/assets/drinks/generated/strawberry-banana-16-oz.png"
+  );
 });
 
 test("orders-up display keeps individual drink done state", () => {
