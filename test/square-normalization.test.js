@@ -46,6 +46,7 @@ const {
     getDisplayDrinkItems,
     getItemDrinkCategory,
     parseCustomerNameFromNotes,
+    isServiceOption,
   },
 } = require("../server");
 
@@ -134,6 +135,12 @@ test("availability and online ordering menus use current display names", () => {
 
   assert.equal(staticNames.includes("Refresher - Strawberry Mango"), false);
   assert.equal(staticNames.includes("Steamer (Or Cold)"), true);
+});
+
+test("customer ordering filters Square service labels from drink additions", () => {
+  assert.equal(isServiceOption({ name: "Hangin' Out" }), true);
+  assert.equal(isServiceOption({ name: "Taking Off" }), true);
+  assert.equal(isServiceOption({ name: "Vanilla" }), false);
 });
 
 test("orders-up display keeps individual drink done state", () => {

@@ -128,6 +128,7 @@ const ONLINE_ORDERING_BETA_MENU = [
 const ONLINE_ORDERING_BETA_MENU_BY_ID = new Map(
   ONLINE_ORDERING_BETA_MENU.map((item) => [item.id, item])
 );
+const GOLDIES_MENU_CATEGORY_LABELS = ["Coffee", "Not Coffee", "Smoothies"];
 const SHOP_TIME_ZONE = "America/Chicago";
 const SHOP_HOURS = {
   0: null,
@@ -712,7 +713,15 @@ function isSizeOption(option = {}) {
 
 function isServiceOption(option = {}) {
   const text = normalizeCatalogLabel(option.name).replace(/[^a-z0-9]+/g, " ").trim();
-  return text === "here" || text === "to go" || text === "togo" || text === "for here";
+  return (
+    text === "here" ||
+    text === "to go" ||
+    text === "togo" ||
+    text === "for here" ||
+    text === "hangin out" ||
+    text === "hanging out" ||
+    text === "taking off"
+  );
 }
 
 function getOnlineOrderingDrinkRule(itemName = "") {
@@ -1467,80 +1476,23 @@ let tickets = [
   },
 ];
 
-const COFFEE_DRINKS = new Set([
-  "Americano",
-  "Americano (DECAF)",
-  "Cappuccino",
-  "Cold Brew",
-  "Drip",
-  "Drip Refill",
-  "Espresso",
-  "Flat White",
-  "Gibraltar",
-  "Latte",
-  "Pour Over",
-]);
+function getStaticDrinkNamesByCategory(category) {
+  return ONLINE_ORDERING_BETA_MENU
+    .filter((item) => item.category === category)
+    .map((item) => item.name);
+}
 
-const NOT_COFFEE_DRINKS = new Set([
-  "Chai Latte",
-  "Hot Chocolate",
-  "London Fog",
-  "Matcha Latte",
-  "Refresher - Strawberry Mango",
-  "Steamer (Or Cold)",
-]);
-
-const SMOOTHIE_DRINKS = new Set([
-  "Chocolate P/B Banana (12 oz Kids)",
-  "Chocolate P/B Banana (16 oz)",
-  "Greens (12 oz Kids)",
-  "Greens (16 oz)",
-  "Mango (12 oz Kids)",
-  "Mango (16 oz)",
-  "Strawberry (12 oz Kids)",
-  "Strawberry (16 oz)",
-  "Strawberry Banana (12 oz Kids)",
-  "Strawberry Banana (16 oz)",
-  "Strawberry Mango (12 oz Kids)",
-  "Strawberry Mango (16 oz)",
-]);
-
-const GOLDIES_MENU_CATEGORIES = [
-  { key: "Coffee", label: "Coffee", items: Array.from(COFFEE_DRINKS) },
-  { key: "Not Coffee", label: "Not Coffee", items: Array.from(NOT_COFFEE_DRINKS) },
-  { key: "Smoothies", label: "Smoothies", items: Array.from(SMOOTHIE_DRINKS) },
-];
-const GOLDIES_STATIC_MENU_PRICE_CENTS = new Map([
-  ["Americano", 325],
-  ["Americano (DECAF)", 325],
-  ["Cappuccino", 425],
-  ["Cold Brew", 500],
-  ["Drip", 325],
-  ["Drip Refill", 100],
-  ["Espresso", 300],
-  ["Flat White", 450],
-  ["Gibraltar", 350],
-  ["Latte", 500],
-  ["Pour Over", 550],
-  ["Chai Latte", 500],
-  ["Hot Chocolate", 450],
-  ["London Fog", 500],
-  ["Matcha Latte", 525],
-  ["Refresher - Strawberry Mango", 600],
-  ["Steamer (Or Cold)", 400],
-  ["Chocolate P/B Banana (12 oz Kids)", 500],
-  ["Chocolate P/B Banana (16 oz)", 700],
-  ["Greens (12 oz Kids)", 500],
-  ["Greens (16 oz)", 700],
-  ["Mango (12 oz Kids)", 500],
-  ["Mango (16 oz)", 700],
-  ["Strawberry (12 oz Kids)", 500],
-  ["Strawberry (16 oz)", 700],
-  ["Strawberry Banana (12 oz Kids)", 500],
-  ["Strawberry Banana (16 oz)", 700],
-  ["Strawberry Mango (12 oz Kids)", 500],
-  ["Strawberry Mango (16 oz)", 700],
-]);
+const COFFEE_DRINKS = new Set(getStaticDrinkNamesByCategory("Coffee"));
+const NOT_COFFEE_DRINKS = new Set(getStaticDrinkNamesByCategory("Not Coffee"));
+const SMOOTHIE_DRINKS = new Set(getStaticDrinkNamesByCategory("Smoothies"));
+const GOLDIES_MENU_CATEGORIES = GOLDIES_MENU_CATEGORY_LABELS.map((category) => ({
+  key: category,
+  label: category,
+  items: getStaticDrinkNamesByCategory(category),
+}));
+const GOLDIES_STATIC_MENU_PRICE_CENTS = new Map(
+  ONLINE_ORDERING_BETA_MENU.map((item) => [item.name, item.priceCents])
+);
 let menuCatalogCache = { fetchedAt: 0, items: [] };
 let squareCatalogCategoryCache = {
   fetchedAt: 0,
@@ -1857,6 +1809,19 @@ function sortGoldiesMenuItems(a = {}, b = {}) {
   return String(a.itemName || a.name || "").localeCompare(String(b.itemName || b.name || ""));
 }
 
+function buildEmptyDrinkCategoryTotals() {
+  return Object.fromEntries(GOLDIES_MENU_CATEGORY_LABELS.map((category) => [category, 0]));
+}
+
+function buildEmptyOwnerCategoryBuckets() {
+  return Object.fromEntries(
+    GOLDIES_MENU_CATEGORY_LABELS.map((category) => [
+      category,
+      { category, revenueCents: 0, taxCents: 0, totalCents: 0, units: 0 },
+    ])
+  );
+}
+
 function applyMenuAvailabilityRows(items = [], availabilityRows = []) {
   const availabilityByKey = new Map(
     (availabilityRows || []).map((row) => [
@@ -1966,8 +1931,8 @@ async function fetchSquareDrinkCategoryAudit({ force = false } = {}) {
     return {
       ok: false,
       error: "Square access token is not configured.",
-      categories: { Coffee: [], "Not Coffee": [], Smoothies: [] },
-      missingCategories: ["Coffee", "Not Coffee", "Smoothies"],
+      categories: Object.fromEntries(GOLDIES_MENU_CATEGORY_LABELS.map((category) => [category, []])),
+      missingCategories: [...GOLDIES_MENU_CATEGORY_LABELS],
       mismatches: [],
       categoryByCatalogObjectId: new Map(),
       checkedAt: new Date().toISOString(),
@@ -1989,8 +1954,8 @@ async function fetchSquareDrinkCategoryAudit({ force = false } = {}) {
       })
   );
   const categoryByCatalogObjectId = new Map();
-  const categories = { Coffee: [], "Not Coffee": [], Smoothies: [] };
-  const missingCategorySet = new Set(["Coffee", "Not Coffee", "Smoothies"]);
+  const categories = Object.fromEntries(GOLDIES_MENU_CATEGORY_LABELS.map((category) => [category, []]));
+  const missingCategorySet = new Set(GOLDIES_MENU_CATEGORY_LABELS);
   const mismatches = [];
 
   for (const name of categoryNamesById.values()) {
@@ -4733,11 +4698,7 @@ async function getDrinkMakingTimeReport(range = "today") {
 
 function buildDrinkReport(reportTickets, start, end = new Date()) {
   const totalsByName = new Map();
-  const totalsByCategory = {
-    Coffee: 0,
-    "Not Coffee": 0,
-    Smoothies: 0,
-  };
+  const totalsByCategory = buildEmptyDrinkCategoryTotals();
 
   for (const ticket of reportTickets) {
     if (ticket.createdAt && ticket.createdAt < start.getTime()) continue;
@@ -4770,11 +4731,7 @@ function buildDrinkReport(reportTickets, start, end = new Date()) {
 
 function buildOwnerDrinkRevenueReport(orders = [], start, end) {
   const shopHours = getShopHoursForDate(start);
-  const categories = {
-    Coffee: { category: "Coffee", revenueCents: 0, taxCents: 0, totalCents: 0, units: 0 },
-    "Not Coffee": { category: "Not Coffee", revenueCents: 0, taxCents: 0, totalCents: 0, units: 0 },
-    Smoothies: { category: "Smoothies", revenueCents: 0, taxCents: 0, totalCents: 0, units: 0 },
-  };
+  const categories = buildEmptyOwnerCategoryBuckets();
   const drinksByName = new Map();
   const orderDetails = [];
   const hourly = Array.from({ length: 24 }, (_value, hour) => ({
@@ -6431,7 +6388,7 @@ const DEVELOPER_NOTE_PROJECTS = new Set([
 const DEVELOPER_NOTE_PLACEMENTS = new Set([
   "Developer diary",
   "Popup message",
-  "Owner portal",
+  "Owner reports",
   "Case study",
   "Release notes",
   "Landing page",
@@ -7366,7 +7323,7 @@ app.post("/api/owner/reports/drink-revenue/email", requireOwnerAuth, async (req,
       "- non-drink add-on percentage",
       "- multi-drink order signal",
       "",
-      "This is a practice report email from the Owner Portal.",
+      "This is a practice report email from the Owner Reports.",
     ].join("\n");
 
     const sendResult = await sendEmailWithAttachments({
@@ -8557,11 +8514,7 @@ app.get("/api/reports/drinks", requireKdsAuth, async (req, res) => {
         range,
         orderCount: 0,
         totalsByName: [],
-        totalsByCategory: {
-          Coffee: 0,
-          "Not Coffee": 0,
-          Smoothies: 0,
-        },
+        totalsByCategory: buildEmptyDrinkCategoryTotals(),
       };
     });
 
@@ -8650,6 +8603,7 @@ module.exports = {
     getDisplayDrinkItems,
     getItemDrinkCategory,
     getSuspiciousPickupNameTickets,
+    isServiceOption,
     isSmoothieDrinkName,
     parseCustomerNameFromNotes,
   },

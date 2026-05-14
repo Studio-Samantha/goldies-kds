@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.16";
+const APP_VERSION = "v1.10.17";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -33,22 +33,22 @@ const DINING_OPTIONS = ["HANGIN' OUT", "TAKING OFF", "Pickup", "Delivery", "Driv
 const DAILY_UPDATE_NOTICE = {
   id: APP_VERSION,
   eyebrow: "Today on the KDS",
-  title: "Owner Portal and menus are cleaned up",
+  title: "Owner Reports label is cleaned up",
   message:
-    "Owner Portal is now a top-level button, privacy agreements are compact, and the drink menus, availability toggles, kiosk, and online ordering match Square's current drink categories.",
+    "Owner Reports is now the visible label for the owner-facing reports area, View Stats is more compact, and menu data has fewer duplicated sources.",
   note:
-    "Volume Board now shows drinks made beside drink orders, and timing reports call out staff Start-to-Ready tap timing.",
+    "Square service labels like Hangin' Out and Taking Off no longer show as drink add-ons in customer ordering.",
 };
 const OWNER_PORTAL_RECENT_CHANGES = [
   {
-    title: "Owner Portal button",
+    title: "Owner Reports button",
     body:
-      "Owner Portal now lives as a top-level KDS button instead of being hidden inside Settings. Training mode opens a demo owner portal directly without the owner password prompt.",
+      "Owner Reports now lives as a top-level KDS button instead of being hidden inside Settings. Training mode opens the demo reports directly without the owner password prompt.",
   },
   {
     title: "Compact privacy card",
     body:
-      "Privacy & Agreements now opens collapsed in Owner Portal, and the policy acknowledgment prompt happens after KDS sign-in instead of reopening inside Owner Portal.",
+      "Privacy & Agreements now opens collapsed in Owner Reports, and the policy acknowledgment prompt happens after KDS sign-in instead of reopening inside Owner Reports.",
   },
   {
     title: "Current Square drink menu",
@@ -136,7 +136,7 @@ const OWNER_PORTAL_RECENT_CHANGES = [
       "Connection reports, release notes, owner login, item details, and ordering checkout panels now scroll cleanly on phones, iPads, and desktop screens.",
   },
   {
-    title: "Owner portal cleanup",
+    title: "Owner reports cleanup",
     body:
       "Customer insights and Today's Snapshot are now collapsible so the owner report is easier to scan during service.",
   },
@@ -148,14 +148,26 @@ const OWNER_PORTAL_RECENT_CHANGES = [
 ];
 const RELEASE_NOTES = [
   {
-    version: "v1.10.16",
+    version: "v1.10.17",
     date: "Current build",
-    summary: "Cleaned up Owner Portal, policy acknowledgments, menus, ordering photos, and Volume Board totals.",
+    summary: "Renamed the visible owner area to Owner Reports.",
     items: [
-      "Owner Portal now has its own top-level KDS button and the user-facing label no longer says Owner Login.",
-      "Training mode now opens a demo Owner Portal directly with sample owner numbers and no owner password prompt.",
-      "Privacy & Agreements opens collapsed in Owner Portal and only shows detailed policy/status rows when expanded.",
-      "The policy acknowledgment dialog now appears after KDS sign-in when the current policy version has not been acknowledged, instead of reopening from Owner Portal.",
+      "Owner Reports is now the visible label on the login screen, dashboard button, settings action, and training-mode reports entry.",
+      "Customer ordering no longer shows Square dining/service labels like Hangin' Out or Taking Off as drink additions.",
+      "View Stats now uses shared compact range controls and avoids horizontal overflow when the window is narrowed.",
+      "Static drink names, prices, categories, and fallback ordering groups now share fewer duplicated lists.",
+      "The v1.10.16 menu, owner report, photo, and timing-report changes remain in place.",
+    ],
+  },
+  {
+    version: "v1.10.16",
+    date: "Previous build",
+    summary: "Cleaned up Owner Reports, policy acknowledgments, menus, ordering photos, and Volume Board totals.",
+    items: [
+      "Owner Reports now has its own top-level KDS button and the user-facing label no longer says Owner Login.",
+      "Training mode now opens demo reports directly with sample owner numbers and no owner password prompt.",
+      "Privacy & Agreements opens collapsed in Owner Reports and only shows detailed policy/status rows when expanded.",
+      "The policy acknowledgment dialog now appears after KDS sign-in when the current policy version has not been acknowledged, instead of reopening from Owner Reports.",
       "Menu Board and menu availability toggles now build directly from Square's current Coffee, Not Coffee, and Smoothies categories with current names and prices.",
       "Self-order kiosk uses the full in-shop Square drink menu, while online pickup keeps hang-out-only drinks filtered out.",
       "Self-order kiosk and online ordering now use the added drink photos and drink-specific detail text for the supported drink names.",
@@ -191,11 +203,11 @@ const RELEASE_NOTES = [
   {
     version: "v1.10.13",
     date: "Previous build",
-    summary: "Added Goldie's owner privacy acknowledgment and a safe demo owner portal.",
+    summary: "Added Goldie's owner privacy acknowledgment and a safe demo reports view.",
     items: [
       "Goldie's owner/admin dashboard now has a lightweight policy acknowledgment flow for the 2026-05-08 Privacy & Data Handling Policy.",
-      "Owner Portal includes a Privacy & Agreements card for policy status, case study boundaries, domain reminders, and daily checks.",
-      "The /demo/owner portal uses fake sample data only and is clearly labeled for school projects, public demos, screenshots, portfolio use, and walkthroughs.",
+      "Owner Reports includes a Privacy & Agreements card for policy status, case study boundaries, domain reminders, and daily checks.",
+      "The /demo/owner reports view uses fake sample data only and is clearly labeled for school projects, public demos, screenshots, portfolio use, and walkthroughs.",
       "Demo owner reports now use generic DrinkFlow Demo Cafe branding and never use Goldie's live Square data, logo, recipes, customer/order data, or private financials.",
     ],
   },
@@ -226,7 +238,7 @@ const RELEASE_NOTES = [
     items: [
       "View Stats now uses tighter mobile controls and cards so drink stats and timing reports fit better on phones, iPads, and desktop screens.",
       "End-of-day PDF report email now prefers Resend when configured instead of relying only on Outlook SMTP.",
-      "If Microsoft 365 blocks SMTP AUTH, the owner portal now gets a plain-English error instead of the raw Outlook failure.",
+      "If Microsoft 365 blocks SMTP AUTH, Owner Reports now shows a plain-English error instead of the raw Outlook failure.",
       "Owner report downloads now include detailed CPA, inventory, hourly, order-detail, and non-drink add-on sections.",
     ],
   },
@@ -238,7 +250,7 @@ const RELEASE_NOTES = [
       "Today's Count, Drink Stats, Average Drink Time, display boards, Online Ordering, and Self Order Kiosk now use readable drink names instead of raw all-caps Square names.",
       "Kids-size smoothie variants roll into the main smoothie name so counts stay readable.",
       "Connection reports, release notes, owner login, item details, and ordering checkout panels now scroll cleanly on phones, iPads, and desktop screens.",
-      "Owner Portal now keeps Customer insights and Today's Snapshot collapsible so the report is easier to scan.",
+      "Owner Reports now keeps Customer insights and Today's Snapshot collapsible so the report is easier to scan.",
       "Square checkout still uses the original Square item IDs and variation IDs.",
     ],
   },
@@ -278,16 +290,16 @@ const RELEASE_NOTES = [
     date: "Previous build",
     summary: "Made owner sessions easier to tuck away.",
     items: [
-      "Owner Portal now labels recent access as Owner sessions and keeps the session details collapsed until opened.",
+      "Owner Reports now labels recent access as Owner sessions and keeps the session details collapsed until opened.",
       "The sessions area now reads like a quiet security summary instead of another always-open tool.",
     ],
   },
   {
     version: "v1.10.4",
     date: "Previous build",
-    summary: "Tightened Owner Portal wording and varied the daily owner read.",
+    summary: "Tightened Owner Reports wording and varied the daily owner read.",
     items: [
-      "Owner Portal recent changes now start collapsed so the main report stays first.",
+      "Owner Reports recent changes now start collapsed so the main report stays first.",
       "Sales read and What you should do next now rotate daily based on date, range, category mix, order count, and ticket value.",
       "The confusing Owner tools shortcut strip was removed; existing report actions stay where they already worked.",
       "Weather, local events, and Goldie's news mentions are tracked as the next owner-context sources to add, using public sources such as Exira Public Library, Exira Community Club, Exira Community Center events and rentals, City of Exira updates, TJ's Pourhouse events, local business-hosted events like yoga in the park, civic groups, churches, local news, and other public listings.",
@@ -296,14 +308,14 @@ const RELEASE_NOTES = [
   {
     version: "v1.10.3",
     date: "Previous build",
-    summary: "Cleaned up Owner Portal, connection reporting, and customer ordering visuals.",
+    summary: "Cleaned up Owner Reports, connection reporting, and customer ordering visuals.",
     items: [
-      "Owner Portal now opens with the main report first and keeps recent changes and owner tools collapsible.",
-      "Owner Portal recent changes can collapse, while exports, email reports, beta links, and access checks stay in the main report area where they already worked.",
-      "Owner Portal now has one clear exit button instead of separate Back and Sign out buttons doing the same thing.",
+      "Owner Reports now opens with the main report first and keeps recent changes and owner tools collapsible.",
+      "Owner Reports recent changes can collapse, while exports, email reports, beta links, and access checks stay in the main report area where they already worked.",
+      "Owner Reports now has one clear exit button instead of separate Back and Sign out buttons doing the same thing.",
       "The dashboard Connection box now opens a connection report with Square health, sync state, cached ticket count, and downtime tracking notes.",
       "Self Order Kiosk and Online Ordering now share the same refined Goldie's photo-menu style.",
-      "Owner Portal recent changes now call out the improved self-order and online ordering screens for owners.",
+      "Owner Reports recent changes now call out the improved self-order and online ordering screens for owners.",
       "Smoothie fallback images now vary by drink title instead of reusing one generic smoothie photo.",
       "Periodic system checks can now write a local downtime and recovery log when GOLDIES_TRACK_UPTIME=1 is enabled.",
       "The production update rules now require downtime/recovery tracking for operational incidents.",
@@ -317,7 +329,7 @@ const RELEASE_NOTES = [
       "Orders Up now pulls completed drink tickets from today's saved order lookup before falling back to active tickets.",
       "The recently completed display now matches the same production data path used by day lookup, owner stats, and drink counts.",
       "The Staff tools shortcut area stays focused on private recipe cards; the menu-toggle shortcut was removed.",
-      "Production update rule: owner portal notes, visible version notes, and the public case study should be updated with each live-facing change.",
+      "Production update rule: owner reports notes, visible version notes, and the public case study should be updated with each live-facing change.",
     ],
   },
   {
@@ -350,11 +362,11 @@ const RELEASE_NOTES = [
     items: [
       "A private Studio Samantha dashboard can save developer notes, update ideas, and diary entries.",
       "Notes can be tagged for GoldiesKDS, DrinkFlowKDS, Studio Samantha, Ignite Wonder, or VendorFlow.",
-      "Notes can be marked for popups, owner portal updates, release notes, case studies, landing pages, or internal ideas.",
+      "Notes can be marked for popups, owner reports updates, release notes, case studies, landing pages, or internal ideas.",
       "The dashboard uses a playful rainbow style so it feels like Studio Samantha instead of a shop operations screen.",
-      "Owner Portal now has a practice end-of-day email field for sending the selected PDF report.",
-      "Dense Owner Portal timing and category details are collapsed by default so the main read is easier to scan.",
-      "Owner Portal now has a collapsed access check showing recent owner logins when the access log table is installed.",
+      "Owner Reports now has a practice end-of-day email field for sending the selected PDF report.",
+      "Dense Owner Reports timing and category details are collapsed by default so the main read is easier to scan.",
+      "Owner Reports now has a collapsed access check showing recent owner logins when the access log table is installed.",
     ],
   },
   {
@@ -504,7 +516,7 @@ const RELEASE_NOTES = [
     items: [
       "The Goldie's case study now shows an example Drink Revenue Dashboard.",
       "The example highlights drink revenue, peak hour, average drinks, 2+ drink order rate, hourly volume, drink mix, and report exports.",
-      "This helps show why the Owner Portal belongs in the full DrinkFlow KDS plan.",
+      "This helps show why Owner Reports belongs in the full DrinkFlow KDS plan.",
     ],
   },
   {
@@ -547,7 +559,7 @@ const RELEASE_NOTES = [
     items: [
       "The marketing site now has a DrinkFlow-themed survey page that can save responses to Supabase.",
       "The survey includes contact name, shop name, email, POS, screen, pricing, and feature questions.",
-      "The Learn More page now shows an example of what DrinkFlow Lite looks like: live KDS columns without the owner portal or custom domain.",
+      "The Learn More page now shows an example of what DrinkFlow Lite looks like: live KDS columns without the owner reports or custom domain.",
       "The hero and Lite pricing now show a $2.99/month starting point.",
       "The a la carte section now gives clearer examples of small post-launch improvements.",
       "The survey and landing page now mention the first month of DrinkFlow Lite free after survey completion and onboarding.",
@@ -589,7 +601,7 @@ const RELEASE_NOTES = [
     summary: "Added owner history and coffee-shop analytics.",
     items: [
       "Owner Reports can save monthly snapshots to Supabase for long-term history.",
-      "The owner portal now includes hourly drink volume, daily rotating coffee-shop guidance, and CSV download support.",
+      "Owner Reports now includes hourly drink volume, daily rotating coffee-shop guidance, and CSV download support.",
       "Owner Reports now shows how many drink orders included 2 or more drinks.",
       "Retail items like bagged coffee, soap, shower steamers, and packaged goods stay out of drink counts.",
       "The Learn More page now pitches the app specifically for coffee shops, smoothie shops, cafes, and drink counters.",
@@ -1009,12 +1021,12 @@ function buildSupportMailto() {
 }
 
 function buildOwnerPasswordResetMailto(ownerName = "Owner") {
-  const subject = encodeURIComponent("Goldie's KDS Owner Portal password reset");
+  const subject = encodeURIComponent("Goldie's KDS Owner Reports password reset");
   const body = encodeURIComponent(
     [
       "Hi Samantha,",
       "",
-      "Please reset the Goldie's KDS Owner Portal password.",
+      "Please reset the Goldie's KDS Owner Reports password.",
       "",
       `Requested by: ${ownerName || "Owner"}`,
       "",
@@ -1297,7 +1309,7 @@ function OwnerReportsNoticeDialog({ open, onClose, onOpenOwnerLogin }) {
               Where to find everything
             </div>
             <p className="mt-1 text-sm font-semibold leading-6 text-[#6A614F]">
-              Owner Portal is now a top dashboard button. Menu Board and Orders Up are in the
+              Owner Reports is now a top dashboard button. Menu Board and Orders Up are in the
               Displays menu and can be opened on a customer-facing screen.
             </p>
           </div>
@@ -1315,7 +1327,7 @@ function OwnerReportsNoticeDialog({ open, onClose, onOpenOwnerLogin }) {
               onClick={onOpenOwnerLogin}
               className="rounded-xl bg-[#0F4036] px-4 py-2.5 font-black text-white transition hover:bg-[#0b352d]"
             >
-              Open Owner Portal
+              Open Owner Reports
             </button>
           </div>
         </div>
@@ -1871,6 +1883,15 @@ const DEMO_RECENT_ORDERS = [
   { orderNumber: "1044", item: "Hot Americano", status: "New", time: "8:20 AM" },
 ];
 
+function buildEmptyOwnerCategoryBuckets() {
+  return Object.fromEntries(
+    GOLDIES_MENU_CATEGORY_LABELS.map((category) => [
+      category,
+      { category, revenueCents: 0, taxCents: 0, totalCents: 0, units: 0 },
+    ])
+  );
+}
+
 function buildDemoOwnerReport(_tickets, rangeKey) {
   const seed = DEMO_OWNER_SEED[rangeKey] || DEMO_OWNER_SEED.today;
   const { start, end } = getRangeBounds(rangeKey);
@@ -1879,11 +1900,7 @@ function buildDemoOwnerReport(_tickets, rangeKey) {
     ...item,
     qty: Math.max(1, Math.round(item.qty * scale)),
   }));
-  const categoryBuckets = {
-    Coffee: { category: "Coffee", revenueCents: 0, taxCents: 0, totalCents: 0, units: 0 },
-    "Not Coffee": { category: "Not Coffee", revenueCents: 0, taxCents: 0, totalCents: 0, units: 0 },
-    Smoothies: { category: "Smoothies", revenueCents: 0, taxCents: 0, totalCents: 0, units: 0 },
-  };
+  const categoryBuckets = buildEmptyOwnerCategoryBuckets();
 
   scaledTopDrinks.forEach((item) => {
     const revenueCents = item.qty * item.unitCents;
@@ -2027,49 +2044,50 @@ const REPORT_RANGES = [
   { key: "thisYear", label: "This Year" },
 ];
 
-const COFFEE_MENU_ITEMS = new Set([
-  "Americano",
-  "Americano (DECAF)",
-  "Cappuccino",
-  "Cold Brew",
-  "Drip",
-  "Drip Refill",
-  "Espresso",
-  "Flat White",
-  "Gibraltar",
-  "Latte",
-  "Pour Over",
-]);
+const GOLDIES_MENU_CATEGORY_LABELS = ["Coffee", "Not Coffee", "Smoothies"];
 
-const NOT_COFFEE_MENU_ITEMS = new Set([
-  "Chai Latte",
-  "Hot Chocolate",
-  "London Fog",
-  "Matcha Latte",
-  "Refresher - Strawberry Mango",
-  "Steamer (Or Cold)",
-]);
+const GOLDIES_STATIC_DRINK_MENU_ITEMS = [
+  { id: "americano", name: "Americano", category: "Coffee", priceCents: 325, imageUrl: "/assets/drinks/photos/americano.png" },
+  { id: "americano-decaf", name: "Americano (DECAF)", category: "Coffee", priceCents: 325, imageUrl: "/assets/drinks/photos/americano.png" },
+  { id: "cappuccino", name: "Cappuccino", category: "Coffee", priceCents: 425, imageUrl: "/assets/drinks/photos/cappuccino.png" },
+  { id: "cold-brew", name: "Cold Brew", category: "Coffee", priceCents: 500, imageUrl: "/assets/drinks/cold-brew.svg" },
+  { id: "drip", name: "Drip", category: "Coffee", priceCents: 325, imageUrl: "/assets/drinks/americano.svg" },
+  { id: "drip-refill", name: "Drip Refill", category: "Coffee", priceCents: 100, imageUrl: "/assets/drinks/americano.svg" },
+  { id: "espresso", name: "Espresso", category: "Coffee", priceCents: 300, imageUrl: "/assets/drinks/americano.svg" },
+  { id: "flat-white", name: "Flat White", category: "Coffee", priceCents: 450, imageUrl: "/assets/drinks/latte.svg" },
+  { id: "gibraltar", name: "Gibraltar", category: "Coffee", priceCents: 350, imageUrl: "/assets/drinks/latte.svg" },
+  { id: "latte", name: "Latte", category: "Coffee", priceCents: 500, imageUrl: "/assets/drinks/latte.svg" },
+  { id: "pour-over", name: "Pour Over", category: "Coffee", priceCents: 550, imageUrl: "/assets/drinks/americano.svg" },
+  { id: "chai-latte", name: "Chai Latte", category: "Not Coffee", priceCents: 500, imageUrl: "/assets/drinks/photos/chai-latte.png" },
+  { id: "hot-chocolate", name: "Hot Chocolate", category: "Not Coffee", priceCents: 450, imageUrl: "/assets/drinks/photos/hot-chocolate.png" },
+  { id: "london-fog", name: "London Fog", category: "Not Coffee", priceCents: 500, imageUrl: "/assets/drinks/london-fog.svg" },
+  { id: "matcha-latte", name: "Matcha Latte", category: "Not Coffee", priceCents: 525, imageUrl: "/assets/drinks/matcha-latte.svg" },
+  { id: "refresher-strawberry-mango", name: "Refresher - Strawberry Mango", category: "Not Coffee", priceCents: 600, imageUrl: "/assets/drinks/strawberry-banana.svg" },
+  { id: "steamer-or-cold", name: "Steamer (Or Cold)", category: "Not Coffee", priceCents: 400, imageUrl: "/assets/drinks/london-fog.svg" },
+  { id: "chocolate-pb-banana-12-oz-kids", name: "Chocolate P/B Banana (12 oz Kids)", category: "Smoothies", priceCents: 500, imageUrl: "/assets/drinks/chocolate-pb-banana.svg" },
+  { id: "chocolate-pb-banana-16-oz", name: "Chocolate P/B Banana (16 oz)", category: "Smoothies", priceCents: 700, imageUrl: "/assets/drinks/chocolate-pb-banana.svg" },
+  { id: "greens-12-oz-kids", name: "Greens (12 oz Kids)", category: "Smoothies", priceCents: 500, imageUrl: "/assets/drinks/green-smoothie.svg" },
+  { id: "greens-16-oz", name: "Greens (16 oz)", category: "Smoothies", priceCents: 700, imageUrl: "/assets/drinks/green-smoothie.svg" },
+  { id: "mango-12-oz-kids", name: "Mango (12 oz Kids)", category: "Smoothies", priceCents: 500, imageUrl: "/assets/drinks/strawberry-banana.svg" },
+  { id: "mango-16-oz", name: "Mango (16 oz)", category: "Smoothies", priceCents: 700, imageUrl: "/assets/drinks/strawberry-banana.svg" },
+  { id: "strawberry-12-oz-kids", name: "Strawberry (12 oz Kids)", category: "Smoothies", priceCents: 500, imageUrl: "/assets/drinks/strawberry-banana.svg" },
+  { id: "strawberry-16-oz", name: "Strawberry (16 oz)", category: "Smoothies", priceCents: 700, imageUrl: "/assets/drinks/strawberry-banana.svg" },
+  { id: "strawberry-banana-12-oz-kids", name: "Strawberry Banana (12 oz Kids)", category: "Smoothies", priceCents: 500, imageUrl: "/assets/drinks/strawberry-banana.svg" },
+  { id: "strawberry-banana-16-oz", name: "Strawberry Banana (16 oz)", category: "Smoothies", priceCents: 700, imageUrl: "/assets/drinks/strawberry-banana.svg" },
+  { id: "strawberry-mango-12-oz-kids", name: "Strawberry Mango (12 oz Kids)", category: "Smoothies", priceCents: 500, imageUrl: "/assets/drinks/strawberry-banana.svg" },
+  { id: "strawberry-mango-16-oz", name: "Strawberry Mango (16 oz)", category: "Smoothies", priceCents: 700, imageUrl: "/assets/drinks/strawberry-banana.svg" },
+];
 
-const SMOOTHIE_MENU_ITEMS = new Set([
-  "Chocolate P/B Banana (12 oz Kids)",
-  "Chocolate P/B Banana (16 oz)",
-  "Greens (12 oz Kids)",
-  "Greens (16 oz)",
-  "Mango (12 oz Kids)",
-  "Mango (16 oz)",
-  "Strawberry (12 oz Kids)",
-  "Strawberry (16 oz)",
-  "Strawberry Banana (12 oz Kids)",
-  "Strawberry Banana (16 oz)",
-  "Strawberry Mango (12 oz Kids)",
-  "Strawberry Mango (16 oz)",
-]);
+function getStaticDrinkNamesByCategory(category) {
+  return GOLDIES_STATIC_DRINK_MENU_ITEMS
+    .filter((item) => item.category === category)
+    .map((item) => item.name);
+}
 
-const DRINK_MENU_ITEMS = new Set([
-  ...COFFEE_MENU_ITEMS,
-  ...NOT_COFFEE_MENU_ITEMS,
-  ...SMOOTHIE_MENU_ITEMS,
-]);
+const COFFEE_MENU_ITEMS = new Set(getStaticDrinkNamesByCategory("Coffee"));
+const NOT_COFFEE_MENU_ITEMS = new Set(getStaticDrinkNamesByCategory("Not Coffee"));
+const SMOOTHIE_MENU_ITEMS = new Set(getStaticDrinkNamesByCategory("Smoothies"));
+const DRINK_MENU_ITEMS = new Set(GOLDIES_STATIC_DRINK_MENU_ITEMS.map((item) => item.name));
 
 function getMinutesElapsed(createdAt) {
   return Math.max(0, Math.floor((Date.now() - createdAt) / 60000));
@@ -3500,13 +3518,14 @@ function ReportWindowSwitcher({ activePanel }) {
 
 function ReportWindowShell({ eyebrow, title, description, activePanel, onClose, children }) {
   const closeWindow = onClose || (() => window.close());
+  const contentMaxWidth = activePanel === "stats" ? "max-w-[1120px]" : "max-w-[1400px]";
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,253,248,0.96),_rgba(238,224,197,1)_50%,_rgba(230,210,173,1)_100%)] px-3 py-3 text-[#111111] sm:px-4 sm:py-4">
-      <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-[1400px] flex-col gap-3">
+    <div className="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top,_rgba(255,253,248,0.96),_rgba(238,224,197,1)_50%,_rgba(230,210,173,1)_100%)] px-3 py-3 text-[#111111] sm:px-4 sm:py-4">
+      <div className={`mx-auto flex min-h-[calc(100vh-1.5rem)] w-full min-w-0 ${contentMaxWidth} flex-col gap-3`}>
         <header className="rounded-2xl border border-white/70 bg-[rgba(255,253,248,0.94)] px-4 py-4 shadow-sm backdrop-blur-sm">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-            <div>
+            <div className="min-w-0">
               <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
                 {eyebrow}
               </div>
@@ -3518,7 +3537,7 @@ function ReportWindowShell({ eyebrow, title, description, activePanel, onClose, 
               </p>
             </div>
 
-            <div className="flex w-full flex-col gap-2 md:w-auto md:items-end">
+            <div className="flex w-full min-w-0 flex-col gap-2 md:w-auto md:items-end">
               {activePanel ? <ReportWindowSwitcher activePanel={activePanel} /> : null}
               <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
                 <a
@@ -3539,7 +3558,7 @@ function ReportWindowShell({ eyebrow, title, description, activePanel, onClose, 
           </div>
         </header>
 
-        <div className="min-h-0 flex-1">{children}</div>
+        <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden">{children}</div>
       </div>
     </div>
   );
@@ -3635,11 +3654,11 @@ function StatsReportWindow({ reports, timeReports, onClose }) {
     <ReportWindowShell
       eyebrow="Owner stats"
       title="View Stats"
-      description="Open the larger report set in a separate window so the dashboard stays cleaner."
+      description="A compact report window for drink counts and staff Start-to-Ready timing."
       activePanel="stats"
       onClose={onClose}
     >
-      <div className="grid gap-3 sm:gap-4">
+      <div className="grid min-w-0 gap-3 sm:gap-4">
         <DrinkStats reports={reports} />
         <DrinkTimeStatsPanel reports={timeReports} onClose={onClose} />
       </div>
@@ -4529,7 +4548,7 @@ function SettingsPopover({
   suggestFixHref,
   onVersionClick,
   showPasswordAction = true,
-  ownerActionLabel = "Owner Portal",
+  ownerActionLabel = "Owner Reports",
 }) {
   if (!open) return null;
   if (typeof document === "undefined") return null;
@@ -4625,6 +4644,46 @@ function SettingsPopover({
   );
 }
 
+function ReportRangeSelector({
+  reports,
+  selectedRange,
+  onSelectRange,
+  valueForRange,
+  detailForRange,
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
+      {REPORT_RANGES.map((range) => {
+        const report = reports[range.key] || {};
+        const active = selectedRange === range.key;
+
+        return (
+          <button
+            key={range.key}
+            type="button"
+            onClick={() => onSelectRange(range.key)}
+            className={`min-h-[78px] rounded-xl border px-3 py-2 text-left transition ${
+              active
+                ? "border-[#0F4036] bg-[#0F4036] text-white"
+                : "border-[#CA862B]/18 bg-white text-[#0F4036] hover:bg-[#EEE0C5]/40"
+            }`}
+          >
+            <div className="text-xs font-black uppercase tracking-[0.12em] opacity-75">
+              {range.label}
+            </div>
+            <div className="mt-1 text-xl font-black sm:text-2xl">
+              {valueForRange(report)}
+            </div>
+            <div className="text-xs font-bold opacity-75">
+              {detailForRange(report)}
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function DrinkStats({ reports }) {
   const [selectedRange, setSelectedRange] = useState("today");
   const [collapsed, setCollapsed] = useState(false);
@@ -4656,38 +4715,21 @@ function DrinkStats({ reports }) {
         </button>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        {REPORT_RANGES.map((range) => {
-          const report = reports[range.key] || {};
-          const rangeTotal = (report.totalsByName || []).reduce(
+      <ReportRangeSelector
+        reports={reports}
+        selectedRange={selectedRange}
+        onSelectRange={(rangeKey) => {
+          setSelectedRange(rangeKey);
+          setCollapsed(false);
+        }}
+        valueForRange={(report) =>
+          (report.totalsByName || []).reduce(
             (sum, drink) => sum + Number(drink.qty || 0),
             0
-          );
-          const active = selectedRange === range.key;
-
-          return (
-            <button
-              key={range.key}
-              type="button"
-              onClick={() => {
-                setSelectedRange(range.key);
-                setCollapsed(false);
-              }}
-              className={`min-w-[112px] rounded-xl border px-3 py-2 text-left transition sm:min-w-[135px] ${
-                active
-                  ? "border-[#0F4036] bg-[#0F4036] text-white"
-                  : "border-[#CA862B]/18 bg-white text-[#0F4036] hover:bg-[#EEE0C5]/40"
-              }`}
-            >
-              <div className="text-xs font-black uppercase tracking-[0.12em] opacity-75">
-                {range.label}
-              </div>
-              <div className="mt-1 text-2xl font-black">{rangeTotal}</div>
-              <div className="text-xs font-bold opacity-75">drinks counted</div>
-            </button>
-          );
-        })}
-      </div>
+          )
+        }
+        detailForRange={() => "drinks counted"}
+      />
 
       {!collapsed && (
         <div className="mt-2 rounded-xl bg-white border border-[#0F4036]/10 p-3 sm:p-4">
@@ -4706,7 +4748,7 @@ function DrinkStats({ reports }) {
           </div>
 
           <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
-            {["Coffee", "Not Coffee", "Smoothies"].map((category) => (
+            {GOLDIES_MENU_CATEGORY_LABELS.map((category) => (
               <div
                 key={category}
                 className="rounded-lg bg-[#FFFDF8] border border-[#0F4036]/10 px-3 py-2"
@@ -4731,9 +4773,9 @@ function DrinkStats({ reports }) {
                 {selectedReport.totalsByName.map((drink) => (
                   <div
                     key={drink.name}
-                    className="flex items-center justify-between gap-3 rounded-lg border border-[#0F4036]/8 bg-[#FFFDF8] px-3 py-2 text-sm"
+                    className="flex flex-col gap-1 rounded-lg border border-[#0F4036]/8 bg-[#FFFDF8] px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between sm:gap-3"
                   >
-                    <span className="min-w-0 font-bold text-[#111111]">
+                    <span className="min-w-0 break-words font-bold leading-tight text-[#111111]">
                       {drink.name}
                     </span>
                     <span className="shrink-0 font-black text-[#0F4036]">
@@ -4792,33 +4834,14 @@ function DrinkTimeStatsPanel({ reports, onClose }) {
         </button>
       </div>
 
-      <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
-        {REPORT_RANGES.map((range) => {
-          const report = reports[range.key] || {};
-          const active = selectedRange === range.key;
-          return (
-            <button
-              key={range.key}
-              type="button"
-              onClick={() => setSelectedRange(range.key)}
-              className={`min-w-[112px] rounded-xl border px-3 py-2 text-left transition sm:min-w-[135px] ${
-                active
-                  ? "border-[#0F4036] bg-[#0F4036] text-white"
-                  : "border-[#CA862B]/18 bg-white text-[#0F4036] hover:bg-[#EEE0C5]/40"
-              }`}
-            >
-              <div className="text-xs font-black uppercase tracking-[0.12em] opacity-75">
-                {range.label}
-              </div>
-              <div className="mt-1 text-xl font-black">
-                {report.label || "Collecting"}
-              </div>
-              <div className="text-xs font-bold opacity-75">
-                {report.sampleSize || 0} orders timed
-              </div>
-            </button>
-          );
-        })}
+      <div className="mt-4">
+        <ReportRangeSelector
+          reports={reports}
+          selectedRange={selectedRange}
+          onSelectRange={setSelectedRange}
+          valueForRange={(report) => report.label || "Collecting"}
+          detailForRange={(report) => `${report.sampleSize || 0} orders timed`}
+        />
       </div>
 
       <div className="mt-4 grid gap-3 lg:grid-cols-[0.85fr_1.15fr]">
@@ -4834,7 +4857,7 @@ function DrinkTimeStatsPanel({ reports, onClose }) {
           </div>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid min-w-0 gap-3 md:grid-cols-2">
           <div className="rounded-2xl border border-[#CA862B]/14 bg-white p-3 sm:p-4">
             <div className="text-xs font-black uppercase tracking-[0.14em] text-[#8B5A1D]">
               By hour
@@ -4868,8 +4891,8 @@ function DrinkTimeStatsPanel({ reports, onClose }) {
               {selectedReport.byDrinkName?.length ? (
                 selectedReport.byDrinkName.map((drink) => (
                   <div key={drink.name} className="rounded-xl border border-[#0F4036]/8 bg-[#FFFDF8] px-3 py-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="min-w-0 font-black text-[#111111]">{drink.name}</span>
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                      <span className="min-w-0 break-words font-black leading-tight text-[#111111]">{drink.name}</span>
                       <span className="shrink-0 font-black text-[#0F4036]">{drink.label}</span>
                     </div>
                     <div className="mt-1 text-xs font-bold text-[#6A614F]">
@@ -5771,7 +5794,7 @@ function OwnerLoginDialog({ open, onClose, onLogin, themeMode }) {
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
-              Owner Portal
+              Owner Reports
             </div>
             <h2 className="mt-1 text-2xl font-black text-[#0F4036]">
               Financial Reports
@@ -5826,7 +5849,7 @@ function OwnerLoginDialog({ open, onClose, onLogin, themeMode }) {
           disabled={submitting}
           className="w-full rounded-2xl bg-[#0F4036] text-white px-4 py-3 font-black transition hover:bg-[#0b352d] disabled:cursor-not-allowed disabled:bg-neutral-300"
         >
-          {submitting ? "Signing in..." : "Open Owner Portal"}
+          {submitting ? "Signing in..." : "Open Owner Reports"}
         </button>
 
         <div className="flex justify-center">
@@ -6136,7 +6159,7 @@ function PrivacyAgreementsCard({
           </div>
           <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-[#6A614F]">
             {demoMode
-              ? "Demo owner portal privacy notes are collapsed because the demo uses sample data only."
+              ? "Demo owner reports privacy notes are collapsed because the demo uses sample data only."
               : acknowledged
                 ? `Acknowledged by ${policyAcknowledgment?.user_name || "Owner"}${policyAcknowledgment?.acknowledged_timestamp ? ` on ${formatPolicyTimestamp(policyAcknowledgment.acknowledged_timestamp)}` : ""}.`
                 : "The acknowledgment prompt now appears after KDS sign-in and stays dismissed once the current policy version is acknowledged."}
@@ -6609,7 +6632,7 @@ function OwnerReportsView({
                 {demoMode ? "DrinkFlow Demo Cafe" : "Owner Reports"}
               </div>
               <h1 className="mt-1 text-3xl font-black text-[#0F4036]">
-                {demoMode ? "Demo Owner Portal" : "Drink Revenue"}
+                {demoMode ? "Demo Owner Reports" : "Drink Revenue"}
               </h1>
               <p className="mt-1 text-sm text-[#6A614F]">
                 {demoMode
@@ -6851,7 +6874,7 @@ function OwnerReportsView({
                     Owner sessions
                   </div>
                   <div className="mt-1 text-sm font-semibold leading-6 text-[#6A614F]">
-                    Recent owner portal sign-ins stay tucked away unless you need to review them.
+                    Recent owner reports sign-ins stay tucked away unless you need to review them.
                   </div>
                 </div>
                 <button
@@ -6957,7 +6980,7 @@ function OwnerReportsView({
                     href="/demo/owner"
                     className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
                   >
-                    Demo Owner Portal
+                    Demo Owner Reports
                   </a>
                 )}
               </div>
@@ -7247,7 +7270,7 @@ function OwnerReportsView({
                   Notes from the counter
                 </h2>
                 <p className="mt-1 text-sm font-semibold text-[#6A614F]">
-                  Collapsed so the owner portal stays focused during service.
+                  Collapsed so Owner Reports stays focused during service.
                 </p>
               </div>
               <button
@@ -7388,7 +7411,7 @@ function LoginScreen({
             onClick={onOwnerLogin}
             className="rounded-xl border border-[#CA862B]/22 bg-[#0F4036] px-3 py-2 text-sm font-black text-white transition hover:bg-[#0b352d]"
           >
-            {isTrainingMode ? "Training Owner Portal" : "Owner Portal"}
+            {isTrainingMode ? "Training Owner Reports" : "Owner Reports"}
           </button>
           <button
             type="button"
@@ -8111,7 +8134,7 @@ function MenuBoardDisplay() {
     };
   }, [demoMode]);
 
-  const fallbackMenu = ["Coffee", "Not Coffee", "Smoothies"].map((label) => ({
+  const fallbackMenu = GOLDIES_MENU_CATEGORY_LABELS.map((label) => ({
     label,
     items: [],
   }));
@@ -10488,52 +10511,15 @@ function RollerRollerCoasterGameLegacy() {
   );
 }
 
-const ONLINE_ORDERING_BETA_MENU = [
-  {
-    category: "Coffee",
-    items: [
-      { id: "americano", name: "Americano", price: "$3.25", priceCents: 325, imageUrl: "/assets/drinks/photos/americano.png" },
-      { id: "americano-decaf", name: "Americano (DECAF)", price: "$3.25", priceCents: 325, imageUrl: "/assets/drinks/photos/americano.png" },
-      { id: "cappuccino", name: "Cappuccino", price: "$4.25", priceCents: 425, imageUrl: "/assets/drinks/photos/cappuccino.png" },
-      { id: "cold-brew", name: "Cold Brew", price: "$5.00", priceCents: 500, imageUrl: "/assets/drinks/cold-brew.svg" },
-      { id: "drip", name: "Drip", price: "$3.25", priceCents: 325, imageUrl: "/assets/drinks/americano.svg" },
-      { id: "drip-refill", name: "Drip Refill", price: "$1.00", priceCents: 100, imageUrl: "/assets/drinks/americano.svg" },
-      { id: "espresso", name: "Espresso", price: "$3.00", priceCents: 300, imageUrl: "/assets/drinks/americano.svg" },
-      { id: "flat-white", name: "Flat White", price: "$4.50", priceCents: 450, imageUrl: "/assets/drinks/latte.svg" },
-      { id: "gibraltar", name: "Gibraltar", price: "$3.50", priceCents: 350, imageUrl: "/assets/drinks/latte.svg" },
-      { id: "latte", name: "Latte", price: "$5.00", priceCents: 500, imageUrl: "/assets/drinks/latte.svg" },
-      { id: "pour-over", name: "Pour Over", price: "$5.50", priceCents: 550, imageUrl: "/assets/drinks/americano.svg" },
-    ],
-  },
-  {
-    category: "Not Coffee",
-    items: [
-      { id: "chai-latte", name: "Chai Latte", price: "$5.00", priceCents: 500, imageUrl: "/assets/drinks/photos/chai-latte.png" },
-      { id: "hot-chocolate", name: "Hot Chocolate", price: "$4.50", priceCents: 450, imageUrl: "/assets/drinks/photos/hot-chocolate.png" },
-      { id: "london-fog", name: "London Fog", price: "$5.00", priceCents: 500, imageUrl: "/assets/drinks/london-fog.svg" },
-      { id: "matcha-latte", name: "Matcha Latte", price: "$5.25", priceCents: 525, imageUrl: "/assets/drinks/matcha-latte.svg" },
-      { id: "refresher-strawberry-mango", name: "Refresher - Strawberry Mango", price: "$6.00", priceCents: 600, imageUrl: "/assets/drinks/strawberry-banana.svg" },
-      { id: "steamer-or-cold", name: "Steamer (Or Cold)", price: "$4.00", priceCents: 400, imageUrl: "/assets/drinks/london-fog.svg" },
-    ],
-  },
-  {
-    category: "Smoothies",
-    items: [
-      { id: "chocolate-pb-banana-12-oz-kids", name: "Chocolate P/B Banana (12 oz Kids)", price: "$5.00", priceCents: 500, imageUrl: "/assets/drinks/chocolate-pb-banana.svg" },
-      { id: "chocolate-pb-banana-16-oz", name: "Chocolate P/B Banana (16 oz)", price: "$7.00", priceCents: 700, imageUrl: "/assets/drinks/chocolate-pb-banana.svg" },
-      { id: "greens-12-oz-kids", name: "Greens (12 oz Kids)", price: "$5.00", priceCents: 500, imageUrl: "/assets/drinks/green-smoothie.svg" },
-      { id: "greens-16-oz", name: "Greens (16 oz)", price: "$7.00", priceCents: 700, imageUrl: "/assets/drinks/green-smoothie.svg" },
-      { id: "mango-12-oz-kids", name: "Mango (12 oz Kids)", price: "$5.00", priceCents: 500, imageUrl: "/assets/drinks/strawberry-banana.svg" },
-      { id: "mango-16-oz", name: "Mango (16 oz)", price: "$7.00", priceCents: 700, imageUrl: "/assets/drinks/strawberry-banana.svg" },
-      { id: "strawberry-12-oz-kids", name: "Strawberry (12 oz Kids)", price: "$5.00", priceCents: 500, imageUrl: "/assets/drinks/strawberry-banana.svg" },
-      { id: "strawberry-16-oz", name: "Strawberry (16 oz)", price: "$7.00", priceCents: 700, imageUrl: "/assets/drinks/strawberry-banana.svg" },
-      { id: "strawberry-banana-12-oz-kids", name: "Strawberry Banana (12 oz Kids)", price: "$5.00", priceCents: 500, imageUrl: "/assets/drinks/strawberry-banana.svg" },
-      { id: "strawberry-banana-16-oz", name: "Strawberry Banana (16 oz)", price: "$7.00", priceCents: 700, imageUrl: "/assets/drinks/strawberry-banana.svg" },
-      { id: "strawberry-mango-12-oz-kids", name: "Strawberry Mango (12 oz Kids)", price: "$5.00", priceCents: 500, imageUrl: "/assets/drinks/strawberry-banana.svg" },
-      { id: "strawberry-mango-16-oz", name: "Strawberry Mango (16 oz)", price: "$7.00", priceCents: 700, imageUrl: "/assets/drinks/strawberry-banana.svg" },
-    ],
-  },
-];
+const ONLINE_ORDERING_BETA_MENU = GOLDIES_MENU_CATEGORY_LABELS.map((category) => ({
+  category,
+  items: GOLDIES_STATIC_DRINK_MENU_ITEMS
+    .filter((item) => item.category === category)
+    .map((item) => ({
+      ...item,
+      price: formatCurrencyCents(item.priceCents),
+    })),
+}));
 
 function isOnlinePickupStaticItem(item = {}) {
   const text = String(item.name || "").toLowerCase();
@@ -11397,7 +11383,7 @@ const DEVELOPER_PROJECTS = [
 const DEVELOPER_PLACEMENTS = [
   "Developer diary",
   "Popup message",
-  "Owner portal",
+  "Owner reports",
   "Case study",
   "Release notes",
   "Landing page",
@@ -11643,7 +11629,7 @@ function DeveloperDiaryDashboard() {
             Developer Diary
           </h1>
           <p className="mx-auto mt-4 max-w-sm text-center text-sm font-semibold leading-6 text-[#66576f]">
-            A private place for updates, ideas, case-study notes, owner portal messages,
+            A private place for updates, ideas, case-study notes, owner reports messages,
             and little sparks before they become features.
           </p>
 
@@ -11703,7 +11689,7 @@ function DeveloperDiaryDashboard() {
             </h1>
             <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-[#66576f]">
               Capture the thought once, then decide whether it belongs in Goldie&apos;s,
-              DrinkFlow, the owner portal, a popup, a case study, or the public story.
+              DrinkFlow, the owner reports, a popup, a case study, or the public story.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -11895,7 +11881,7 @@ function DeveloperDiaryDashboard() {
               Write once, reuse later
             </h2>
             <p className="mt-3 text-sm font-semibold leading-6 text-white/78">
-              These notes can become Goldie&apos;s popups, owner portal language, release notes,
+              These notes can become Goldie&apos;s popups, owner reports language, release notes,
               DrinkFlow case-study updates, Studio Samantha event copy, or future product ideas.
             </p>
           </section>
@@ -13342,7 +13328,7 @@ export default function GoldiesKDS() {
                 onClick={openOwnerPortal}
                 className="rounded-2xl border border-[#CA862B]/14 bg-[#0F4036] px-4 py-2 text-sm font-black text-white shadow-sm transition hover:bg-[#0b352d]"
               >
-                {isTrainingMode ? "Training Owner Portal" : "Owner Portal"}
+                {isTrainingMode ? "Training Owner Reports" : "Owner Reports"}
               </button>
 
             <div className="relative" onClick={(event) => event.stopPropagation()}>
@@ -13351,7 +13337,7 @@ export default function GoldiesKDS() {
                     <div className="text-xs font-black uppercase tracking-[0.16em] text-[#CA862B]">
                       Demo tip
                     </div>
-                    Click Training Owner Portal for the demo reports.
+                    Click Training Owner Reports for the demo reports.
                   </div>
                 )}
                 <div className="flex items-center gap-1.5 rounded-2xl border border-[#CA862B]/14 bg-white/75 px-1.5 py-1 shadow-sm">
@@ -13396,7 +13382,7 @@ export default function GoldiesKDS() {
                     setShowDiningOnTickets((current) => !current)
                   }
                   onOwnerLogin={openOwnerPortal}
-                  ownerActionLabel={isDemoRoute || isTrainingMode ? "Training Owner Portal" : "Owner Portal"}
+                  ownerActionLabel={isDemoRoute || isTrainingMode ? "Training Owner Reports" : "Owner Reports"}
                   showPasswordAction={true}
                   onChangePassword={() => {
                     setShowSettingsMenu(false);
