@@ -4366,6 +4366,7 @@ function getDisplayDrinkItems(ticket) {
       qty: Number(item.qty || item.quantity || 1) || 1,
       modifiers: Array.isArray(item.modifiers) ? item.modifiers.filter(Boolean) : [],
       note: item.note || "",
+      done: Boolean(item.done || item.completed || item.completed_item),
     }));
 }
 
@@ -8003,12 +8004,19 @@ app.get("/api/staff/sop/:file", requireKdsAuth, (req, res) => {
     "goldies-recipes-2.png",
   ]);
   const fileName = path.basename(String(req.params.file || ""));
+  const recipeViewerHeader = String(req.get("x-goldies-recipe-viewer") || "");
 
   if (!allowedFiles.has(fileName)) {
     return res.status(404).json({ error: "Recipe SOP not found" });
   }
 
-  res.setHeader("Cache-Control", "private, max-age=300");
+  if (recipeViewerHeader !== "kds") {
+    return res.status(403).json({ error: "Open recipe cards from the signed-in KDS." });
+  }
+
+  res.setHeader("Cache-Control", "private, no-store, max-age=0");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("X-Content-Type-Options", "nosniff");
   res.sendFile(path.join(STAFF_SOP_DIR, fileName), (error) => {
     if (!error) return;
     console.error("Error serving staff SOP:", error.message);
@@ -8426,6 +8434,7 @@ module.exports = {
     fetchSquareDrinkCategoryAudit,
     getCanonicalDrinkName,
     getDrinkCategory,
+    getDisplayDrinkItems,
     getItemDrinkCategory,
     getSuspiciousPickupNameTickets,
     isSmoothieDrinkName,

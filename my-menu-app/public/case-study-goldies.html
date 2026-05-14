@@ -49,6 +49,15 @@
           linear-gradient(180deg, #fffdf8 0%, #f6efe1 54%, #fffdf8 100%);
       }
       a { color: inherit; }
+      body {
+        overflow-x: hidden;
+      }
+      img, svg {
+        max-width: 100%;
+      }
+      h1, h2, h3, p, li, .button, .proof-tile, .card, .report-point, .report-mini, .report-panel, .timeline-item, .metric {
+        overflow-wrap: anywhere;
+      }
       .nav {
         position: sticky;
         top: 0;
@@ -108,7 +117,7 @@
         border-color: var(--green);
       }
       main {
-        overflow: hidden;
+        overflow-x: hidden;
       }
       .hero {
         min-height: calc(100vh - 68px);
@@ -683,6 +692,14 @@
         .proof-tile, .card {
           padding: 16px;
         }
+        .report-metrics,
+        .category-row {
+          grid-template-columns: 1fr;
+        }
+        .report-topbar,
+        footer .section-inner {
+          align-items: flex-start;
+        }
       }
     </style>
   </head>
@@ -887,6 +904,13 @@
           <h2>Version history with the why included.</h2>
           <p class="section-copy">The newest changes stay visible first. Open the full archive when you want the complete build history.</p>
           <div class="timeline is-collapsed" id="version-timeline">
+            <article class="timeline-item">
+              <div class="timeline-date">v1.10.15</div>
+              <div>
+                <h3>Recipe cards were locked down and Orders Up started showing item progress.</h3>
+                <p>Private staff recipe cards now open inside the signed-in KDS instead of exposing reusable direct links. When staff checks off an individual drink on Focus Board, the Orders Up pickup display shows that drink crossed off with a done mark. Focus Board also gained larger order text, larger modifier text, bigger touch buttons, and two side-by-side columns on portrait iPads while the regular full dashboard keeps its Back button.</p>
+              </div>
+            </article>
             <article class="timeline-item">
               <div class="timeline-date">v1.10.14</div>
               <div>

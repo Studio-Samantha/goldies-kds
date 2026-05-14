@@ -84,6 +84,15 @@
         background: var(--paper);
       }
       a { color: inherit; }
+      body {
+        overflow-x: hidden;
+      }
+      img, svg {
+        max-width: 100%;
+      }
+      h1, h2, h3, p, li, summary, .button, .card, .feature, .price-card, .comparison-card, .savings-pill, .support-card, .proof-item, .setup-note, .theme-card, .tier-card, .portal-card, .faq-panel {
+        overflow-wrap: anywhere;
+      }
       .nav {
         position: fixed;
         z-index: 20;
@@ -2228,6 +2237,14 @@
         }
         .lead-form-row {
           grid-template-columns: 1fr;
+        }
+        .comparison-number,
+        .price {
+          font-size: clamp(30px, 10vw, 38px);
+        }
+        .price-card h3,
+        .comparison-card h3 {
+          font-size: 17px;
         }
       }
     </style>

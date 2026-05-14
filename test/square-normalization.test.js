@@ -41,6 +41,7 @@ const {
     cleanCustomerName,
     getSuspiciousPickupNameTickets,
     getCanonicalDrinkName,
+    getDisplayDrinkItems,
     getItemDrinkCategory,
     parseCustomerNameFromNotes,
   },
@@ -105,6 +106,34 @@ test("drink classification keeps smoothies and refreshers in drink reporting", (
   assert.equal(getItemDrinkCategory({ name: "CHAI LATTE" }), "Not Coffee");
   assert.equal(getItemDrinkCategory({ name: "STRAWMANGO" }), "Not Coffee");
   assert.equal(getItemDrinkCategory({ name: "Muffin" }), null);
+});
+
+test("orders-up display keeps individual drink done state", () => {
+  const items = getDisplayDrinkItems({
+    items: [
+      {
+        name: "STRAWBERRY MANGO (16 OZ)",
+        qty: 1,
+        category: "Smoothies",
+        done: true,
+      },
+      {
+        name: "Muffin",
+        qty: 1,
+        done: true,
+      },
+    ],
+  });
+
+  assert.deepEqual(items, [
+    {
+      name: "Strawberry Mango (16 oz)",
+      qty: 1,
+      modifiers: [],
+      note: "",
+      done: true,
+    },
+  ]);
 });
 
 test("owner report separates drink revenue from non-drink add-on signals", () => {

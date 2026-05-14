@@ -37,6 +37,15 @@
           linear-gradient(180deg, #fffdf8 0%, #f6efe1 52%, #fffdf8 100%);
       }
       a { color: inherit; }
+      body {
+        overflow-x: hidden;
+      }
+      img, svg {
+        max-width: 100%;
+      }
+      h1, h2, h3, p, li, .button, .card, .quote {
+        overflow-wrap: anywhere;
+      }
       .nav {
         position: sticky;
         top: 0;
@@ -219,6 +228,23 @@
       @media (max-width: 900px) {
         .hero, .feature-grid, .proof-grid, .two-col {
           grid-template-columns: 1fr;
+        }
+      }
+      @media (max-width: 560px) {
+        .nav {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+        .nav-links,
+        .hero-actions {
+          width: 100%;
+          justify-content: flex-start;
+        }
+        .button {
+          min-width: 0;
+        }
+        .card {
+          padding: 16px;
         }
       }
     </style>

@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.14";
+const APP_VERSION = "v1.10.15";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -33,13 +33,28 @@ const DINING_OPTIONS = ["HANGIN' OUT", "TAKING OFF", "Pickup", "Delivery", "Driv
 const DAILY_UPDATE_NOTICE = {
   id: APP_VERSION,
   eyebrow: "Today on the KDS",
-  title: "Smoothie names now follow Square",
+  title: "Recipe cards are locked down",
   message:
-    "Smoothies renamed in Square now stay visible on the KDS and display with readable casing.",
+    "Private staff recipe cards now open inside the signed-in KDS instead of exposing reusable direct links.",
   note:
-    "System checks now compare Square's Coffee, Not Coffee, and Smoothies categories against KDS drink classification.",
+    "Orders Up also shows individual drinks checked off on Focus Board.",
 };
 const OWNER_PORTAL_RECENT_CHANGES = [
+  {
+    title: "Private recipe cards",
+    body:
+      "Staff recipe cards now open through a signed-in KDS viewer, block plain copied links, and tell browsers not to cache the files.",
+  },
+  {
+    title: "Orders Up item progress",
+    body:
+      "Individual drinks checked off on Focus Board now carry through to Orders Up with a done mark and crossed-off drink name.",
+  },
+  {
+    title: "Focus Board readability",
+    body:
+      "Focus Board now uses larger order text, larger modifier text, bigger touch buttons, and two side-by-side columns on portrait iPads.",
+  },
   {
     title: "Smoothie category check",
     body:
@@ -103,8 +118,22 @@ const OWNER_PORTAL_RECENT_CHANGES = [
 ];
 const RELEASE_NOTES = [
   {
-    version: "v1.10.14",
+    version: "v1.10.15",
     date: "Current build",
+    summary: "Showed Focus Board drink checkoffs on Orders Up.",
+    items: [
+      "Orders Up now receives individual drink done state from the KDS backend.",
+      "Checked-off drinks show with a checkmark, crossed-off drink name, and Done label on the pickup display.",
+      "Focus Board now uses larger order text, larger modifier text, bigger touch buttons, and two side-by-side columns on portrait iPads.",
+      "The regular full dashboard keeps its Back button for cases where staff need to move a ticket back.",
+      "Private recipe cards now open inside the signed-in KDS and no longer expose reusable direct links.",
+      "Goldie's display boards and public pages got a responsive overflow cleanup for narrow phone and tablet screens.",
+      "Backend regression coverage now verifies Orders Up keeps individual drink done state.",
+    ],
+  },
+  {
+    version: "v1.10.14",
+    date: "Previous build",
     summary: "Kept Square-renamed smoothies visible in KDS.",
     items: [
       "Smoothie names from Square, including STRAWBERRY MANGO and size labels like 16 OZ or 12 OZ KIDS, now classify as Smoothies.",
@@ -2624,6 +2653,7 @@ function TicketCard({
   onDiningOptionChange,
   showDiningOption,
   compact = false,
+  focusMode = false,
 }) {
   const [nameValue, setNameValue] = useState(ticket.customerName || "");
   const orderTime = formatOrderTime(ticket.createdAt);
@@ -2727,33 +2757,33 @@ function TicketCard({
 
   return (
     <article className={`rounded-2xl bg-[#FFFDF8] border border-[#CA862B]/18 shadow-[0_10px_24px_rgba(15,64,54,0.05)] ${
-      compact ? "p-2.5 space-y-2" : "p-3 space-y-3"
+      focusMode ? "p-3 space-y-3" : compact ? "p-2.5 space-y-2" : "p-3 space-y-3"
     }`}>
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className={`${compact ? "text-xl" : "text-2xl"} font-black tracking-tight leading-none text-[#0F4036]`}>
+        <div className="min-w-0 flex-1">
+          <div className={`${focusMode ? "text-3xl md:text-[2.1rem]" : compact ? "text-xl" : "text-2xl"} break-words font-black tracking-tight leading-none text-[#0F4036]`}>
             {displayName || `#${ticket.orderNumber}`}
           </div>
 
           {compact ? (
             <div className="mt-1 flex flex-wrap items-center gap-1.5">
               {displayName && (
-                <span className="rounded-lg border border-[#0F4036]/12 bg-[#0F4036]/6 px-2 py-1 text-xs font-black text-[#111111]">
+                <span className={`rounded-lg border border-[#0F4036]/12 bg-[#0F4036]/6 px-2 py-1 font-black text-[#111111] ${focusMode ? "text-sm" : "text-xs"}`}>
                   #{ticket.orderNumber}
                 </span>
               )}
               {showDiningOption && hasSpecificDiningOption && (
-                <span className="rounded-lg border border-[#CA862B]/18 bg-[#CA862B]/10 px-2 py-1 text-xs font-black text-[#8B5A1D]">
+                <span className={`rounded-lg border border-[#CA862B]/18 bg-[#CA862B]/10 px-2 py-1 font-black text-[#8B5A1D] ${focusMode ? "text-sm" : "text-xs"}`}>
                   {ticket.diningOption}
                 </span>
               )}
               {isOnlineOrder && (
-                <span className="rounded-lg border border-[#0F4036]/14 bg-[#0F4036] px-2 py-1 text-xs font-black text-white">
+                <span className={`rounded-lg border border-[#0F4036]/14 bg-[#0F4036] px-2 py-1 font-black text-white ${focusMode ? "text-sm" : "text-xs"}`}>
                   Online order
                 </span>
               )}
               {isOnlineOrder && ticket.pickupDueTime && (
-                <span className="rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-xs font-black text-red-800">
+                <span className={`rounded-lg border border-red-200 bg-red-50 px-2 py-1 font-black text-red-800 ${focusMode ? "text-sm" : "text-xs"}`}>
                   Due {ticket.pickupDueTime}
                 </span>
               )}
@@ -2818,7 +2848,7 @@ function TicketCard({
           )}
 
           {stageLabel && (
-            <div className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-black ${
+            <div className={`mt-2 inline-flex rounded-full px-2.5 py-1 font-black ${focusMode ? "text-sm" : "text-xs"} ${
               ticket.status === "ready" && getMinutesElapsed(stageStartedAt) >= 1
                 ? "bg-[#CA862B]/16 text-[#8B5A1D]"
                 : "bg-[#0F4036]/8 text-[#0F4036]"
@@ -2851,12 +2881,12 @@ function TicketCard({
           )}
         </div>
 
-        <div className={`rounded-xl border font-black ${compact ? "px-2 py-1 text-xs" : "px-3 py-2 text-sm"} ${timeClass}`}>
+        <div className={`shrink-0 rounded-xl border font-black ${focusMode ? "px-3 py-2 text-base" : compact ? "px-2 py-1 text-xs" : "px-3 py-2 text-sm"} ${timeClass}`}>
           {orderTime}
         </div>
       </div>
 
-      <div className={compact ? "space-y-1.5" : "space-y-2"}>
+      <div className={focusMode ? "space-y-2.5" : compact ? "space-y-1.5" : "space-y-2"}>
         {visibleItems.length > 0 ? (
           visibleItems.map((item, idx) => {
             const itemKey = getItemKey(item, idx);
@@ -2866,11 +2896,11 @@ function TicketCard({
             return (
               <div
                 key={`${ticket.id}-${itemKey}`}
-                className={`${compact ? "rounded-xl px-2 py-1.5" : "border-t border-[#CA862B]/12 pt-2 first:border-t-0 first:pt-0"} ${
+                className={`${focusMode ? "rounded-xl px-2.5 py-2" : compact ? "rounded-xl px-2 py-1.5" : "border-t border-[#CA862B]/12 pt-2 first:border-t-0 first:pt-0"} ${
                   isDone ? "bg-[#0F4036]/8 opacity-75" : "bg-white/70"
                 }`}
               >
-                <div className={`flex items-start gap-2 font-bold leading-tight ${compact ? "text-sm" : "text-base"}`}>
+                <div className={`flex min-w-0 items-start gap-2 font-bold leading-tight ${focusMode ? "text-xl md:text-2xl" : compact ? "text-sm" : "text-base"}`}>
                   {canCheckOffDrinks && isDrink && (
                     <button
                       type="button"
@@ -2878,7 +2908,7 @@ function TicketCard({
                         onItemDoneChange(ticket.id, itemKey, !isDone)
                       }
                       aria-label={`${isDone ? "Mark not done" : "Mark done"} ${item.name}`}
-                      className={`mt-[-1px] inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-sm font-black transition ${
+                      className={`mt-[-1px] inline-flex shrink-0 items-center justify-center rounded-full border font-black transition ${focusMode ? "h-10 w-10 text-lg" : "h-7 w-7 text-sm"} ${
                         isDone
                           ? "border-[#0F4036] bg-[#0F4036] text-white"
                           : "border-[#CA862B]/30 bg-white text-[#CA862B] hover:bg-[#EEE0C5]/60"
@@ -2888,13 +2918,13 @@ function TicketCard({
                     </button>
                   )}
                   <span className="text-[#6A614F]">{item.qty}×</span>
-                  <span className={`${isDone ? "text-[#0F4036] line-through decoration-2" : "text-[#111111]"}`}>
+                  <span className={`min-w-0 break-words ${isDone ? "text-[#0F4036] line-through decoration-2" : "text-[#111111]"}`}>
                     {item.name}
                   </span>
                 </div>
 
               {item.modifiers.length > 0 && !compact && (
-                <ul className="mt-1 ml-7 list-disc text-sm text-[#4E4637] space-y-0.5">
+                <ul className="mt-1 ml-7 list-disc space-y-0.5 break-words text-sm text-[#4E4637]">
                   {item.modifiers.map((mod) => (
                     <li key={mod}>{mod}</li>
                   ))}
@@ -2902,7 +2932,7 @@ function TicketCard({
               )}
 
               {item.modifiers.length > 0 && compact && (
-                <div className="mt-0.5 text-xs font-medium leading-snug text-[#4E4637]">
+                <div className={`mt-1 break-words font-semibold leading-snug text-[#4E4637] ${focusMode ? "ml-12 text-lg md:text-xl" : "text-xs"}`}>
                   {item.modifiers.join(", ")}
                 </div>
               )}
@@ -2914,7 +2944,7 @@ function TicketCard({
               )}
 
               {item.note && compact && (
-                <div className="mt-0.5 text-xs font-semibold leading-snug text-[#8B5A1D]">
+                <div className={`mt-1 break-words font-semibold leading-snug text-[#8B5A1D] ${focusMode ? "ml-12 text-lg md:text-xl" : "text-xs"}`}>
                   Note: {item.note}
                 </div>
               )}
@@ -2935,23 +2965,21 @@ function TicketCard({
       </div>
 
       {actions.length > 0 && (
-        <div className={`grid grid-cols-1 gap-1.5 ${compact ? "" : "pt-1"}`}>
+        <div className={`grid grid-cols-1 ${focusMode ? "gap-2.5" : "gap-1.5"} ${compact ? "" : "pt-1"}`}>
           {actions.map((action) => (
             <button
               key={action.label}
               onClick={() => onStatusChange(ticket.id, action.status)}
-              className={`rounded-xl font-black transition shadow-sm ${compact ? "px-3 py-2 text-sm" : "px-4 py-2.5"} ${action.className}`}
+              className={`rounded-xl font-black transition shadow-sm ${focusMode ? "min-h-[58px] px-4 py-3 text-xl" : compact ? "px-3 py-2 text-sm" : "min-h-[48px] px-4 py-3 text-base"} ${action.className}`}
             >
               {action.label}
             </button>
           ))}
 
-          {previousStatus && !compact && (
+          {previousStatus && !compact && !focusMode && (
             <button
               onClick={() => onStatusChange(ticket.id, previousStatus)}
-              className={`rounded-xl font-black transition bg-white border border-[#CA862B]/24 text-[#0F4036] hover:bg-[#EEE0C5]/45 ${
-                compact ? "px-3 py-2 text-sm" : "px-4 py-2"
-              }`}
+              className="rounded-xl border border-[#CA862B]/24 bg-white px-4 py-2 font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
             >
               Back
             </button>
@@ -3849,42 +3877,127 @@ function MenuAvailabilityPanel({ demoMode = false }) {
 }
 
 function StaffToolsGuide({ demoMode = false }) {
+  const [recipePreview, setRecipePreview] = useState(null);
+  const [recipeLoading, setRecipeLoading] = useState("");
+  const [recipeError, setRecipeError] = useState("");
+
+  useEffect(() => {
+    return () => {
+      if (recipePreview?.url) URL.revokeObjectURL(recipePreview.url);
+    };
+  }, [recipePreview]);
+
   if (demoMode) return null;
 
+  const recipeCards = [
+    { label: "Smoothie recipes", file: "goldies-recipes-1.png" },
+    { label: "Coffee recipes", file: "goldies-recipes-2.png" },
+  ];
+
+  async function openRecipeCard(card) {
+    setRecipeLoading(card.file);
+    setRecipeError("");
+
+    try {
+      const response = await fetch(apiUrl(`/api/staff/sop/${card.file}`), {
+        credentials: "include",
+        cache: "no-store",
+        headers: { "X-Goldies-Recipe-Viewer": "kds" },
+      });
+
+      if (response.status === 401) {
+        throw new Error("Sign in to the KDS before opening recipe cards.");
+      }
+      if (!response.ok) {
+        throw new Error(`Recipe card unavailable: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const nextPreview = {
+        title: card.label,
+        url: URL.createObjectURL(blob),
+      };
+
+      setRecipePreview((current) => {
+        if (current?.url) URL.revokeObjectURL(current.url);
+        return nextPreview;
+      });
+    } catch (error) {
+      setRecipeError(error.message || "Recipe card unavailable.");
+    } finally {
+      setRecipeLoading("");
+    }
+  }
+
+  function closeRecipePreview() {
+    setRecipePreview((current) => {
+      if (current?.url) URL.revokeObjectURL(current.url);
+      return null;
+    });
+  }
+
   return (
-    <section className="rounded-2xl border border-[#CA862B]/18 bg-[rgba(255,253,248,0.92)] p-4 shadow-sm backdrop-blur-sm">
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <div>
-          <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
-            Staff tools to know
+    <>
+      <section className="rounded-2xl border border-[#CA862B]/18 bg-[rgba(255,253,248,0.92)] p-4 shadow-sm backdrop-blur-sm">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div>
+            <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
+              Staff tools to know
+            </div>
+            <h2 className="mt-1 text-xl font-black text-[#0F4036]">
+              New dashboard shortcuts
+            </h2>
+            <p className="mt-1 max-w-3xl text-sm font-semibold leading-6 text-[#6A614F]">
+              Use Menu Availability to hide sold-out drinks from customer menus, and open the private recipe cards when staff need a quick drink build reference.
+            </p>
+            {recipeError ? (
+              <div className="mt-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-bold text-red-900">
+                {recipeError}
+              </div>
+            ) : null}
           </div>
-          <h2 className="mt-1 text-xl font-black text-[#0F4036]">
-            New dashboard shortcuts
-          </h2>
-          <p className="mt-1 max-w-3xl text-sm font-semibold leading-6 text-[#6A614F]">
-            Use Menu Availability to hide sold-out drinks from customer menus, and open the private recipe cards when staff need a quick drink build reference.
-          </p>
+          <div className="flex flex-wrap gap-2">
+            {recipeCards.map((card) => (
+              <button
+                key={card.file}
+                type="button"
+                onClick={() => openRecipeCard(card)}
+                disabled={Boolean(recipeLoading)}
+                className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45 disabled:cursor-wait disabled:opacity-60"
+              >
+                {recipeLoading === card.file ? "Opening..." : card.label}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <a
-            href={apiUrl("/api/staff/sop/goldies-recipes-1.png")}
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-          >
-            Smoothie recipes
-          </a>
-          <a
-            href={apiUrl("/api/staff/sop/goldies-recipes-2.png")}
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
-          >
-            Coffee recipes
-          </a>
+      </section>
+
+      {recipePreview ? (
+        <div className="fixed inset-0 z-[90] bg-[#111111]/70 p-3 backdrop-blur-sm md:p-6" role="dialog" aria-modal="true" aria-label={recipePreview.title}>
+          <div className="mx-auto flex h-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-[#CA862B]/24 bg-[#FFFDF8] shadow-[0_24px_70px_rgba(0,0,0,0.28)]">
+            <div className="flex items-center justify-between gap-3 border-b border-[#CA862B]/18 px-4 py-3">
+              <h2 className="min-w-0 text-lg font-black text-[#0F4036] md:text-2xl">
+                {recipePreview.title}
+              </h2>
+              <button
+                type="button"
+                onClick={closeRecipePreview}
+                className="rounded-xl bg-[#0F4036] px-4 py-2 text-sm font-black text-white transition hover:bg-[#0b352d]"
+              >
+                Close
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-auto bg-[#EEE0C5]/35 p-3">
+              <img
+                src={recipePreview.url}
+                alt={recipePreview.title}
+                className="mx-auto h-auto max-w-full rounded-xl border border-[#CA862B]/18 bg-white shadow-sm"
+              />
+            </div>
+          </div>
         </div>
-      </div>
-    </section>
+      ) : null}
+    </>
   );
 }
 
@@ -7675,7 +7788,7 @@ function DisplayBackground({ children, accent = "gold", darkMode = false }) {
 
   return (
     <div
-      className={`min-h-screen px-3 py-3 sm:px-4 sm:py-4 md:px-5 md:py-5 overflow-hidden ${
+      className={`min-h-screen px-3 py-3 sm:px-4 sm:py-4 md:px-5 md:py-5 overflow-x-hidden ${
         darkMode ? "bg-[#041c19] text-[#FFF7EA]" : "bg-[#FFFDF8] text-[#111111]"
       }`}
       style={{ backgroundImage }}
@@ -7738,7 +7851,7 @@ function DisplayBackButton() {
   return (
     <a
       href={demoMode ? "/?demo=training" : "/"}
-      className="fixed bottom-3 right-3 z-30 rounded-full border border-white/24 bg-[#0F4036]/90 px-3 py-2 text-xs font-semibold text-white shadow-[0_16px_44px_rgba(15,64,54,0.22)] backdrop-blur-md transition hover:bg-[#0b352d] sm:right-4 sm:top-4 sm:bottom-auto sm:px-4 sm:text-sm"
+      className="fixed bottom-3 right-3 z-30 rounded-full border border-white/24 bg-[#0F4036]/90 px-3 py-2 text-xs font-semibold text-white shadow-[0_16px_44px_rgba(15,64,54,0.22)] backdrop-blur-md transition hover:bg-[#0b352d] xl:right-4 xl:top-4 xl:bottom-auto xl:px-4 xl:text-sm"
     >
       Back to KDS
     </a>
@@ -7850,12 +7963,12 @@ function FullscreenButton({ darkMode = false }) {
     : "border-white/24 bg-[#0F4036]/90 text-white hover:bg-[#0b352d]";
 
   return (
-    <div className="fixed bottom-3 left-3 z-30 sm:left-auto sm:right-32 sm:top-4 sm:bottom-auto">
+    <div className="fixed bottom-3 left-3 z-30 xl:left-auto xl:right-32 xl:top-4 xl:bottom-auto">
       <button
         type="button"
         onClick={toggleFullscreen}
         aria-label="Enter full screen"
-        className={`rounded-full border px-3 py-2 text-xs font-semibold shadow-[0_16px_44px_rgba(15,64,54,0.22)] backdrop-blur-md transition sm:px-4 sm:text-sm ${buttonClass}`}
+        className={`rounded-full border px-3 py-2 text-xs font-semibold shadow-[0_16px_44px_rgba(15,64,54,0.22)] backdrop-blur-md transition xl:px-4 xl:text-sm ${buttonClass}`}
       >
         Full screen
       </button>
@@ -7880,7 +7993,7 @@ function DisplayThemeButton({ themeMode, onToggle, darkMode = false }) {
     <button
       type="button"
       onClick={onToggle}
-      className={`fixed bottom-3 left-1/2 z-30 -translate-x-1/2 rounded-full border px-3 py-2 text-xs font-semibold shadow-[0_16px_44px_rgba(15,64,54,0.22)] backdrop-blur-md transition sm:left-auto sm:right-[15.25rem] sm:top-4 sm:bottom-auto sm:translate-x-0 sm:px-4 sm:text-sm ${buttonClass}`}
+      className={`fixed bottom-3 left-1/2 z-30 -translate-x-1/2 rounded-full border px-3 py-2 text-xs font-semibold shadow-[0_16px_44px_rgba(15,64,54,0.22)] backdrop-blur-md transition xl:left-auto xl:right-[15.25rem] xl:top-4 xl:bottom-auto xl:translate-x-0 xl:px-4 xl:text-sm ${buttonClass}`}
     >
       {themeMode === "dark" ? "Light mode" : "Dark mode"}
     </button>
@@ -8031,7 +8144,7 @@ function MenuBoardDisplay() {
         </header>
         <DisplayStatus loading={loading} error={error} updatedAt={updatedAt} darkMode={isDark} />
 
-        <main className="grid flex-1 grid-cols-1 gap-3 lg:grid-cols-3 lg:gap-4">
+        <main className="grid flex-1 grid-cols-1 gap-3 xl:grid-cols-3 xl:gap-4">
           {(menu.length ? menu : fallbackMenu).map((category) => (
             <section
               key={category.key || category.label}
@@ -8075,19 +8188,22 @@ function CustomerOrderDetails({ order, darkMode = false, compact = false }) {
   const items = Array.isArray(order.items) ? order.items : [];
   const nameClass = darkMode ? "text-[#FFF7EA]" : "text-[#2D261C]";
   const detailClass = darkMode ? "text-[#FFF7EA]/68" : "text-[#6A614F]";
+  const itemGridStyle = compact
+    ? undefined
+    : { gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 14rem), 1fr))" };
 
   return (
     <div className="min-w-0">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <strong className={`text-lg font-semibold leading-none tracking-normal sm:text-xl ${nameClass}`}>
+        <strong className={`min-w-0 break-words text-lg font-semibold leading-none tracking-normal sm:text-xl ${nameClass}`}>
           {order.customerName || `Order ${order.orderNumber}`}
         </strong>
         {order.customerName ? (
-          <span className={`min-w-0 text-sm font-medium sm:text-base ${detailClass}`}>
+          <span className={`min-w-0 break-words text-sm font-medium sm:text-base ${detailClass}`}>
             Order {order.orderNumber}
           </span>
         ) : null}
-        <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${
+        <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${
           order.isOnlineOrder
             ? darkMode
               ? "bg-red-500/22 text-red-100"
@@ -8099,28 +8215,50 @@ function CustomerOrderDetails({ order, darkMode = false, compact = false }) {
           {order.isOnlineOrder ? "Online" : "In person"}
         </span>
       </div>
-      <div className={`mt-2 grid gap-1.5 ${compact ? "" : "sm:grid-cols-2"}`}>
+      <div className="mt-2 grid gap-1.5" style={itemGridStyle}>
         {items.length ? (
-          items.map((item, index) => (
-            <div
-              key={`${order.id}-${item.name}-${index}`}
-              className={`rounded-xl border px-2.5 py-2 ${
-                darkMode
-                  ? "border-white/10 bg-white/8"
-                  : "border-[#0F4036]/10 bg-[#FFFDF8]"
-              }`}
-            >
-              <div className={`text-sm font-semibold leading-tight sm:text-base ${nameClass}`}>
-                {item.qty > 1 ? `${item.qty}x ` : ""}
-                {item.name}
-              </div>
-              {(item.modifiers?.length || item.note) ? (
-                <div className={`mt-1 text-xs font-medium leading-snug sm:text-sm ${detailClass}`}>
-                  {[...(item.modifiers || []), item.note].filter(Boolean).join(", ")}
+          items.map((item, index) => {
+            const isDone = Boolean(item.done);
+
+            return (
+              <div
+                key={`${order.id}-${item.name}-${index}`}
+                className={`min-w-0 rounded-xl border px-2.5 py-2 ${
+                  isDone
+                    ? darkMode
+                      ? "border-emerald-200/16 bg-emerald-200/10"
+                      : "border-[#0F4036]/12 bg-[#0F4036]/6"
+                    : darkMode
+                      ? "border-white/10 bg-white/8"
+                      : "border-[#0F4036]/10 bg-[#FFFDF8]"
+                }`}
+              >
+                <div className={`flex min-w-0 items-start gap-2 text-sm font-semibold leading-tight sm:text-base ${isDone ? (darkMode ? "text-[#FFF7EA]/62" : "text-[#0F4036]/62") : nameClass}`}>
+                  {isDone ? (
+                    <span className={`mt-[-1px] inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-black ${
+                      darkMode ? "bg-emerald-200/18 text-emerald-100" : "bg-[#0F4036] text-white"
+                    }`}>
+                      ✓
+                    </span>
+                  ) : null}
+                  <span className={`min-w-0 break-words ${isDone ? "line-through decoration-2" : ""}`}>
+                    {item.qty > 1 ? `${item.qty}x ` : ""}
+                    {item.name}
+                  </span>
                 </div>
-              ) : null}
-            </div>
-          ))
+                {(item.modifiers?.length || item.note) ? (
+                  <div className={`mt-1 break-words text-xs font-medium leading-snug sm:text-sm ${isDone ? (darkMode ? "text-[#FFF7EA]/48 line-through decoration-1" : "text-[#0F4036]/48 line-through decoration-1") : detailClass}`}>
+                    {[...(item.modifiers || []), item.note].filter(Boolean).join(", ")}
+                  </div>
+                ) : null}
+                {isDone ? (
+                  <div className={`mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${darkMode ? "text-emerald-100/72" : "text-[#0F4036]/68"}`}>
+                    Done
+                  </div>
+                ) : null}
+              </div>
+            );
+          })
         ) : (
           <div className={`rounded-2xl border px-3 py-2 text-sm font-semibold ${darkMode ? "border-white/10 bg-white/8 text-[#FFF7EA]/68" : "border-[#0F4036]/10 bg-[#FFFDF8] text-[#6A614F]"}`}>
             Drink details loading
@@ -8247,6 +8385,9 @@ function OrdersUpDisplay() {
   const readyTileClass = isDark
     ? "border-[#CA862B]/22 bg-[#082622] text-[#FFF7EA]"
     : "border-[#0F4036]/10 bg-white text-[#111111]";
+  const orderTileGridStyle = {
+    gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 18rem), 1fr))",
+  };
 
   return (
     <DisplayBackground accent="green" darkMode={isDark}>
@@ -8283,7 +8424,7 @@ function OrdersUpDisplay() {
         </header>
         <DisplayStatus loading={loading} error={error} updatedAt={updatedAt} darkMode={isDark} />
 
-        <main className="grid flex-1 grid-cols-1 gap-3 lg:grid-cols-[0.9fr_1.1fr_0.65fr] lg:gap-4">
+        <main className="grid flex-1 grid-cols-1 gap-3 xl:grid-cols-[0.9fr_1.1fr_0.65fr] xl:gap-4">
           <section className={`overflow-hidden rounded-[18px] border sm:rounded-[24px] ${cardClass}`}>
             <div className={`flex items-end justify-between gap-3 border-b px-3 py-3 sm:px-4 sm:py-4 ${cardHeaderClass}`}>
               <div>
@@ -8300,7 +8441,7 @@ function OrdersUpDisplay() {
             </div>
 
             {orders.making.length ? (
-              <div className="grid grid-cols-1 gap-2.5 p-3 sm:grid-cols-2 xl:grid-cols-1">
+              <div className="grid gap-2.5 p-3" style={orderTileGridStyle}>
                 {orders.making.map((order) => (
                   <div
                     key={order.id}
@@ -8343,7 +8484,7 @@ function OrdersUpDisplay() {
             </div>
 
             {orders.ready.length ? (
-              <div className="grid grid-cols-1 gap-2.5 p-3 sm:grid-cols-2 sm:p-4 xl:grid-cols-3">
+              <div className="grid gap-2.5 p-3 sm:p-4" style={orderTileGridStyle}>
                 {orders.ready.map((order) => (
                   <div
                     key={order.id}
@@ -8395,7 +8536,7 @@ function OrdersUpDisplay() {
                     key={order.id}
                     className="grid gap-2 px-3 py-2.5 sm:px-4 sm:py-3"
                   >
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                       <CustomerOrderDetails order={order} darkMode={isDark} compact />
                       <span className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] sm:text-xs ${isDark ? "bg-[#CA862B]/18 text-[#F3D39B]" : "bg-[#0F4036]/8 text-[#0F4036]"}`}>
                         Picked up
@@ -8538,7 +8679,7 @@ function DriveThruDisplay() {
         <DisplayStatus error={error} />
 
         {orders.length ? (
-          <main className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <main className="grid flex-1 grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
             {orders.map((order) => {
               const statusCopy = getDriveThruStatusCopy(order.status);
               return (
@@ -9023,7 +9164,7 @@ function OnlineOrdersDisplay() {
         </header>
         <DisplayStatus error={error} />
 
-        <main className="grid flex-1 grid-cols-1 gap-3 lg:grid-cols-3">
+        <main className="grid flex-1 grid-cols-1 gap-3 xl:grid-cols-3">
           {groupedOrders.map((group) => (
             <section key={group.status} className={`overflow-hidden rounded-[18px] border sm:rounded-[24px] ${cardClass}`}>
               <div className={`flex items-center justify-between gap-3 border-b px-3 py-3 sm:px-4 sm:py-4 ${headerClass}`}>
@@ -13450,7 +13591,7 @@ export default function GoldiesKDS() {
             </div>
 
             <div className={`grid grid-cols-1 gap-3 ${
-              showFocusBoard ? "xl:grid-cols-2" : "xl:grid-cols-3"
+              showFocusBoard ? "md:grid-cols-2" : "xl:grid-cols-3"
             }`}>
               {(showFocusBoard ? FOCUS_STATUS_COLUMNS : STATUS_COLUMNS).map((column) => (
                 <section
@@ -13491,6 +13632,7 @@ export default function GoldiesKDS() {
                           onDiningOptionChange={handleDiningOptionChange}
                           showDiningOption={showDiningOnTickets}
                           compact={showFocusBoard}
+                          focusMode={showFocusBoard}
                         />
                       ))
                     ) : (

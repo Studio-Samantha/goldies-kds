@@ -88,13 +88,14 @@
 
 .catalog-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
   gap: 0.85rem;
   align-items: stretch;
 }
 
 .catalog-grid article,
 .sign-grid article {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -218,12 +219,14 @@
 .catalog-grid h3 {
   padding: 0.8rem 0.85rem 0.2rem;
   line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .catalog-grid p {
   margin-top: auto;
   padding: 0 0.85rem 0.85rem;
   font-weight: 800;
+  overflow-wrap: anywhere;
 }
 
 .lightbox {
@@ -368,7 +371,7 @@
   }
 
   .catalog-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
   }
 
   .catalog-grid img {

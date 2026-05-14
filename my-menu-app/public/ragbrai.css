@@ -31,10 +31,28 @@ body {
 img {
   display: block;
   width: 100%;
+  max-width: 100%;
 }
 
 a {
   color: inherit;
+}
+
+h1,
+h2,
+h3,
+p,
+li,
+summary,
+.button,
+.pill,
+.tag,
+.product-card,
+.pickup-card,
+.mini-dashboard,
+.feature-card,
+.steps article {
+  overflow-wrap: anywhere;
 }
 
 .topbar {
@@ -538,6 +556,7 @@ p {
   max-width: 8rem;
   font-weight: 900;
   text-transform: uppercase;
+  overflow-wrap: anywhere;
 }
 
 .stockist-card span {
@@ -630,7 +649,7 @@ footer {
   .product-grid,
   .category-rack,
   .mini-dashboard {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
   }
 
   .product-card {
