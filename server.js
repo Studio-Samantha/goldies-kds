@@ -3164,6 +3164,17 @@ function getLocalActiveTickets() {
   return tickets.filter((ticket) => ticket.status !== "done");
 }
 
+function hasLocalTicket(id) {
+  return tickets.some((ticket) => ticket.id === id);
+}
+
+function markStorageFallbackActive(error, action = "ticket update") {
+  storageFallbackActive = true;
+  storageFallbackLastError =
+    error?.message ||
+    `Primary storage unavailable during ${action}; serving active tickets from memory.`;
+}
+
 async function fetchSquareOrders() {
   try {
     const { ordersApi } = squareClient;
@@ -3986,8 +3997,7 @@ async function syncRecentSquareOrders(context = "scheduled sync") {
       if (savedTicket?.syncAction === "updated") summary.updated += 1;
       if (savedTicket?.storageFallback) {
         summary.storageFallback += 1;
-        storageFallbackActive = true;
-        storageFallbackLastError = "Supabase storage unavailable; serving active tickets from memory.";
+        markStorageFallbackActive(null, "Square sync");
       }
     } catch (orderError) {
       summary.failed += 1;
@@ -4043,8 +4053,7 @@ async function getActiveTickets() {
     return await getStoredActiveTickets();
   } catch (error) {
     console.error("Stored tickets unavailable; serving in-memory Square tickets:", error.message);
-    storageFallbackActive = true;
-    storageFallbackLastError = error.message || "Supabase storage unavailable.";
+    markStorageFallbackActive(error, "active ticket load");
     lastKnownActiveTickets = getLocalActiveTickets();
     lastKnownActiveTicketsAt = Date.now();
     return lastKnownActiveTickets;
@@ -4103,21 +4112,32 @@ async function setTicketStatus(id, status) {
     return sanitizedStatus;
   }
 
-  const { data, error } = await supabase
-    .from("kds_orders")
-    .update({
-      status: sanitizedStatus,
-      updated_at: statusUpdatedAt,
-    })
-    .eq("square_order_id", id)
-    .select("square_order_id")
-    .maybeSingle();
+  try {
+    const { data, error } = await supabase
+      .from("kds_orders")
+      .update({
+        status: sanitizedStatus,
+        updated_at: statusUpdatedAt,
+      })
+      .eq("square_order_id", id)
+      .select("square_order_id")
+      .maybeSingle();
 
-  if (error) throw error;
-  if (!data) {
-    const missingError = new Error(`Ticket ${id} was not found`);
-    missingError.statusCode = 404;
-    throw missingError;
+    if (error) throw error;
+    if (!data) {
+      if (hasLocalTicket(id)) {
+        markStorageFallbackActive(null, "ticket status update");
+        updateLocalTicketStatus(id, sanitizedStatus);
+        return sanitizedStatus;
+      }
+      const missingError = new Error(`Ticket ${id} was not found`);
+      missingError.statusCode = 404;
+      throw missingError;
+    }
+  } catch (error) {
+    markStorageFallbackActive(error, "ticket status update");
+    updateLocalTicketStatus(id, sanitizedStatus);
+    return sanitizedStatus;
   }
 
   try {
@@ -4214,8 +4234,17 @@ async function setTicketItemDone(id, itemKey, done) {
     .eq("square_order_id", id)
     .maybeSingle();
 
-  if (existingError) throw existingError;
+  if (existingError) {
+    markStorageFallbackActive(existingError, "ticket item update");
+    updateLocalTicketItemDone(id, normalizedKey, done);
+    return Boolean(done);
+  }
   if (!existingOrder) {
+    if (hasLocalTicket(id)) {
+      markStorageFallbackActive(null, "ticket item update");
+      updateLocalTicketItemDone(id, normalizedKey, done);
+      return Boolean(done);
+    }
     const missingError = new Error(`Ticket ${id} was not found`);
     missingError.statusCode = 404;
     throw missingError;
@@ -4231,8 +4260,17 @@ async function setTicketItemDone(id, itemKey, done) {
     .select("square_order_id")
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) {
+    markStorageFallbackActive(error, "ticket item update");
+    updateLocalTicketItemDone(id, normalizedKey, done);
+    return Boolean(done);
+  }
   if (!data) {
+    if (hasLocalTicket(id)) {
+      markStorageFallbackActive(null, "ticket item update");
+      updateLocalTicketItemDone(id, normalizedKey, done);
+      return Boolean(done);
+    }
     const missingError = new Error(`Ticket ${id} was not found`);
     missingError.statusCode = 404;
     throw missingError;
@@ -4258,8 +4296,17 @@ async function setTicketName(id, customerName) {
     .select("square_order_id")
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) {
+    markStorageFallbackActive(error, "ticket name update");
+    updateLocalTicketName(id, normalizedName);
+    return normalizedName;
+  }
   if (!data) {
+    if (hasLocalTicket(id)) {
+      markStorageFallbackActive(null, "ticket name update");
+      updateLocalTicketName(id, normalizedName);
+      return normalizedName;
+    }
     const missingError = new Error(`Ticket ${id} was not found`);
     missingError.statusCode = 404;
     throw missingError;
@@ -4291,8 +4338,17 @@ async function setTicketDiningOption(id, diningOption) {
     .select("square_order_id")
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) {
+    markStorageFallbackActive(error, "ticket dining option update");
+    updateLocalTicketDiningOption(id, normalizedDiningOption);
+    return normalizedDiningOption;
+  }
   if (!data) {
+    if (hasLocalTicket(id)) {
+      markStorageFallbackActive(null, "ticket dining option update");
+      updateLocalTicketDiningOption(id, normalizedDiningOption);
+      return normalizedDiningOption;
+    }
     const missingError = new Error(`Ticket ${id} was not found`);
     missingError.statusCode = 404;
     throw missingError;
@@ -8424,8 +8480,7 @@ app.post("/api/square-sync", requireKdsAuth, async (req, res) => {
         if (savedTicket?.syncAction === "updated") summary.updated += 1;
         if (savedTicket?.storageFallback) {
           summary.storageFallback += 1;
-          storageFallbackActive = true;
-          storageFallbackLastError = "Supabase storage unavailable; serving active tickets from memory.";
+          markStorageFallbackActive(null, "manual Square sync");
         }
       } catch (orderError) {
         summary.failed += 1;

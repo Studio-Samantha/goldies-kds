@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.20";
+const APP_VERSION = "v1.10.21";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -33,13 +33,18 @@ const DINING_OPTIONS = ["HANGIN' OUT", "TAKING OFF", "Pickup", "Delivery", "Driv
 const DAILY_UPDATE_NOTICE = {
   id: APP_VERSION,
   eyebrow: "Today on the KDS",
-  title: "Emergency ticket fallback is active",
+  title: "Degraded mode actions are stronger",
   message:
-    "If primary storage is temporarily unavailable, the backend can keep serving current Square tickets from memory so the KDS can stay usable.",
+    "Ticket buttons now keep working during temporary storage interruptions, including Done, Ready, item checkoffs, names, and dining labels.",
   note:
-    "Historical reports still need primary storage restored, but live kitchen tickets now have a safer degraded mode during a storage interruption.",
+    "The KDS stays focused on live service first, then resumes normal history and reporting when primary storage is available.",
 };
 const OWNER_PORTAL_RECENT_CHANGES = [
+  {
+    title: "Degraded mode ticket actions",
+    body:
+      "When the KDS is temporarily using live memory fallback, staff can still clear tickets, mark drinks done, and update ticket details.",
+  },
   {
     title: "Emergency KDS fallback",
     body:
@@ -168,8 +173,18 @@ const OWNER_PORTAL_RECENT_CHANGES = [
 ];
 const RELEASE_NOTES = [
   {
-    version: "v1.10.20",
+    version: "v1.10.21",
     date: "Current build",
+    summary: "Kept ticket actions working during storage interruptions.",
+    items: [
+      "Done, Ready, Start, drink checkoffs, customer names, and dining labels now update in temporary memory fallback mode.",
+      "Tickets shown during degraded mode can be cleared from the kitchen screen instead of getting stuck.",
+      "The v1.10.20 live-ticket storage fallback remains in place.",
+    ],
+  },
+  {
+    version: "v1.10.20",
+    date: "Previous build",
     summary: "Added a temporary storage fallback for live tickets.",
     items: [
       "When primary storage is unavailable, Square orders can still appear in the KDS from server memory.",
