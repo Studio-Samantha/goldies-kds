@@ -60,6 +60,7 @@ const VALID_DINING_OPTIONS = new Set([
 ]);
 const SQUARE_SYNC_INTERVAL_MS = 30 * 1000;
 const SQUARE_SYNC_TIMEOUT_MS = Number(process.env.SQUARE_SYNC_TIMEOUT_MS || 4500);
+const SQUARE_BACKFILL_MAX_LOOKBACK_DAYS = 7;
 const SQUARE_HEALTH_CHECK_INTERVAL_MS = 30 * 1000;
 const SQUARE_HEALTH_ALERT_COOLDOWN_MS = 15 * 60 * 1000;
 const READY_AUTO_COMPLETE_MS = 2 * 60 * 1000;
@@ -3175,39 +3176,112 @@ function markStorageFallbackActive(error, action = "ticket update") {
     `Primary storage unavailable during ${action}; serving active tickets from memory.`;
 }
 
-async function fetchSquareOrders() {
+function getSquareRange(options = {}) {
+  const endAt = options.endAt instanceof Date ? options.endAt : new Date(options.endAt || Date.now());
+  const lookbackMs = Number(options.lookbackMs || 24 * 60 * 60 * 1000);
+  const startAt =
+    options.startAt instanceof Date
+      ? options.startAt
+      : new Date(options.startAt || endAt.getTime() - lookbackMs);
+
+  return { startAt, endAt };
+}
+
+function getSquareBackfillOptions(input = {}) {
+  const requestedDays = Number(input.lookbackDays || input.days || 1);
+  const lookbackDays = Math.min(
+    Math.max(Number.isFinite(requestedDays) ? requestedDays : 1, 1),
+    SQUARE_BACKFILL_MAX_LOOKBACK_DAYS
+  );
+  const endAt = input.endAt ? new Date(input.endAt) : new Date();
+  const startAt = input.startAt
+    ? new Date(input.startAt)
+    : new Date(endAt.getTime() - lookbackDays * 24 * 60 * 60 * 1000);
+
+  if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime())) {
+    const error = new Error("Invalid Square sync date range");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (startAt >= endAt) {
+    const error = new Error("Square sync start date must be before end date");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const maxStartAt = new Date(endAt.getTime() - SQUARE_BACKFILL_MAX_LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
+  if (startAt < maxStartAt) {
+    const error = new Error(`Square sync backfill can cover up to ${SQUARE_BACKFILL_MAX_LOOKBACK_DAYS} days at a time`);
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return { startAt, endAt, lookbackDays };
+}
+
+function getSquareCompletedAt(order = {}) {
+  const fulfillment = order.fulfillments?.[0] || {};
+  const pickupDetails = fulfillment.pickupDetails || fulfillment.pickup_details || {};
+  const shipmentDetails = fulfillment.shipmentDetails || fulfillment.shipment_details || {};
+  const candidates = [
+    order.closedAt,
+    order.closed_at,
+    order.updatedAt,
+    order.updated_at,
+    fulfillment.updatedAt,
+    fulfillment.updated_at,
+    pickupDetails.pickedUpAt,
+    pickupDetails.picked_up_at,
+    shipmentDetails.deliveredAt,
+    shipmentDetails.delivered_at,
+  ];
+
+  for (const candidate of candidates) {
+    const date = new Date(candidate || "");
+    if (!Number.isNaN(date.getTime())) return date.toISOString();
+  }
+
+  return null;
+}
+
+async function fetchSquareOrders(options = {}) {
   try {
     const { ordersApi } = squareClient;
-    const now = new Date();
-    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const { startAt, endAt } = getSquareRange(options);
     const locations = await getSquareLocations();
     const locationIds = uniqueLocationIds(locations);
     const orders = [];
 
     for (const locationId of locationIds) {
+      let cursor;
       try {
-        const response = await ordersApi.searchOrders({
-          locationIds: [locationId],
-          query: {
-            filter: {
-              dateTimeFilter: {
-                createdAt: {
-                  startAt: yesterday.toISOString(),
-                  endAt: now.toISOString(),
+        do {
+          const response = await ordersApi.searchOrders({
+            locationIds: [locationId],
+            cursor,
+            query: {
+              filter: {
+                dateTimeFilter: {
+                  createdAt: {
+                    startAt: startAt.toISOString(),
+                    endAt: endAt.toISOString(),
+                  },
+                },
+                stateFilter: {
+                  states: ["OPEN", "COMPLETED"],
                 },
               },
-              stateFilter: {
-                states: ["OPEN", "COMPLETED"],
+              sort: {
+                sortField: "CREATED_AT",
+                sortOrder: "DESC",
               },
             },
-            sort: {
-              sortField: "CREATED_AT",
-              sortOrder: "DESC",
-            },
-          },
-        });
+          });
 
-        orders.push(...(response.result.orders || []));
+          orders.push(...(response.result.orders || []));
+          cursor = response.result.cursor;
+        } while (cursor);
       } catch (error) {
         console.error(`Error searching Square orders for location ${locationId}:`, error.message);
       }
@@ -3220,29 +3294,32 @@ async function fetchSquareOrders() {
   }
 }
 
-async function fetchSquarePayments() {
+async function fetchSquarePayments(options = {}) {
   try {
     const { paymentsApi } = squareClient;
-    const now = new Date();
-    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const { startAt, endAt } = getSquareRange(options);
     const locations = await getSquareLocations();
     const locationIds = uniqueLocationIds(locations);
     const payments = [];
 
     for (const locationId of locationIds) {
+      let cursor;
       try {
-        const response = await paymentsApi.listPayments(
-          yesterday.toISOString(),
-          now.toISOString(),
-          "DESC",
-          undefined,
-          locationId,
-          undefined,
-          undefined,
-          undefined,
-          100
-        );
-        payments.push(...(response.result.payments || []));
+        do {
+          const response = await paymentsApi.listPayments(
+            startAt.toISOString(),
+            endAt.toISOString(),
+            "DESC",
+            cursor,
+            locationId,
+            undefined,
+            undefined,
+            undefined,
+            100
+          );
+          payments.push(...(response.result.payments || []));
+          cursor = response.result.cursor;
+        } while (cursor);
       } catch (error) {
         console.error(
           `Error fetching Square payments for location ${locationId}:`,
@@ -3802,7 +3879,7 @@ async function normalizeSquareOrder(order, payment = null) {
     createdAt: new Date(order.createdAt || Date.now()).getTime(),
     source: getSquareOrderSourceLabel(order),
     pickupDueTime: getSquarePickupDueTime(order),
-    status: "new",
+    status: getSquareOrderStatus(order),
     diningOption: getDiningOption(order),
     items,
   };
@@ -3867,7 +3944,7 @@ function getSuspiciousPickupNameTickets(ticketsToCheck = lastKnownActiveTickets)
     }));
 }
 
-async function upsertTicket(ticket, rawOrder = null) {
+async function upsertTicket(ticket, rawOrder = null, options = {}) {
   if (!supabase) {
     const alreadyExists = tickets.some((existing) => existing.id === ticket.id);
     return { ...addTicket(ticket), syncAction: alreadyExists ? "updated" : "created" };
@@ -3876,14 +3953,22 @@ async function upsertTicket(ticket, rawOrder = null) {
   try {
     const { data: existingOrder, error: existingError } = await supabase
       .from("kds_orders")
-      .select("status, customer_name, raw_order, updated_at")
+      .select("status, customer_name, completed_at, raw_order, updated_at")
       .eq("square_order_id", ticket.id)
       .maybeSingle();
 
     if (existingError) throw existingError;
 
-    const status = sanitizeStatus(existingOrder?.status || ticket.status);
+    const squareStatus = sanitizeStatus(ticket.status);
+    const shouldRefreshCompletedStatus =
+      options.refreshCompletedStatus && isCompletedStatus(squareStatus);
+    const status = sanitizeStatus(
+      shouldRefreshCompletedStatus ? squareStatus : existingOrder?.status || ticket.status
+    );
     const createdAt = new Date(ticket.createdAt || Date.now()).toISOString();
+    const completedAt = isCompletedStatus(status)
+      ? getSquareCompletedAt(rawOrder) || existingOrder?.completed_at || new Date().toISOString()
+      : null;
 
     const { error: orderError } = await supabase.from("kds_orders").upsert(
       {
@@ -3894,6 +3979,7 @@ async function upsertTicket(ticket, rawOrder = null) {
         source: ticket.source || "Square Register",
         status,
         dining_option: ticket.diningOption || "Unspecified",
+        completed_at: completedAt,
         square_state: rawOrder?.state || null,
         raw_order: rawOrder
           ? toJsonSafe({
@@ -8452,12 +8538,18 @@ app.get("/api/staff/sop/:file", requireKdsAuth, (req, res) => {
 
 app.post("/api/square-sync", requireKdsAuth, async (req, res) => {
   try {
-    const squareOrders = await fetchSquareOrders();
-    const paymentOrders = await fetchSquarePaymentOrders();
+    const backfillOptions = getSquareBackfillOptions(req.body || {});
+    const squareOrders = await fetchSquareOrders(backfillOptions);
+    const squarePayments = await fetchSquarePayments(backfillOptions);
+    const paymentOrders = await fetchSquarePaymentOrders(squarePayments);
+    const employeeNameByOrderId = await buildPaymentEmployeeMap(squarePayments);
     const savedTickets = [];
     const summary = {
-      context: "manual sync",
+      context: backfillOptions.lookbackDays > 1 ? "manual backfill" : "manual sync",
       startedAt: new Date().toISOString(),
+      startAt: backfillOptions.startAt.toISOString(),
+      endAt: backfillOptions.endAt.toISOString(),
+      lookbackDays: backfillOptions.lookbackDays,
       fetchedOrders: squareOrders.length,
       fetchedPaymentOrders: paymentOrders.length,
       dedupedOrders: 0,
@@ -8472,8 +8564,10 @@ app.post("/api/square-sync", requireKdsAuth, async (req, res) => {
 
     for (const order of dedupedOrders) {
       try {
-        const ticket = await normalizeSquareOrder(order);
-        const savedTicket = await upsertTicket(ticket, order);
+        const ticket = await normalizeSquareOrder(order, employeeNameByOrderId.get(order.id) || null);
+        const savedTicket = await upsertTicket(ticket, order, {
+          refreshCompletedStatus: backfillOptions.lookbackDays > 1,
+        });
         savedTickets.push(savedTicket);
         summary.saved += 1;
         if (savedTicket?.syncAction === "created") summary.created += 1;
@@ -8514,14 +8608,19 @@ app.get("/api/square-sync", requireKdsAuth, async (req, res) => {
   try {
     const locations = await getSquareLocations();
     const locationIds = uniqueLocationIds(locations);
+    const backfillOptions = getSquareBackfillOptions(req.query || {});
+    const squarePayments = await fetchSquarePayments(backfillOptions);
     const [squareOrders, paymentOrders] = await Promise.all([
-      fetchSquareOrders(),
-      fetchSquarePaymentOrders(),
+      fetchSquareOrders(backfillOptions),
+      fetchSquarePaymentOrders(squarePayments),
     ]);
 
     res.json({
       ok: true,
       method: "POST",
+      checkedFrom: backfillOptions.startAt.toISOString(),
+      checkedTo: backfillOptions.endAt.toISOString(),
+      lookbackDays: backfillOptions.lookbackDays,
       locationId: SQUARE_LOCATION_ID,
       accessibleLocations: locations.map((location) => ({
         id: location.id || null,

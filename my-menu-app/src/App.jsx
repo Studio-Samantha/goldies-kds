@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.21";
+const APP_VERSION = "v1.10.22";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -33,13 +33,18 @@ const DINING_OPTIONS = ["HANGIN' OUT", "TAKING OFF", "Pickup", "Delivery", "Driv
 const DAILY_UPDATE_NOTICE = {
   id: APP_VERSION,
   eyebrow: "Today on the KDS",
-  title: "Degraded mode actions are stronger",
+  title: "Square history backfill is safer",
   message:
-    "Ticket buttons now keep working during temporary storage interruptions, including Done, Ready, item checkoffs, names, and dining labels.",
+    "The KDS can refill recent Square order history into primary storage after a temporary storage interruption.",
   note:
-    "The KDS stays focused on live service first, then resumes normal history and reporting when primary storage is available.",
+    "Backfilled orders keep their Square status so old completed tickets do not return to the active kitchen board.",
 };
 const OWNER_PORTAL_RECENT_CHANGES = [
+  {
+    title: "Square history backfill",
+    body:
+      "Recent Square order history can be safely refilled into primary storage after a temporary interruption, with old completed orders kept off the live board.",
+  },
   {
     title: "Degraded mode ticket actions",
     body:
@@ -173,8 +178,18 @@ const OWNER_PORTAL_RECENT_CHANGES = [
 ];
 const RELEASE_NOTES = [
   {
-    version: "v1.10.21",
+    version: "v1.10.22",
     date: "Current build",
+    summary: "Added safer Square history backfill support.",
+    items: [
+      "Manual Square sync can now backfill a chosen recent date window into primary storage.",
+      "Backfilled completed orders use their Square status so old tickets do not reappear as new active tickets.",
+      "The sync summary records the backfill window for easier recovery checks.",
+    ],
+  },
+  {
+    version: "v1.10.21",
+    date: "Previous build",
     summary: "Kept ticket actions working during storage interruptions.",
     items: [
       "Done, Ready, Start, drink checkoffs, customer names, and dining labels now update in temporary memory fallback mode.",
@@ -1498,7 +1513,17 @@ function HelpDialog({ open, title, body, onClose }) {
   );
 }
 
-function ConnectionReportDialog({ open, report, loading, error, onClose, onRefresh }) {
+function ConnectionReportDialog({
+  open,
+  report,
+  loading,
+  error,
+  backfillLoading,
+  backfillResult,
+  onBackfill,
+  onClose,
+  onRefresh,
+}) {
   if (!open) return null;
 
   const square = report?.squareApi || {};
@@ -1551,6 +1576,11 @@ function ConnectionReportDialog({ open, report, loading, error, onClose, onRefre
           <div className="rounded-2xl border border-[#0F4036]/10 bg-[#0F4036]/8 px-4 py-3 text-sm font-semibold leading-6 text-[#0F4036]">
             Last sync context: {syncSummary.context || "Not recorded"}. The created/updated count helps show whether Square sent new orders or refreshed existing tickets.
           </div>
+          {backfillResult ? (
+            <div className="rounded-2xl border border-[#CA862B]/18 bg-[#EEE0C5]/35 px-4 py-3 text-sm font-bold leading-6 text-[#2D261C]">
+              {backfillResult}
+            </div>
+          ) : null}
           {suspiciousPickupNames.length ? (
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold leading-6 text-amber-950">
               Review pickup names: {suspiciousPickupNames.map((ticket) => `#${ticket.orderNumber} ${ticket.customerName}`).join(", ")}
@@ -1563,6 +1593,14 @@ function ConnectionReportDialog({ open, report, loading, error, onClose, onRefre
               className="rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2.5 font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
             >
               Refresh
+            </button>
+            <button
+              type="button"
+              onClick={onBackfill}
+              disabled={backfillLoading}
+              className="rounded-xl border border-[#CA862B]/26 bg-[#CA862B] px-4 py-2.5 font-black text-white transition hover:bg-[#a86d22] disabled:cursor-wait disabled:opacity-60"
+            >
+              {backfillLoading ? "Backfilling..." : "Backfill 4 days"}
             </button>
             <button
               type="button"
@@ -12309,6 +12347,8 @@ export default function GoldiesKDS() {
   const [connectionReport, setConnectionReport] = useState(null);
   const [connectionReportLoading, setConnectionReportLoading] = useState(false);
   const [connectionReportError, setConnectionReportError] = useState("");
+  const [connectionBackfillLoading, setConnectionBackfillLoading] = useState(false);
+  const [connectionBackfillResult, setConnectionBackfillResult] = useState("");
   const [lastError, setLastError] = useState("");
   const [systemNotice, setSystemNotice] = useState("");
   const [showSystemPopup, setShowSystemPopup] = useState(false);
@@ -12414,6 +12454,33 @@ export default function GoldiesKDS() {
       setConnectionReportError(error.message || "Connection report unavailable.");
     } finally {
       setConnectionReportLoading(false);
+    }
+  }
+
+  async function runSquareHistoryBackfill() {
+    setConnectionBackfillLoading(true);
+    setConnectionBackfillResult("");
+    setConnectionReportError("");
+    try {
+      const response = await fetch(apiUrl("/api/square-sync"), {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ lookbackDays: 4 }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || `Backfill failed: ${response.status}`);
+      const summary = data.summary || {};
+      setConnectionBackfillResult(
+        `Backfill complete: ${summary.saved ?? data.saved ?? 0} orders checked, ${summary.created ?? 0} created, ${summary.updated ?? 0} refreshed, ${summary.failed ?? 0} failed.`
+      );
+      await fetchConnectionReport();
+    } catch (error) {
+      setConnectionReportError(error.message || "Square history backfill failed.");
+    } finally {
+      setConnectionBackfillLoading(false);
     }
   }
 
@@ -13988,6 +14055,9 @@ export default function GoldiesKDS() {
         report={connectionReport}
         loading={connectionReportLoading}
         error={connectionReportError}
+        backfillLoading={connectionBackfillLoading}
+        backfillResult={connectionBackfillResult}
+        onBackfill={runSquareHistoryBackfill}
         onClose={() => setShowConnectionReport(false)}
         onRefresh={fetchConnectionReport}
       />
