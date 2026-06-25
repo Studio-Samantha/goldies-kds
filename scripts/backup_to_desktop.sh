@@ -3,6 +3,15 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+BACKUP_ENV_FILE="${GOLDIES_BACKUP_ENV_FILE:-${HOME}/Library/Application Support/GoldiesKDS/backup.env}"
+
+if [[ -f "${BACKUP_ENV_FILE}" ]]; then
+  set -a
+  # shellcheck source=/dev/null
+  source "${BACKUP_ENV_FILE}"
+  set +a
+fi
+
 BACKUP_ROOT="${GOLDIES_BACKUP_ROOT:-${HOME}/Desktop/Goldies KDS Backups}"
 LIVE_DATA_DAYS="${GOLDIES_BACKUP_LIVE_DATA_DAYS:-14}"
 BASE_URL="${GOLDIES_BASE_URL:-https://goldieskds.com}"
