@@ -1412,9 +1412,12 @@ let lastSquareSyncSummary = {
   updated: 0,
   saved: 0,
   failed: 0,
+  storageFallback: 0,
 };
 let lastKnownActiveTickets = [];
 let lastKnownActiveTicketsAt = 0;
+let storageFallbackActive = false;
+let storageFallbackLastError = "";
 let lastSquareHealthCheckAt = 0;
 let alertMailer = null;
 let squareApiAlertState = {
@@ -3096,10 +3099,17 @@ function requireKdsOrOwnerAuth(req, res, next) {
 }
 
 function addTicket(ticket) {
-  const alreadyExists = tickets.some((existing) => existing.id === ticket.id);
+  const existingIndex = tickets.findIndex((existing) => existing.id === ticket.id);
 
-  if (!alreadyExists) {
+  if (existingIndex === -1) {
     tickets.unshift(ticket);
+  } else {
+    tickets[existingIndex] = {
+      ...tickets[existingIndex],
+      ...ticket,
+      status: tickets[existingIndex].status || ticket.status,
+      completedAt: tickets[existingIndex].completedAt || ticket.completedAt,
+    };
   }
 
   return ticket;
@@ -3852,85 +3862,97 @@ async function upsertTicket(ticket, rawOrder = null) {
     return { ...addTicket(ticket), syncAction: alreadyExists ? "updated" : "created" };
   }
 
-  const { data: existingOrder, error: existingError } = await supabase
-    .from("kds_orders")
-    .select("status, customer_name, raw_order, updated_at")
-    .eq("square_order_id", ticket.id)
-    .maybeSingle();
+  try {
+    const { data: existingOrder, error: existingError } = await supabase
+      .from("kds_orders")
+      .select("status, customer_name, raw_order, updated_at")
+      .eq("square_order_id", ticket.id)
+      .maybeSingle();
 
-  if (existingError) throw existingError;
+    if (existingError) throw existingError;
 
-  const status = sanitizeStatus(existingOrder?.status || ticket.status);
-  const createdAt = new Date(ticket.createdAt || Date.now()).toISOString();
+    const status = sanitizeStatus(existingOrder?.status || ticket.status);
+    const createdAt = new Date(ticket.createdAt || Date.now()).toISOString();
 
-  const { error: orderError } = await supabase.from("kds_orders").upsert(
-    {
-      square_order_id: ticket.id,
-      order_number: ticket.orderNumber,
-      customer_name: ticket.customerName || existingOrder?.customer_name || null,
-      created_at: createdAt,
-      source: ticket.source || "Square Register",
-      status,
-      dining_option: ticket.diningOption || "Unspecified",
-      square_state: rawOrder?.state || null,
-      raw_order: rawOrder
-        ? toJsonSafe({
-            ...rawOrder,
-            kdsStatusEvents:
-              existingOrder?.raw_order?.kdsStatusEvents ||
-              rawOrder.kdsStatusEvents ||
-              [],
-            kdsCompletedItemKeys:
-              existingOrder?.raw_order?.kdsCompletedItemKeys ||
-              rawOrder.kdsCompletedItemKeys ||
-              [],
-            employeeName:
-              ticket.employeeName ||
-              existingOrder?.raw_order?.employeeName ||
-              rawOrder.employeeName ||
-              null,
-            pickupDueTime:
-              ticket.pickupDueTime ||
-              existingOrder?.raw_order?.pickupDueTime ||
-              getSquarePickupDueTime(rawOrder),
-          })
-        : existingOrder?.raw_order || null,
-      updated_at: existingOrder?.updated_at || new Date().toISOString(),
-    },
-    { onConflict: "square_order_id" }
-  );
-
-  if (orderError) throw orderError;
-
-  const { error: deleteError } = await supabase
-    .from("kds_order_items")
-    .delete()
-    .eq("order_id", ticket.id);
-
-  if (deleteError) throw deleteError;
-
-  if (ticket.items.length) {
-    const { error: itemsError } = await supabase.from("kds_order_items").insert(
-      ticket.items.map((item) => ({
-        order_id: ticket.id,
-        square_line_item_uid: item.id || null,
-        name: item.name || "Unnamed item",
-        quantity: Number(item.qty || 1),
-        modifiers: item.modifiers || [],
-        note: item.note || "",
-        category: getItemDrinkCategory(item),
-      }))
+    const { error: orderError } = await supabase.from("kds_orders").upsert(
+      {
+        square_order_id: ticket.id,
+        order_number: ticket.orderNumber,
+        customer_name: ticket.customerName || existingOrder?.customer_name || null,
+        created_at: createdAt,
+        source: ticket.source || "Square Register",
+        status,
+        dining_option: ticket.diningOption || "Unspecified",
+        square_state: rawOrder?.state || null,
+        raw_order: rawOrder
+          ? toJsonSafe({
+              ...rawOrder,
+              kdsStatusEvents:
+                existingOrder?.raw_order?.kdsStatusEvents ||
+                rawOrder.kdsStatusEvents ||
+                [],
+              kdsCompletedItemKeys:
+                existingOrder?.raw_order?.kdsCompletedItemKeys ||
+                rawOrder.kdsCompletedItemKeys ||
+                [],
+              employeeName:
+                ticket.employeeName ||
+                existingOrder?.raw_order?.employeeName ||
+                rawOrder.employeeName ||
+                null,
+              pickupDueTime:
+                ticket.pickupDueTime ||
+                existingOrder?.raw_order?.pickupDueTime ||
+                getSquarePickupDueTime(rawOrder),
+            })
+          : existingOrder?.raw_order || null,
+        updated_at: existingOrder?.updated_at || new Date().toISOString(),
+      },
+      { onConflict: "square_order_id" }
     );
 
-    if (itemsError) throw itemsError;
-  }
+    if (orderError) throw orderError;
 
-  return { ...ticket, status, syncAction: existingOrder ? "updated" : "created" };
+    const { error: deleteError } = await supabase
+      .from("kds_order_items")
+      .delete()
+      .eq("order_id", ticket.id);
+
+    if (deleteError) throw deleteError;
+
+    if (ticket.items.length) {
+      const { error: itemsError } = await supabase.from("kds_order_items").insert(
+        ticket.items.map((item) => ({
+          order_id: ticket.id,
+          square_line_item_uid: item.id || null,
+          name: item.name || "Unnamed item",
+          quantity: Number(item.qty || 1),
+          modifiers: item.modifiers || [],
+          note: item.note || "",
+          category: getItemDrinkCategory(item),
+        }))
+      );
+
+      if (itemsError) throw itemsError;
+    }
+
+    return { ...ticket, status, syncAction: existingOrder ? "updated" : "created" };
+  } catch (error) {
+    const alreadyExists = tickets.some((existing) => existing.id === ticket.id);
+    console.error(
+      `Supabase write failed for ${ticket.id}; serving ticket from memory until storage recovers:`,
+      error.message
+    );
+    return {
+      ...addTicket(ticket),
+      status: sanitizeStatus(ticket.status),
+      syncAction: alreadyExists ? "memory-updated" : "memory-created",
+      storageFallback: true,
+    };
+  }
 }
 
 async function syncRecentSquareOrders(context = "scheduled sync") {
-  if (!supabase) return;
-
   const now = Date.now();
   if (now - lastSquareSyncAt < SQUARE_SYNC_INTERVAL_MS) return;
 
@@ -3952,6 +3974,7 @@ async function syncRecentSquareOrders(context = "scheduled sync") {
     updated: 0,
     saved: 0,
     failed: 0,
+    storageFallback: 0,
   };
 
   for (const order of dedupedOrders) {
@@ -3961,6 +3984,11 @@ async function syncRecentSquareOrders(context = "scheduled sync") {
       summary.saved += 1;
       if (savedTicket?.syncAction === "created") summary.created += 1;
       if (savedTicket?.syncAction === "updated") summary.updated += 1;
+      if (savedTicket?.storageFallback) {
+        summary.storageFallback += 1;
+        storageFallbackActive = true;
+        storageFallbackLastError = "Supabase storage unavailable; serving active tickets from memory.";
+      }
     } catch (orderError) {
       summary.failed += 1;
       console.error(`Square order ${order?.id || "unknown"} failed during sync:`, orderError.message);
@@ -3974,6 +4002,11 @@ async function syncRecentSquareOrders(context = "scheduled sync") {
     ...summary,
     finishedAt: new Date(lastSquareSyncSuccessAt).toISOString(),
   };
+
+  if (summary.storageFallback === 0 && summary.failed === 0) {
+    storageFallbackActive = false;
+    storageFallbackLastError = "";
+  }
 }
 
 async function trySyncRecentSquareOrders(context = "ticket request") {
@@ -4006,7 +4039,16 @@ async function getActiveTickets() {
     console.error("Auto-complete check failed; serving active tickets:", error.message);
   }
 
-  return getStoredActiveTickets();
+  try {
+    return await getStoredActiveTickets();
+  } catch (error) {
+    console.error("Stored tickets unavailable; serving in-memory Square tickets:", error.message);
+    storageFallbackActive = true;
+    storageFallbackLastError = error.message || "Supabase storage unavailable.";
+    lastKnownActiveTickets = getLocalActiveTickets();
+    lastKnownActiveTicketsAt = Date.now();
+    return lastKnownActiveTickets;
+  }
 }
 
 async function getStoredActiveTickets() {
@@ -6245,6 +6287,8 @@ app.get("/api/health", (req, res) => {
     service: "Goldie's KDS backend",
     environment: SQUARE_ENVIRONMENT,
     storage: supabase ? "supabase" : "memory",
+    storageFallbackActive,
+    storageFallbackLastError: storageFallbackLastError || null,
     loginConfigured: isKdsLoginConfigured(),
     passwordSource: kdsPasswordState.source,
     squareApi: {
@@ -8365,6 +8409,7 @@ app.post("/api/square-sync", requireKdsAuth, async (req, res) => {
       updated: 0,
       saved: 0,
       failed: 0,
+      storageFallback: 0,
     };
     const dedupedOrders = dedupeOrders([...squareOrders, ...paymentOrders]);
     summary.dedupedOrders = dedupedOrders.length;
@@ -8377,6 +8422,11 @@ app.post("/api/square-sync", requireKdsAuth, async (req, res) => {
         summary.saved += 1;
         if (savedTicket?.syncAction === "created") summary.created += 1;
         if (savedTicket?.syncAction === "updated") summary.updated += 1;
+        if (savedTicket?.storageFallback) {
+          summary.storageFallback += 1;
+          storageFallbackActive = true;
+          storageFallbackLastError = "Supabase storage unavailable; serving active tickets from memory.";
+        }
       } catch (orderError) {
         summary.failed += 1;
         console.error(`Manual Square sync failed for order ${order?.id || "unknown"}:`, orderError.message);
@@ -8385,6 +8435,10 @@ app.post("/api/square-sync", requireKdsAuth, async (req, res) => {
     summary.finishedAt = new Date().toISOString();
     lastSquareSyncSummary = summary;
     lastSquareSyncSuccessAt = Date.now();
+    if (summary.storageFallback === 0 && summary.failed === 0) {
+      storageFallbackActive = false;
+      storageFallbackLastError = "";
+    }
 
     res.json({
       ok: true,

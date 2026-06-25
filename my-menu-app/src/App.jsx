@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.19";
+const APP_VERSION = "v1.10.20";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -33,13 +33,18 @@ const DINING_OPTIONS = ["HANGIN' OUT", "TAKING OFF", "Pickup", "Delivery", "Driv
 const DAILY_UPDATE_NOTICE = {
   id: APP_VERSION,
   eyebrow: "Today on the KDS",
-  title: "Owner Reports exports are cleaner",
+  title: "Emergency ticket fallback is active",
   message:
-    "Owner Reports now supports quarter and custom date-range downloads, and the old end-of-day email form has been removed.",
+    "If Supabase storage is temporarily unavailable, the backend can keep serving current Square tickets from memory so the KDS can stay usable.",
   note:
-    "Online Orders and Self Order Kiosk now use unique drink images for each menu item instead of shared placeholder photos.",
+    "Historical reports still need Supabase restored, but live kitchen tickets have a safer degraded mode while billing or storage issues are fixed.",
 };
 const OWNER_PORTAL_RECENT_CHANGES = [
+  {
+    title: "Emergency KDS fallback",
+    body:
+      "If Supabase storage is unavailable, Square sync now keeps active tickets in server memory so the kitchen screen can continue in a temporary degraded mode.",
+  },
   {
     title: "Report downloads",
     body:
@@ -163,8 +168,18 @@ const OWNER_PORTAL_RECENT_CHANGES = [
 ];
 const RELEASE_NOTES = [
   {
-    version: "v1.10.19",
+    version: "v1.10.20",
     date: "Current build",
+    summary: "Added a temporary storage fallback for live tickets.",
+    items: [
+      "When Supabase storage is unavailable, Square orders can still appear in the KDS from server memory.",
+      "The fallback keeps the kitchen usable during a billing or storage outage, while owner history and reports still need Supabase restored.",
+      "The v1.10.19 Owner Reports export cleanup and unique ordering images remain in place.",
+    ],
+  },
+  {
+    version: "v1.10.19",
+    date: "Previous build",
     summary: "Cleaned up report exports and customer ordering images.",
     items: [
       "Owner Reports now includes This Quarter and Custom date ranges for the main report, timing report, CSV, Excel, and PDF exports.",
