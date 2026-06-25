@@ -1,0 +1,43 @@
+name: Goldie's Nightly Backup
+
+on:
+  schedule:
+    # Runs after closing time without needing a local computer to be on.
+    - cron: "15 3 * * *"
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "How many recent ticket days to include"
+        required: false
+        default: "14"
+
+concurrency:
+  group: goldies-nightly-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Export KDS reports and recent ticket history
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run cloud backup
+        env:
+          GOLDIES_BASE_URL: https://goldieskds.com
+          GOLDIES_KDS_PASSWORD: ${{ secrets.GOLDIES_KDS_PASSWORD }}
+          GOLDIES_BACKUP_DAYS: ${{ github.event.inputs.days || '14' }}
+          GOLDIES_BACKUP_DIR: .goldies-backup
+          KDS_TIME_ZONE: America/Chicago
+        run: bash scripts/cloud_backup_kds.sh
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: goldies-kds-cloud-backup-${{ github.run_id }}
+          path: .goldies-backup/
+          retention-days: 30
+          if-no-files-found: error
