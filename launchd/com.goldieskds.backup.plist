@@ -7,7 +7,8 @@
 
     <key>ProgramArguments</key>
     <array>
-      <string>/Users/fullsailuniversity-samanthacarey/Desktop/goldies-kds-main/scripts/backup_to_desktop.sh</string>
+      <string>/bin/bash</string>
+      <string>/Users/fullsailuniversity-samanthacarey/Documents/Codex/2026-04-29/okay-so-can-we-work-on/goldies-kds-production/scripts/backup_to_desktop.sh</string>
     </array>
 
     <key>StartCalendarInterval</key>
