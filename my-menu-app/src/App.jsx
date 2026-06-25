@@ -35,15 +35,15 @@ const DAILY_UPDATE_NOTICE = {
   eyebrow: "Today on the KDS",
   title: "Emergency ticket fallback is active",
   message:
-    "If Supabase storage is temporarily unavailable, the backend can keep serving current Square tickets from memory so the KDS can stay usable.",
+    "If primary storage is temporarily unavailable, the backend can keep serving current Square tickets from memory so the KDS can stay usable.",
   note:
-    "Historical reports still need Supabase restored, but live kitchen tickets have a safer degraded mode while billing or storage issues are fixed.",
+    "Historical reports still need primary storage restored, but live kitchen tickets now have a safer degraded mode during a storage interruption.",
 };
 const OWNER_PORTAL_RECENT_CHANGES = [
   {
     title: "Emergency KDS fallback",
     body:
-      "If Supabase storage is unavailable, Square sync now keeps active tickets in server memory so the kitchen screen can continue in a temporary degraded mode.",
+      "If primary storage is unavailable, Square sync now keeps active tickets in server memory so the kitchen screen can continue in a temporary degraded mode.",
   },
   {
     title: "Report downloads",
@@ -172,8 +172,8 @@ const RELEASE_NOTES = [
     date: "Current build",
     summary: "Added a temporary storage fallback for live tickets.",
     items: [
-      "When Supabase storage is unavailable, Square orders can still appear in the KDS from server memory.",
-      "The fallback keeps the kitchen usable during a billing or storage outage, while owner history and reports still need Supabase restored.",
+      "When primary storage is unavailable, Square orders can still appear in the KDS from server memory.",
+      "The fallback keeps the kitchen usable during a storage interruption, while owner history and reports resume when storage is restored.",
       "The v1.10.19 Owner Reports export cleanup and unique ordering images remain in place.",
     ],
   },
