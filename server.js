@@ -3968,12 +3968,7 @@ async function upsertTicket(ticket, rawOrder = null, options = {}) {
 
     if (existingError) throw existingError;
 
-    const squareStatus = sanitizeStatus(ticket.status);
-    const shouldRefreshCompletedStatus =
-      options.refreshCompletedStatus && isCompletedStatus(squareStatus);
-    const status = sanitizeStatus(
-      shouldRefreshCompletedStatus ? squareStatus : existingOrder?.status || ticket.status
-    );
+    const status = resolveKdsTicketStatus(existingOrder, ticket, options);
     const createdAt = new Date(ticket.createdAt || Date.now()).toISOString();
     const completedAt = isCompletedStatus(status)
       ? getSquareCompletedAt(rawOrder) || existingOrder?.completed_at || new Date().toISOString()
@@ -4056,6 +4051,18 @@ async function upsertTicket(ticket, rawOrder = null, options = {}) {
       storageFallback: true,
     };
   }
+}
+
+function resolveKdsTicketStatus(existingOrder, ticket, options = {}) {
+  const squareStatus = sanitizeStatus(ticket.status);
+  const shouldRefreshCompletedStatus =
+    options.refreshCompletedStatus && isCompletedStatus(squareStatus);
+
+  if (shouldRefreshCompletedStatus) return squareStatus;
+  if (existingOrder?.status) return sanitizeStatus(existingOrder.status);
+  if (isCompletedStatus(squareStatus) && ticketHasDrinkItem(ticket)) return "new";
+
+  return squareStatus;
 }
 
 async function syncRecentSquareOrders(context = "scheduled sync") {
@@ -8978,6 +8985,7 @@ module.exports = {
     getDisplayDrinkItems,
     getItemDrinkCategory,
     normalizeSquareOrder,
+    resolveKdsTicketStatus,
     getSuspiciousPickupNameTickets,
     isServiceOption,
     isSmoothieDrinkName,

@@ -49,6 +49,7 @@ const {
     getItemDrinkCategory,
     normalizeSquareOrder,
     parseCustomerNameFromNotes,
+    resolveKdsTicketStatus,
     isServiceOption,
   },
 } = require("../server");
@@ -236,6 +237,32 @@ test("Square order normalization keeps repeated identical drinks as separate KDS
     "same-square-line__1",
     "same-square-line__2",
   ]);
+});
+
+test("brand-new completed Square drink orders still enter the active KDS queue", () => {
+  const status = resolveKdsTicketStatus(
+    null,
+    {
+      status: "completed",
+      items: [{ name: "Drip", qty: 1, category: "Coffee" }],
+    },
+    {}
+  );
+
+  assert.equal(status, "new");
+});
+
+test("manual backfill keeps completed Square drink orders completed", () => {
+  const status = resolveKdsTicketStatus(
+    null,
+    {
+      status: "completed",
+      items: [{ name: "Drip", qty: 1, category: "Coffee" }],
+    },
+    { refreshCompletedStatus: true }
+  );
+
+  assert.equal(status, "completed");
 });
 
 test("owner report separates drink revenue from non-drink add-on signals", () => {
