@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.22";
+const APP_VERSION = "v1.10.23";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -33,13 +33,18 @@ const DINING_OPTIONS = ["HANGIN' OUT", "TAKING OFF", "Pickup", "Delivery", "Driv
 const DAILY_UPDATE_NOTICE = {
   id: APP_VERSION,
   eyebrow: "Today on the KDS",
-  title: "Square history backfill is safer",
+  title: "Drink queue visibility is safer",
   message:
-    "The KDS can refill recent Square order history into primary storage after a temporary storage interruption.",
+    "The KDS now keeps repeated same-drink items separate and brings unseen Square-completed drink tickets into the live queue.",
   note:
-    "Backfilled orders keep their Square status so old completed tickets do not return to the active kitchen board.",
+    "Tickets completed by staff in the KDS still stay completed, while unseen drink tickets stay visible for the bar.",
 };
 const OWNER_PORTAL_RECENT_CHANGES = [
+  {
+    title: "Drink queue visibility",
+    body:
+      "Repeated identical drinks stay separate on tickets, and drink orders Square sends as completed before staff sees them now enter the live KDS queue.",
+  },
   {
     title: "Square history backfill",
     body:
@@ -178,8 +183,18 @@ const OWNER_PORTAL_RECENT_CHANGES = [
 ];
 const RELEASE_NOTES = [
   {
-    version: "v1.10.22",
+    version: "v1.10.23",
     date: "Current build",
+    summary: "Improved live drink queue reliability.",
+    items: [
+      "Repeated identical drinks on the same Square order now stay separate in the KDS ticket display.",
+      "Drink orders that Square marks completed before the KDS records a staff completion now reopen into the New queue.",
+      "Tickets completed by staff in the KDS continue to stay completed during Square sync.",
+    ],
+  },
+  {
+    version: "v1.10.22",
+    date: "Previous build",
     summary: "Added safer Square history backfill support.",
     items: [
       "Manual Square sync can now backfill a chosen recent date window into primary storage.",
