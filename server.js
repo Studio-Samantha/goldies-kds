@@ -2287,6 +2287,37 @@ function isOnlineOrderTicket(ticket = {}) {
   return source.includes("online order") || rawSource.includes("drinkflow online") || drinkflowSource.includes("online");
 }
 
+function isDrinkFlowOnlineOrder(order = {}) {
+  const sourceName = String(order.source?.name || order.sourceName || order.source_name || "").toLowerCase();
+  const drinkflowSource = String(
+    order.metadata?.drinkflow_source || order.metadata?.drinkflowSource || ""
+  ).toLowerCase();
+
+  return (
+    sourceName.includes("drinkflow online") ||
+    sourceName.includes("drinkflow self order") ||
+    drinkflowSource.includes("online_ordering") ||
+    drinkflowSource.includes("self_order_kiosk")
+  );
+}
+
+function getPaidSquareOrderIds(payments = []) {
+  return new Set(
+    (payments || [])
+      .filter((payment) => {
+        const status = String(payment.status || "").toUpperCase();
+        return !status || ["APPROVED", "COMPLETED"].includes(status);
+      })
+      .map((payment) => String(payment.orderId || payment.order_id || "").trim())
+      .filter(Boolean)
+  );
+}
+
+function shouldSkipUnpaidOnlineOrder(order = {}, paidOrderIds = new Set()) {
+  if (!isDrinkFlowOnlineOrder(order)) return false;
+  return !paidOrderIds.has(String(order.id || ""));
+}
+
 function isPickupDriveThruTicket(ticket = {}) {
   const option = String(ticket.diningOption || "").trim().toLowerCase();
   return option.includes("pickup") || option.includes("drive");
@@ -4088,6 +4119,7 @@ async function syncRecentSquareOrders(context = "scheduled sync") {
   const squarePayments = await fetchSquarePayments();
   const paymentOrders = await fetchSquarePaymentOrders(squarePayments);
   const employeeNameByOrderId = await buildPaymentEmployeeMap(squarePayments);
+  const paidOrderIds = getPaidSquareOrderIds(squarePayments);
   const dedupedOrders = dedupeOrders([...squareOrders, ...paymentOrders]);
   const summary = {
     context,
@@ -4099,12 +4131,17 @@ async function syncRecentSquareOrders(context = "scheduled sync") {
     created: 0,
     updated: 0,
     saved: 0,
+    skippedUnpaidOnline: 0,
     failed: 0,
     storageFallback: 0,
   };
 
   for (const order of dedupedOrders) {
     try {
+      if (shouldSkipUnpaidOnlineOrder(order, paidOrderIds)) {
+        summary.skippedUnpaidOnline += 1;
+        continue;
+      }
       const ticket = await normalizeSquareOrder(order, employeeNameByOrderId.get(order.id) || null);
       const savedTicket = await upsertTicket(ticket, order);
       summary.saved += 1;
@@ -8572,6 +8609,7 @@ app.post("/api/square-sync", requireKdsAuth, async (req, res) => {
     const squarePayments = await fetchSquarePayments(backfillOptions);
     const paymentOrders = await fetchSquarePaymentOrders(squarePayments);
     const employeeNameByOrderId = await buildPaymentEmployeeMap(squarePayments);
+    const paidOrderIds = getPaidSquareOrderIds(squarePayments);
     const savedTickets = [];
     const summary = {
       context: backfillOptions.lookbackDays > 1 ? "manual backfill" : "manual sync",
@@ -8585,6 +8623,7 @@ app.post("/api/square-sync", requireKdsAuth, async (req, res) => {
       created: 0,
       updated: 0,
       saved: 0,
+      skippedUnpaidOnline: 0,
       failed: 0,
       storageFallback: 0,
     };
@@ -8593,6 +8632,10 @@ app.post("/api/square-sync", requireKdsAuth, async (req, res) => {
 
     for (const order of dedupedOrders) {
       try {
+        if (shouldSkipUnpaidOnlineOrder(order, paidOrderIds)) {
+          summary.skippedUnpaidOnline += 1;
+          continue;
+        }
         const ticket = await normalizeSquareOrder(order, employeeNameByOrderId.get(order.id) || null);
         const savedTicket = await upsertTicket(ticket, order, {
           refreshCompletedStatus: backfillOptions.lookbackDays > 1,
@@ -8855,14 +8898,19 @@ app.post("/api/square-webhook", async (req, res) => {
       event.type === "payment.updated"
     ) {
       let orderId = getWebhookOrderId(event);
+      let paymentConfirmed = false;
 
-      if (!orderId && event.type.startsWith("payment.")) {
+      if (event.type.startsWith("payment.")) {
         const paymentId = getWebhookPaymentId(event);
 
         if (paymentId) {
           const { paymentsApi } = squareClient;
           const paymentResponse = await paymentsApi.getPayment(paymentId);
-          orderId = paymentResponse.result.payment?.orderId || null;
+          const payment = paymentResponse.result.payment || {};
+          orderId = orderId || payment.orderId || null;
+          paymentConfirmed =
+            Boolean(orderId) &&
+            ["APPROVED", "COMPLETED"].includes(String(payment.status || "").toUpperCase());
         }
       }
 
@@ -8872,6 +8920,13 @@ app.post("/api/square-webhook", async (req, res) => {
         const order = orderResponse.result.order;
 
         if (order) {
+          if (isDrinkFlowOnlineOrder(order) && !paymentConfirmed) {
+            console.log(`Skipped unpaid online order webhook: ${order.id}`);
+            return res.status(200).json({
+              ok: true,
+              message: "Webhook processed; unpaid online order not sent to KDS yet.",
+            });
+          }
           const ticket = await normalizeSquareOrder(order);
           await upsertTicket(ticket, order);
 
@@ -8999,6 +9054,7 @@ module.exports = {
     getItemDrinkCategory,
     normalizeSquareOrder,
     resolveKdsTicketStatus,
+    shouldSkipUnpaidOnlineOrder,
     getSuspiciousPickupNameTickets,
     isServiceOption,
     isSmoothieDrinkName,

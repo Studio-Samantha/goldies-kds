@@ -50,6 +50,7 @@ const {
     normalizeSquareOrder,
     parseCustomerNameFromNotes,
     resolveKdsTicketStatus,
+    shouldSkipUnpaidOnlineOrder,
     isServiceOption,
   },
 } = require("../server");
@@ -301,6 +302,32 @@ test("KDS-completed drink orders stay completed during Square sync", () => {
   );
 
   assert.equal(status, "completed");
+});
+
+test("unpaid DrinkFlow online checkout orders stay out of the KDS queue", () => {
+  assert.equal(
+    shouldSkipUnpaidOnlineOrder(
+      {
+        id: "online-order-1",
+        source: { name: "DrinkFlow Online Orders" },
+        metadata: { drinkflow_source: "online_ordering_beta" },
+      },
+      new Set()
+    ),
+    true
+  );
+
+  assert.equal(
+    shouldSkipUnpaidOnlineOrder(
+      {
+        id: "online-order-1",
+        source: { name: "DrinkFlow Online Orders" },
+        metadata: { drinkflow_source: "online_ordering_beta" },
+      },
+      new Set(["online-order-1"])
+    ),
+    false
+  );
 });
 
 test("owner report separates drink revenue from non-drink add-on signals", () => {

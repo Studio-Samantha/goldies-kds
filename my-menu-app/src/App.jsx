@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.23";
+const APP_VERSION = "v1.10.24";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -33,13 +33,18 @@ const DINING_OPTIONS = ["HANGIN' OUT", "TAKING OFF", "Pickup", "Delivery", "Driv
 const DAILY_UPDATE_NOTICE = {
   id: APP_VERSION,
   eyebrow: "Today on the KDS",
-  title: "Drink queue visibility is safer",
+  title: "Online ordering launch path is cleaner",
   message:
-    "The KDS now keeps repeated same-drink items separate and brings unseen Square-completed drink tickets into the live queue.",
+    "Goldie's online ordering now has a clean customer link and waits for Square payment before sending DrinkFlow online tickets to the KDS.",
   note:
-    "Tickets completed by staff in the KDS still stay completed, while unseen drink tickets stay visible for the bar.",
+    "The beta links still work, but the customer-facing link is now /online-ordering.",
 };
 const OWNER_PORTAL_RECENT_CHANGES = [
+  {
+    title: "Online ordering launch path",
+    body:
+      "The customer-facing Online Orders link now uses /online-ordering, and DrinkFlow checkout-link orders wait for confirmed Square payment before entering the live KDS queue.",
+  },
   {
     title: "Drink queue visibility",
     body:
@@ -183,8 +188,18 @@ const OWNER_PORTAL_RECENT_CHANGES = [
 ];
 const RELEASE_NOTES = [
   {
-    version: "v1.10.23",
+    version: "v1.10.24",
     date: "Current build",
+    summary: "Prepared Online Orders for a cleaner first launch.",
+    items: [
+      "Online Orders now has clean customer-facing routes at /online-ordering and /order while keeping the beta routes compatible.",
+      "Owner Reports now opens the cleaner Online Orders link from Customer tools.",
+      "DrinkFlow online checkout-link orders stay out of the KDS until Square payment is confirmed.",
+    ],
+  },
+  {
+    version: "v1.10.23",
+    date: "Previous build",
     summary: "Improved live drink queue reliability.",
     items: [
       "Repeated identical drinks on the same Square order now stay separate in the KDS ticket display.",
@@ -1868,7 +1883,12 @@ function isDeveloperDashboardRoute() {
 function isOnlineOrderingBetaRoute() {
   if (typeof window === "undefined") return false;
   const path = window.location.pathname.replace(/\/+$/, "");
-  return path === "/online-ordering-beta" || path === "/order-beta";
+  return (
+    path === "/online-ordering" ||
+    path === "/order" ||
+    path === "/online-ordering-beta" ||
+    path === "/order-beta"
+  );
 }
 
 function isSelfOrderKioskRoute() {
@@ -7155,7 +7175,7 @@ function OwnerReportsView({
                   Volume Board
                 </a>
                 <a
-                  href={`/online-ordering-beta${demoQuery}`}
+                  href={`/online-ordering${demoQuery}`}
                   className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
                 >
                   Online Orders
