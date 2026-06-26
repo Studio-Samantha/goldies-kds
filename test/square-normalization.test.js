@@ -265,6 +265,44 @@ test("manual backfill keeps completed Square drink orders completed", () => {
   assert.equal(status, "completed");
 });
 
+test("previously mis-saved completed Square drink orders reopen if KDS never completed them", () => {
+  const status = resolveKdsTicketStatus(
+    {
+      status: "completed",
+      raw_order: {
+        state: "COMPLETED",
+        kdsStatusEvents: [],
+      },
+    },
+    {
+      status: "completed",
+      items: [{ name: "Drip", qty: 1, category: "Coffee" }],
+    },
+    {}
+  );
+
+  assert.equal(status, "new");
+});
+
+test("KDS-completed drink orders stay completed during Square sync", () => {
+  const status = resolveKdsTicketStatus(
+    {
+      status: "completed",
+      raw_order: {
+        state: "COMPLETED",
+        kdsStatusEvents: [{ status: "completed", at: "2026-06-26T13:00:00.000Z" }],
+      },
+    },
+    {
+      status: "completed",
+      items: [{ name: "Drip", qty: 1, category: "Coffee" }],
+    },
+    {}
+  );
+
+  assert.equal(status, "completed");
+});
+
 test("owner report separates drink revenue from non-drink add-on signals", () => {
   const report = buildOwnerDrinkRevenueReport(
     [

@@ -2397,6 +2397,10 @@ function isCompletedStatus(status) {
   return status === "completed" || status === "done";
 }
 
+function hasKdsCompletionEvent(rawOrder) {
+  return getStatusEvents(rawOrder).some((event) => isCompletedStatus(event.status));
+}
+
 function formatDurationSeconds(seconds) {
   if (!Number.isFinite(seconds) || seconds <= 0) return "Collecting";
 
@@ -4057,10 +4061,19 @@ function resolveKdsTicketStatus(existingOrder, ticket, options = {}) {
   const squareStatus = sanitizeStatus(ticket.status);
   const shouldRefreshCompletedStatus =
     options.refreshCompletedStatus && isCompletedStatus(squareStatus);
+  const existingStatus = existingOrder?.status ? sanitizeStatus(existingOrder.status) : "";
+  const hasDrink = ticketHasDrinkItem(ticket);
 
   if (shouldRefreshCompletedStatus) return squareStatus;
-  if (existingOrder?.status) return sanitizeStatus(existingOrder.status);
-  if (isCompletedStatus(squareStatus) && ticketHasDrinkItem(ticket)) return "new";
+  if (
+    isCompletedStatus(existingStatus) &&
+    hasDrink &&
+    !hasKdsCompletionEvent(existingOrder?.raw_order)
+  ) {
+    return "new";
+  }
+  if (existingStatus) return existingStatus;
+  if (isCompletedStatus(squareStatus) && hasDrink) return "new";
 
   return squareStatus;
 }
