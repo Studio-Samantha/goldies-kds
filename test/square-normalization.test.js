@@ -47,6 +47,7 @@ const {
     getFallbackDrinkImageUrl,
     getDisplayDrinkItems,
     getItemDrinkCategory,
+    normalizeSquareOrder,
     parseCustomerNameFromNotes,
     isServiceOption,
   },
@@ -204,6 +205,36 @@ test("orders-up display keeps individual drink done state", () => {
       note: "",
       done: true,
     },
+  ]);
+});
+
+test("Square order normalization keeps repeated identical drinks as separate KDS items", async () => {
+  const ticket = await normalizeSquareOrder({
+    id: "square-order-duplicate-drinks",
+    orderNumber: "1042",
+    createdAt: "2026-06-26T13:00:00.000Z",
+    lineItems: [
+      {
+        uid: "same-square-line",
+        catalogObjectId: "latte-variation",
+        name: "Latte",
+        quantity: "1",
+      },
+      {
+        uid: "same-square-line",
+        catalogObjectId: "latte-variation",
+        name: "Latte",
+        quantity: "1",
+      },
+    ],
+  });
+
+  assert.equal(ticket.items.length, 2);
+  assert.deepEqual(ticket.items.map((item) => item.name), ["Latte", "Latte"]);
+  assert.equal(new Set(ticket.items.map((item) => item.id)).size, 2);
+  assert.deepEqual(ticket.items.map((item) => item.id), [
+    "same-square-line__1",
+    "same-square-line__2",
   ]);
 });
 

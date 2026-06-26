@@ -3554,6 +3554,14 @@ function getSquareOrderStatus(order) {
   return "new";
 }
 
+function buildKdsLineItemId(lineItem = {}, index = 0) {
+  const squareUid = String(lineItem.uid || lineItem.uid_v2 || "").trim();
+  const catalogObjectId = String(lineItem.catalogObjectId || lineItem.catalog_object_id || "").trim();
+  const base = squareUid || catalogObjectId || `line-${index + 1}`;
+
+  return `${base}__${index + 1}`;
+}
+
 function getSquareOrderSourceLabel(order = {}) {
   const sourceName = String(order.source?.name || order.sourceName || order.source_name || "").trim();
   const drinkflowSource = String(
@@ -3852,7 +3860,7 @@ async function normalizeSquareOrder(order, payment = null) {
     return new Map();
   });
 
-  for (const lineItem of order.lineItems || []) {
+  for (const [index, lineItem] of (order.lineItems || []).entries()) {
     const modifiers = (lineItem.modifiers || []).map(
       (modifier) => modifier.name || "Unknown modifier"
     );
@@ -3861,7 +3869,8 @@ async function normalizeSquareOrder(order, payment = null) {
     const category = catalogCategoryByObjectId.get(catalogObjectId) || getDrinkCategory(name);
 
     items.push({
-      id: lineItem.uid || catalogObjectId || null,
+      id: buildKdsLineItemId(lineItem, index),
+      squareLineItemUid: lineItem.uid || lineItem.uid_v2 || null,
       catalogObjectId,
       name,
       qty: Number.parseInt(lineItem.quantity, 10) || 1,
@@ -8968,6 +8977,7 @@ module.exports = {
     getFallbackDrinkImageUrl,
     getDisplayDrinkItems,
     getItemDrinkCategory,
+    normalizeSquareOrder,
     getSuspiciousPickupNameTickets,
     isServiceOption,
     isSmoothieDrinkName,

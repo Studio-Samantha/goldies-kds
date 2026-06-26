@@ -2608,9 +2608,16 @@ function getDailyDrinkCounts(tickets) {
     .sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name));
 }
 
+function getStableItemId(item, index) {
+  const base = String(item?.id || item?.itemId || item?.square_line_item_uid || "item").trim();
+  if (base && /__\d+$/.test(base)) return base;
+
+  return `${base || "item"}__${index + 1}`;
+}
+
 function normalizeTicket(ticket) {
 const items = (ticket.items || []).map((item, index) => ({
-    id: item.id || item.itemId || item.square_line_item_uid || String(index),
+    id: getStableItemId(item, index),
     name: getCanonicalDrinkName(item.name || "Unnamed item"),
     qty: item.qty || item.quantity || 1,
     modifiers: item.modifiers || [],
