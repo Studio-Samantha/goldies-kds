@@ -56,8 +56,24 @@ jobs:
           KDS_TIME_ZONE: America/Chicago
         run: bash scripts/system_check.sh
 
-      - name: Trigger safe Render redeploy after repeated failure
+      - name: Wait before final retry
         if: steps.system-check.outcome == 'failure' && steps.retry-system-check.outcome == 'failure'
+        run: sleep 120
+
+      - name: Final retry production system check
+        id: final-system-check
+        if: steps.system-check.outcome == 'failure' && steps.retry-system-check.outcome == 'failure'
+        continue-on-error: true
+        env:
+          GOLDIES_BASE_URL: https://goldieskds.com
+          GOLDIES_KDS_PASSWORD: ${{ secrets.GOLDIES_KDS_PASSWORD }}
+          GOLDIES_TRACK_UPTIME: "1"
+          GOLDIES_UPTIME_STATE_DIR: ${{ github.workspace }}/.goldies-uptime
+          KDS_TIME_ZONE: America/Chicago
+        run: bash scripts/system_check.sh
+
+      - name: Trigger safe Render redeploy after repeated failure
+        if: steps.system-check.outcome == 'failure' && steps.retry-system-check.outcome == 'failure' && steps.final-system-check.outcome == 'failure'
         env:
           GOLDIES_RENDER_DEPLOY_HOOK_URL: ${{ secrets.GOLDIES_RENDER_DEPLOY_HOOK_URL }}
         run: |
@@ -68,9 +84,9 @@ jobs:
           curl -fsS "$GOLDIES_RENDER_DEPLOY_HOOK_URL"
 
       - name: Fail workflow after repeated failure
-        if: steps.system-check.outcome == 'failure' && steps.retry-system-check.outcome == 'failure'
+        if: steps.system-check.outcome == 'failure' && steps.retry-system-check.outcome == 'failure' && steps.final-system-check.outcome == 'failure'
         run: |
-          echo "Goldie's production system check failed twice. If configured, a safe Render redeploy was triggered."
+          echo "Goldie's production system check failed three times. If configured, a safe Render redeploy was triggered."
           exit 1
 
       - name: Save uptime state

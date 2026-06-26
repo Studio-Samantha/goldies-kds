@@ -9,6 +9,7 @@ TRACK_UPTIME="${GOLDIES_TRACK_UPTIME:-0}"
 UPTIME_STATE_DIR="${GOLDIES_UPTIME_STATE_DIR:-${HOME}/Library/Application Support/GoldiesKDS}"
 UPTIME_STATE_FILE="${UPTIME_STATE_DIR}/system-health-state"
 UPTIME_LOG_FILE="${UPTIME_STATE_DIR}/system-health-events.jsonl"
+CURL_RETRY_ARGS=(--retry 3 --retry-delay 5 --retry-all-errors)
 
 cleanup() {
   rm -f "$COOKIE_JAR"
@@ -76,7 +77,7 @@ NODE
 check_public_health() {
   echo "== Public health =="
   local body
-  body="$(curl -fsS "$BASE_URL/api/health" 2>/tmp/goldies-health.err)"
+  body="$(curl "${CURL_RETRY_ARGS[@]}" -fsS "$BASE_URL/api/health" 2>/tmp/goldies-health.err)"
   local code=$?
   if [ "$code" -ne 0 ]; then
     echo "FAIL health request: $(cat /tmp/goldies-health.err)"
@@ -114,7 +115,7 @@ check_authenticated_tickets() {
   echo "== Authenticated tickets =="
   local login_code
   login_code="$(
-    curl -sS -o /tmp/goldies-login.json -w "%{http_code}" \
+    curl "${CURL_RETRY_ARGS[@]}" -sS -o /tmp/goldies-login.json -w "%{http_code}" \
       -c "$COOKIE_JAR" \
       -H "Content-Type: application/json" \
       -d "{\"password\":\"$GOLDIES_KDS_PASSWORD\",\"employeeName\":\"System Check\"}" \
@@ -147,7 +148,7 @@ check_json_endpoint() {
   local code
 
   rm -f "$out"
-  code="$(curl -sS -o "$out" -w "%{http_code}" -b "$COOKIE_JAR" "$url")"
+  code="$(curl "${CURL_RETRY_ARGS[@]}" -sS -o "$out" -w "%{http_code}" -b "$COOKIE_JAR" "$url")"
   if [ "$code" != "200" ]; then
     echo "FAIL $name status=$code"
     if [ -s "$out" ]; then
@@ -183,8 +184,8 @@ check_authenticated_workflows() {
   check_json_endpoint "drink-time" "$BASE_URL/api/reports/drink-making-time?range=today" "object"
   check_json_endpoint "tickets-day" "$BASE_URL/api/tickets/day?date=$TODAY" "object"
   check_json_endpoint "menu-availability" "$BASE_URL/api/menu/availability" "object"
-  check_json_endpoint "catalog-category-audit" "$BASE_URL/api/system/catalog-category-audit" "object"
-  node - <<'NODE'
+  if check_json_endpoint "catalog-category-audit" "$BASE_URL/api/system/catalog-category-audit" "object"; then
+    node - <<'NODE'
 const fs = require("fs");
 const audit = JSON.parse(fs.readFileSync("/tmp/goldies-check-catalog-category-audit.json", "utf8"));
 const categories = audit.categories || {};
@@ -204,15 +205,16 @@ if (!audit.ok || missing.length || mismatches.length) {
   process.exit(2);
 }
 NODE
-  if [ "$?" -ne 0 ]; then
-    STATUS=1
+    if [ "$?" -ne 0 ]; then
+      STATUS=1
+    fi
   fi
   check_json_endpoint "display-menu" "$BASE_URL/api/display/menu" "object"
   check_json_endpoint "display-orders-up" "$BASE_URL/api/display/orders-up" "object"
   check_json_endpoint "display-online-orders" "$BASE_URL/api/display/online-orders" "object"
 
   local sop_code
-  sop_code="$(curl -sS -o /tmp/goldies-check-sop.png -w "%{http_code}" -b "$COOKIE_JAR" "$BASE_URL/api/staff/sop/goldies-recipes-1.png")"
+  sop_code="$(curl "${CURL_RETRY_ARGS[@]}" -sS -o /tmp/goldies-check-sop.png -w "%{http_code}" -b "$COOKIE_JAR" "$BASE_URL/api/staff/sop/goldies-recipes-1.png")"
   if [ "$sop_code" != "200" ]; then
     echo "FAIL staff SOP status=$sop_code"
     STATUS=1
@@ -223,8 +225,8 @@ NODE
 
 check_public_kiosk_menu() {
   echo "== Public kiosk menu =="
-  check_json_endpoint "public-kiosk-menu" "$BASE_URL/api/beta/online-order/menu" "object"
-  node - <<'NODE'
+  if check_json_endpoint "public-kiosk-menu" "$BASE_URL/api/beta/online-order/menu" "object"; then
+    node - <<'NODE'
 const fs = require("fs");
 const menu = JSON.parse(fs.readFileSync("/tmp/goldies-check-public-kiosk-menu.json", "utf8"));
 const items = (menu.categories || []).flatMap((category) => category.items || []);
@@ -234,8 +236,9 @@ console.log(`kioskMenuItems=${items.length}`);
 console.log(`kioskMenuMissingImages=${missingImages.length}`);
 if (!items.length || missingImages.length) process.exit(2);
 NODE
-  if [ "$?" -ne 0 ]; then
-    STATUS=1
+    if [ "$?" -ne 0 ]; then
+      STATUS=1
+    fi
   fi
 }
 
