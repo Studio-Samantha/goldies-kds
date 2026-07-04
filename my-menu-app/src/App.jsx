@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.25";
+const APP_VERSION = "v1.10.26";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -33,11 +33,11 @@ const DINING_OPTIONS = ["HANGIN' OUT", "TAKING OFF", "Pickup", "Delivery", "Driv
 const DAILY_UPDATE_NOTICE = {
   id: APP_VERSION,
   eyebrow: "Today on the KDS",
-  title: "Online ordering launch path is cleaner",
+  title: "250th Fourth of July service",
   message:
-    "Goldie's online ordering now has a clean customer link and waits for Square payment before sending DrinkFlow online tickets to the KDS.",
+    "Cherry Firecracker is ready for Goldie's 250th Fourth of July service day.",
   note:
-    "The beta links still work, but the customer-facing link is now /online-ordering.",
+    "The screen stays light, with red and blue accents today only.",
 };
 const OWNER_PORTAL_RECENT_CHANGES = [
   {
@@ -188,11 +188,11 @@ const OWNER_PORTAL_RECENT_CHANGES = [
 ];
 const RELEASE_NOTES = [
   {
-    version: "v1.10.25",
+    version: "v1.10.26",
     date: "Current build",
-    summary: "Added the July 4 Cherry Firecracker service update.",
+    summary: "Added the 250th Fourth of July Cherry Firecracker update.",
     items: [
-      "Cherry Firecracker now appears on the drink menu, kiosk, online ordering, and KDS tickets.",
+      "Cherry Firecracker now appears on the drink menu, kiosk, online ordering, and KDS tickets for Goldie's 250th Fourth of July service.",
       "Square items without a category can still land in the right drink group when their name matches Goldie's menu.",
       "The July 4 theme keeps the screen light while using red and blue for text, buttons, and accents today only.",
     ],
