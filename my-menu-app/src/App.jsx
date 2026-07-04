@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.26";
+const APP_VERSION = "v1.10.27";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -188,12 +188,12 @@ const OWNER_PORTAL_RECENT_CHANGES = [
 ];
 const RELEASE_NOTES = [
   {
-    version: "v1.10.26",
+    version: "v1.10.27",
     date: "Current build",
     summary: "Added the 250th Fourth of July Cherry Firecracker update.",
     items: [
-      "Cherry Firecracker now appears on the drink menu, kiosk, online ordering, and KDS tickets for Goldie's 250th Fourth of July service.",
-      "Square items without a category can still land in the right drink group when their name matches Goldie's menu.",
+      "Cherry Firecracker now stays on the drink menu, kiosk, online ordering, and KDS tickets for Goldie's 250th Fourth of July service.",
+      "Known Goldie's drinks are merged back into the live menu when Square leaves one uncategorized or missing from the returned menu.",
       "The July 4 theme keeps the screen light while using red and blue for text, buttons, and accents today only.",
     ],
   },

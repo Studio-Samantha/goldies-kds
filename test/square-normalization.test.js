@@ -41,6 +41,7 @@ const {
     buildOwnerReportPeriod,
     buildCatalogMenuAvailabilityItems,
     buildStaticOnlineOrderingMenu,
+    mergeStaticOnlineOrderingMenuItems,
     cleanCustomerName,
     getSuspiciousPickupNameTickets,
     getCanonicalDrinkName,
@@ -143,6 +144,33 @@ test("availability and online ordering menus use current display names", () => {
 
   assert.equal(staticNames.includes("Refresher - Strawberry Mango"), false);
   assert.equal(staticNames.includes("Steamer (Or Cold)"), true);
+});
+
+test("online ordering menu keeps known static drinks when Square omits one item", () => {
+  const menu = mergeStaticOnlineOrderingMenuItems(
+    [
+      {
+        category: "Coffee",
+        items: [
+          {
+            id: "square-latte",
+            name: "Latte",
+            squareName: "LATTE",
+            category: "Coffee",
+            price: "$4.75",
+            priceCents: 475,
+            source: "square",
+          },
+        ],
+      },
+    ],
+    { includeForHereOnly: true }
+  );
+  const items = menu.flatMap((group) => group.items.map((item) => [item.name, item.category, item.price]));
+
+  assert.equal(items.some(([name]) => name === "Cherry Firecracker"), true);
+  assert.equal(items.some(([name, category, price]) => name === "Cherry Firecracker" && category === "Not Coffee" && price === "$6.00"), true);
+  assert.equal(items.filter(([name]) => name === "Latte").length, 1);
 });
 
 test("customer ordering filters Square service labels from drink additions", () => {

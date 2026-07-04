@@ -935,6 +935,37 @@ function buildStaticOnlineOrderingMenu({ includeForHereOnly = false, unavailable
   return Array.from(grouped, ([category, items]) => ({ category, items }));
 }
 
+function mergeStaticOnlineOrderingMenuItems(
+  menu,
+  { includeForHereOnly = false, unavailableKeys = new Set() } = {}
+) {
+  const groups = new Map((menu || []).map((group) => [group.category, [...(group.items || [])]]));
+  const seenNames = new Set();
+
+  for (const items of groups.values()) {
+    for (const item of items) {
+      seenNames.add(normalizeMenuAvailabilityKey(getCanonicalDrinkName(item.name || item.squareName || "")));
+    }
+  }
+
+  const staticMenu = buildStaticOnlineOrderingMenu({ includeForHereOnly, unavailableKeys });
+  for (const group of staticMenu) {
+    if (!groups.has(group.category)) groups.set(group.category, []);
+
+    for (const item of group.items || []) {
+      const itemKey = normalizeMenuAvailabilityKey(getCanonicalDrinkName(item.name || item.squareName || ""));
+      if (!itemKey || seenNames.has(itemKey)) continue;
+      groups.get(group.category).push(item);
+      seenNames.add(itemKey);
+    }
+  }
+
+  return Array.from(groups, ([category, items]) => ({
+    category,
+    items: items.sort((a, b) => a.name.localeCompare(b.name)),
+  })).sort((a, b) => a.category.localeCompare(b.category));
+}
+
 async function getSquareOnlineOrderingMenu({ includeForHereOnly = false } = {}) {
   const unavailableKeys = await getUnavailableMenuKeys();
   const objects = await fetchSquareCatalogObjects([
@@ -1076,7 +1107,7 @@ async function getSquareOnlineOrderingMenu({ includeForHereOnly = false } = {}) 
     items: items.sort((a, b) => a.name.localeCompare(b.name)),
   })).sort((a, b) => a.category.localeCompare(b.category));
 
-  return menu.length ? menu : buildStaticOnlineOrderingMenu({ includeForHereOnly, unavailableKeys });
+  return mergeStaticOnlineOrderingMenuItems(menu, { includeForHereOnly, unavailableKeys });
 }
 
 function flattenOnlineOrderingMenu(menu) {
@@ -9057,6 +9088,7 @@ module.exports = {
     buildOwnerReportPeriod,
     buildCatalogMenuAvailabilityItems,
     buildStaticOnlineOrderingMenu,
+    mergeStaticOnlineOrderingMenuItems,
     cleanCustomerName,
     fetchSquareDrinkCategoryAudit,
     getCanonicalDrinkName,
