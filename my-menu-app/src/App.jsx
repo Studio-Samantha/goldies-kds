@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.24";
+const APP_VERSION = "v1.10.25";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -188,13 +188,13 @@ const OWNER_PORTAL_RECENT_CHANGES = [
 ];
 const RELEASE_NOTES = [
   {
-    version: "v1.10.24",
+    version: "v1.10.25",
     date: "Current build",
-    summary: "Prepared Online Orders for a cleaner first launch.",
+    summary: "Added the July 4 Cherry Firecracker service update.",
     items: [
-      "Online Orders now has clean customer-facing routes at /online-ordering and /order while keeping the beta routes compatible.",
-      "Owner Reports now opens the cleaner Online Orders link from Customer tools.",
-      "DrinkFlow online checkout-link orders stay out of the KDS until Square payment is confirmed.",
+      "Cherry Firecracker now appears on the drink menu, kiosk, online ordering, and KDS tickets.",
+      "Square items without a category can still land in the right drink group when their name matches Goldie's menu.",
+      "The July 4 theme keeps the screen light while using red and blue for text, buttons, and accents today only.",
     ],
   },
   {
@@ -2222,6 +2222,7 @@ const GOLDIES_STATIC_DRINK_MENU_ITEMS = [
   { id: "london-fog", name: "London Fog", category: "Not Coffee", priceCents: 500, imageUrl: getGeneratedDrinkImageUrl("london-fog") },
   { id: "matcha-latte", name: "Matcha Latte", category: "Not Coffee", priceCents: 525, imageUrl: getGeneratedDrinkImageUrl("matcha-latte") },
   { id: "refresher-strawberry-mango", name: "Refresher - Strawberry Mango", category: "Not Coffee", priceCents: 600, imageUrl: getGeneratedDrinkImageUrl("refresher-strawberry-mango") },
+  { id: "cherry-firecracker", name: "Cherry Firecracker", category: "Not Coffee", priceCents: 600, imageUrl: getGeneratedDrinkImageUrl("cherry-firecracker") },
   { id: "steamer-or-cold", name: "Steamer (Or Cold)", category: "Not Coffee", priceCents: 400, imageUrl: getGeneratedDrinkImageUrl("steamer-or-cold") },
   { id: "chocolate-pb-banana-12-oz-kids", name: "Chocolate P/B Banana (12 oz Kids)", category: "Smoothies", priceCents: 500, imageUrl: getGeneratedDrinkImageUrl("chocolate-pb-banana-12-oz-kids") },
   { id: "chocolate-pb-banana-16-oz", name: "Chocolate P/B Banana (16 oz)", category: "Smoothies", priceCents: 700, imageUrl: getGeneratedDrinkImageUrl("chocolate-pb-banana-16-oz") },
@@ -2375,6 +2376,8 @@ function getBeverageCategory(itemName = "") {
 
   if (isNonDrinkItem(name)) return null;
 
+  if (lower.includes("cherry") && lower.includes("firecracker")) return "Not Coffee";
+
   if (NOT_COFFEE_MENU_ITEMS.has(name)) return "Not Coffee";
 
   if (
@@ -2451,6 +2454,7 @@ function getCanonicalDrinkName(itemName = "") {
     return formatDrinkDisplayName(name);
   }
   if (lower.includes("refresher") && lower.includes("strawberry") && lower.includes("mango")) return "Refresher - Strawberry Mango";
+  if (lower.includes("cherry") && lower.includes("firecracker")) return "Cherry Firecracker";
   if (lower === "steamer") return "Steamer (Or Cold)";
   if (lower.includes("decaf") && lower.includes("americano")) return "Americano (DECAF)";
   if (DRINK_MENU_ITEMS.has(name)) return name;
@@ -10815,6 +10819,7 @@ function getKioskImageSlug(item = {}) {
   if (text.includes("chai")) return "chai-latte";
   if (text.includes("hot-chocolate")) return "hot-chocolate";
   if (text.includes("matcha")) return "matcha-latte";
+  if (text.includes("cherry") && text.includes("firecracker")) return "cherry-firecracker";
   if (text.includes("refresher")) return "refresher-strawberry-mango";
   if (text.includes("steamer")) return "steamer-or-cold";
   if (text.includes("chocolate") && text.includes("banana")) {

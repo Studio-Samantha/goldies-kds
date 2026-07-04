@@ -143,3 +143,93 @@
 .goldies-training-dark td [class*="bg-white"] {
   background-color: rgba(35, 24, 16, 0.98) !important;
 }
+
+.goldies-july-four body {
+  background: #f8fbff;
+}
+
+.goldies-july-four #startup-fallback {
+  background: radial-gradient(circle at top, #ffffff 0%, #f6f9ff 56%, #eaf1ff 100%);
+  color: #123c8c;
+}
+
+.goldies-july-four [class*="bg-[radial-gradient(circle_at_top"] {
+  background-image:
+    radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.98), transparent 32%),
+    linear-gradient(135deg, #ffffff 0%, #f8fbff 42%, #eef4ff 72%, #ffffff 100%) !important;
+  background-color: #f8fbff !important;
+}
+
+.goldies-july-four [class*="bg-[#EEE0C5]"],
+.goldies-july-four [class*="bg-[rgba(238,224,197"],
+.goldies-july-four [class*="bg-[#FFFDF8]"],
+.goldies-july-four [class*="bg-[rgba(255,253,248"],
+.goldies-july-four [class*="bg-white"] {
+  background-color: rgba(255, 255, 255, 0.94) !important;
+}
+
+.goldies-july-four [class*="bg-[#EEE0C5]/"],
+.goldies-july-four [class*="bg-white/"],
+.goldies-july-four [class*="bg-[#FFFDF8]/"] {
+  background-color: rgba(248, 251, 255, 0.88) !important;
+}
+
+.goldies-july-four [class*="bg-[#0F4036]"],
+.goldies-july-four [class*="hover:bg-[#0b352d]"]:hover {
+  background-color: #123c8c !important;
+}
+
+.goldies-july-four [class*="bg-[#CA862B]"],
+.goldies-july-four [class*="hover:bg-[#a86d22]"]:hover {
+  background-color: #c71f37 !important;
+}
+
+.goldies-july-four [class*="bg-[#CA862B]/"] {
+  background-color: rgba(199, 31, 55, 0.12) !important;
+}
+
+.goldies-july-four [class*="bg-[#0F4036]/"] {
+  background-color: rgba(18, 60, 140, 0.1) !important;
+}
+
+.goldies-july-four [class*="border-[#CA862B]"],
+.goldies-july-four [class*="border-white"] {
+  border-color: rgba(199, 31, 55, 0.28) !important;
+}
+
+.goldies-july-four [class*="border-[#0F4036]"] {
+  border-color: rgba(18, 60, 140, 0.3) !important;
+}
+
+.goldies-july-four [class*="border-t-[#0F4036]"] {
+  border-top-color: #123c8c !important;
+}
+
+.goldies-july-four [class*="border-t-[#CA862B]"] {
+  border-top-color: #c71f37 !important;
+}
+
+.goldies-july-four [class*="text-[#0F4036]"],
+.goldies-july-four [class*="text-[#111111]"],
+.goldies-july-four [class*="text-[#2D261C]"] {
+  color: #123c8c !important;
+}
+
+.goldies-july-four [class*="text-[#8B5A1D]"],
+.goldies-july-four [class*="text-[#CA862B]"] {
+  color: #b01830 !important;
+}
+
+.goldies-july-four [class*="text-[#6A614F]"],
+.goldies-july-four [class*="text-[#4E4637]"],
+.goldies-july-four [class*="text-[#5A4F3E]"] {
+  color: #475d87 !important;
+}
+
+.goldies-july-four input,
+.goldies-july-four select,
+.goldies-july-four textarea {
+  background-color: #ffffff !important;
+  border-color: rgba(18, 60, 140, 0.24) !important;
+  color: #123c8c !important;
+}

@@ -115,12 +115,14 @@ test("drink classification keeps smoothies and refreshers in drink reporting", (
   assert.equal(getItemDrinkCategory({ name: "CHAI LATTE" }), "Not Coffee");
   assert.equal(getItemDrinkCategory({ name: "Steamer" }), "Not Coffee");
   assert.equal(getItemDrinkCategory({ name: "STRAWMANGO" }), "Not Coffee");
+  assert.equal(getItemDrinkCategory({ name: "CHERRY FIRECRACKER" }), "Not Coffee");
   assert.equal(getItemDrinkCategory({ name: "Muffin" }), null);
 });
 
 test("availability and online ordering menus use current display names", () => {
   const availabilityItems = buildCatalogMenuAvailabilityItems([
     { name: "STRAWMANGO", displayName: "Refresher - Strawberry Mango", category: "Not Coffee", priceCents: 600 },
+    { name: "CHERRY FIRECRACKER", displayName: "Cherry Firecracker", category: "", priceCents: 600 },
     { name: "STRAWBERRY BANANA (16 OZ)", displayName: "Strawberry Banana (16 oz)", category: "Smoothies", priceCents: 700 },
     { name: "AMERICANO DECAF", displayName: "Americano (DECAF)", category: "Coffee", priceCents: 325 },
   ]);
@@ -129,6 +131,7 @@ test("availability and online ordering menus use current display names", () => {
     availabilityItems.map((item) => [item.itemName, item.category, item.price]),
     [
       ["Americano (DECAF)", "Coffee", "$3.25"],
+      ["Cherry Firecracker", "Not Coffee", "$6.00"],
       ["Refresher - Strawberry Mango", "Not Coffee", "$6.00"],
       ["Strawberry Banana (16 oz)", "Smoothies", "$7.00"],
     ]
@@ -166,7 +169,7 @@ test("static customer ordering menu uses unique generated drink images", () => {
   const items = staticOnlineMenu.flatMap((group) => group.items);
   const imageUrls = items.map((item) => item.imageUrl);
 
-  assert.equal(items.length, 29);
+  assert.equal(items.length, 30);
   assert.equal(new Set(imageUrls).size, imageUrls.length);
   assert.equal(
     imageUrls.every((url) => url.startsWith("/assets/drinks/generated/")),
@@ -179,6 +182,10 @@ test("static customer ordering menu uses unique generated drink images", () => {
   assert.equal(
     getFallbackDrinkImageUrl("Strawberry Banana (16 oz)"),
     "/assets/drinks/generated/strawberry-banana-16-oz.png"
+  );
+  assert.equal(
+    getFallbackDrinkImageUrl("Cherry Firecracker"),
+    "/assets/drinks/generated/cherry-firecracker.png"
   );
 });
 

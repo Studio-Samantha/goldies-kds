@@ -4,6 +4,15 @@ import { flushSync } from 'react-dom'
 import App from './App.jsx'
 import './index.css'
 
+function isJulyFourthThemeActive(date = new Date()) {
+  return date.getMonth() === 6 && date.getDate() === 4
+}
+
+if (isJulyFourthThemeActive()) {
+  document.documentElement.classList.add('goldies-july-four')
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#123c8c')
+}
+
 const fallback = document.getElementById('startup-fallback')
 const rootElement = document.getElementById('root')
 if (fallback) {

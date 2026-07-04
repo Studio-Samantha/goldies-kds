@@ -112,6 +112,7 @@ const ONLINE_ORDERING_BETA_MENU = [
   { id: "london-fog", name: "London Fog", category: "Not Coffee", priceCents: 500 },
   { id: "matcha-latte", name: "Matcha Latte", category: "Not Coffee", priceCents: 525 },
   { id: "refresher-strawberry-mango", name: "Refresher - Strawberry Mango", category: "Not Coffee", priceCents: 600 },
+  { id: "cherry-firecracker", name: "Cherry Firecracker", category: "Not Coffee", priceCents: 600 },
   { id: "steamer-or-cold", name: "Steamer (Or Cold)", category: "Not Coffee", priceCents: 400 },
   { id: "chocolate-pb-banana-12-oz-kids", name: "Chocolate P/B Banana (12 oz Kids)", category: "Smoothies", priceCents: 500 },
   { id: "chocolate-pb-banana-16-oz", name: "Chocolate P/B Banana (16 oz)", category: "Smoothies", priceCents: 700 },
@@ -541,6 +542,7 @@ function getDrinkImageSlug(itemName = "") {
   if (normalized.includes("chai")) return "chai-latte";
   if (normalized.includes("hot") && normalized.includes("chocolate")) return "hot-chocolate";
   if (normalized.includes("matcha")) return "matcha-latte";
+  if (normalized.includes("cherry") && normalized.includes("firecracker")) return "cherry-firecracker";
   if (normalized.includes("refresher")) return "refresher-strawberry-mango";
   if (normalized.includes("steamer")) return "steamer-or-cold";
   if (normalized.includes("strawberry") && normalized.includes("mango")) {
@@ -595,6 +597,7 @@ const KIOSK_LOCAL_IMAGE_PATHS = {
   "london-fog": "/assets/drinks/generated/london-fog.png",
   "matcha-latte": "/assets/drinks/generated/matcha-latte.png",
   "refresher-strawberry-mango": "/assets/drinks/generated/refresher-strawberry-mango.png",
+  "cherry-firecracker": "/assets/drinks/generated/cherry-firecracker.png",
   "steamer-or-cold": "/assets/drinks/generated/steamer-or-cold.png",
   "chocolate-pb-banana-12-oz-kids": "/assets/drinks/generated/chocolate-pb-banana-12-oz-kids.png",
   "chocolate-pb-banana-16-oz": "/assets/drinks/generated/chocolate-pb-banana-16-oz.png",
@@ -973,7 +976,11 @@ async function getSquareOnlineOrderingMenu({ includeForHereOnly = false } = {}) 
       itemData.categories?.[0]?.id ||
       "";
     const squareCategoryName = categoriesById.get(categoryId) || itemData.category_name || "Drinks";
-    const categoryName = normalizeGoldiesDrinkCategory(squareCategoryName) || squareCategoryName;
+    const inferredCategoryName = getDrinkCategory(itemData.name || "");
+    const categoryName =
+      normalizeGoldiesDrinkCategory(squareCategoryName) ||
+      inferredCategoryName ||
+      squareCategoryName;
     const categoryAllowed = ONLINE_ORDERING_CATEGORY_NAMES.includes(squareCategoryName.toLowerCase());
     const staticNameAllowed = ONLINE_ORDERING_BETA_MENU_BY_ID.has(
       String(itemData.name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
@@ -1658,6 +1665,7 @@ function getCanonicalDrinkName(itemName = "") {
 
   if (compact.includes("strawmango")) return "Refresher - Strawberry Mango";
   if (lower.includes("refresher") && lower.includes("strawberry") && lower.includes("mango")) return "Refresher - Strawberry Mango";
+  if (lower.includes("cherry") && lower.includes("firecracker")) return "Cherry Firecracker";
   if (lower === "steamer") return "Steamer (Or Cold)";
   if (lower.includes("decaf") && lower.includes("americano")) return "Americano (DECAF)";
 
@@ -1688,6 +1696,10 @@ function getDrinkCategory(itemName = "") {
   if (normalizedCategory) return normalizedCategory;
 
   if (compact.includes("strawmango")) {
+    return "Not Coffee";
+  }
+
+  if (lower.includes("cherry") && lower.includes("firecracker")) {
     return "Not Coffee";
   }
 
