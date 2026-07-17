@@ -2035,6 +2035,35 @@ function buildStaticMenuAvailabilityItems() {
     .sort(sortGoldiesMenuItems);
 }
 
+function buildEventMenuAvailabilityItems() {
+  return GOLDIES_EVENT_MENU_FALLBACK_ITEMS
+    .map((item) => {
+      const itemName = getCanonicalDrinkName(item.name);
+      const category = getDrinkCategory(item.name);
+      if (!itemName || !category) return null;
+
+      return {
+        itemKey: normalizeMenuAvailabilityKey(itemName),
+        itemName,
+        squareName: item.name,
+        category,
+        price: formatCatalogMoney(item.priceCents),
+        priceCents: item.priceCents,
+        source: "static",
+      };
+    })
+    .filter(Boolean)
+    .sort(sortGoldiesMenuItems);
+}
+
+function buildMenuAvailabilityFallbackItems({
+  eventMenuActive = isGoldiesEventMenuActive(),
+} = {}) {
+  return eventMenuActive
+    ? buildEventMenuAvailabilityItems()
+    : buildStaticMenuAvailabilityItems();
+}
+
 function buildCatalogMenuAvailabilityItems(catalogItems = [], recentPrices = new Map()) {
   const itemsByKey = new Map();
 
@@ -2313,8 +2342,6 @@ async function fetchSquareMenuCatalogItems() {
 }
 
 async function getGoldiesMenuBoard() {
-  const staticMenu = buildStaticMenuItems();
-
   try {
     const [catalogItems, recentPrices, availabilityRows] = await Promise.all([
       fetchSquareMenuCatalogItems(),
@@ -2332,17 +2359,17 @@ async function getGoldiesMenuBoard() {
     }
 
     return groupAvailabilityItemsForMenu(
-      applyMenuAvailabilityRows(buildStaticMenuAvailabilityItems(), availabilityRows)
+      applyMenuAvailabilityRows(buildMenuAvailabilityFallbackItems(), availabilityRows)
     );
   } catch (error) {
     console.error("Error building menu board from Square catalog:", error.message);
     try {
       const availabilityRows = await getMenuAvailabilityRows();
       return groupAvailabilityItemsForMenu(
-        applyMenuAvailabilityRows(buildStaticMenuAvailabilityItems(), availabilityRows)
+        applyMenuAvailabilityRows(buildMenuAvailabilityFallbackItems(), availabilityRows)
       );
     } catch (_availabilityError) {
-      return staticMenu;
+      return groupAvailabilityItemsForMenu(buildMenuAvailabilityFallbackItems());
     }
   }
 }
@@ -8537,7 +8564,7 @@ app.get("/api/menu/availability", requireKdsOrOwnerAuth, async (_req, res) => {
 
     const baseItems = catalogItems.length
       ? buildCatalogMenuAvailabilityItems(catalogItems, recentPrices)
-      : buildStaticMenuAvailabilityItems();
+      : buildMenuAvailabilityFallbackItems();
     const items = applyMenuAvailabilityRows(baseItems, availability);
 
     res.json({
@@ -9369,6 +9396,7 @@ module.exports = {
     buildOwnerReportPeriod,
     buildCatalogMenuAvailabilityItems,
     buildEventOnlineOrderingMenu,
+    buildMenuAvailabilityFallbackItems,
     buildStaticOnlineOrderingMenu,
     mergeStaticOnlineOrderingMenuItems,
     cleanCustomerName,
