@@ -3,6 +3,7 @@ const Module = require("node:module");
 const test = require("node:test");
 
 process.env.GOLDIES_TEST_MODE = "1";
+process.env.SQUARE_LOCATION_ID = "LTH6Q7CDT9R0P";
 
 const originalLoad = Module._load;
 Module._load = function loadWithTestStubs(request, parent, isMain) {
@@ -40,6 +41,7 @@ const {
     buildOwnerDrinkRevenueReport,
     buildOwnerReportPeriod,
     buildCatalogMenuAvailabilityItems,
+    buildEventOnlineOrderingMenu,
     buildStaticOnlineOrderingMenu,
     mergeStaticOnlineOrderingMenuItems,
     cleanCustomerName,
@@ -48,13 +50,26 @@ const {
     getFallbackDrinkImageUrl,
     getDisplayDrinkItems,
     getItemDrinkCategory,
+    isCatalogObjectPresentAtLocation,
+    isDeveloperLoginConfigured,
+    isGoldiesEventMenuActive,
+    isGoldiesEventMenuCategory,
+    isKdsLoginConfigured,
+    isOwnerLoginConfigured,
     normalizeSquareOrder,
     parseCustomerNameFromNotes,
+    resolveCatalogDrinkMenuCategory,
     resolveKdsTicketStatus,
     shouldSkipUnpaidOnlineOrder,
     isServiceOption,
   },
 } = require("../server");
+
+test("private logins fail closed when deployment credentials are absent", () => {
+  assert.equal(isKdsLoginConfigured(), false);
+  assert.equal(isOwnerLoginConfigured(), false);
+  assert.equal(isDeveloperLoginConfigured(), false);
+});
 
 test("canonical drink names clean up Square edits without changing display style", () => {
   assert.equal(getCanonicalDrinkName("STRAWBERRY BANANA (16 OZ)"), "Strawberry Banana (16 oz)");
@@ -120,6 +135,85 @@ test("drink classification keeps smoothies and refreshers in drink reporting", (
   assert.equal(getItemDrinkCategory({ name: "Muffin" }), null);
 });
 
+test("RAGBRAI event menu follows Goldie's Central Time shop day", () => {
+  assert.equal(isGoldiesEventMenuActive(new Date("2026-07-20T04:59:59.000Z")), false);
+  assert.equal(isGoldiesEventMenuActive(new Date("2026-07-20T05:00:00.000Z")), true);
+  assert.equal(isGoldiesEventMenuActive(new Date("2026-07-21T04:59:59.000Z")), true);
+  assert.equal(isGoldiesEventMenuActive(new Date("2026-07-21T05:00:00.000Z")), false);
+  assert.equal(isGoldiesEventMenuCategory("RAGBRAI - BONE JAM 2026"), true);
+  assert.equal(isGoldiesEventMenuCategory("RAGBRAI BONE JAM 2026"), true);
+});
+
+test("RAGBRAI category limits the menu without turning retail into drink tickets", () => {
+  const eventCategoryNames = ["RAGBRAI - BONE JAM 2026"];
+  const eventDrinks = [
+    ["COLD BREW", "Coffee"],
+    ["DRIP COFFEE", "Coffee"],
+    ["ESPRESSO ONLY", "Coffee"],
+    ["REFRESHER", "Not Coffee"],
+    ["STRAWBERRY SMOOTHIE", "Smoothies"],
+    ["VANILLA LATTE", "Coffee"],
+  ];
+
+  for (const [itemName, expectedCategory] of eventDrinks) {
+    assert.equal(
+      resolveCatalogDrinkMenuCategory({
+        itemName,
+        categoryNames: eventCategoryNames,
+        eventMenuActive: true,
+      }),
+      expectedCategory
+    );
+  }
+
+  assert.equal(
+    resolveCatalogDrinkMenuCategory({
+      itemName: "BONE JAM T-SHIRT",
+      categoryNames: eventCategoryNames,
+      eventMenuActive: true,
+    }),
+    ""
+  );
+  assert.equal(
+    resolveCatalogDrinkMenuCategory({
+      itemName: "LATTE",
+      categoryNames: ["Coffee"],
+      eventMenuActive: true,
+    }),
+    ""
+  );
+  assert.equal(
+    resolveCatalogDrinkMenuCategory({
+      itemName: "LATTE",
+      categoryNames: ["Coffee"],
+      eventMenuActive: false,
+    }),
+    "Coffee"
+  );
+  assert.equal(
+    getItemDrinkCategory({ name: "BONE JAM T-SHIRT", category: "RAGBRAI - BONE JAM 2026" }),
+    null
+  );
+});
+
+test("RAGBRAI fallback ordering menu stays limited to the event selection", () => {
+  const onlineNames = buildEventOnlineOrderingMenu()
+    .flatMap((group) => group.items.map((item) => item.name));
+  const kioskNames = buildEventOnlineOrderingMenu({ includeForHereOnly: true })
+    .flatMap((group) => group.items.map((item) => item.name));
+
+  assert.equal(onlineNames.length, 5);
+  assert.equal(onlineNames.includes("Espresso Only"), false);
+  assert.deepEqual(kioskNames, [
+    "Cold Brew",
+    "Drip Coffee",
+    "Espresso Only",
+    "Refresher",
+    "Strawberry Smoothie",
+    "Vanilla Latte",
+  ]);
+});
+
 test("availability and online ordering menus use current display names", () => {
   const availabilityItems = buildCatalogMenuAvailabilityItems([
     { name: "STRAWMANGO", displayName: "Refresher - Strawberry Mango", category: "Not Coffee", priceCents: 600 },
@@ -171,6 +265,12 @@ test("online ordering menu keeps known static drinks when Square omits one item"
   assert.equal(items.some(([name]) => name === "Cherry Firecracker"), true);
   assert.equal(items.some(([name, category, price]) => name === "Cherry Firecracker" && category === "Not Coffee" && price === "$6.00"), true);
   assert.equal(items.filter(([name]) => name === "Latte").length, 1);
+});
+
+test("Square catalog location checks support expanded camelCase detail fields", () => {
+  assert.equal(isCatalogObjectPresentAtLocation({ presentAtAllLocations: true }), true);
+  assert.equal(isCatalogObjectPresentAtLocation({ presentAtLocationIds: ["LTH6Q7CDT9R0P"] }), true);
+  assert.equal(isCatalogObjectPresentAtLocation({ presentAtLocationIds: ["OTHER_LOCATION"] }), false);
 });
 
 test("customer ordering filters Square service labels from drink additions", () => {

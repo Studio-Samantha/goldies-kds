@@ -25,12 +25,12 @@
     },
     {
       "source": "/drinkflow-survey",
-      "destination": "https://drinkflowkds.com/#survey",
+      "destination": "https://drinkflowkds.com/#demo",
       "permanent": false
     },
     {
       "source": "/survey",
-      "destination": "https://drinkflowkds.com/#survey",
+      "destination": "https://drinkflowkds.com/#demo",
       "permanent": false
     }
   ],
@@ -80,6 +80,14 @@
       "destination": "/index.html"
     },
     {
+      "source": "/online-ordering",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/order",
+      "destination": "/index.html"
+    },
+    {
       "source": "/order-beta",
       "destination": "/index.html"
     },
@@ -116,7 +124,11 @@
       "destination": "/index.html"
     },
     {
-      "source": "/demo/owner",
+      "source": "/demo",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/demo/:path*",
       "destination": "/index.html"
     },
     {

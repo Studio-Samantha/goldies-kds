@@ -22,7 +22,7 @@ const SQUARE_LOCATION_ID = process.env.SQUARE_LOCATION_ID;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const KDS_PASSWORD = process.env.KDS_PASSWORD;
-const OWNER_PASSWORD = process.env.OWNER_PASSWORD || "Goldie123";
+const OWNER_PASSWORD = process.env.OWNER_PASSWORD;
 const SESSION_SECRET = process.env.SESSION_SECRET || SQUARE_ACCESS_TOKEN;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || process.env.FRONTEND_ORIGIN || "";
 const ALERT_SMTP_HOST = process.env.ALERT_SMTP_HOST || "";
@@ -47,6 +47,11 @@ const DRINKFLOW_EMAIL_FROM =
   process.env.DRINKFLOW_EMAIL_FROM ||
   process.env.RESEND_FROM_EMAIL ||
   ALERT_EMAIL_FROM;
+const DRINKFLOW_INQUIRY_EMAIL_TO =
+  process.env.DRINKFLOW_INQUIRY_EMAIL_TO ||
+  process.env.DRINKFLOW_DEMO_EMAIL_TO ||
+  process.env.DRINKFLOW_LEADS_EMAIL_TO ||
+  "samantha@studiosamantha.com";
 const VALID_STATUSES = new Set(["new", "making", "ready", "completed", "done"]);
 const VALID_DINING_OPTIONS = new Set([
   "HANGIN' OUT",
@@ -73,11 +78,8 @@ const CUSTOMER_INSIGHTS_RETENTION_DAYS = 7;
 const KDS_PASSWORD_SETTING_KEY = "kds_password";
 const OWNER_PASSWORD_SETTING_KEY = "owner_password";
 const DEVELOPER_USERNAME = process.env.DEVELOPER_USERNAME || "StudioSamantha";
-const DEVELOPER_PASSWORD_HASH =
-  process.env.DEVELOPER_PASSWORD_HASH ||
-  "1495452a693a8a1659c6ed4449554ded95522b7e0bfe429629d99949fec7d170ea058f6d067a1742ad81ffb0ae232e52602576fc96afe854a85ad7123a49fe5e";
-const DEVELOPER_PASSWORD_SALT =
-  process.env.DEVELOPER_PASSWORD_SALT || "a8a44832a6f84faf004f993d58de828c";
+const DEVELOPER_PASSWORD_HASH = process.env.DEVELOPER_PASSWORD_HASH || "";
+const DEVELOPER_PASSWORD_SALT = process.env.DEVELOPER_PASSWORD_SALT || "";
 const DRINKFLOW_SQUARE_APPLICATION_ID =
   process.env.DRINKFLOW_SQUARE_APPLICATION_ID || process.env.SQUARE_APPLICATION_ID || "";
 const DRINKFLOW_SQUARE_APPLICATION_SECRET =
@@ -132,6 +134,21 @@ const ONLINE_ORDERING_BETA_MENU_BY_ID = new Map(
 );
 const GOLDIES_MENU_CATEGORY_LABELS = ["Coffee", "Not Coffee", "Smoothies"];
 const SHOP_TIME_ZONE = "America/Chicago";
+const GOLDIES_EVENT_MENU = Object.freeze({
+  categoryName:
+    process.env.GOLDIES_EVENT_MENU_CATEGORY_NAME || "RAGBRAI - BONE JAM 2026",
+  label: process.env.GOLDIES_EVENT_MENU_LABEL || "RAGBRAI BONE JAM 2026",
+  startDate: process.env.GOLDIES_EVENT_MENU_START_DATE || "2026-07-20",
+  endDate: process.env.GOLDIES_EVENT_MENU_END_DATE || "2026-07-20",
+});
+const GOLDIES_EVENT_MENU_FALLBACK_ITEMS = [
+  { id: "event-cold-brew", name: "COLD BREW", priceCents: 500 },
+  { id: "event-drip-coffee", name: "DRIP COFFEE", priceCents: 500 },
+  { id: "event-espresso-only", name: "ESPRESSO ONLY", priceCents: 300 },
+  { id: "event-refresher", name: "REFRESHER", priceCents: 500 },
+  { id: "event-strawberry-smoothie", name: "STRAWBERRY SMOOTHIE", priceCents: 500 },
+  { id: "event-vanilla-latte", name: "VANILLA LATTE", priceCents: 500 },
+];
 const SHOP_HOURS = {
   0: null,
   1: { openHour: 7, closeHour: 15 },
@@ -269,6 +286,33 @@ async function sendTransactionalEmail({ to, subject, text, from = DRINKFLOW_EMAI
   return true;
 }
 
+function formatInquiryField(label, value) {
+  const normalized = Array.isArray(value)
+    ? value.filter(Boolean).join(", ")
+    : String(value || "").trim();
+  return `${label}: ${normalized || "Not provided"}`;
+}
+
+async function notifyDrinkFlowInquiry({ type = "DrinkFlow inquiry", subject, lines = [] } = {}) {
+  const text = [
+    type,
+    "",
+    ...lines.filter(Boolean),
+    "",
+    `Received: ${new Date().toLocaleString("en-US", { timeZone: SHOP_TIME_ZONE })}`,
+  ].join("\n");
+
+  try {
+    await sendTransactionalEmail({
+      to: DRINKFLOW_INQUIRY_EMAIL_TO,
+      subject: subject || type,
+      text,
+    });
+  } catch (error) {
+    console.error("DrinkFlow inquiry notification failed:", error.message);
+  }
+}
+
 function isSmtpAuthDisabledError(error) {
   const message = String(error?.message || error || "").toLowerCase();
   return (
@@ -347,7 +391,7 @@ function getOnlineOrderingReturnUrl(req) {
   const requestOrigin = String(req.get("origin") || "").trim();
   const origin = envOrigin || (requestOrigin.startsWith("http") ? requestOrigin : "") || "https://goldieskds.com";
   const source = cleanLeadText(req.body?.source, 40);
-  const returnPath = source === "self_order_kiosk" ? "/self-order-kiosk" : "/online-ordering-beta";
+  const returnPath = source === "self_order_kiosk" ? "/self-order-kiosk" : "/online-ordering";
   return `${origin.replace(/\/+$/, "")}${returnPath}?ordered=1`;
 }
 
@@ -402,6 +446,26 @@ function getShopDateString(date = new Date()) {
   }).formatToParts(date);
   const getPart = (type) => parts.find((part) => part.type === type)?.value || "";
   return `${getPart("year")}-${getPart("month")}-${getPart("day")}`;
+}
+
+function isGoldiesEventMenuActive(date = new Date()) {
+  const shopDate = getShopDateString(date);
+  return (
+    Boolean(GOLDIES_EVENT_MENU.categoryName) &&
+    Boolean(GOLDIES_EVENT_MENU.startDate) &&
+    Boolean(GOLDIES_EVENT_MENU.endDate) &&
+    shopDate >= GOLDIES_EVENT_MENU.startDate &&
+    shopDate <= GOLDIES_EVENT_MENU.endDate
+  );
+}
+
+function getGoldiesEventMenuStatus(date = new Date()) {
+  return {
+    active: isGoldiesEventMenuActive(date),
+    label: GOLDIES_EVENT_MENU.label,
+    startDate: GOLDIES_EVENT_MENU.startDate,
+    endDate: GOLDIES_EVENT_MENU.endDate,
+  };
 }
 
 function getShopHoursForDate(date = new Date()) {
@@ -511,8 +575,8 @@ async function fetchSquareCatalogObjects(types) {
 }
 
 function isCatalogObjectPresentAtLocation(data = {}) {
-  if (data.present_at_all_locations) return true;
-  const locationIds = data.present_at_location_ids || [];
+  if (data.present_at_all_locations || data.presentAtAllLocations) return true;
+  const locationIds = data.present_at_location_ids || data.presentAtLocationIds || [];
   return !locationIds.length || locationIds.includes(SQUARE_LOCATION_ID);
 }
 
@@ -935,6 +999,34 @@ function buildStaticOnlineOrderingMenu({ includeForHereOnly = false, unavailable
   return Array.from(grouped, ([category, items]) => ({ category, items }));
 }
 
+function buildEventOnlineOrderingMenu({ includeForHereOnly = false, unavailableKeys = new Set() } = {}) {
+  const items = GOLDIES_EVENT_MENU_FALLBACK_ITEMS
+    .filter((item) => includeForHereOnly || getOnlineOrderingDrinkRule(item.name).online)
+    .filter((item) => isMenuItemAvailable(item, unavailableKeys))
+    .map((item) => ({
+      id: item.id,
+      name: getCanonicalDrinkName(item.name),
+      squareName: item.name,
+      category: GOLDIES_EVENT_MENU.label,
+      price: formatCatalogMoney(item.priceCents),
+      priceCents: item.priceCents,
+      variationId: "",
+      variationName: "",
+      description: "",
+      imageUrl: getFallbackDrinkImageUrl(item.name),
+      modifierGroups: [],
+      source: "static",
+    }));
+
+  return items.length ? [{ category: GOLDIES_EVENT_MENU.label, items }] : [];
+}
+
+function buildOnlineOrderingFallbackMenu(options = {}) {
+  return isGoldiesEventMenuActive()
+    ? buildEventOnlineOrderingMenu(options)
+    : buildStaticOnlineOrderingMenu(options);
+}
+
 function mergeStaticOnlineOrderingMenuItems(
   menu,
   { includeForHereOnly = false, unavailableKeys = new Set() } = {}
@@ -967,6 +1059,7 @@ function mergeStaticOnlineOrderingMenuItems(
 }
 
 async function getSquareOnlineOrderingMenu({ includeForHereOnly = false } = {}) {
+  const eventMenuActive = isGoldiesEventMenuActive();
   const unavailableKeys = await getUnavailableMenuKeys();
   const objects = await fetchSquareCatalogObjects([
     "ITEM",
@@ -1001,23 +1094,35 @@ async function getSquareOnlineOrderingMenu({ includeForHereOnly = false } = {}) 
     const itemData = object.item_data || {};
     if (!isCatalogObjectPresentAtLocation(itemData)) continue;
 
-    const categoryId =
-      itemData.reporting_category?.id ||
-      itemData.category_id ||
-      itemData.categories?.[0]?.id ||
-      "";
-    const squareCategoryName = categoriesById.get(categoryId) || itemData.category_name || "Drinks";
+    const squareCategoryNames = getCatalogCategoryIds(itemData)
+      .map((categoryId) => categoriesById.get(categoryId))
+      .filter(Boolean);
+    const squareCategoryName = squareCategoryNames[0] || itemData.category_name || "Drinks";
+    const isEventMenuItem = squareCategoryNames.some((name) =>
+      isGoldiesEventMenuCategory(name)
+    );
     const inferredCategoryName = getDrinkCategory(itemData.name || "");
-    const categoryName =
-      normalizeGoldiesDrinkCategory(squareCategoryName) ||
-      inferredCategoryName ||
-      squareCategoryName;
-    const categoryAllowed = ONLINE_ORDERING_CATEGORY_NAMES.includes(squareCategoryName.toLowerCase());
+    const categoryName = eventMenuActive
+      ? GOLDIES_EVENT_MENU.label
+      : normalizeGoldiesDrinkCategory(squareCategoryName) ||
+        inferredCategoryName ||
+        squareCategoryName;
+    const categoryAllowed = squareCategoryNames.some((name) =>
+      ONLINE_ORDERING_CATEGORY_NAMES.includes(name.toLowerCase())
+    );
     const staticNameAllowed = ONLINE_ORDERING_BETA_MENU_BY_ID.has(
       String(itemData.name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
     );
 
-    if (ONLINE_ORDERING_CATEGORY_NAMES.length && !categoryAllowed && !staticNameAllowed) {
+    if (eventMenuActive && (!isEventMenuItem || !inferredCategoryName)) {
+      continue;
+    }
+    if (
+      !eventMenuActive &&
+      ONLINE_ORDERING_CATEGORY_NAMES.length &&
+      !categoryAllowed &&
+      !staticNameAllowed
+    ) {
       continue;
     }
 
@@ -1107,6 +1212,8 @@ async function getSquareOnlineOrderingMenu({ includeForHereOnly = false } = {}) 
     items: items.sort((a, b) => a.name.localeCompare(b.name)),
   })).sort((a, b) => a.category.localeCompare(b.category));
 
+  if (eventMenuActive) return menu;
+
   return mergeStaticOnlineOrderingMenuItems(menu, { includeForHereOnly, unavailableKeys });
 }
 
@@ -1126,7 +1233,7 @@ async function buildOnlineOrderingBetaLineItems(rawItems, { includeForHereOnly =
   const menu = await getSquareOnlineOrderingMenu({ includeForHereOnly }).catch(async (error) => {
     console.error("Square catalog menu unavailable, using static customer ordering menu:", error.message);
     const unavailableKeys = await getUnavailableMenuKeys();
-    return buildStaticOnlineOrderingMenu({ includeForHereOnly, unavailableKeys });
+    return buildOnlineOrderingFallbackMenu({ includeForHereOnly, unavailableKeys });
   });
   const menuById = flattenOnlineOrderingMenu(menu);
 
@@ -1474,10 +1581,10 @@ let kdsPasswordState = {
   plaintextPassword: null,
 };
 let ownerPasswordState = {
-  source: "env",
+  source: "unconfigured",
   passwordHash: null,
   passwordSalt: null,
-  plaintextPassword: String(OWNER_PASSWORD),
+  plaintextPassword: null,
 };
 let localDeveloperNotes = [];
 let localAccessLogs = [];
@@ -1594,6 +1701,25 @@ function normalizeGoldiesDrinkCategory(value = "") {
   if (compact === "smoothie" || compact === "smoothies") return "Smoothies";
 
   return "";
+}
+
+function isGoldiesEventMenuCategory(value = "") {
+  return normalizeDrinkText(value) === normalizeDrinkText(GOLDIES_EVENT_MENU.categoryName);
+}
+
+function resolveCatalogDrinkMenuCategory({
+  itemName = "",
+  categoryNames = [],
+  eventMenuActive = isGoldiesEventMenuActive(),
+} = {}) {
+  if (eventMenuActive) {
+    if (!categoryNames.some((name) => isGoldiesEventMenuCategory(name))) return "";
+    return getDrinkCategory(itemName) || "";
+  }
+
+  return categoryNames
+    .map((name) => normalizeGoldiesDrinkCategory(name))
+    .find(Boolean) || "";
 }
 
 function normalizeDiningOptionValue(value = "") {
@@ -2003,27 +2129,28 @@ async function fetchSquareDrinkCategoryAudit({ force = false } = {}) {
       .map((id) => normalizeGoldiesDrinkCategory(categoryNamesById.get(id)))
       .find(Boolean);
 
-    if (!squareCategory) continue;
-
     const itemName = itemData.name || "";
     const kdsCategory = getDrinkCategory(itemName);
+    const category = squareCategory || kdsCategory;
+    if (!category) continue;
+
     const displayName = getCanonicalDrinkName(itemName);
     const record = {
       id: object.id,
       name: displayName,
       squareName: itemName,
-      squareCategory,
+      squareCategory: squareCategory || "",
       kdsCategory: kdsCategory || "",
     };
 
-    categories[squareCategory].push(record);
-    categoryByCatalogObjectId.set(object.id, squareCategory);
+    categories[category].push(record);
+    categoryByCatalogObjectId.set(object.id, category);
 
     for (const variationRef of itemData.variations || []) {
-      if (variationRef?.id) categoryByCatalogObjectId.set(variationRef.id, squareCategory);
+      if (variationRef?.id) categoryByCatalogObjectId.set(variationRef.id, category);
     }
 
-    if (kdsCategory !== squareCategory) {
+    if (squareCategory && kdsCategory && kdsCategory !== squareCategory) {
       mismatches.push(record);
     }
   }
@@ -2118,7 +2245,11 @@ async function fetchSquareMenuCatalogItems() {
   if (!SQUARE_ACCESS_TOKEN) return [];
 
   const now = Date.now();
-  if (now - menuCatalogCache.fetchedAt < 10 * 60 * 1000) {
+  const eventMenuActive = isGoldiesEventMenuActive();
+  if (
+    menuCatalogCache.eventMenuActive === eventMenuActive &&
+    now - menuCatalogCache.fetchedAt < 10 * 60 * 1000
+  ) {
     return menuCatalogCache.items;
   }
 
@@ -2135,15 +2266,21 @@ async function fetchSquareMenuCatalogItems() {
 
   menuCatalogCache = {
     fetchedAt: now,
+    eventMenuActive,
     items: objects
       .filter((object) => object.type === "ITEM" && !object.is_deleted)
       .map((object) => {
         const itemData = object.itemData || object.item_data || {};
         if (!isCatalogObjectPresentAtLocation(itemData)) return null;
 
-        const category = getCatalogCategoryIds(itemData)
-          .map((id) => normalizeGoldiesDrinkCategory(categoryNamesById.get(id)))
-          .find(Boolean);
+        const categoryNames = getCatalogCategoryIds(itemData)
+          .map((id) => categoryNamesById.get(id))
+          .filter(Boolean);
+        const category = resolveCatalogDrinkMenuCategory({
+          itemName: itemData.name || "",
+          categoryNames,
+          eventMenuActive,
+        });
         if (!category) return null;
 
         const prices = (itemData.variations || [])
@@ -2872,9 +3009,20 @@ function isKdsLoginConfigured() {
   return (
     kdsPasswordState.source === "supabase" ||
     kdsPasswordState.source === "env" ||
-    kdsPasswordState.source === "memory" ||
-    kdsPasswordState.source === "fallback"
+    kdsPasswordState.source === "memory"
   );
+}
+
+function isOwnerLoginConfigured() {
+  return (
+    ownerPasswordState.source === "supabase" ||
+    ownerPasswordState.source === "env" ||
+    ownerPasswordState.source === "memory"
+  );
+}
+
+function isDeveloperLoginConfigured() {
+  return Boolean(DEVELOPER_PASSWORD_HASH && DEVELOPER_PASSWORD_SALT);
 }
 
 async function loadKdsPasswordState() {
@@ -2905,8 +3053,6 @@ async function loadKdsPasswordState() {
     }
   }
 
-  const fallbackPassword = process.env.KDS_PASSWORD || "espresso";
-
   if (KDS_PASSWORD) {
     kdsPasswordState = {
       source: "env",
@@ -2916,10 +3062,10 @@ async function loadKdsPasswordState() {
     };
   } else {
     kdsPasswordState = {
-      source: "fallback",
+      source: "unconfigured",
       passwordHash: null,
       passwordSalt: null,
-      plaintextPassword: String(fallbackPassword),
+      plaintextPassword: null,
     };
   }
 
@@ -3003,12 +3149,19 @@ async function loadOwnerPasswordState() {
     }
   }
 
-  ownerPasswordState = {
-    source: "env",
-    passwordHash: null,
-    passwordSalt: null,
-    plaintextPassword: String(OWNER_PASSWORD),
-  };
+  ownerPasswordState = OWNER_PASSWORD
+    ? {
+        source: "env",
+        passwordHash: null,
+        passwordSalt: null,
+        plaintextPassword: String(OWNER_PASSWORD),
+      }
+    : {
+        source: "unconfigured",
+        passwordHash: null,
+        passwordSalt: null,
+        plaintextPassword: null,
+      };
 
   return ownerPasswordState;
 }
@@ -3074,7 +3227,7 @@ function isPasswordMatch(password) {
     );
   }
 
-  if (kdsPasswordState.source === "env" || kdsPasswordState.source === "fallback") {
+  if (kdsPasswordState.source === "env") {
     const provided = Buffer.from(normalizedPassword);
     const expected = Buffer.from(String(kdsPasswordState.plaintextPassword || ""));
 
@@ -3089,7 +3242,7 @@ function isPasswordMatch(password) {
 
 function isOwnerPasswordMatch(password) {
   const normalizedPassword = normalizePasswordInput(password);
-  if (!normalizedPassword) return false;
+  if (!normalizedPassword || !isOwnerLoginConfigured()) return false;
 
   if (ownerPasswordState.source === "supabase" || ownerPasswordState.source === "memory") {
     return verifyPassword(
@@ -3109,6 +3262,8 @@ function isOwnerPasswordMatch(password) {
 }
 
 function isDeveloperLoginMatch(username, password) {
+  if (!isDeveloperLoginConfigured()) return false;
+
   const normalizedUsername = normalizeName(username);
   const expectedUsername = normalizeName(DEVELOPER_USERNAME);
 
@@ -6532,8 +6687,8 @@ function writeOwnerReportPdf(res, snapshots, month) {
   doc.end();
 }
 
-app.get("/api/health", (req, res) => {
-  res.json({
+function getSystemHealthPayload() {
+  return {
     ok: true,
     service: "Goldie's KDS backend",
     environment: SQUARE_ENVIRONMENT,
@@ -6565,15 +6720,32 @@ app.get("/api/health", (req, res) => {
       alertConfig: getAlertEmailConfigDiagnostics(),
     },
     time: new Date().toISOString(),
+  };
+}
+
+app.get("/api/health", (_req, res) => {
+  res.json({
+    ok: true,
+    service: "Goldie's KDS backend",
+    time: new Date().toISOString(),
   });
 });
 
-app.post("/api/drinkflow-leads", async (req, res) => {
+app.get("/api/system-health", requireKdsAuth, (_req, res) => {
+  res.json(getSystemHealthPayload());
+});
+
+app.post(["/api/drinkflow-leads", "/api/vendorflow-leads"], async (req, res) => {
   try {
+    const isVendorFlowLead = req.path === "/api/vendorflow-leads";
+    const productName = isVendorFlowLead ? "VendorFlow" : "DrinkFlow";
     const email = normalizeLeadEmail(req.body?.email);
     const shopName = cleanLeadText(req.body?.shopName, 120);
     const featureInterest = cleanLeadText(req.body?.featureInterest, 240);
-    const source = cleanLeadText(req.body?.source || "learn-more", 80);
+    const requestedSource = cleanLeadText(req.body?.source, 60);
+    const source = isVendorFlowLead
+      ? cleanLeadText(`vendorflow:${requestedSource || "website"}`, 80)
+      : requestedSource || "learn-more";
     const pagePath = cleanLeadText(req.body?.pagePath, 200);
     const referrer = cleanLeadText(req.body?.referrer || req.get("referer") || "", 300);
     const honeypot = cleanLeadText(req.body?.company, 80);
@@ -6619,15 +6791,32 @@ app.post("/api/drinkflow-leads", async (req, res) => {
       });
     }
 
+    await notifyDrinkFlowInquiry({
+      type: `New ${productName} lead`,
+      subject: `${productName} lead: ${shopName || email}`,
+      lines: [
+        formatInquiryField("Email", email),
+        formatInquiryField("Shop", shopName),
+        formatInquiryField("Interest", featureInterest),
+        formatInquiryField("Source", source),
+        formatInquiryField("Page", pagePath),
+        formatInquiryField("Referrer", referrer),
+      ],
+    });
+
     res.json({ ok: true, message: "Thanks. You are on the update list." });
   } catch (error) {
-    console.error("Error handling DrinkFlow lead:", error);
+    console.error("Error handling product lead:", error);
     res.status(500).json({ ok: false, error: "Could not save that email right now." });
   }
 });
 
-app.get("/api/drinkflow-leads", async (_req, res) => {
+app.get(
+  ["/api/drinkflow-leads", "/api/developer/vendorflow-leads"],
+  requireDeveloperAuth,
+  async (req, res) => {
   try {
+    const vendorFlowOnly = req.path === "/api/developer/vendorflow-leads";
     if (!supabase) {
       return res.status(503).json({
         ok: false,
@@ -6639,7 +6828,7 @@ app.get("/api/drinkflow-leads", async (_req, res) => {
       .from("drinkflow_leads")
       .select("email, shop_name, feature_interest, source, page_path, referrer, created_at, updated_at")
       .order("updated_at", { ascending: false })
-      .limit(50);
+      .limit(vendorFlowOnly ? 200 : 50);
 
     if (error) {
       console.error("Error loading DrinkFlow leads:", error);
@@ -6653,10 +6842,16 @@ app.get("/api/drinkflow-leads", async (_req, res) => {
       });
     }
 
+    const selectedLeads = vendorFlowOnly
+      ? (data || [])
+          .filter((lead) => /vendorflow|souvenir/i.test(String(lead.source || "")))
+          .slice(0, 50)
+      : data || [];
+
     res.json({
       ok: true,
-      count: data?.length || 0,
-      leads: (data || []).map((lead) => ({
+      count: selectedLeads.length,
+      leads: selectedLeads.map((lead) => ({
         email: lead.email || "",
         shopName: lead.shop_name || "",
         featureInterest: lead.feature_interest || "",
@@ -6668,10 +6863,11 @@ app.get("/api/drinkflow-leads", async (_req, res) => {
       })),
     });
   } catch (error) {
-    console.error("Error reading DrinkFlow leads:", error);
+    console.error("Error reading product leads:", error);
     res.status(500).json({ ok: false, error: "Could not load email leads right now." });
   }
-});
+  }
+);
 
 app.post("/api/drinkflow-surveys", async (req, res) => {
   try {
@@ -6739,6 +6935,25 @@ app.post("/api/drinkflow-surveys", async (req, res) => {
           : "Could not save that survey right now.",
       });
     }
+
+    await notifyDrinkFlowInquiry({
+      type: "New DrinkFlow survey",
+      subject: `DrinkFlow survey: ${survey.shop_name || survey.email || "New response"}`,
+      lines: [
+        formatInquiryField("Name", survey.contact_name),
+        formatInquiryField("Email", survey.email),
+        formatInquiryField("Shop", survey.shop_name),
+        formatInquiryField("Business type", survey.business_type),
+        formatInquiryField("POS", survey.pos_system),
+        formatInquiryField("Current workflow", survey.current_workflow),
+        formatInquiryField("Screens", survey.screens),
+        formatInquiryField("Needs", survey.needs),
+        formatInquiryField("Features", survey.features),
+        formatInquiryField("Pricing", survey.pricing),
+        formatInquiryField("Notes", survey.notes),
+        formatInquiryField("Source", survey.source),
+      ],
+    });
 
     res.json({ ok: true, message: "Thank you. Your feedback was saved." });
   } catch (error) {
@@ -6815,6 +7030,27 @@ app.post("/api/drinkflow-onboarding", async (req, res) => {
       };
       localDrinkFlowOnboardingRequests.unshift(localRequest);
       localDrinkFlowOnboardingRequests = localDrinkFlowOnboardingRequests.slice(0, 200);
+      await notifyDrinkFlowInquiry({
+        type: "New DrinkFlow demo/setup request",
+        subject: `DrinkFlow demo request: ${request.shop_name || request.email}`,
+        lines: [
+          formatInquiryField("Name", request.contact_name),
+          formatInquiryField("Email", request.email),
+          formatInquiryField("Shop", request.shop_name),
+          formatInquiryField("Business type", request.business_type),
+          formatInquiryField("Location", request.location),
+          formatInquiryField("POS", request.pos_system),
+          formatInquiryField("Order sources", request.order_sources),
+          formatInquiryField("Screen needs", request.screen_needs),
+          formatInquiryField("Current pain", request.current_pain),
+          formatInquiryField("Average daily orders", request.average_daily_orders),
+          formatInquiryField("Rush window", request.rush_window),
+          formatInquiryField("Timeline", request.timeline),
+          formatInquiryField("Notes", request.notes),
+          formatInquiryField("Source", request.source),
+          formatInquiryField("Page", request.page_path),
+        ],
+      });
       return res.json({
         ok: true,
         request: localRequest,
@@ -6830,6 +7066,28 @@ app.post("/api/drinkflow-onboarding", async (req, res) => {
       .single();
 
     if (error) throw error;
+
+    await notifyDrinkFlowInquiry({
+      type: "New DrinkFlow demo/setup request",
+      subject: `DrinkFlow demo request: ${request.shop_name || request.email}`,
+      lines: [
+        formatInquiryField("Name", request.contact_name),
+        formatInquiryField("Email", request.email),
+        formatInquiryField("Shop", request.shop_name),
+        formatInquiryField("Business type", request.business_type),
+        formatInquiryField("Location", request.location),
+        formatInquiryField("POS", request.pos_system),
+        formatInquiryField("Order sources", request.order_sources),
+        formatInquiryField("Screen needs", request.screen_needs),
+        formatInquiryField("Current pain", request.current_pain),
+        formatInquiryField("Average daily orders", request.average_daily_orders),
+        formatInquiryField("Rush window", request.rush_window),
+        formatInquiryField("Timeline", request.timeline),
+        formatInquiryField("Notes", request.notes),
+        formatInquiryField("Source", request.source),
+        formatInquiryField("Page", request.page_path),
+      ],
+    });
 
     res.json({
       ok: true,
@@ -7192,7 +7450,8 @@ app.get("/api/developer/session", (req, res) => {
   const session = getSessionFromToken(cookies[DEVELOPER_SESSION_COOKIE_NAME]);
 
   res.json({
-    authenticated: Boolean(session && session.role === "developer"),
+    authenticated: isDeveloperLoginConfigured() && Boolean(session && session.role === "developer"),
+    configured: isDeveloperLoginConfigured(),
     username: session?.username || "",
   });
 });
@@ -7200,6 +7459,10 @@ app.get("/api/developer/session", (req, res) => {
 app.post("/api/developer/login", (req, res) => {
   const username = normalizeName(req.body?.username || "");
   const password = req.body?.password;
+
+  if (!isDeveloperLoginConfigured()) {
+    return res.status(503).json({ error: "Studio login is not configured." });
+  }
 
   if (!isDeveloperLoginMatch(username, password)) {
     return res.status(401).json({ error: "That studio login did not match." });
@@ -7652,7 +7915,8 @@ app.get("/api/owner/session", (req, res) => {
   const session = getSessionFromToken(cookies[OWNER_SESSION_COOKIE_NAME]);
 
   res.json({
-    authenticated: Boolean(session && session.role === "owner"),
+    authenticated: isOwnerLoginConfigured() && Boolean(session && session.role === "owner"),
+    configured: isOwnerLoginConfigured(),
     ownerName: session?.ownerName || "",
   });
 });
@@ -7660,6 +7924,10 @@ app.get("/api/owner/session", (req, res) => {
 app.post("/api/owner/login", (req, res) => {
   const password = req.body?.password;
   const ownerName = normalizeName(req.body?.ownerName || "Owner");
+
+  if (!isOwnerLoginConfigured()) {
+    return res.status(503).json({ error: "Owner login is not configured." });
+  }
 
   if (!isOwnerPasswordMatch(password)) {
     return res.status(401).json({ error: "Invalid owner password" });
@@ -8240,6 +8508,7 @@ app.get("/api/display/menu", requireKdsAuth, async (_req, res) => {
       ok: true,
       shopName: "Goldie's Coffee & Goods",
       categories,
+      eventMenu: getGoldiesEventMenuStatus(),
       updatedAt: new Date().toISOString(),
     });
   } catch (error) {
@@ -8376,6 +8645,7 @@ app.get("/api/beta/online-order/menu", async (req, res) => {
         ? "square"
         : "static",
       categories: menu,
+      eventMenu: getGoldiesEventMenuStatus(),
       hours,
       pickupSlots: generatePickupSlots(),
       updatedAt: new Date().toISOString(),
@@ -8387,7 +8657,8 @@ app.get("/api/beta/online-order/menu", async (req, res) => {
       ok: true,
       mode: includeForHereOnly ? "kiosk" : "online",
       source: "static",
-      categories: buildStaticOnlineOrderingMenu({ includeForHereOnly, unavailableKeys }),
+      categories: buildOnlineOrderingFallbackMenu({ includeForHereOnly, unavailableKeys }),
+      eventMenu: getGoldiesEventMenuStatus(),
       hours: getOnlineOrderingHoursStatus(),
       pickupSlots: generatePickupSlots(),
       updatedAt: new Date().toISOString(),
@@ -9058,6 +9329,16 @@ async function bootstrap() {
       "WARNING: KDS login is not configured. Set KDS_PASSWORD or store a password in Supabase."
     );
   }
+  if (!isOwnerLoginConfigured()) {
+    console.warn(
+      "WARNING: Owner login is not configured. Set OWNER_PASSWORD or store an owner password in Supabase."
+    );
+  }
+  if (!isDeveloperLoginConfigured()) {
+    console.warn(
+      "WARNING: Studio login is not configured. Set DEVELOPER_PASSWORD_HASH and DEVELOPER_PASSWORD_SALT."
+    );
+  }
 
   app.listen(PORT, () => {
     console.log("Ready to receive requests!");
@@ -9087,6 +9368,7 @@ module.exports = {
     buildOwnerDrinkRevenueReport,
     buildOwnerReportPeriod,
     buildCatalogMenuAvailabilityItems,
+    buildEventOnlineOrderingMenu,
     buildStaticOnlineOrderingMenu,
     mergeStaticOnlineOrderingMenuItems,
     cleanCustomerName,
@@ -9096,6 +9378,12 @@ module.exports = {
     getFallbackDrinkImageUrl,
     getDisplayDrinkItems,
     getItemDrinkCategory,
+    isCatalogObjectPresentAtLocation,
+    isDeveloperLoginConfigured,
+    isGoldiesEventMenuActive,
+    isGoldiesEventMenuCategory,
+    isKdsLoginConfigured,
+    isOwnerLoginConfigured,
     normalizeSquareOrder,
     resolveKdsTicketStatus,
     shouldSkipUnpaidOnlineOrder,
@@ -9103,5 +9391,6 @@ module.exports = {
     isServiceOption,
     isSmoothieDrinkName,
     parseCustomerNameFromNotes,
+    resolveCatalogDrinkMenuCategory,
   },
 };

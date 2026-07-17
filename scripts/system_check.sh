@@ -86,17 +86,10 @@ check_public_health() {
   fi
   BODY="$body" node - <<'NODE'
 const health = JSON.parse(process.env.BODY || "{}");
-const square = health.squareApi || {};
 console.log(`ok=${health.ok}`);
-console.log(`storage=${health.storage}`);
-console.log(`loginConfigured=${health.loginConfigured}`);
-console.log(`squareOnline=${square.online}`);
-console.log(`squareLastHealthyAt=${square.lastHealthyAt || "none"}`);
-console.log(`squareLastError=${square.lastError || "none"}`);
-console.log(`squareLastSyncSuccessAt=${square.lastSyncSuccessAt || "none"}`);
-console.log(`squareLastSyncError=${square.lastSyncError || "none"}`);
-console.log(`alertsConfigured=${square.alertsConfigured}`);
-if (!health.ok || health.storage !== "supabase" || !health.loginConfigured || square.online === false) {
+console.log(`service=${health.service || "unknown"}`);
+console.log(`time=${health.time || "unknown"}`);
+if (!health.ok) {
   process.exit(2);
 }
 NODE
@@ -180,6 +173,27 @@ check_authenticated_workflows() {
   fi
 
   echo "== Authenticated workflows =="
+  if check_json_endpoint "system-health" "$BASE_URL/api/system-health" "object"; then
+    node - <<'NODE'
+const fs = require("fs");
+const health = JSON.parse(fs.readFileSync("/tmp/goldies-check-system-health.json", "utf8"));
+const square = health.squareApi || {};
+console.log(`storage=${health.storage}`);
+console.log(`loginConfigured=${health.loginConfigured}`);
+console.log(`squareOnline=${square.online}`);
+console.log(`squareLastHealthyAt=${square.lastHealthyAt || "none"}`);
+console.log(`squareLastError=${square.lastError || "none"}`);
+console.log(`squareLastSyncSuccessAt=${square.lastSyncSuccessAt || "none"}`);
+console.log(`squareLastSyncError=${square.lastSyncError || "none"}`);
+console.log(`alertsConfigured=${square.alertsConfigured}`);
+if (!health.ok || health.storage !== "supabase" || !health.loginConfigured || square.online === false) {
+  process.exit(2);
+}
+NODE
+    if [ "$?" -ne 0 ]; then
+      STATUS=1
+    fi
+  fi
   check_json_endpoint "drinks-today" "$BASE_URL/api/reports/drinks?range=today" "object"
   check_json_endpoint "drink-time" "$BASE_URL/api/reports/drink-making-time?range=today" "object"
   check_json_endpoint "tickets-day" "$BASE_URL/api/tickets/day?date=$TODAY" "object"

@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.27";
+const APP_VERSION = "v1.10.29";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -43,7 +43,7 @@ const OWNER_PORTAL_RECENT_CHANGES = [
   {
     title: "Online ordering launch path",
     body:
-      "The customer-facing Online Orders link now uses /online-ordering, and DrinkFlow checkout-link orders wait for confirmed Square payment before entering the live KDS queue.",
+      "The customer-facing Online Ordering link now opens the current ordering page, and paid Square checkout returns customers to the same clean link.",
   },
   {
     title: "Drink queue visibility",
@@ -188,12 +188,22 @@ const OWNER_PORTAL_RECENT_CHANGES = [
 ];
 const RELEASE_NOTES = [
   {
-    version: "v1.10.27",
+    version: "v1.10.29",
     date: "Current build",
+    summary: "Fixed the customer online-ordering link.",
+    items: [
+      "The owner dashboard now opens the customer-facing Online Ordering page at /online-ordering.",
+      "The /online-ordering and /order links now load the app in production, while older beta links still work.",
+      "After Square checkout, paid pickup orders return customers to the current Online Ordering page instead of the old beta path.",
+    ],
+  },
+  {
+    version: "v1.10.28",
+    date: "Previous build",
     summary: "Added the 250th Fourth of July Cherry Firecracker update.",
     items: [
       "Cherry Firecracker now stays on the drink menu, kiosk, online ordering, and KDS tickets for Goldie's 250th Fourth of July service.",
-      "Known Goldie's drinks are merged back into the live menu when Square leaves one uncategorized or missing from the returned menu.",
+      "Known Goldie's drinks are merged back into the live menu and drink reports when Square leaves one uncategorized, missing, or variation-only.",
       "The July 4 theme keeps the screen light while using red and blue for text, buttons, and accents today only.",
     ],
   },
@@ -1545,6 +1555,7 @@ function HelpDialog({ open, title, body, onClose }) {
 
 function ConnectionReportDialog({
   open,
+  demoMode = false,
   report,
   loading,
   error,
@@ -1582,7 +1593,7 @@ function ConnectionReportDialog({
             Connection report
           </div>
           <h2 className="mt-1 text-2xl font-black text-[#0F4036]">
-            Square and system health
+            {demoMode ? "Sample system health" : "Square and system health"}
           </h2>
         </div>
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5">
@@ -1604,7 +1615,9 @@ function ConnectionReportDialog({
             ))}
           </div>
           <div className="rounded-2xl border border-[#0F4036]/10 bg-[#0F4036]/8 px-4 py-3 text-sm font-semibold leading-6 text-[#0F4036]">
-            Last sync context: {syncSummary.context || "Not recorded"}. The created/updated count helps show whether Square sent new orders or refreshed existing tickets.
+            {demoMode
+              ? "This report contains sample values only. The public demo does not read Goldie's connection history or trigger a live sync."
+              : `Last sync context: ${syncSummary.context || "Not recorded"}. The created/updated count helps show whether Square sent new orders or refreshed existing tickets.`}
           </div>
           {backfillResult ? (
             <div className="rounded-2xl border border-[#CA862B]/18 bg-[#EEE0C5]/35 px-4 py-3 text-sm font-bold leading-6 text-[#2D261C]">
@@ -1624,14 +1637,16 @@ function ConnectionReportDialog({
             >
               Refresh
             </button>
-            <button
-              type="button"
-              onClick={onBackfill}
-              disabled={backfillLoading}
-              className="rounded-xl border border-[#CA862B]/26 bg-[#CA862B] px-4 py-2.5 font-black text-white transition hover:bg-[#a86d22] disabled:cursor-wait disabled:opacity-60"
-            >
-              {backfillLoading ? "Backfilling..." : "Backfill 4 days"}
-            </button>
+            {!demoMode ? (
+              <button
+                type="button"
+                onClick={onBackfill}
+                disabled={backfillLoading}
+                className="rounded-xl border border-[#CA862B]/26 bg-[#CA862B] px-4 py-2.5 font-black text-white transition hover:bg-[#a86d22] disabled:cursor-wait disabled:opacity-60"
+              >
+                {backfillLoading ? "Backfilling..." : "Backfill 4 days"}
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={onClose}
@@ -1853,7 +1868,8 @@ function isDemoTrainingRoute() {
     const params = new URLSearchParams(window.location.search);
     const path = window.location.pathname.replace(/\/+$/, "");
     return (
-      path === "/demo/owner" ||
+      path === "/demo" ||
+      path.startsWith("/demo/") ||
       params.get("demo") === "training" ||
       window.location.hash === "#demo"
     );
@@ -1887,14 +1903,20 @@ function isOnlineOrderingBetaRoute() {
     path === "/online-ordering" ||
     path === "/order" ||
     path === "/online-ordering-beta" ||
-    path === "/order-beta"
+    path === "/order-beta" ||
+    path === "/demo/order" ||
+    path === "/demo/online-ordering"
   );
 }
 
 function isSelfOrderKioskRoute() {
   if (typeof window === "undefined") return false;
   const path = window.location.pathname.replace(/\/+$/, "");
-  return path === "/self-order-kiosk" || path === "/kiosk";
+  return (
+    path === "/self-order-kiosk" ||
+    path === "/kiosk" ||
+    path === "/demo/kiosk"
+  );
 }
 
 function getLocalDayBounds(date = new Date()) {
@@ -3646,18 +3668,10 @@ function getDashboardReportHref(panel) {
   if (typeof window === "undefined") return `/?panel=${panel}`;
 
   const nextUrl = new URL(window.location.href);
-  nextUrl.pathname = "/";
+  nextUrl.pathname = isDemoTrainingRoute() ? "/demo" : "/";
   nextUrl.search = "";
   nextUrl.hash = "";
   nextUrl.searchParams.set("panel", panel);
-
-  try {
-    if (window.location.search.includes("demo=training")) {
-      nextUrl.searchParams.set("demo", "training");
-    }
-  } catch {
-    // ignore URL construction failures
-  }
 
   return `${nextUrl.pathname}${nextUrl.search}`;
 }
@@ -6586,7 +6600,6 @@ function OwnerReportsView({
   const [showRecentChanges, setShowRecentChanges] = useState(false);
   const [policyAcknowledgment] = useState(readPolicyAcknowledgment);
   const [policyReminder] = useState(readPolicyReminder);
-  const demoQuery = demoMode ? "?demo=training" : "";
   const selectedRangeLabel = getSelectedOwnerRangeLabel(range, customRange);
   const reportQuery = buildOwnerReportQuery(range, customRange);
   const canLoadSelectedRange = range !== "custom" || isCustomOwnerRangeReady(customRange);
@@ -7173,19 +7186,19 @@ function OwnerReportsView({
               </div>
               <div className="flex flex-wrap gap-2">
                 <a
-                  href={`/volume-board${demoQuery}`}
+                  href={getDisplayHref("/volume-board", demoMode)}
                   className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
                 >
                   Volume Board
                 </a>
                 <a
-                  href={`/online-ordering${demoQuery}`}
+                  href={getDisplayHref("/online-ordering", demoMode)}
                   className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
                 >
-                  Online Orders
+                  Online Ordering
                 </a>
                 <a
-                  href={`/self-order-kiosk${demoQuery}`}
+                  href={getDisplayHref("/self-order-kiosk", demoMode)}
                   className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
                 >
                   Self Order Kiosk
@@ -7893,11 +7906,11 @@ function PasswordSettingsDialog({
 function getDisplayRoute() {
   if (typeof window === "undefined") return "";
   const path = window.location.pathname.replace(/\/+$/, "");
-  if (path === "/goldies-menu" || path === "/menu-board") return "menu";
-  if (path === "/orders-up" || path === "/customer-orders") return "orders";
-  if (path === "/drive-thru" || path === "/drive-thru-board") return "drive-thru";
-  if (path === "/volume-board" || path === "/drink-volume") return "volume";
-  if (path === "/online-orders" || path === "/online-order-board") return "online-orders";
+  if (path === "/goldies-menu" || path === "/menu-board" || path === "/demo/menu") return "menu";
+  if (path === "/orders-up" || path === "/customer-orders" || path === "/demo/orders-up") return "orders";
+  if (path === "/drive-thru" || path === "/drive-thru-board" || path === "/demo/drive-thru") return "drive-thru";
+  if (path === "/volume-board" || path === "/drink-volume" || path === "/demo/volume-board") return "volume";
+  if (path === "/online-orders" || path === "/online-order-board" || path === "/demo/online-orders") return "online-orders";
   return "";
 }
 
@@ -8106,7 +8119,7 @@ function DisplayBackButton() {
 
   return (
     <a
-      href={demoMode ? "/?demo=training" : "/"}
+      href={demoMode ? "/demo" : "/"}
       className="fixed bottom-3 right-3 z-30 rounded-full border border-white/24 bg-[#0F4036]/90 px-3 py-2 text-xs font-semibold text-white shadow-[0_16px_44px_rgba(15,64,54,0.22)] backdrop-blur-md transition hover:bg-[#0b352d] xl:right-4 xl:top-4 xl:bottom-auto xl:px-4 xl:text-sm"
     >
       Back to KDS
@@ -8115,7 +8128,26 @@ function DisplayBackButton() {
 }
 
 function getDisplayHref(path, demoMode = false) {
-  return demoMode ? `${path}?demo=training` : path;
+  if (!demoMode) return path;
+
+  const demoPaths = {
+    "/goldies-menu": "/demo/menu",
+    "/menu-board": "/demo/menu",
+    "/orders-up": "/demo/orders-up",
+    "/customer-orders": "/demo/orders-up",
+    "/drive-thru": "/demo/drive-thru",
+    "/drive-thru-board": "/demo/drive-thru",
+    "/volume-board": "/demo/volume-board",
+    "/drink-volume": "/demo/volume-board",
+    "/online-orders": "/demo/online-orders",
+    "/online-order-board": "/demo/online-orders",
+    "/online-ordering": "/demo/order",
+    "/order": "/demo/order",
+    "/self-order-kiosk": "/demo/kiosk",
+    "/kiosk": "/demo/kiosk",
+  };
+
+  return demoPaths[path] || "/demo";
 }
 
 function getDemoDisplayTickets() {
@@ -8299,6 +8331,7 @@ function MenuBoardDisplay() {
   const { themeMode, isDark, toggleTheme } = useDisplayTheme();
   const demoMode = isDemoTrainingRoute();
   const [menu, setMenu] = useState([]);
+  const [eventMenu, setEventMenu] = useState(null);
   const [updatedAt, setUpdatedAt] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -8309,6 +8342,7 @@ function MenuBoardDisplay() {
     async function refreshMenu() {
       if (demoMode) {
         setMenu(getDemoMenuDisplay());
+        setEventMenu(null);
         setUpdatedAt(new Date().toISOString());
         setError("");
         setLoading(false);
@@ -8330,6 +8364,7 @@ function MenuBoardDisplay() {
         const data = await response.json();
         if (!mounted) return;
         setMenu(data.categories || []);
+        setEventMenu(data.eventMenu || null);
         setUpdatedAt(data.updatedAt || "");
         setError("");
       } catch (displayError) {
@@ -8364,6 +8399,7 @@ function MenuBoardDisplay() {
   const priceClass = isDark
     ? "bg-[#CA862B]/18 text-[#F3D39B]"
     : "bg-[#0F4036]/8 text-[#0F4036]";
+  const eventMenuActive = Boolean(eventMenu?.active);
 
   return (
     <DisplayBackground darkMode={isDark}>
@@ -8390,11 +8426,11 @@ function MenuBoardDisplay() {
                 {demoMode ? "DF Demo Cafe" : "Goldie's Coffee & Goods"}
               </div>
               <h1 className="mt-1 text-2xl font-semibold tracking-normal sm:text-3xl md:text-4xl">
-                Drink Menu
+                {eventMenuActive ? eventMenu.label : "Drink Menu"}
               </h1>
             </div>
             <div className="hidden rounded-full border border-white/16 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/82 md:block">
-              Fresh today
+              {eventMenuActive ? "One-day menu" : "Fresh today"}
             </div>
           </div>
         </header>
@@ -10736,6 +10772,95 @@ const ONLINE_ORDERING_BETA_MENU = GOLDIES_MENU_CATEGORY_LABELS.map((category) =>
     })),
 }));
 
+const DEMO_ONLINE_ORDERING_MENU = [
+  {
+    category: "Coffee",
+    items: [
+      {
+        id: "demo-iced-vanilla-latte",
+        name: "Iced Vanilla Latte",
+        category: "Coffee",
+        priceCents: 575,
+        price: "$5.75",
+        imageUrl: getGeneratedDrinkImageUrl("latte"),
+        modifierGroups: [],
+      },
+      {
+        id: "demo-caramel-cold-brew",
+        name: "Caramel Cold Brew",
+        category: "Coffee",
+        priceCents: 525,
+        price: "$5.25",
+        imageUrl: getGeneratedDrinkImageUrl("cold-brew"),
+        modifierGroups: [],
+      },
+    ],
+  },
+  {
+    category: "Not Coffee",
+    items: [
+      {
+        id: "demo-matcha-latte",
+        name: "Matcha Latte",
+        category: "Not Coffee",
+        priceCents: 550,
+        price: "$5.50",
+        imageUrl: getGeneratedDrinkImageUrl("matcha-latte"),
+        modifierGroups: [],
+      },
+      {
+        id: "demo-chai-latte",
+        name: "Chai Latte",
+        category: "Not Coffee",
+        priceCents: 525,
+        price: "$5.25",
+        imageUrl: getGeneratedDrinkImageUrl("chai-latte"),
+        modifierGroups: [],
+      },
+    ],
+  },
+  {
+    category: "Smoothies",
+    items: [
+      {
+        id: "demo-strawberry-mango-smoothie",
+        name: "Strawberry Mango Smoothie",
+        category: "Smoothies",
+        priceCents: 700,
+        price: "$7.00",
+        imageUrl: getGeneratedDrinkImageUrl("strawberry-mango-16-oz"),
+        modifierGroups: [],
+      },
+      {
+        id: "demo-green-smoothie",
+        name: "Green Smoothie",
+        category: "Smoothies",
+        priceCents: 700,
+        price: "$7.00",
+        imageUrl: getGeneratedDrinkImageUrl("greens-16-oz"),
+        modifierGroups: [],
+      },
+    ],
+  },
+];
+
+const DEMO_ORDERING_HOURS = {
+  accepting: true,
+  message: "Sample ordering is available for this demo.",
+};
+
+const DEMO_PICKUP_SLOTS = [
+  { value: "sample-11-30", label: "11:30 AM" },
+  { value: "sample-11-45", label: "11:45 AM" },
+  { value: "sample-12-00", label: "12:00 PM" },
+];
+
+const DEMO_READY_QUOTE = {
+  readyTimeLabel: "10-15 minutes",
+  drinksAhead: 3,
+  averageLabel: "3m 12s",
+};
+
 function isOnlinePickupStaticItem(item = {}) {
   const text = String(item.name || "").toLowerCase();
   return !(
@@ -10951,13 +11076,18 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
     .trim()
     .slice(0, 80);
   const [menuGroups, setMenuGroups] = useState(() =>
-    normalizeOnlineOrderMenuGroups(ONLINE_ORDERING_BETA_MENU, {
-      includeForHereOnly: kioskMode,
-    })
+    normalizeOnlineOrderMenuGroups(
+      demoMode ? DEMO_ONLINE_ORDERING_MENU : ONLINE_ORDERING_BETA_MENU,
+      { includeForHereOnly: kioskMode }
+    )
   );
-  const [menuSource, setMenuSource] = useState("static");
-  const [orderingHours, setOrderingHours] = useState(null);
-  const [serverPickupSlots, setServerPickupSlots] = useState([]);
+  const [menuSource, setMenuSource] = useState(demoMode ? "demo" : "static");
+  const [orderingHours, setOrderingHours] = useState(
+    demoMode ? DEMO_ORDERING_HOURS : null
+  );
+  const [serverPickupSlots, setServerPickupSlots] = useState(
+    demoMode ? DEMO_PICKUP_SLOTS : []
+  );
   const [cart, setCart] = useState([]);
   const [customerName, setCustomerName] = useState(testerName);
   const [customerEmail, setCustomerEmail] = useState("");
@@ -10969,6 +11099,7 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [orderError, setOrderError] = useState("");
+  const [demoOrdered, setDemoOrdered] = useState(false);
   const cartTotalCents = cart.reduce((sum, item) => {
     const baseCents =
       Number(item.priceCents || 0) ||
@@ -10994,6 +11125,18 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
         ? `ASAP - estimated ${readyQuote.readyTimeLabel}`
         : "ASAP";
   useEffect(() => {
+    if (demoMode) {
+      setMenuGroups(
+        normalizeOnlineOrderMenuGroups(DEMO_ONLINE_ORDERING_MENU, {
+          includeForHereOnly: kioskMode,
+        })
+      );
+      setMenuSource("demo");
+      setOrderingHours(DEMO_ORDERING_HOURS);
+      setServerPickupSlots(DEMO_PICKUP_SLOTS);
+      return undefined;
+    }
+
     let mounted = true;
 
     async function fetchMenu() {
@@ -11021,9 +11164,14 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
     return () => {
       mounted = false;
     };
-  }, [kioskMode]);
+  }, [demoMode, kioskMode]);
 
   useEffect(() => {
+    if (demoMode) {
+      setReadyQuote(cartItemCount ? DEMO_READY_QUOTE : null);
+      return undefined;
+    }
+
     let mounted = true;
 
     async function fetchReadyQuote() {
@@ -11052,7 +11200,7 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
       mounted = false;
       clearInterval(interval);
     };
-  }, [cartItemCount]);
+  }, [cartItemCount, demoMode]);
 
   function addItem(item, category) {
     setCart((current) => {
@@ -11133,6 +11281,14 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
     setSubmitting(true);
     setOrderError("");
 
+    if (demoMode) {
+      setDemoOrdered(true);
+      setCart([]);
+      setShowCartDrawer(false);
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const response = await fetch(apiUrl("/api/beta/online-order/checkout"), {
         method: "POST",
@@ -11177,7 +11333,7 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
         <div className="relative mx-auto max-w-7xl px-4 py-5 md:py-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <a
-              href={demoMode ? "/?demo=training" : "/"}
+              href={demoMode ? "/demo" : "/"}
               className="inline-flex rounded-full border border-[#CA862B]/18 bg-white px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
             >
               Back to KDS
@@ -11200,17 +11356,33 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
                 </div>
                 <div>
                   <div className="text-xs font-black uppercase tracking-[0.24em] text-[#8B5A1D]">
-                    {kioskMode ? "Goldie's self order" : "Goldie's pickup ordering"}
+                    {demoMode
+                      ? kioskMode
+                        ? "DrinkFlow sample kiosk"
+                        : "DrinkFlow sample ordering"
+                      : kioskMode
+                        ? "Goldie's self order"
+                        : "Goldie's pickup ordering"}
                   </div>
                   <h1 className="mt-2 max-w-3xl text-4xl font-black leading-[0.98] tracking-normal text-[#0F4036] md:text-6xl">
-                    {kioskMode ? "Choose your drink." : "Goldie's drinks, ordered ahead."}
+                    {demoMode
+                      ? kioskMode
+                        ? "Try the customer kiosk."
+                        : "Try the pickup experience."
+                      : kioskMode
+                        ? "Choose your drink."
+                        : "Goldie's drinks, ordered ahead."}
                   </h1>
                 </div>
               </div>
               <p className="mt-5 max-w-2xl text-lg font-semibold leading-8 text-[#5A4F3E]">
                 {kioskMode
-                  ? "Browse the photo menu, add your favorites, then open the cart when you're ready."
-                  : "Choose your drink, add a pickup name, and pay through Square checkout."}
+                  ? demoMode
+                    ? "Explore a sample menu and complete a practice order. Nothing connects to Goldie's or a live checkout."
+                    : "Browse the photo menu, add your favorites, then open the cart when you're ready."
+                  : demoMode
+                    ? "See how customers choose a drink, add a pickup name, and receive a clear ready-time estimate."
+                    : "Choose your drink, add a pickup name, and pay through Square checkout."}
               </p>
             </div>
             <div className="rounded-[1.75rem] border border-[#CA862B]/16 bg-white p-4 shadow-[0_24px_70px_rgba(15,64,54,0.12)]">
@@ -11235,9 +11407,11 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
 
       <div className="mx-auto max-w-7xl space-y-4 p-4 pb-28">
 
-        {ordered ? (
+        {ordered || demoOrdered ? (
           <div className="rounded-3xl border border-[#0F4036]/14 bg-white/90 p-4 text-sm font-bold leading-6 text-[#0F4036] shadow-sm">
-            Payment complete. Square may take a moment to send the order back to the KDS.
+            {demoMode
+              ? "Sample order complete. Nothing was sent to Goldie's, Square, or a live KDS."
+              : "Payment complete. Square may take a moment to send the order back to the KDS."}
           </div>
         ) : null}
 
@@ -11499,10 +11673,20 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
                 cart.length && customerName.trim() && !submitting ? "bg-[#0F4036] hover:bg-[#0b352d]" : "bg-neutral-300"
               }`}
             >
-              {submitting ? "Opening Square checkout..." : kioskMode ? "Checkout" : "Pay with Square"}
+              {submitting
+                ? demoMode
+                  ? "Completing sample order..."
+                  : "Opening Square checkout..."
+                : demoMode
+                  ? "Complete sample order"
+                  : kioskMode
+                    ? "Checkout"
+                    : "Pay with Square"}
             </button>
             <p className="mt-3 text-xs font-semibold leading-5 text-[#6A614F]">
-              Checkout note: payment opens in Square checkout. Once paid, Square sends the order back for KDS intake.
+              {demoMode
+                ? "Demo note: this practice flow uses sample products and never sends an order or payment."
+                : "Checkout note: payment opens in Square checkout. Once paid, Square sends the order back for KDS intake."}
             </p>
           </aside>
             </div>
@@ -11549,11 +11733,15 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
               <div className="relative flex min-h-52 flex-col justify-between">
                 <div>
                   <div className="mb-4 inline-grid h-14 w-14 place-items-center rounded-2xl bg-white shadow-lg">
-                    <img src={LOGO_URL} alt="Goldie's Coffee & Goods" className="max-h-11 max-w-11 object-contain" />
+                    {demoMode ? (
+                      <DemoBrandMark size="sm" />
+                    ) : (
+                      <img src={LOGO_URL} alt="Goldie's Coffee & Goods" className="max-h-11 max-w-11 object-contain" />
+                    )}
                   </div>
                   <div>
                     <div className="text-xs font-black uppercase tracking-[0.18em] text-white/75">
-                      Goldie&apos;s {getOnlineOrderVisualStyle(detailItem).label}
+                      {demoMode ? "Sample" : "Goldie's"} {getOnlineOrderVisualStyle(detailItem).label}
                     </div>
                     <h2 className="mt-1 text-3xl font-black leading-none">
                       {detailItem.name}
@@ -12294,7 +12482,7 @@ export default function GoldiesKDS() {
         demoMode
         demoTickets={createTrainingTickets()}
         onClose={() => {
-          window.location.href = "/?demo=training";
+          window.location.href = "/demo";
         }}
       />
     );
@@ -12490,8 +12678,35 @@ export default function GoldiesKDS() {
   async function fetchConnectionReport() {
     setConnectionReportLoading(true);
     setConnectionReportError("");
+
+    if (isDemoRoute || isTrainingMode) {
+      const sampleTime = new Date().toISOString();
+      setConnectionReport({
+        ok: true,
+        storage: "sample",
+        squareApi: {
+          online: true,
+          lastHealthyAt: sampleTime,
+          lastSyncSuccessAt: sampleTime,
+          lastSyncError: null,
+          lastSyncSummary: {
+            context: "sample demo sync",
+            dedupedOrders: 8,
+            created: 3,
+            updated: 5,
+            failed: 0,
+          },
+          cachedActiveTicketCount: trainingTickets.length,
+          suspiciousPickupNames: [],
+          alertsConfigured: true,
+        },
+      });
+      setConnectionReportLoading(false);
+      return;
+    }
+
     try {
-      const response = await fetch(apiUrl("/api/health"), {
+      const response = await fetch(apiUrl("/api/system-health"), {
         credentials: "include",
       });
       const data = await response.json().catch(() => ({}));
@@ -12505,6 +12720,11 @@ export default function GoldiesKDS() {
   }
 
   async function runSquareHistoryBackfill() {
+    if (isDemoRoute || isTrainingMode) {
+      setConnectionBackfillResult("The sample demo never starts a live history sync.");
+      return;
+    }
+
     setConnectionBackfillLoading(true);
     setConnectionBackfillResult("");
     setConnectionReportError("");
@@ -12704,7 +12924,7 @@ export default function GoldiesKDS() {
           fetch(apiUrl("/api/reports/drink-making-time?range=today"), {
             credentials: "include",
           }),
-          fetch(apiUrl("/api/health"), {
+          fetch(apiUrl("/api/system-health"), {
             credentials: "include",
           }),
         ]);
@@ -14099,6 +14319,7 @@ export default function GoldiesKDS() {
       />
       <ConnectionReportDialog
         open={showConnectionReport}
+        demoMode={isDemoRoute || isTrainingMode}
         report={connectionReport}
         loading={connectionReportLoading}
         error={connectionReportError}

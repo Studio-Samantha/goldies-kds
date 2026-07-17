@@ -3,1332 +3,1570 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Goldie&apos;s Coffee &amp; Goods Case Study | DrinkFlow KDS</title>
+    <title>DrinkFlow KDS at Goldie&apos;s | Field Case Study</title>
     <meta
       name="description"
-      content="A living case study showing how Goldie's Coffee & Goods in Exira uses DrinkFlow KDS during opening week, with real product updates, fixes, and future owner-report stats."
+      content="See how DrinkFlow KDS separates drink preparation from mixed retail transactions while preserving full-order lookup, customer handoff, and owner reporting in a real coffee shop."
     />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://goldieskds.com/case-study/goldies" />
     <meta property="og:type" content="article" />
     <meta property="og:url" content="https://goldieskds.com/case-study/goldies" />
-    <meta property="og:title" content="Goldie&apos;s Coffee &amp; Goods Case Study | DrinkFlow KDS" />
+    <meta property="og:title" content="DrinkFlow KDS at Goldie&apos;s | Field Case Study" />
     <meta
       property="og:description"
-      content="A living case study for the first live DrinkFlow KDS customer: opening-week fixes, owner analytics, reports, and practical drink-shop workflow improvements."
+      content="What real mixed retail service taught DrinkFlow about focused prep, complete transaction context, customer handoff, and useful owner reporting."
     />
     <meta property="og:image" content="https://goldieskds.com/drinkflow-ipad-kds.png" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Goldie&apos;s Coffee &amp; Goods Case Study" />
+    <meta name="twitter:title" content="DrinkFlow KDS at Goldie&apos;s" />
     <meta
       name="twitter:description"
-      content="How a real Exira coffee shop shaped DrinkFlow KDS during opening week."
+      content="A product-first field case study built from approved, privacy-safe operating evidence."
     />
     <meta name="twitter:image" content="https://goldieskds.com/drinkflow-ipad-kds.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Nunito+Sans:wght@400;700;800;900&display=swap"
+      rel="stylesheet"
+    />
     <style>
       :root {
-        --paper: #fffdf8;
-        --cream: #f6efe1;
-        --green: #0f4036;
-        --gold: #ca862b;
-        --blue: #2f6f8f;
-        --ink: #15130f;
-        --muted: #665f52;
-        --line: rgba(15, 64, 54, 0.14);
-        --shadow: 0 22px 70px rgba(15, 64, 54, 0.16);
+        --cream: #fff5e3;
+        --paper: #fffdf6;
+        --ink: #201713;
+        --espresso: #38261f;
+        --muted: #67564d;
+        --tomato: #e9432e;
+        --coral: #ff7b55;
+        --butter: #ffd95a;
+        --matcha: #79b65b;
+        --turquoise: #2fb6b2;
+        --cobalt: #3157c8;
+        --lavender: #bda7ff;
+        --warm-gray: #efe4d1;
+        --goldies-green: #0f4036;
+        --goldies-gold: #ca862b;
+        --radius: 8px;
+        --shadow: 8px 8px 0 rgba(56, 38, 31, 0.22);
+        --hard-shadow: 8px 8px 0 var(--espresso);
       }
 
-      * { box-sizing: border-box; }
-      html { scroll-behavior: smooth; }
+      * {
+        box-sizing: border-box;
+        letter-spacing: 0;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
       body {
         margin: 0;
-        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        color: var(--ink);
-        background:
-          radial-gradient(circle at 18% 10%, rgba(202, 134, 43, 0.13), transparent 26%),
-          linear-gradient(180deg, #fffdf8 0%, #f6efe1 54%, #fffdf8 100%);
-      }
-      a { color: inherit; }
-      body {
         overflow-x: hidden;
+        color: var(--ink);
+        background: var(--cream);
+        font-family: "Nunito Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.5;
       }
-      img, svg {
+
+      a {
+        color: inherit;
+      }
+
+      img,
+      svg {
+        display: block;
         max-width: 100%;
       }
-      h1, h2, h3, p, li, .button, .proof-tile, .card, .report-point, .report-mini, .report-panel, .timeline-item, .metric {
-        overflow-wrap: anywhere;
+
+      button {
+        font: inherit;
       }
-      .nav {
+
+      :focus-visible {
+        outline: 4px solid var(--cobalt);
+        outline-offset: 4px;
+      }
+
+      h1,
+      h2,
+      h3,
+      p,
+      figure {
+        margin-top: 0;
+      }
+
+      h1,
+      h2,
+      h3 {
+        font-family: Fraunces, Georgia, serif;
+      }
+
+      h1 {
+        max-width: 13ch;
+        margin-bottom: 1.3rem;
+        font-size: 4.8rem;
+        line-height: 0.98;
+      }
+
+      h2 {
+        margin-bottom: 1rem;
+        font-size: 3.35rem;
+        line-height: 1.02;
+      }
+
+      h3 {
+        margin-bottom: 0.65rem;
+        font-size: 1.65rem;
+        line-height: 1.08;
+      }
+
+      .site-nav {
         position: sticky;
         top: 0;
-        z-index: 10;
-        display: flex;
+        z-index: 50;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 1rem;
         align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 14px clamp(16px, 4vw, 48px);
-        background: rgba(255, 253, 248, 0.86);
-        border-bottom: 1px solid rgba(15, 64, 54, 0.08);
-        backdrop-filter: blur(18px);
+        min-height: 74px;
+        border-bottom: 2px solid var(--espresso);
+        padding: 0.8rem 3rem;
+        background: var(--cream);
       }
-      .brand {
+
+      .brand,
+      .nav-links,
+      .hero-actions,
+      .proof-key,
+      .footer-inner,
+      .footer-links {
         display: flex;
         align-items: center;
-        gap: 10px;
-        font-weight: 950;
-        color: var(--green);
+      }
+
+      .brand {
+        gap: 0.7rem;
         text-decoration: none;
       }
-      .brand-mark {
-        display: grid;
+
+      .brand-stamp {
+        display: inline-grid;
         place-items: center;
-        width: 34px;
-        height: 34px;
-        border-radius: 8px;
-        background: var(--green);
-        color: #fff;
+        width: 2.4rem;
+        height: 2.4rem;
+        border: 2px solid var(--espresso);
+        border-radius: var(--radius);
+        color: var(--paper);
+        background: var(--tomato);
+        box-shadow: 4px 4px 0 var(--espresso);
+        font-weight: 950;
       }
+
+      .brand strong {
+        font-size: 1.2rem;
+        font-weight: 950;
+        white-space: nowrap;
+      }
+
+      .brand strong span {
+        color: var(--tomato);
+      }
+
       .nav-links {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-        justify-content: flex-end;
+        justify-content: center;
+        gap: 1.2rem;
+        font-size: 0.9rem;
+        font-weight: 900;
       }
-      .button, .nav-links a {
+
+      .nav-links a,
+      .footer-links a {
+        text-decoration: none;
+      }
+
+      .nav-links a {
+        border-bottom: 3px solid transparent;
+        padding: 0.4rem 0.15rem;
+      }
+
+      .nav-links a:hover {
+        border-color: var(--tomato);
+      }
+
+      .button,
+      .nav-cta {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-height: 40px;
-        padding: 0 14px;
-        border-radius: 8px;
-        font-size: 14px;
-        font-weight: 850;
-        text-decoration: none;
-      }
-      .button {
-        border: 1px solid rgba(15, 64, 54, 0.16);
-        background: #fff;
-        color: var(--green);
-      }
-      .button.primary {
-        background: var(--green);
-        color: #fff;
-        border-color: var(--green);
-      }
-      main {
-        overflow-x: hidden;
-      }
-      .hero {
-        min-height: calc(100vh - 68px);
-        padding: clamp(28px, 5vw, 70px) clamp(16px, 4vw, 48px) 48px;
-        display: grid;
-        align-items: center;
-      }
-      .hero-inner, .section-inner {
-        width: min(1180px, 100%);
-        margin: 0 auto;
-      }
-      .hero-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 0.9fr) minmax(320px, 0.72fr);
-        gap: clamp(28px, 6vw, 80px);
-        align-items: center;
-      }
-      .eyebrow {
-        margin: 0 0 12px;
-        color: var(--gold);
-        font-size: 12px;
+        min-height: 3rem;
+        border: 2px solid var(--espresso);
+        border-radius: var(--radius);
+        padding: 0.75rem 1rem;
+        box-shadow: 5px 5px 0 var(--espresso);
         font-weight: 950;
-        letter-spacing: 0;
-        text-transform: uppercase;
-      }
-      h1, h2, h3, p {
-        margin-top: 0;
-      }
-      h1 {
-        max-width: 860px;
-        margin-bottom: 18px;
-        color: var(--green);
-        font-size: clamp(44px, 7vw, 86px);
-        line-height: 0.94;
-        letter-spacing: 0;
-      }
-      h2 {
-        margin-bottom: 14px;
-        color: var(--green);
-        font-size: clamp(30px, 4.4vw, 56px);
-        line-height: 1;
-        letter-spacing: 0;
-      }
-      h3 {
-        color: var(--green);
-        font-size: 20px;
-        line-height: 1.15;
-      }
-      .lead {
-        max-width: 700px;
-        margin-bottom: 24px;
-        color: var(--muted);
-        font-size: clamp(18px, 2vw, 23px);
-        line-height: 1.45;
-      }
-      .hero-actions {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-      .proof-row {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 10px;
-        margin-top: 34px;
-      }
-      .proof-tile {
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background: rgba(255, 255, 255, 0.74);
-        padding: 14px;
-      }
-      .proof-tile strong {
-        display: block;
-        color: var(--green);
-        font-size: 22px;
-      }
-      .proof-tile span {
-        display: block;
-        margin-top: 4px;
-        color: var(--muted);
-        font-size: 13px;
-        line-height: 1.35;
-      }
-      .device-wrap {
-        position: relative;
-        min-height: 480px;
-      }
-      .screen {
-        position: relative;
-        z-index: 1;
-        border: 1px solid rgba(15, 64, 54, 0.18);
-        border-radius: 22px;
-        background: #f6efe1;
-        box-shadow: var(--shadow);
-        padding: 14px;
-        transform: rotate(1.2deg);
-      }
-      .goldies-login {
-        position: relative;
-        min-height: 520px;
-        border-radius: 13px;
-        overflow: hidden;
-        display: grid;
-        place-items: center;
-        padding: 30px;
-        background:
-          linear-gradient(rgba(246, 239, 225, 0.84), rgba(246, 239, 225, 0.84)),
-          url("/goldies-logo.png") center / 170px auto repeat;
-      }
-      .goldies-login::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background:
-          radial-gradient(circle at 24% 18%, rgba(202, 134, 43, 0.16), transparent 28%),
-          linear-gradient(135deg, rgba(255, 253, 248, 0.62), rgba(15, 64, 54, 0.08));
-      }
-      .goldies-settings {
-        position: absolute;
-        z-index: 2;
-        top: 18px;
-        right: 18px;
-        display: flex;
-        gap: 8px;
-      }
-      .goldies-settings span {
-        display: grid;
-        place-items: center;
-        min-width: 36px;
-        height: 34px;
-        border: 1px solid rgba(15, 64, 54, 0.18);
-        border-radius: 999px;
-        background: rgba(255, 253, 248, 0.9);
-        color: var(--green);
-        font-size: 12px;
-        font-weight: 950;
-      }
-      .goldies-login-card {
-        position: relative;
-        z-index: 1;
-        width: min(330px, 100%);
-        border: 1px solid rgba(15, 64, 54, 0.14);
-        border-radius: 24px;
-        background: rgba(255, 253, 248, 0.93);
-        box-shadow: 0 18px 50px rgba(15, 64, 54, 0.16);
-        padding: 24px;
         text-align: center;
+        text-decoration: none;
+        transition: transform 160ms ease, box-shadow 160ms ease;
       }
-      .goldies-login-card img {
-        display: block;
-        width: min(210px, 82%);
-        margin: 0 auto 12px;
+
+      .button.primary,
+      .nav-cta {
+        color: var(--paper);
+        background: var(--tomato);
       }
-      .goldies-pill {
-        display: inline-flex;
-        border-radius: 999px;
-        background: rgba(15, 64, 54, 0.1);
-        color: var(--green);
-        padding: 6px 10px;
-        font-size: 11px;
+
+      .button.secondary {
+        color: var(--espresso);
+        background: var(--butter);
+      }
+
+      .button:hover,
+      .nav-cta:hover {
+        transform: translate(-2px, -2px);
+        box-shadow: 7px 7px 0 var(--espresso);
+      }
+
+      .section-label,
+      .proof-label,
+      .figure-label,
+      .metric-label,
+      .timeline-date,
+      .privacy-note strong {
         font-weight: 950;
         text-transform: uppercase;
       }
-      .goldies-login-card h3 {
-        margin: 10px 0 6px;
-        color: var(--green);
-        font-size: 26px;
+
+      .section-label {
+        display: inline-block;
+        margin: 0 0 0.8rem;
+        color: var(--tomato);
+        font-size: 0.8rem;
       }
-      .goldies-login-card p {
-        margin: 0 0 14px;
-        color: var(--muted);
-        font-size: 13px;
+
+      .hero {
+        position: relative;
+        isolation: isolate;
+        display: flex;
+        align-items: flex-end;
+        min-height: 39rem;
+        overflow: hidden;
+        padding: 5.5rem 3rem 4rem;
+        color: var(--paper);
+        background-color: var(--espresso);
+        background-image: url("/drinkflow-ipad-kds.png");
+        background-position: center 52%;
+        background-size: cover;
       }
-      .goldies-field {
-        margin-top: 10px;
-        text-align: left;
-      }
-      .goldies-field span {
-        color: var(--muted);
-        font-size: 12px;
-        font-weight: 850;
-      }
-      .goldies-line {
-        height: 38px;
-        margin-top: 5px;
-        border: 1px solid rgba(15, 64, 54, 0.16);
-        border-radius: 8px;
-        background: #fff;
-      }
-      .goldies-button {
-        display: grid;
-        place-items: center;
-        min-height: 42px;
-        margin-top: 14px;
-        border-radius: 8px;
-        background: var(--green);
-        color: #fff;
-        font-weight: 950;
-      }
-      .goldies-footer {
-        margin-top: 12px;
-        color: rgba(15, 64, 54, 0.54);
-        font-size: 10px;
-        font-weight: 900;
-        text-transform: uppercase;
-      }
-      .floating-note {
+
+      .hero::before {
         position: absolute;
-        z-index: 2;
-        right: -12px;
-        bottom: 28px;
-        width: min(270px, 72%);
-        border: 1px solid rgba(202, 134, 43, 0.25);
-        border-radius: 8px;
-        background: #fffdf8;
-        box-shadow: 0 16px 40px rgba(15, 64, 54, 0.13);
-        padding: 16px;
+        z-index: -1;
+        inset: 0;
+        background: rgba(56, 38, 31, 0.66);
+        content: "";
       }
-      .floating-note strong {
-        display: block;
-        color: var(--green);
+
+      .hero-copy {
+        width: min(100%, 72rem);
       }
-      .floating-note span {
-        display: block;
-        margin-top: 5px;
-        color: var(--muted);
-        font-size: 13px;
-        line-height: 1.45;
+
+      .hero .section-label {
+        color: var(--butter);
       }
-      .section {
-        padding: 70px clamp(16px, 4vw, 48px);
+
+      .hero h1 {
+        color: var(--paper);
+        text-shadow: 0 3px 18px rgba(33, 20, 16, 0.34);
       }
-      .section.alt {
-        background: rgba(15, 64, 54, 0.045);
-        border-top: 1px solid rgba(15, 64, 54, 0.08);
-        border-bottom: 1px solid rgba(15, 64, 54, 0.08);
+
+      .hero-lead {
+        max-width: 54rem;
+        margin-bottom: 1.6rem;
+        color: var(--paper);
+        font-size: 1.22rem;
+        font-weight: 800;
       }
-      .section-copy {
-        max-width: 720px;
-        color: var(--muted);
-        font-size: 18px;
-        line-height: 1.6;
+
+      .hero-actions {
+        flex-wrap: wrap;
+        gap: 0.85rem;
       }
-      .grid {
+
+      .case-map {
+        padding: 2.2rem 3rem 3rem;
+        color: var(--paper);
+        background: var(--espresso);
+      }
+
+      .case-map-inner,
+      .section-inner,
+      .footer-inner {
+        width: min(100%, 96rem);
+        margin-inline: auto;
+      }
+
+      .proof-key {
+        justify-content: space-between;
+        gap: 1rem;
+        min-height: 2.6rem;
+        border-bottom: 2px solid rgba(255, 253, 246, 0.45);
+        padding-bottom: 0.85rem;
+        font-size: 0.82rem;
+        font-weight: 950;
+        text-transform: uppercase;
+      }
+
+      .proof-key span:last-child {
+        color: var(--butter);
+      }
+
+      .proof-grid {
         display: grid;
-        gap: 16px;
-      }
-      .two {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-      .three {
         grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.85rem;
+        margin-top: 1rem;
       }
-      .card {
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background: rgba(255, 255, 255, 0.78);
-        padding: 22px;
-        box-shadow: 0 14px 38px rgba(15, 64, 54, 0.06);
+
+      .proof-grid article {
+        min-height: 11rem;
+        border: 2px solid var(--espresso);
+        border-radius: var(--radius);
+        padding: 1.1rem;
+        color: var(--espresso);
       }
-      .card p, .timeline p {
+
+      .proof-grid article:nth-child(1) {
+        background: var(--butter);
+      }
+
+      .proof-grid article:nth-child(2) {
+        background: var(--lavender);
+      }
+
+      .proof-grid article:nth-child(3) {
+        background: var(--turquoise);
+      }
+
+      .proof-label {
+        display: block;
+        margin-bottom: 1.2rem;
+        font-size: 0.72rem;
+      }
+
+      .proof-grid strong {
+        display: block;
+        margin-bottom: 0.45rem;
+        font-family: Fraunces, Georgia, serif;
+        font-size: 1.85rem;
+        line-height: 1.05;
+      }
+
+      .proof-grid p {
+        margin-bottom: 0;
+        font-weight: 800;
+      }
+
+      .section {
+        padding: 5rem 3rem;
+      }
+
+      .section-intro {
+        max-width: 70rem;
+        margin-bottom: 2rem;
+      }
+
+      .section-intro p:last-child,
+      .story-copy > p,
+      .reports-copy > p,
+      .about-copy > p {
         color: var(--muted);
-        line-height: 1.58;
+        font-size: 1.15rem;
+        font-weight: 700;
       }
-      .report-showcase {
+
+      .problem-section {
+        background: var(--paper);
+      }
+
+      .problem-layout {
+        display: grid;
+        grid-template-columns: 0.76fr 1.24fr;
+        gap: 2.5rem;
         align-items: center;
-        margin-top: 28px;
-        grid-template-columns: minmax(0, 0.82fr) minmax(420px, 1.18fr);
       }
+
+      .mixed-order {
+        border: 3px solid var(--espresso);
+        border-radius: var(--radius);
+        padding: 1.2rem;
+        background: var(--butter);
+        box-shadow: var(--hard-shadow);
+      }
+
+      .mixed-order-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        border-bottom: 2px solid var(--espresso);
+        padding-bottom: 0.8rem;
+        font-size: 0.76rem;
+        font-weight: 950;
+        text-transform: uppercase;
+      }
+
+      .mixed-order ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .mixed-order li {
+        display: grid;
+        grid-template-columns: 2rem minmax(0, 1fr) auto;
+        gap: 0.55rem;
+        align-items: center;
+        border-bottom: 2px solid rgba(56, 38, 31, 0.25);
+        padding: 0.8rem 0;
+        font-weight: 900;
+      }
+
+      .mixed-order li span:last-child {
+        border: 2px solid var(--espresso);
+        border-radius: var(--radius);
+        padding: 0.25rem 0.4rem;
+        background: var(--paper);
+        font-size: 0.7rem;
+        text-transform: uppercase;
+      }
+
+      .mixed-order li.drink span:last-child {
+        color: var(--paper);
+        background: var(--cobalt);
+      }
+
+      .mixed-order-note {
+        margin: 1rem 0 0;
+        font-weight: 950;
+      }
+
+      .split-results {
+        display: grid;
+        gap: 0.9rem;
+      }
+
+      .split-results article {
+        border: 2px solid var(--espresso);
+        border-radius: var(--radius);
+        padding: 1.2rem;
+      }
+
+      .split-results article:first-child {
+        background: var(--coral);
+      }
+
+      .split-results article:last-child {
+        color: var(--paper);
+        background: var(--cobalt);
+      }
+
+      .split-results span {
+        display: block;
+        margin-bottom: 0.8rem;
+        font-size: 0.74rem;
+        font-weight: 950;
+        text-transform: uppercase;
+      }
+
+      .split-results strong {
+        display: block;
+        font-family: Fraunces, Georgia, serif;
+        font-size: 2rem;
+        line-height: 1.05;
+      }
+
+      .split-results p {
+        margin: 0.55rem 0 0;
+        font-weight: 800;
+      }
+
+      .evidence-section {
+        border-block: 3px solid var(--espresso);
+        background: var(--cream);
+      }
+
+      .metric-story {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 1rem;
+      }
+
+      .metric {
+        grid-column: span 6;
+        min-height: 17rem;
+        border: 2px solid var(--espresso);
+        border-radius: var(--radius);
+        padding: 1.25rem;
+        box-shadow: var(--hard-shadow);
+      }
+
+      .metric:nth-child(1) {
+        background: var(--butter);
+      }
+
+      .metric:nth-child(2) {
+        background: var(--matcha);
+      }
+
+      .metric:nth-child(3) {
+        color: var(--paper);
+        background: var(--cobalt);
+      }
+
+      .metric:nth-child(4) {
+        background: var(--lavender);
+      }
+
+      .metric-label {
+        display: block;
+        margin-bottom: 1.5rem;
+        font-size: 0.72rem;
+      }
+
+      .metric strong {
+        display: block;
+        margin-bottom: 0.8rem;
+        font-family: Fraunces, Georgia, serif;
+        font-size: 3.3rem;
+        line-height: 1;
+      }
+
+      .metric h3 {
+        font-size: 1.45rem;
+      }
+
+      .metric p {
+        margin-bottom: 0;
+        font-weight: 800;
+      }
+
+      .honest-result {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 1.5rem;
+        align-items: center;
+        margin-top: 1.4rem;
+        border: 3px solid var(--espresso);
+        border-radius: var(--radius);
+        padding: 1.4rem;
+        color: var(--paper);
+        background: var(--espresso);
+      }
+
+      .honest-result strong {
+        color: var(--butter);
+        font-family: Fraunces, Georgia, serif;
+        font-size: 2.7rem;
+        line-height: 1;
+        white-space: nowrap;
+      }
+
+      .honest-result p {
+        margin: 0;
+        font-weight: 800;
+      }
+
+      .honest-result p b {
+        color: var(--butter);
+      }
+
+      .product-section {
+        color: var(--paper);
+        background: var(--turquoise);
+      }
+
+      .product-section .section-label,
+      .product-section .section-intro p:last-child {
+        color: var(--espresso);
+      }
+
+      .product-visuals {
+        display: grid;
+        grid-template-columns: 1.12fr 0.88fr;
+        gap: 1rem;
+      }
+
+      .product-figure {
+        display: grid;
+        grid-template-rows: minmax(0, 1fr) auto;
+        min-width: 0;
+        min-height: 34rem;
+        border: 3px solid var(--espresso);
+        border-radius: var(--radius);
+        margin: 0;
+        overflow: hidden;
+        background: var(--paper);
+        box-shadow: var(--hard-shadow);
+      }
+
+      .product-figure img {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        object-fit: cover;
+      }
+
+      .product-figure:first-child img {
+        object-position: center;
+      }
+
+      .product-figure.brand-figure {
+        background: var(--goldies-green);
+        box-shadow: 8px 8px 0 var(--goldies-gold);
+      }
+
+      .product-figure.brand-figure img {
+        object-position: center 30%;
+      }
+
+      .product-figure figcaption {
+        min-height: 7rem;
+        border-top: 3px solid var(--espresso);
+        padding: 1rem;
+        color: var(--paper);
+        background: var(--espresso);
+      }
+
+      .brand-figure figcaption {
+        border-color: var(--goldies-gold);
+        background: var(--goldies-green);
+      }
+
+      .figure-label {
+        display: block;
+        margin-bottom: 0.45rem;
+        color: var(--butter);
+        font-size: 0.7rem;
+      }
+
+      .brand-figure .figure-label {
+        color: #f0c36b;
+      }
+
+      .product-figure figcaption strong {
+        display: block;
+        font-family: Fraunces, Georgia, serif;
+        font-size: 1.3rem;
+        line-height: 1.1;
+      }
+
+      .reports-section {
+        color: var(--paper);
+        background: var(--espresso);
+      }
+
+      .reports-layout {
+        display: grid;
+        grid-template-columns: 0.78fr 1.22fr;
+        gap: 2.5rem;
+        align-items: center;
+      }
+
+      .reports-copy .section-label {
+        color: var(--butter);
+      }
+
+      .reports-copy > p {
+        color: var(--paper);
+      }
+
       .report-points {
         display: grid;
-        gap: 10px;
-        margin-top: 20px;
+        gap: 0.7rem;
+        margin-top: 1.5rem;
       }
-      .report-point {
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background: rgba(255, 255, 255, 0.72);
-        padding: 14px;
+
+      .report-points div {
+        border-top: 2px solid rgba(255, 253, 246, 0.45);
+        padding-top: 0.75rem;
       }
-      .report-point strong {
+
+      .report-points strong,
+      .report-points span {
         display: block;
-        color: var(--green);
       }
-      .report-point span {
-        display: block;
-        margin-top: 4px;
-        color: var(--muted);
-        font-size: 14px;
-        line-height: 1.45;
+
+      .report-points strong {
+        color: var(--butter);
+        font-family: Fraunces, Georgia, serif;
+        font-size: 1.3rem;
       }
+
+      .report-points span {
+        margin-top: 0.25rem;
+        font-weight: 700;
+      }
+
       .report-screen {
-        overflow: hidden;
-        border: 1px solid rgba(15, 64, 54, 0.16);
-        border-radius: 18px;
-        background: #fffdf8;
-        box-shadow: var(--shadow);
+        border: 3px solid var(--espresso);
+        border-radius: var(--radius);
+        color: var(--espresso);
+        background: var(--paper);
+        box-shadow: 12px 12px 0 var(--tomato);
       }
+
       .report-topbar {
         display: flex;
-        align-items: center;
         justify-content: space-between;
-        gap: 16px;
-        padding: 16px 18px;
-        background: var(--green);
-        color: #fff;
+        gap: 1rem;
+        align-items: center;
+        border-bottom: 2px solid var(--espresso);
+        padding: 1rem;
+        background: var(--butter);
       }
+
+      .report-topbar span,
       .report-topbar strong {
         display: block;
-        font-size: 18px;
       }
+
       .report-topbar span {
-        color: rgba(255, 255, 255, 0.72);
-        font-size: 12px;
-        font-weight: 850;
+        font-size: 0.72rem;
+        font-weight: 950;
         text-transform: uppercase;
       }
-      .report-badges {
+
+      .report-topbar strong {
+        font-family: Fraunces, Georgia, serif;
+        font-size: 1.3rem;
+      }
+
+      .export-badges {
         display: flex;
         flex-wrap: wrap;
+        gap: 0.4rem;
         justify-content: flex-end;
-        gap: 7px;
       }
-      .report-badges span {
-        border: 1px solid rgba(255, 255, 255, 0.22);
-        border-radius: 999px;
-        padding: 6px 9px;
-        color: #fff;
-        font-size: 11px;
+
+      .export-badges b {
+        border: 2px solid var(--espresso);
+        border-radius: var(--radius);
+        padding: 0.3rem 0.45rem;
+        background: var(--paper);
+        font-size: 0.7rem;
       }
+
       .report-body {
-        padding: 18px;
+        padding: 1rem;
       }
+
       .report-metrics {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 10px;
-      }
-      .report-mini {
-        border: 1px solid rgba(15, 64, 54, 0.1);
-        border-radius: 8px;
-        background: #fff;
-        padding: 12px;
-      }
-      .report-mini span {
-        display: block;
-        color: var(--muted);
-        font-size: 11px;
-        font-weight: 850;
-        text-transform: uppercase;
-      }
-      .report-mini strong {
-        display: block;
-        margin-top: 5px;
-        color: var(--green);
-        font-size: 25px;
-        line-height: 1;
-      }
-      .report-main-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(210px, 0.58fr);
-        gap: 12px;
-        margin-top: 12px;
-      }
-      .report-panel {
-        border: 1px solid rgba(15, 64, 54, 0.1);
-        border-radius: 8px;
-        background: #fff;
-        padding: 14px;
-      }
-      .report-panel h3 {
-        margin-bottom: 10px;
-        font-size: 17px;
-      }
-      .report-chart {
-        width: 100%;
-        min-height: 170px;
-      }
-      .category-row {
-        display: grid;
-        grid-template-columns: 78px minmax(0, 1fr) 42px;
-        gap: 10px;
-        align-items: center;
-        margin-top: 11px;
-        color: var(--muted);
-        font-size: 13px;
-        font-weight: 850;
-      }
-      .category-track {
-        overflow: hidden;
-        height: 10px;
-        border-radius: 999px;
-        background: rgba(15, 64, 54, 0.09);
-      }
-      .category-fill {
-        height: 100%;
-        border-radius: inherit;
-        background: var(--gold);
-      }
-      .report-advice {
-        margin-top: 12px;
-        border: 1px solid rgba(202, 134, 43, 0.2);
-        border-radius: 8px;
-        background: rgba(246, 239, 225, 0.72);
-        padding: 14px;
-      }
-      .report-advice strong {
-        display: block;
-        color: var(--green);
-      }
-      .report-advice p {
-        margin: 6px 0 0;
-        color: var(--muted);
-        font-size: 14px;
-        line-height: 1.5;
-      }
-      .timeline {
-        display: grid;
-        gap: 14px;
-      }
-      .timeline.is-collapsed .timeline-item:nth-of-type(n + 7) {
-        display: none;
-      }
-      .timeline-item {
-        display: grid;
-        grid-template-columns: 130px minmax(0, 1fr);
-        gap: 18px;
-        border-left: 3px solid rgba(202, 134, 43, 0.55);
-        padding: 2px 0 18px 18px;
-      }
-      .timeline-date {
-        color: var(--gold);
-        font-size: 12px;
-        font-weight: 950;
-        text-transform: uppercase;
-      }
-      .timeline h3 {
-        margin-bottom: 8px;
-      }
-      .timeline-actions {
-        margin-top: 18px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .timeline-toggle {
-        border: 1px solid rgba(202, 134, 43, 0.28);
-        border-radius: 999px;
-        background: #fff;
-        color: var(--green);
-        cursor: pointer;
-        font: inherit;
-        font-size: 14px;
-        font-weight: 950;
-        padding: 12px 18px;
-        box-shadow: 0 14px 34px rgba(15, 64, 54, 0.08);
-      }
-      .timeline-toggle:hover {
-        background: var(--cream);
-      }
-      .metric-strip {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 12px;
-      }
-      .metric {
-        min-height: 132px;
-        border-radius: 8px;
-        background: var(--green);
-        color: #fff;
-        padding: 18px;
-      }
-      .metric strong {
-        display: block;
-        font-size: clamp(28px, 4vw, 44px);
-        line-height: 1;
-      }
-      .metric span {
-        display: block;
-        margin-top: 10px;
-        color: rgba(255, 255, 255, 0.78);
-        line-height: 1.4;
-      }
-      .quote {
-        border-left: 4px solid var(--gold);
-        padding-left: 20px;
-        color: var(--green);
-        font-size: clamp(24px, 3.4vw, 42px);
-        font-weight: 950;
-        line-height: 1.08;
-      }
-      .source-note {
-        color: var(--muted);
-        font-size: 14px;
-        line-height: 1.55;
-      }
-      footer {
-        padding: 34px clamp(16px, 4vw, 48px);
-        background: var(--green);
-        color: rgba(255, 255, 255, 0.78);
-      }
-      footer .section-inner {
-        display: flex;
-        justify-content: space-between;
-        gap: 24px;
-        align-items: center;
-      }
-      .footer-links {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        justify-content: flex-end;
-      }
-      .footer-links a {
-        color: #fff;
-        text-decoration: none;
-        font-weight: 850;
+        gap: 0.6rem;
       }
 
-      @media (max-width: 900px) {
-        .hero {
-          min-height: auto;
+      .report-metric {
+        min-height: 7.4rem;
+        border: 2px solid var(--espresso);
+        border-radius: var(--radius);
+        padding: 0.8rem;
+        background: var(--warm-gray);
+      }
+
+      .report-metric:nth-child(2) {
+        background: var(--matcha);
+      }
+
+      .report-metric:nth-child(3) {
+        background: var(--lavender);
+      }
+
+      .report-metric:nth-child(4) {
+        background: var(--turquoise);
+      }
+
+      .report-metric span,
+      .report-metric strong {
+        display: block;
+      }
+
+      .report-metric span {
+        font-size: 0.7rem;
+        font-weight: 950;
+        text-transform: uppercase;
+      }
+
+      .report-metric strong {
+        margin-top: 0.4rem;
+        font-family: Fraunces, Georgia, serif;
+        font-size: 1.8rem;
+      }
+
+      .report-lower {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 0.7rem;
+        margin-top: 0.7rem;
+      }
+
+      .chart-panel,
+      .mix-panel {
+        min-height: 14rem;
+        border: 2px solid var(--espresso);
+        border-radius: var(--radius);
+        padding: 0.9rem;
+      }
+
+      .chart-panel h3,
+      .mix-panel h3 {
+        font-size: 1.15rem;
+      }
+
+      .chart-panel svg {
+        width: 100%;
+        height: 10rem;
+      }
+
+      .mix-row {
+        display: grid;
+        grid-template-columns: 4.4rem minmax(0, 1fr) 2.4rem;
+        gap: 0.45rem;
+        align-items: center;
+        margin-top: 0.85rem;
+        font-size: 0.78rem;
+        font-weight: 900;
+      }
+
+      .mix-track {
+        height: 0.75rem;
+        border: 2px solid var(--espresso);
+        border-radius: 999px;
+        overflow: hidden;
+        background: var(--warm-gray);
+      }
+
+      .mix-fill {
+        height: 100%;
+        background: var(--cobalt);
+      }
+
+      .owner-note {
+        margin: 0.7rem 0 0;
+        border: 2px solid var(--espresso);
+        border-radius: var(--radius);
+        padding: 0.9rem;
+        background: var(--butter);
+        font-weight: 800;
+      }
+
+      .learning-section {
+        background: var(--paper);
+      }
+
+      .learning-layout {
+        display: grid;
+        grid-template-columns: 0.72fr 1.28fr;
+        gap: 2.5rem;
+        align-items: start;
+      }
+
+      .learning-steps {
+        display: grid;
+        gap: 0.85rem;
+      }
+
+      .learning-steps article {
+        display: grid;
+        grid-template-columns: 3.2rem minmax(0, 1fr);
+        gap: 1rem;
+        border-top: 3px solid var(--espresso);
+        padding-top: 0.9rem;
+      }
+
+      .learning-steps article > span {
+        display: grid;
+        place-items: center;
+        width: 3rem;
+        height: 3rem;
+        border: 2px solid var(--espresso);
+        border-radius: 50%;
+        background: var(--butter);
+        font-weight: 950;
+      }
+
+      .learning-steps article:nth-child(2) > span {
+        background: var(--coral);
+      }
+
+      .learning-steps article:nth-child(3) > span {
+        background: var(--matcha);
+      }
+
+      .learning-steps article:nth-child(4) > span {
+        color: var(--paper);
+        background: var(--cobalt);
+      }
+
+      .learning-steps h3 {
+        margin-bottom: 0.3rem;
+        font-size: 1.35rem;
+      }
+
+      .learning-steps p {
+        margin-bottom: 0;
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      .evolution {
+        margin-top: 2.5rem;
+        border: 3px solid var(--espresso);
+        border-radius: var(--radius);
+        background: var(--cream);
+        box-shadow: var(--shadow);
+      }
+
+      .evolution summary {
+        min-height: 4.2rem;
+        padding: 1.1rem;
+        cursor: pointer;
+        font-family: Fraunces, Georgia, serif;
+        font-size: 1.3rem;
+        font-weight: 900;
+      }
+
+      .timeline {
+        display: grid;
+        gap: 0.8rem;
+        border-top: 2px solid var(--espresso);
+        padding: 1rem;
+      }
+
+      .timeline article {
+        display: grid;
+        grid-template-columns: 7rem minmax(0, 1fr);
+        gap: 1rem;
+        border-left: 5px solid var(--tomato);
+        padding: 0.2rem 0 0.7rem 1rem;
+      }
+
+      .timeline article:nth-child(2) {
+        border-color: var(--cobalt);
+      }
+
+      .timeline article:nth-child(3) {
+        border-color: var(--matcha);
+      }
+
+      .timeline article:nth-child(4) {
+        border-color: var(--turquoise);
+      }
+
+      .timeline-date {
+        color: var(--tomato);
+        font-size: 0.72rem;
+      }
+
+      .timeline h3 {
+        margin-bottom: 0.25rem;
+        font-size: 1.15rem;
+      }
+
+      .timeline p {
+        margin-bottom: 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+        font-weight: 700;
+      }
+
+      .about-section {
+        background: var(--butter);
+      }
+
+      .about-layout {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 2.5rem;
+        align-items: center;
+      }
+
+      .about-card {
+        border: 3px solid var(--goldies-green);
+        border-radius: var(--radius);
+        padding: 1.4rem;
+        color: var(--paper);
+        background: var(--goldies-green);
+        box-shadow: 8px 8px 0 var(--goldies-gold);
+      }
+
+      .about-card h3 {
+        color: #f0c36b;
+      }
+
+      .about-card p:last-child {
+        margin-bottom: 0;
+      }
+
+      .source-note,
+      .privacy-note {
+        font-size: 0.86rem;
+        line-height: 1.55;
+      }
+
+      .source-note {
+        color: var(--muted);
+      }
+
+      .privacy-note {
+        margin-top: 1.2rem;
+        border-top: 2px solid rgba(56, 38, 31, 0.28);
+        padding-top: 0.9rem;
+      }
+
+      .privacy-note strong {
+        display: block;
+        font-size: 0.7rem;
+      }
+
+      .cta-section {
+        padding: 5rem 3rem;
+        color: var(--paper);
+        background: var(--tomato);
+      }
+
+      .cta-layout {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 2rem;
+        align-items: center;
+      }
+
+      .cta-layout h2 {
+        max-width: 18ch;
+        margin-bottom: 0.7rem;
+      }
+
+      .cta-layout p {
+        max-width: 52rem;
+        margin-bottom: 0;
+        font-size: 1.1rem;
+        font-weight: 800;
+      }
+
+      .cta-layout .button {
+        color: var(--espresso);
+        background: var(--butter);
+      }
+
+      footer {
+        padding: 2.2rem 3rem;
+        color: var(--paper);
+        background: var(--espresso);
+      }
+
+      .footer-inner {
+        justify-content: space-between;
+        gap: 2rem;
+      }
+
+      .footer-inner p {
+        margin: 0;
+      }
+
+      .footer-links {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 1rem;
+        font-weight: 900;
+      }
+
+      @media (max-width: 1000px) {
+        h1 {
+          font-size: 4rem;
         }
-        .hero-grid, .two, .three, .metric-strip, .report-showcase, .report-main-grid {
+
+        h2 {
+          font-size: 2.8rem;
+        }
+
+        .nav-links {
+          display: none;
+        }
+
+        .site-nav {
+          grid-template-columns: 1fr auto;
+        }
+
+        .problem-layout,
+        .reports-layout,
+        .learning-layout,
+        .about-layout {
           grid-template-columns: 1fr;
         }
-        .report-metrics {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+
+        .product-visuals {
+          grid-template-columns: 1fr;
         }
-        .device-wrap {
+
+        .product-figure {
+          min-height: 30rem;
+        }
+      }
+
+      @media (max-width: 760px) {
+        h1 {
+          font-size: 3.15rem;
+        }
+
+        h2 {
+          font-size: 2.35rem;
+        }
+
+        .site-nav,
+        .hero,
+        .case-map,
+        .section,
+        .cta-section,
+        footer {
+          padding-right: 1.2rem;
+          padding-left: 1.2rem;
+        }
+
+        .hero {
+          min-height: 36rem;
+          padding-top: 4rem;
+          background-position: 60% center;
+        }
+
+        .proof-grid,
+        .report-metrics,
+        .report-lower {
+          grid-template-columns: 1fr;
+        }
+
+        .metric {
+          grid-column: 1 / -1;
           min-height: 0;
         }
-        .screen {
-          transform: none;
-        }
-        .floating-note {
-          position: relative;
-          right: auto;
-          bottom: auto;
-          width: 100%;
-          margin-top: 12px;
-        }
-        .proof-row {
+
+        .honest-result,
+        .cta-layout {
           grid-template-columns: 1fr;
         }
-        .timeline-item {
-          grid-template-columns: 1fr;
+
+        .honest-result strong {
+          white-space: normal;
         }
-        footer .section-inner {
+
+        .product-figure {
+          min-height: 25rem;
+        }
+
+        .footer-inner {
           display: grid;
         }
+
         .footer-links {
           justify-content: flex-start;
         }
       }
 
-      @media (max-width: 560px) {
-        .nav {
-          position: relative;
-          align-items: flex-start;
-        }
-        .nav-links {
-          display: none;
-        }
-        .hero {
-          padding-top: 28px;
-        }
+      @media (max-width: 520px) {
         h1 {
-          font-size: 42px;
+          font-size: 2.7rem;
         }
-        .proof-tile, .card {
-          padding: 16px;
+
+        h2 {
+          font-size: 2rem;
         }
-        .report-metrics,
-        .category-row {
+
+        .brand strong {
+          font-size: 1rem;
+        }
+
+        .nav-cta {
+          min-height: 2.7rem;
+          padding: 0.6rem 0.75rem;
+          font-size: 0.84rem;
+        }
+
+        .hero-lead {
+          font-size: 1.05rem;
+        }
+
+        .proof-key,
+        .mixed-order-top,
+        .report-topbar {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .timeline article {
           grid-template-columns: 1fr;
         }
-        .report-topbar,
-        footer .section-inner {
-          align-items: flex-start;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition: none !important;
         }
       }
     </style>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "DrinkFlow KDS at Goldie's: a field case study",
+        "description": "How real mixed retail service shaped DrinkFlow KDS features for focused preparation, complete transaction context, customer handoff, and owner reporting.",
+        "dateModified": "2026-07-15",
+        "about": {
+          "@type": "SoftwareApplication",
+          "name": "DrinkFlow KDS",
+          "applicationCategory": "BusinessApplication"
+        }
+      }
+    </script>
   </head>
   <body>
-    <nav class="nav">
-      <a class="brand" href="https://drinkflowkds.com" aria-label="DrinkFlow home">
-        <span class="brand-mark">DF</span>
-        <span>DrinkFlow KDS</span>
+    <nav class="site-nav" aria-label="Main navigation">
+      <a class="brand" href="https://drinkflowkds.com/" aria-label="DrinkFlow KDS home">
+        <span class="brand-stamp" aria-hidden="true">DF</span>
+        <strong>DrinkFlow <span>KDS</span></strong>
       </a>
       <div class="nav-links">
-        <a href="https://drinkflowkds.com">Learn More</a>
-        <a class="button primary" href="mailto:samantha@studiosamantha.com?subject=DrinkFlow%20KDS%20case%20study">Ask about setup</a>
+        <a href="#difference">The problem</a>
+        <a href="#evidence">Field evidence</a>
+        <a href="#product">In practice</a>
+        <a href="#reports">Owner reports</a>
       </div>
+      <a class="nav-cta" href="https://drinkflowkds.com/#demo">Request demo</a>
     </nav>
 
     <main>
-      <section class="hero">
-        <div class="hero-inner hero-grid">
-          <div>
-            <p class="eyebrow">Living customer story</p>
-            <h1>Goldie&apos;s helped shape DrinkFlow in real service.</h1>
-            <p class="lead">
-              Goldie&apos;s Coffee &amp; Goods in Exira is the first live DrinkFlow KDS shop.
-              This public case study stays customer-facing: real service, pickup flow, owner reports, and the small-shop details that shaped the current build.
+      <section class="hero" aria-labelledby="case-title">
+        <div class="hero-copy">
+          <p class="section-label">Field case study · Goldie&apos;s Coffee &amp; Goods</p>
+          <h1 id="case-title">DrinkFlow KDS, tested at a real mixed retail counter.</h1>
+          <p class="hero-lead">
+            Goldie&apos;s first live deployment helped prove what DrinkFlow is built to do:
+            keep drink preparation focused while the full sale, customer handoff, and owner view stay connected.
+          </p>
+          <div class="hero-actions" aria-label="Case study actions">
+            <a class="button primary" href="https://drinkflowkds.com/">Explore DrinkFlow</a>
+            <a class="button secondary" href="#evidence">See what the field test showed</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="case-map" aria-label="What the Goldie's field test validated">
+        <div class="case-map-inner">
+          <div class="proof-key">
+            <span>What real service validated</span>
+            <span>Product lessons, not vanity numbers</span>
+          </div>
+          <div class="proof-grid">
+            <article>
+              <span class="proof-label">Focused preparation</span>
+              <strong>Show the bar only what it needs to make.</strong>
+              <p>Drink items, modifiers, names, timers, and checkoffs stay clear during service.</p>
+            </article>
+            <article>
+              <span class="proof-label">Complete context</span>
+              <strong>Keep the original transaction intact.</strong>
+              <p>Retail, food, notes, service type, and order history remain available for lookup.</p>
+            </article>
+            <article>
+              <span class="proof-label">Connected handoff</span>
+              <strong>Carry status from order to pickup.</strong>
+              <p>Preparation, customer displays, menu availability, and owner reporting share one flow.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section problem-section" id="difference" aria-labelledby="difference-title">
+        <div class="section-inner problem-layout">
+          <div class="story-copy">
+            <p class="section-label">The problem behind the product</p>
+            <h2 id="difference-title">A drink ticket and a full sale are not the same view.</h2>
+            <p>
+              At a shop that sells drinks alongside retail goods and food, the bar should not have
+              to sort through every item. But hiding those items completely creates a different problem
+              when staff need to answer a transaction question later.
             </p>
-            <div class="hero-actions">
-              <a class="button primary" href="https://drinkflowkds.com">Back to DrinkFlow</a>
-              <a class="button" href="https://withlovelibby.com/portfolio/goldies" target="_blank" rel="noreferrer">View Goldie&apos;s brand story</a>
-            </div>
-            <div class="proof-row" aria-label="Case study highlights">
-            <div class="proof-tile">
-                <strong>First shop</strong>
-                <span>The first live DrinkFlow location.</span>
-              </div>
-              <div class="proof-tile">
-                <strong>Current build</strong>
-                <span>The public story stays aligned with the live dashboard.</span>
-              </div>
-              <div class="proof-tile">
-                <strong>Live service</strong>
-                <span>Built around real use in a working coffee shop, with private data protected.</span>
-              </div>
-              <div class="proof-tile">
-                <strong>Demo-safe story</strong>
-                <span>The story can use demo data while the live dashboard stays private.</span>
-              </div>
-            </div>
+            <p>
+              DrinkFlow separates the preparation work while preserving the full order for the people
+              and moments that need it.
+            </p>
           </div>
-          <div class="device-wrap" aria-label="Goldie's branded KDS login visual">
-            <div class="screen">
-              <div class="goldies-login" role="img" aria-label="Goldie's branded KDS login screen">
-                <div class="goldies-settings">
-                  <span>Settings</span>
-                  <span>?</span>
-                </div>
-                <div class="goldies-login-card">
-                  <img src="/goldies-logo.png" alt="Goldie's Coffee Shop logo" />
-                  <div class="goldies-pill">Goldie&apos;s KDS</div>
-                  <h3>Kitchen Display</h3>
-                  <p>Enter your name and password to continue.</p>
-                  <div class="goldies-field">
-                    <span>Name</span>
-                    <div class="goldies-line"></div>
-                  </div>
-                  <div class="goldies-field">
-                    <span>Password</span>
-                    <div class="goldies-line"></div>
-                  </div>
-                  <div class="goldies-button">Sign in</div>
-                  <div class="goldies-footer">Studio Samantha 2026</div>
-                </div>
-              </div>
+
+          <div class="problem-demo" aria-label="How DrinkFlow handles a mixed transaction">
+            <div class="mixed-order">
+              <div class="mixed-order-top"><span>Sample mixed sale #1842</span><span>5 items</span></div>
+              <ul>
+                <li class="drink"><b>2x</b><span>Iced latte + modifiers</span><span>Prep</span></li>
+                <li class="drink"><b>1x</b><span>Matcha latte</span><span>Prep</span></li>
+                <li><b>1x</b><span>Retail item</span><span>Context</span></li>
+                <li><b>1x</b><span>Bakery item</span><span>Context</span></li>
+              </ul>
+              <p class="mixed-order-note">One sale. Two useful levels of detail.</p>
             </div>
-            <div class="floating-note">
-              <strong>Built for real shop use.</strong>
-              <span>Branded login, custom colors, owner reports, Square connection, and drink-focused analytics.</span>
+            <div class="split-results">
+              <article>
+                <span>Focus Board</span>
+                <strong>3 drinks to prepare</strong>
+                <p>The bar sees makeable drinks, modifiers, names, timing, and item checkoffs.</p>
+              </article>
+              <article>
+                <span>Dashboard + lookup</span>
+                <strong>All 5 items preserved</strong>
+                <p>The complete sale remains available without adding noise to the active drink queue.</p>
+              </article>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="section alt">
+      <section class="section evidence-section" id="evidence" aria-labelledby="evidence-title">
         <div class="section-inner">
-          <p class="eyebrow">What the shop showed</p>
-          <h2>Real service made the product clearer.</h2>
-          <p class="section-copy">
-            The point is simple: the shop notices something, the app changes, and the version history
-            keeps the public story honest.
+          <div class="section-intro">
+            <p class="section-label">Approved field evidence</p>
+            <h2 id="evidence-title">Every number answers a product question.</h2>
+            <p>
+              Rounded Goldie&apos;s aggregates through July 15, 2026 show why mixed-order handling,
+              item-level progress, transaction lookup, and measurement belong in the product.
+            </p>
+          </div>
+
+          <div class="metric-story">
+            <article class="metric">
+              <span class="metric-label">Why focused prep matters</span>
+              <strong>44%</strong>
+              <h3>of drink orders also included a non-drink item.</h3>
+              <p>Mixed baskets are routine, so DrinkFlow separates the work without breaking the transaction.</p>
+            </article>
+            <article class="metric">
+              <span class="metric-label">Why queue filtering matters</span>
+              <strong>719</strong>
+              <h3>recorded orders contained no drinks.</h3>
+              <p>Retail-only activity stays out of the bar&apos;s live queue while remaining available elsewhere.</p>
+            </article>
+            <article class="metric">
+              <span class="metric-label">Why item progress matters</span>
+              <strong>670+</strong>
+              <h3>orders used drink-by-drink checkoffs.</h3>
+              <p>Real use confirms that multi-drink orders need item-level progress, not only one status per ticket.</p>
+            </article>
+            <article class="metric">
+              <span class="metric-label">Why owner measurement matters</span>
+              <strong>2,200+</strong>
+              <h3>usable timing samples built a service baseline.</h3>
+              <p>Owners can test operational changes against observed preparation behavior instead of guesswork.</p>
+            </article>
+          </div>
+
+          <div class="honest-result">
+            <strong>3:03 &rarr; 3:07</strong>
+            <p>
+              Median preparation time stayed essentially flat across comparable four-week periods.
+              <b>That is not a speed claim.</b> It is a useful baseline for the next workflow experiment.
+              July 4 and obvious timing errors were excluded from the comparison.
+            </p>
+          </div>
+          <p class="privacy-note">
+            <strong>Privacy boundary</strong>
+            Public evidence is rounded and aggregate. Customer identities, staff-level performance,
+            private financial details, recipes, and internal configuration remain private.
           </p>
-          <div class="grid three">
-            <article class="card">
-              <h3>Older tickets first</h3>
-              <p>The live board keeps older tickets at the top and newer tickets at the bottom so the next order is easier to see.</p>
-            </article>
-            <article class="card">
-              <h3>Drink counts cleaned up</h3>
-              <p>Drink analytics stay focused on drinks, so retail and shelf items do not blur the numbers the shop cares about.</p>
-            </article>
-            <article class="card">
-              <h3>Reports started pulling their weight</h3>
-              <p>Owner reports now support CSV, Excel, and branded PDF downloads with charts, hourly order patterns, and shop notes.</p>
-            </article>
+        </div>
+      </section>
+
+      <section class="section product-section" id="product" aria-labelledby="product-title">
+        <div class="section-inner">
+          <div class="section-intro">
+            <p class="section-label">DrinkFlow in practice</p>
+            <h2 id="product-title">One operating system can still feel like the shop using it.</h2>
+            <p>
+              The DrinkFlow structure stays consistent across devices. The branded layer can reflect
+              the customer&apos;s own colors and identity, which is why Goldie&apos;s green and gold belong inside
+              its deployment rather than across the whole DrinkFlow case-study page.
+            </p>
+          </div>
+
+          <div class="product-visuals">
+            <figure class="product-figure">
+              <img
+                src="/drinkflow-screen-setup.png"
+                alt="DrinkFlow KDS shown across a wall display, tablet, and phone at a drink counter"
+                width="1536"
+                height="1024"
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption>
+                <span class="figure-label">Connected service views</span>
+                <strong>The queue can meet staff and customers on the screens already present at the counter.</strong>
+              </figcaption>
+            </figure>
+
+            <figure class="product-figure brand-figure">
+              <img
+                src="/goldies-login-screenshot.png"
+                alt="Goldie's branded DrinkFlow owner portal with green and gold styling"
+                width="1216"
+                height="992"
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption>
+                <span class="figure-label">Goldie&apos;s branded layer</span>
+                <strong>The customer&apos;s visual identity stays visible where it belongs: inside its own experience.</strong>
+              </figcaption>
+            </figure>
           </div>
         </div>
       </section>
 
-      <section class="section">
+      <section class="section reports-section" id="reports" aria-labelledby="reports-title">
+        <div class="section-inner reports-layout">
+          <div class="reports-copy">
+            <p class="section-label">Beyond the ticket board</p>
+            <h2 id="reports-title">The owner gets a decision view, not another pile of tickets.</h2>
+            <p>
+              DrinkFlow separates drink performance from the rest of the sale and turns service history
+              into questions an owner can act on: what sold, when demand arrived, how orders were composed,
+              and what happened between start and ready.
+            </p>
+            <div class="report-points">
+              <div><strong>Drink demand</strong><span>Volume, mix, and peak hours stay visible without retail items blurring the picture.</span></div>
+              <div><strong>Preparation behavior</strong><span>Start-to-ready timing and item checkoffs create a baseline for improvement.</span></div>
+              <div><strong>Portable reporting</strong><span>Selected views can leave the portal as CSV, Excel, or a branded PDF.</span></div>
+            </div>
+          </div>
+
+          <div class="report-screen" aria-label="Sample DrinkFlow owner report">
+            <div class="report-topbar">
+              <div><span>Owner Reports</span><strong>Drink operations overview</strong></div>
+              <div class="export-badges" aria-label="Available report exports"><b>CSV</b><b>Excel</b><b>PDF</b></div>
+            </div>
+            <div class="report-body">
+              <div class="report-metrics">
+                <div class="report-metric"><span>Drink orders</span><strong>128</strong></div>
+                <div class="report-metric"><span>Peak hour</span><strong>9 AM</strong></div>
+                <div class="report-metric"><span>Avg drinks</span><strong>1.8</strong></div>
+                <div class="report-metric"><span>2+ drinks</span><strong>34%</strong></div>
+              </div>
+              <div class="report-lower">
+                <div class="chart-panel">
+                  <h3>Hourly order volume</h3>
+                  <svg viewBox="0 0 500 180" role="img" aria-label="Example hourly order volume rising to a morning peak">
+                    <line x1="28" y1="145" x2="472" y2="145" stroke="#38261f" stroke-width="2" />
+                    <line x1="28" y1="92" x2="472" y2="92" stroke="#d9cdbd" stroke-width="2" />
+                    <line x1="28" y1="40" x2="472" y2="40" stroke="#d9cdbd" stroke-width="2" />
+                    <polyline points="28,136 90,116 152,72 214,35 276,58 338,88 400,111 472,80" fill="none" stroke="#e9432e" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="214" cy="35" r="9" fill="#3157c8" />
+                    <text x="195" y="22" fill="#38261f" font-size="13" font-weight="900">Peak</text>
+                    <text x="28" y="170" fill="#67564d" font-size="13" font-weight="800">7A</text>
+                    <text x="145" y="170" fill="#67564d" font-size="13" font-weight="800">9A</text>
+                    <text x="332" y="170" fill="#67564d" font-size="13" font-weight="800">12P</text>
+                    <text x="449" y="170" fill="#67564d" font-size="13" font-weight="800">2P</text>
+                  </svg>
+                </div>
+                <div class="mix-panel">
+                  <h3>Drink mix</h3>
+                  <div class="mix-row"><span>Coffee</span><div class="mix-track"><div class="mix-fill" style="width: 58%"></div></div><span>58%</span></div>
+                  <div class="mix-row"><span>Tea</span><div class="mix-track"><div class="mix-fill" style="width: 26%"></div></div><span>26%</span></div>
+                  <div class="mix-row"><span>Smoothie</span><div class="mix-track"><div class="mix-fill" style="width: 16%"></div></div><span>16%</span></div>
+                </div>
+              </div>
+              <p class="owner-note">Sample insight: prepare for the 9 AM demand peak and compare next week&apos;s handoff timing against the current baseline.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section learning-section" aria-labelledby="learning-title">
         <div class="section-inner">
-          <p class="eyebrow">Owner reports example</p>
-          <h2>The upgrade is not just prettier tickets. It gives the owner something to read.</h2>
-          <p class="section-copy">
-            The full KDS plan gives owners a quick drink revenue dashboard: what sold, when the rush hit,
-            how many drinks were in each order, and what can be downloaded for the month. These example
-            numbers are placeholders and can be replaced with approved Goldie&apos;s data over time.
-          </p>
-          <div class="grid report-showcase">
+          <div class="learning-layout">
             <div>
-              <div class="report-points">
-                <div class="report-point">
-                  <strong>Drink revenue stays separate.</strong>
-                  <span>Retail items and local goods do not blur the drink numbers.</span>
-                </div>
-                <div class="report-point">
-                  <strong>Busy hours become obvious.</strong>
-                  <span>The line chart makes the rush easier to spot.</span>
-                </div>
-                <div class="report-point">
-                  <strong>Reports leave the portal.</strong>
-                  <span>Owners can export CSV, Excel, or a branded PDF instead of rebuilding the day by hand.</span>
-                </div>
-              </div>
+              <p class="section-label">A living field study</p>
+              <h2 id="learning-title">Observe the counter. Improve the system. Measure again.</h2>
+              <p class="source-note">
+                DrinkFlow&apos;s product decisions are shaped by real service behavior, but the public story stays focused on customer outcomes rather than internal architecture or private operating details.
+              </p>
             </div>
-
-            <div class="report-screen" aria-label="Example owner reports drink revenue dashboard">
-              <div class="report-topbar">
-                <div>
-                  <span>Owner Reports</span>
-                  <strong>Drink Revenue Dashboard</strong>
-                </div>
-                <div class="report-badges" aria-label="Report export formats">
-                  <span>CSV</span>
-                  <span>Excel</span>
-                  <span>PDF</span>
-                </div>
-              </div>
-              <div class="report-body">
-                <div class="report-metrics">
-                  <div class="report-mini"><span>Drink revenue</span><strong>$487</strong></div>
-                  <div class="report-mini"><span>Peak hour</span><strong>9 AM</strong></div>
-                  <div class="report-mini"><span>Avg drinks</span><strong>1.8</strong></div>
-                  <div class="report-mini"><span>2+ drinks</span><strong>34%</strong></div>
-                </div>
-                <div class="report-main-grid">
-                  <div class="report-panel">
-                    <h3>Hourly order volume</h3>
-                    <svg class="report-chart" viewBox="0 0 500 190" role="img" aria-label="Example hourly order volume from 7 AM to 2 PM">
-                      <line x1="34" y1="150" x2="468" y2="150" stroke="#e8dbc3" stroke-width="2" />
-                      <line x1="34" y1="108" x2="468" y2="108" stroke="#f0e8d8" stroke-width="1" />
-                      <line x1="34" y1="66" x2="468" y2="66" stroke="#f0e8d8" stroke-width="1" />
-                      <polygon points="34,140 96,118 158,72 220,38 282,58 344,92 406,112 468,82 468,150 34,150" fill="rgba(202,134,43,0.14)" />
-                      <polyline points="34,140 96,118 158,72 220,38 282,58 344,92 406,112 468,82" fill="none" stroke="#ca862b" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
-                      <circle cx="220" cy="38" r="8" fill="#0f4036" />
-                      <text x="34" y="176" fill="#665f52" font-size="13" font-weight="800">7A</text>
-                      <text x="149" y="176" fill="#665f52" font-size="13" font-weight="800">9A</text>
-                      <text x="203" y="27" fill="#0f4036" font-size="13" font-weight="900">Peak</text>
-                      <text x="333" y="176" fill="#665f52" font-size="13" font-weight="800">12P</text>
-                      <text x="448" y="176" fill="#665f52" font-size="13" font-weight="800">2P</text>
-                    </svg>
-                  </div>
-                  <div class="report-panel">
-                    <h3>Drink mix</h3>
-                    <div class="category-row">
-                      <span>Coffee</span>
-                      <div class="category-track"><div class="category-fill" style="width: 58%"></div></div>
-                      <span>58%</span>
-                    </div>
-                    <div class="category-row">
-                      <span>Tea</span>
-                      <div class="category-track"><div class="category-fill" style="width: 26%"></div></div>
-                      <span>26%</span>
-                    </div>
-                    <div class="category-row">
-                      <span>Smoothies</span>
-                      <div class="category-track"><div class="category-fill" style="width: 16%"></div></div>
-                      <span>16%</span>
-                    </div>
-                  </div>
-                </div>
-                <div class="report-advice">
-                  <strong>Owner note</strong>
-                  <p>The morning rush carried the day. Prep cold cups before 8:30, keep handoff clear near 9 AM, and watch whether multi-drink orders stay above 30% next week.</p>
-                </div>
-              </div>
+            <div class="learning-steps">
+              <article><span>01</span><div><h3>Observe</h3><p>Identify where staff lose focus, context, or confidence during service.</p></div></article>
+              <article><span>02</span><div><h3>Build</h3><p>Change the workflow around a specific, testable operating problem.</p></div></article>
+              <article><span>03</span><div><h3>Measure</h3><p>Use aggregate behavior to see what changed and what did not.</p></div></article>
+              <article><span>04</span><div><h3>Learn</h3><p>Keep useful gains, revise weak assumptions, and define the next experiment.</p></div></article>
             </div>
           </div>
+
+          <details class="evolution">
+            <summary>Selected product evolution from the Goldie&apos;s pilot</summary>
+            <div class="timeline">
+              <article><span class="timeline-date">Queue focus</span><div><h3>Retail-only activity stopped competing with drink work.</h3><p>The live board became a preparation view while the dashboard retained the complete transaction.</p></div></article>
+              <article><span class="timeline-date">Item progress</span><div><h3>Multi-drink tickets gained drink-by-drink checkoffs.</h3><p>Staff could see what was complete without treating a whole order as one indivisible task.</p></div></article>
+              <article><span class="timeline-date">Customer flow</span><div><h3>Pickup and order-status displays joined the system.</h3><p>Useful status could reach customers without exposing internal preparation detail.</p></div></article>
+              <article><span class="timeline-date">Owner view</span><div><h3>Service history became usable reporting.</h3><p>Volume, mix, timing, order composition, and exports made the KDS useful after the rush too.</p></div></article>
+            </div>
+          </details>
         </div>
       </section>
 
-      <section class="section">
-        <div class="section-inner">
-          <p class="eyebrow">Opening-week timeline</p>
-          <h2>Version history with the why included.</h2>
-          <p class="section-copy">The newest changes stay visible first. Open the full archive when you want the complete build history.</p>
-          <div class="timeline is-collapsed" id="version-timeline">
-            <article class="timeline-item">
-              <div class="timeline-date">v1.10.19</div>
-              <div>
-                <h3>Owner report exports and ordering visuals were cleaned up.</h3>
-                <p>Owner Reports now supports This Quarter and Custom date ranges across the report, timing data, CSV, Excel, and PDF downloads. The old report email form was removed, customer-ordering wording was cleaned up, and every current drink in Online Orders and Self Order Kiosk now has its own image.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.10.18</div>
-              <div>
-                <h3>Owner Reports wording was aligned across public pages.</h3>
-                <p>The public policy and DrinkFlow pages now use Owner Reports instead of Owner Portal, including the demo/training reports section that confirms fake/sample data only and no connection to Goldie&apos;s live Square data.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.10.17</div>
-              <div>
-                <h3>Owner Reports became the visible owner label.</h3>
-                <p>The owner-facing report area is now labeled Owner Reports across the KDS, training mode, and sign-in flow. View Stats now behaves better in narrowed windows, duplicate menu/category lists were consolidated, and customer ordering hides Square service labels like Hangin&apos; Out and Taking Off from drink additions.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.10.16</div>
-              <div>
-                <h3>Owner Reports moved forward and Square menus were refreshed.</h3>
-                <p>Owner Reports became a top-level KDS button, Training mode opens demo reports without an owner password prompt, Privacy &amp; Agreements opens collapsed, and policy acknowledgment happens after KDS sign-in instead of reopening inside Owner Reports. The Menu Board, self-order kiosk, online pickup, and fallback drink lists now match Square&apos;s current Coffee, Not Coffee, and Smoothies names and prices. Volume Board also shows drinks made beside drink orders.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.10.15</div>
-              <div>
-                <h3>Recipe cards were locked down and Orders Up started showing item progress.</h3>
-                <p>Private staff recipe cards now open inside the signed-in KDS instead of exposing reusable direct links. When staff checks off an individual drink on Focus Board, the Orders Up pickup display shows that drink crossed off with a done mark. Focus Board also gained larger order text, larger modifier text, bigger touch buttons, and two side-by-side columns on portrait iPads while the regular full dashboard keeps its Back button.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.10.14</div>
-              <div>
-                <h3>Square-renamed smoothies stayed in the KDS.</h3>
-                <p>Goldie&apos;s renamed smoothie items in Square with size labels such as 16 OZ and 12 OZ KIDS. The KDS now keeps those Square names, cleans the casing for staff, and checks Coffee, Not Coffee, and Smoothies category alignment during system checks.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.10.12</div>
-              <div>
-                <h3>The Connection report became a Square sync audit.</h3>
-                <p>The dashboard Connection report now shows how many Square orders were found, created, updated, saved, or failed during the last sync. It also flags suspicious pickup names when a drink label appears where a customer name should be.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.10.11</div>
-              <div>
-                <h3>Square name handling got regression coverage.</h3>
-                <p>Drink labels like STRAWMANGO now stay classified as drinks instead of becoming pickup names. Backend regression tests and GitHub CI now cover customer-name cleanup, smoothie/refresher classification, owner report add-on math, backend syntax, and the frontend production build.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.10.10</div>
-              <div>
-                <h3>View Stats and report email got a service-day cleanup.</h3>
-                <p>View Stats now fits better on phones, iPads, and desktop screens. End-of-day PDF email also prefers the Resend email path when configured and gives a plain-English message if Microsoft blocks SMTP sending. Owner report downloads now include polished CPA, inventory, hourly, order-detail, and non-drink add-on sections.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.10.9</div>
-              <div>
-                <h3>Edited Square names got cleaned up in the app.</h3>
-                <p>Today&apos;s Count, Drink Stats, Average Drink Time, display boards, Online Ordering, and Self Order Kiosk now use readable drink names even when Square sends all-caps or size-specific labels. Mobile dialogs and ordering panels were tightened for phones, iPads, and desktop screens, and Owner Reports now keeps Customer insights and Today&apos;s Snapshot collapsible.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.10.8</div>
-              <div>
-                <h3>Smoothies returned to the drink workflow.</h3>
-                <p>Square smoothie names like Mango, Strawberry, Greens, and kids-size variants now count as drink items again instead of being treated like retail or food.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.10.7</div>
-              <div>
-                <h3>Cloud checks gained a safe recovery step.</h3>
-                <p>If a production check fails, GitHub retries once. If it fails again, the workflow can trigger a safe Render redeploy while still failing loudly so the issue gets attention.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.10.6</div>
-              <div>
-                <h3>System checks moved into the cloud.</h3>
-                <p>Goldie&apos;s production checks now run every 5 minutes on a GitHub schedule instead of depending on a local computer, covering pre-open, service, and after-close checks with uptime state saved between runs.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.10.5</div>
-              <div>
-                <h3>Owner sessions got tucked away.</h3>
-                <p>Owner Reports now labels recent access as Owner sessions and keeps those details collapsed until the owner chooses to review them.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.10.4</div>
-              <div>
-                <h3>Owner Reports got a cleaner daily read.</h3>
-                <p>Recent changes now start collapsed, redundant owner wording was trimmed, and the Sales read plus next-step guidance rotate daily from the same report numbers so the owner view stays useful without feeling repetitive.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.10.3</div>
-              <div>
-                <h3>The owner, connection, and ordering screens got easier to scan.</h3>
-                <p>The owner view now keeps the main report and working tools easy to find, recent changes can collapse, the dashboard Connection box opens a health report, and both Self Order Kiosk and Online Ordering now share a more polished Goldie&apos;s photo-menu direction.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.10.1</div>
-              <div>
-                <h3>Orders Up got matched to the proven day lookup.</h3>
-                <p>Recently completed drink orders now use the same saved service-day order path that powers day lookup, owner stats, and drink counts, so the customer-facing Orders Up display keeps showing finished tickets during live service.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.10.0</div>
-              <div>
-                <h3>Production sync got a service-day safety net.</h3>
-                <p>When Square sync or the active-ticket path lags, the live board can now restore today&apos;s New, Making, and Ready tickets from the stored order history that also powers day lookup and owner stats.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.10.13</div>
-              <div>
-                <h3>Privacy, agreements, and demo reporting got safer.</h3>
-                <p>Owner Reports now includes a Privacy &amp; Agreements card, a lightweight policy acknowledgment flow for the Goldie&apos;s owner/admin dashboard, and a clearly labeled demo reports view at /demo/owner using fake sample data only.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.9.9</div>
-              <div>
-                <h3>The dashboard finished its cleanup pass.</h3>
-                <p>View Stats, Displays, and Focus Board now sit together, the fullscreen toggle stays small and out of the way, and the public case study matches the current build.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.9.7</div>
-              <div>
-                <h3>DrinkFlow started becoming repeatable.</h3>
-                <p>The Goldie&apos;s pilot now feeds the next product step: a plug-and-play DrinkFlow setup request, a Supabase-backed onboarding table, and a private Studio Samantha queue for future shop leads and setup notes.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.9.6</div>
-              <div>
-                <h3>The product started growing its own control room.</h3>
-                <p>Studio Samantha now has a private developer diary dashboard for product notes and update ideas. Owner Reports also gained a practice email report field, collapsed dense data sections, and a light owner access check for recent owner sign-ins.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.9.5</div>
-              <div>
-                <h3>Ready became a short handoff state.</h3>
-                <p>Goldie&apos;s was using Focus Board, but orders could sit in Ready and distort the day. Ready orders now clear after two minutes, Orders Up gives customers a pickup button, daily customer notes reset on the dashboard, and archived notes stay in Supabase for owner review.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.9.4</div>
-              <div>
-                <h3>Timing reports got more useful.</h3>
-                <p>Average drink time now measures Making to Ready, with hourly and drink-name breakdowns for owners. This gives the shop a cleaner read on bar workflow instead of measuring how long a customer took to pick up an order.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.9.3</div>
-              <div>
-                <h3>Customer ordering choices got less confusing.</h3>
-                <p>Temperature and size now sit outside Drink additions, and duplicate add-on names from overlapping Square&reg; modifier lists are collapsed so online pickup and kiosk ordering feel cleaner.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.9.2</div>
-              <div>
-                <h3>Online pickup and kiosk work got cleaner.</h3>
-                <p>DrinkFlow separated temperature, size, and drink additions for customer ordering, kept for-here-only drinks out of online pickup, added a self-order kiosk route, and made the Online Orders board show online pickup orders only.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.9.1</div>
-              <div>
-                <h3>The drink menu rules became more realistic.</h3>
-                <p>Americano and latte now require hot or iced choices online, while drip, drip refill, flat white, and cappuccino stay hot-only. This protects staff from confusing checkout choices during a real pickup test.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.9.0</div>
-              <div>
-                <h3>Online ordering moved from idea to real checkout.</h3>
-                <p>DrinkFlow added a branded drinks-only ordering flow with Square&reg; checkout, online-order labels in New Tickets, a red pending-order alert for staff, and Online versus In person labels on Orders Up.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.8.3</div>
-              <div>
-                <h3>Owner reports got a live service-window read.</h3>
-                <p>Today Snapshot now understands Goldie's 7 AM-3 PM Central hours, and the new Volume Board shows hourly order volume, drink mix, average drinks per order, and multi-drink behavior.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.8.2</div>
-              <div>
-                <h3>Pickup and drive-thru display work started.</h3>
-                <p>The dashboard display links were grouped into one cleaner Displays menu, and a new pickup/drive-thru board was added for customer-facing order status.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.8.1</div>
-              <div>
-                <h3>The customer displays got cleaner.</h3>
-                <p>The Menu Board and Orders Up screens now hide extra fullscreen/status wording during normal use, and the public pages got a grammar and label consistency pass.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.8.0</div>
-              <div>
-                <h3>The display boards got more iPad-friendly.</h3>
-                <p>The drink menu and Orders Up screens now use tighter spacing, smaller headers, and more compact cards so they fit better on iPads and smaller customer-facing screens.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.7.10</div>
-              <div>
-                <h3>Pricing became easier to read.</h3>
-                <p>The public page now shows monthly and annual options for Lite and KDS, including the discounted annual rates.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.7.9</div>
-              <div>
-                <h3>Orders Up got clearer for pickup.</h3>
-                <p>The customer-facing Orders Up board now shows order number, customer name when available, and drink-only details. Pickup gets clearer without putting retail or food items on the screen.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.7.8</div>
-              <div>
-                <h3>The case study now shows the owner side.</h3>
-                <p>A Drink Revenue Dashboard example was added so shops can see what the Owner Reports adds: exports, hourly volume, drink mix, and a quick read on the day.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.7.7</div>
-              <div>
-                <h3>Focus Board stayed the right name.</h3>
-                <p>The focused three-column board keeps its Focus Board name. Full screen mode keeps extra controls out of the way and shows a small X to exit.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.7.6</div>
-              <div>
-                <h3>The active board became easier to focus on.</h3>
-                <p>The main KDS now uses New Tickets, Making, and Ready for the active workflow. Focus Board hides the extra dashboard sections during busy service, while the full dashboard keeps counts, stats, and completed history available.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.7.5</div>
-              <div>
-                <h3>Customer-facing displays were added.</h3>
-                <p>Goldie&apos;s dashboard now has quick links for a branded drink menu board and an orders-up display, turning KDS data into customer-facing screens.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.7.4</div>
-              <div>
-                <h3>DrinkFlow Lite became clearer.</h3>
-                <p>The public page now shows what Lite includes: the hosted KDS dashboard, core ticket actions, settings, and no Owner Reports or report exports.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.7.3</div>
-              <div>
-                <h3>The marketing message widened carefully.</h3>
-                <p>DrinkFlow stayed honest about being built first for Square&reg;, while leaving room to explore other POS workflows later if the data is clean.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.7.2</div>
-              <div>
-                <h3>Goldie&apos;s becomes the official case study.</h3>
-                <p>The marketing site now links to this page so people can see how DrinkFlow improves from real shop use, not just a feature list.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.7.1</div>
-              <div>
-                <h3>KDS columns sort older tickets first.</h3>
-                <p>After a day of use, the owner spotted that staff could start newer orders before older ones. The live board now prioritizes oldest tickets at the top.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.7.0</div>
-              <div>
-                <h3>Owner analytics became more coffee-shop specific.</h3>
-                <p>Hourly volume, multi-drink order percentage, daily notes, and downloadable owner reports were added so the portal supports real decisions.</p>
-              </div>
-            </article>
-            <article class="timeline-item">
-              <div class="timeline-date">v1.6.x</div>
-              <div>
-                <h3>Non-drink items were filtered out.</h3>
-                <p>DrinkFlow started separating drink analytics from retail items so a coffee shop can read beverage demand without merchandise noise.</p>
-              </div>
-            </article>
-          </div>
-          <div class="timeline-actions">
-            <button class="timeline-toggle" type="button" id="version-timeline-toggle" aria-expanded="false" aria-controls="version-timeline">
-              Show full version history
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <section class="section alt">
-        <div class="section-inner grid two">
-          <div>
-            <p class="eyebrow">Honest by design</p>
-            <h2>A small tool from a small studio.</h2>
-            <p class="section-copy">
-              DrinkFlow is not trying to act like a giant restaurant-tech platform. It is a practical
-              KDS built by Studio Samantha for small drink shops that want clear screens, useful reports,
-              and direct help after launch.
-            </p>
-          </div>
-          <div class="card">
-            <h3>What that means for customers</h3>
-            <p>Setup can follow the shop&apos;s actual people, menu, counters, devices, and Square&reg; setup instead of forcing every business into the same template.</p>
-            <p>It also means this case study can show the real loop: the shop notices something, the app changes, and the version history explains why.</p>
-          </div>
-        </div>
-      </section>
-
-      <section class="section">
-        <div class="section-inner">
-          <p class="eyebrow">Future data from Supabase</p>
-          <h2>This page can become proof, not just a pretty page.</h2>
-          <p class="section-copy">
-            As more approved data comes in, this case study can show monthly trends, exported report examples,
-            busiest hours, average drinks per order, and before-and-after workflow notes. Public stats should be
-            chosen carefully so the story is useful without exposing private revenue details.
-          </p>
-          <div class="metric-strip">
-            <div class="metric">
-              <strong>Hourly</strong>
-              <span>Busy-window chart from real order timing.</span>
-            </div>
-            <div class="metric">
-              <strong>34%</strong>
-              <span>Example multi-drink order stat once approved for public use.</span>
-            </div>
-            <div class="metric">
-              <strong>MoM</strong>
-              <span>Month-over-month owner report exports.</span>
-            </div>
-            <div class="metric">
-              <strong>Fix log</strong>
-              <span>Version notes tied to real shop feedback.</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="section">
-        <div class="section-inner grid two">
-          <div>
-            <p class="eyebrow">About Goldie&apos;s</p>
-            <h2>A coffee shop with a brand worth honoring.</h2>
-            <p class="section-copy">
-              Public brand materials describe Goldie&apos;s Coffee &amp; Goods as a quaint Exira, Iowa
-              coffee shop and local goods store focused on specialty coffee, locally sourced foods,
-              eco-friendly home products, sustainability, inclusivity, authenticity, and quality.
+      <section class="section about-section" aria-labelledby="about-title">
+        <div class="section-inner about-layout">
+          <div class="about-copy">
+            <p class="section-label">The field partner</p>
+            <h2 id="about-title">Goldie&apos;s is the proving ground. DrinkFlow is the product.</h2>
+            <p>
+              Goldie&apos;s Coffee &amp; Goods in Exira, Iowa combines specialty drinks with local goods and food,
+              making it a valuable environment for testing the mixed-order reality DrinkFlow is designed around.
             </p>
             <p class="source-note">
-              Source: <a href="https://withlovelibby.com/portfolio/goldies" target="_blank" rel="noreferrer">With Love, Libby Creative Company portfolio for Goldie&apos;s Coffee &amp; Goods</a>.
+              Public brand context: <a href="https://withlovelibby.com/portfolio/goldies" target="_blank" rel="noreferrer">Goldie&apos;s Coffee &amp; Goods brand story</a>.
             </p>
           </div>
-          <div class="card">
-            <h3>What DrinkFlow did for this setup</h3>
-            <p>Connected to Square&reg; API order flow, kept the KDS readable on counter devices, created a branded login, added owner reports, and adjusted analytics around the shop&apos;s actual menu structure.</p>
-            <p>The same approach can fit coffee shops, smoothie shops, tea stands, food trucks, and small drink counters.</p>
+          <div class="about-card">
+            <h3>What carries beyond one shop</h3>
+            <p>
+              Focused preparation, full-order lookup, item checkoffs, customer-facing status,
+              menu availability, training mode, and owner reporting can support coffee shops,
+              smoothie counters, tea stands, food trucks, and other small drink-service businesses.
+            </p>
           </div>
         </div>
       </section>
 
-      <section class="section alt">
-        <div class="section-inner">
-          <p class="quote">
-            A useful case study should show the product getting better because a real business used it.
-          </p>
+      <section class="cta-section" aria-labelledby="cta-title">
+        <div class="section-inner cta-layout">
+          <div>
+            <p class="section-label">Bring your counter into the conversation</p>
+            <h2 id="cta-title">Show us how your drink service actually works.</h2>
+            <p>A DrinkFlow demo starts with your menu, order mix, service flow, screens, and the operating questions you want answered.</p>
+          </div>
+          <a class="button" href="https://drinkflowkds.com/#demo">Request a DrinkFlow demo</a>
         </div>
       </section>
     </main>
 
     <footer>
-      <div class="section-inner">
-        <div>
-          <strong>Studio Samantha</strong><br />
-          Artist-built tools for small businesses.
-        </div>
+      <div class="footer-inner">
+        <p><strong>DrinkFlow KDS</strong><br />A drink-service operating system by Studio Samantha.</p>
         <div class="footer-links" aria-label="Footer links">
-          <a href="https://drinkflowkds.com">DrinkFlow</a>
+          <a href="https://drinkflowkds.com/">Product</a>
+          <a href="https://drinkflowkds.com/#demo">Demo</a>
           <a href="/policy.html">Policy</a>
           <a href="/policy.html#data-use">Data use</a>
-          <a href="/policy.html#ownership">Ownership</a>
-          <a href="/policy.html#trademarks">Trademarks</a>
-          <a href="mailto:samantha@studiosamantha.com?subject=DrinkFlow%20KDS%20setup">Contact</a>
         </div>
       </div>
     </footer>
-    <script>
-      const timeline = document.getElementById("version-timeline");
-      const timelineToggle = document.getElementById("version-timeline-toggle");
-      if (timeline && timelineToggle) {
-        timelineToggle.addEventListener("click", () => {
-          const collapsed = timeline.classList.toggle("is-collapsed");
-          timelineToggle.setAttribute("aria-expanded", String(!collapsed));
-          timelineToggle.textContent = collapsed
-            ? "Show full version history"
-            : "Hide older versions";
-        });
-      }
-    </script>
   </body>
 </html>
