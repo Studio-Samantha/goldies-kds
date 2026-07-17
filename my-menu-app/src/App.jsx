@@ -3385,7 +3385,7 @@ function HourlyVolumeChart({ report, range }) {
             Drink Orders by Hour
           </h2>
           <p className="mt-1 text-sm font-semibold text-[#6A614F]">
-            {rangeLabel} drink orders from Supabase order history
+            {rangeLabel} drink orders from recorded KDS history
           </p>
         </div>
 
@@ -7236,12 +7236,11 @@ function OwnerReportsView({
           {demoMode && (
             <section className="mb-4 rounded-2xl border border-[#CA862B]/18 bg-white/80 p-3 shadow-sm">
               <div className="text-xs font-black uppercase tracking-[0.18em] text-[#8B5A1D]">
-                Demo reports
+                Downloadable sample reports
               </div>
               <p className="mt-1 text-sm font-semibold leading-6 text-[#6A614F]">
-                Reports generated here use fake sample data and generic branding. They
-                are safe for school projects, screenshots, public demos, and customer
-                walkthroughs.
+                Explore the report formats owners can use to review pace, category
+                mix, timing, system health, and workflow.
               </p>
               <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                 {[
@@ -7275,7 +7274,7 @@ function OwnerReportsView({
             <>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
                 <StatCard
-                  label="Actual Drink Revenue"
+                  label={demoMode ? "Sample Drink Revenue" : "Actual Drink Revenue"}
                   value={report?.totalRevenue || "$0.00"}
                   detail="Before tax"
                 />
