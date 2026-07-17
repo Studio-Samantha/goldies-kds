@@ -4,6 +4,16 @@
   "framework": "vite",
   "redirects": [
     {
+      "source": "/learn-more",
+      "destination": "https://drinkflowkds.com/",
+      "permanent": true
+    },
+    {
+      "source": "/learn-more.html",
+      "destination": "https://drinkflowkds.com/",
+      "permanent": true
+    },
+    {
       "source": "/drinkflow-kds",
       "destination": "https://drinkflowkds.com",
       "permanent": false
