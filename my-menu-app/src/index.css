@@ -52,6 +52,11 @@
   background-color: #fffdf6 !important;
 }
 
+.drinkflow-demo [class*="bg-white/"][class*="text-white"] {
+  background-color: rgba(255, 255, 255, 0.14) !important;
+  color: #fffdf6 !important;
+}
+
 .drinkflow-demo [class*="bg-[#0F4036]"],
 .drinkflow-demo [class*="hover:bg-[#0b352d]"]:hover {
   background-color: #e9432e !important;
