@@ -42,6 +42,7 @@ const {
     buildOwnerReportPeriod,
     buildCatalogMenuAvailabilityItems,
     buildEventOnlineOrderingMenu,
+    buildMenuAvailabilityFallbackItems,
     buildStaticOnlineOrderingMenu,
     mergeStaticOnlineOrderingMenuItems,
     cleanCustomerName,
@@ -212,6 +213,26 @@ test("RAGBRAI fallback ordering menu stays limited to the event selection", () =
     "Strawberry Smoothie",
     "Vanilla Latte",
   ]);
+});
+
+test("RAGBRAI display fallback stays limited to the event selection", () => {
+  const eventItems = buildMenuAvailabilityFallbackItems({ eventMenuActive: true });
+
+  assert.deepEqual(
+    eventItems.map((item) => [item.itemName, item.category, item.price]),
+    [
+      ["Cold Brew", "Coffee", "$5.00"],
+      ["Drip Coffee", "Coffee", "$5.00"],
+      ["Espresso Only", "Coffee", "$3.00"],
+      ["Vanilla Latte", "Coffee", "$5.00"],
+      ["Refresher", "Not Coffee", "$5.00"],
+      ["Strawberry Smoothie", "Smoothies", "$5.00"],
+    ]
+  );
+
+  const regularItems = buildMenuAvailabilityFallbackItems({ eventMenuActive: false });
+  assert.equal(regularItems.some((item) => item.itemName === "Americano"), true);
+  assert.equal(regularItems.some((item) => item.itemName === "Espresso Only"), false);
 });
 
 test("availability and online ordering menus use current display names", () => {
