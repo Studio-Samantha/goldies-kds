@@ -1616,7 +1616,7 @@ function ConnectionReportDialog({
           </div>
           <div className="rounded-2xl border border-[#0F4036]/10 bg-[#0F4036]/8 px-4 py-3 text-sm font-semibold leading-6 text-[#0F4036]">
             {demoMode
-              ? "This report contains sample values only. The public demo does not read Goldie's connection history or trigger a live sync."
+              ? "This report contains fictional sample values only. It does not read a live shop connection or trigger a live sync."
               : `Last sync context: ${syncSummary.context || "Not recorded"}. The created/updated count helps show whether Square sent new orders or refreshed existing tickets.`}
           </div>
           {backfillResult ? (
@@ -2139,7 +2139,7 @@ function buildDemoOwnerReport(_tickets, rangeKey, customRange = {}) {
 
   return {
     demoDataOnly: true,
-    businessName: "DrinkFlow Demo Cafe",
+    businessName: "DrinkFlow Sample Counter",
     reportSubtitle: "Sample Report - Demo Data Only",
     startAt: new Date(start).toISOString(),
     endAt: new Date(end).toISOString(),
@@ -2761,12 +2761,12 @@ function createTrainingTickets() {
       id: "demo-1001",
       orderNumber: "T1001",
       customerName: "",
-      employeeName: "Blake",
+      employeeName: "Avery",
       createdAt: getTrainingTimestamp(0, 7, 58),
       completedAt: null,
       source: "Square Register",
       status: "new",
-      diningOption: "TAKING OFF",
+      diningOption: "To go",
       items: [
         { name: "Americano", qty: 1, modifiers: ["Oat milk"], note: "" },
         { name: "Butter Croissant", qty: 1, modifiers: [], note: "" },
@@ -2776,7 +2776,7 @@ function createTrainingTickets() {
       id: "demo-1002",
       orderNumber: "T1002",
       customerName: "Mia",
-      employeeName: "Zahra",
+      employeeName: "Morgan",
       createdAt: getTrainingTimestamp(0, 8, 7),
       completedAt: null,
       source: "Square Register",
@@ -2791,12 +2791,12 @@ function createTrainingTickets() {
       id: "demo-1003",
       orderNumber: "T1003",
       customerName: "Sammy",
-      employeeName: "Claire",
+      employeeName: "Riley",
       createdAt: getTrainingTimestamp(0, 8, 15),
       completedAt: null,
       source: "Square Register",
       status: "ready",
-      diningOption: "HANGIN' OUT",
+      diningOption: "Dine in",
       items: [
         { name: "Matcha Latte", qty: 1, modifiers: ["Coconut milk"], note: "" },
         { name: "Bagel", qty: 1, modifiers: ["Toasted"], note: "" },
@@ -2806,7 +2806,7 @@ function createTrainingTickets() {
       id: "demo-1004",
       orderNumber: "T1004",
       customerName: "Jordan",
-      employeeName: "Blake",
+      employeeName: "Avery",
       createdAt: getTrainingTimestamp(0, 8, 29),
       completedAt: getTrainingTimestamp(0, 8, 42),
       source: "Square Register",
@@ -2822,7 +2822,7 @@ function createTrainingTickets() {
       id: "demo-1005",
       orderNumber: "T1005",
       customerName: "",
-      employeeName: "Zahra",
+      employeeName: "Morgan",
       createdAt: getTrainingTimestamp(0, 8, 39),
       completedAt: getTrainingTimestamp(0, 8, 51),
       source: "Square Register",
@@ -2830,14 +2830,14 @@ function createTrainingTickets() {
       diningOption: "Drive thru",
       items: [
         { name: "Cold Brew", qty: 1, modifiers: [], note: "" },
-        { name: "Chocolate P/B Banana (16 oz)", qty: 1, modifiers: [], note: "" },
+        { name: "Peanut Butter Banana Smoothie", qty: 1, modifiers: [], note: "" },
       ],
     },
     {
       id: "demo-0998",
       orderNumber: "T0998",
       customerName: "Ashley",
-      employeeName: "Claire",
+      employeeName: "Riley",
       createdAt: getTrainingTimestamp(-1, 9, 4),
       completedAt: getTrainingTimestamp(-1, 9, 19),
       source: "Square Handheld",
@@ -2852,12 +2852,12 @@ function createTrainingTickets() {
       id: "demo-0999",
       orderNumber: "T0999",
       customerName: "Nora",
-      employeeName: "Blake",
+      employeeName: "Avery",
       createdAt: getTrainingTimestamp(-1, 13, 11),
       completedAt: getTrainingTimestamp(-1, 13, 27),
       source: "Square Handheld",
       status: "done",
-      diningOption: "TAKING OFF",
+      diningOption: "To go",
       items: [
         { name: "Strawberry Banana (16 oz)", qty: 1, modifiers: [], note: "" },
         { name: "London Fog", qty: 1, modifiers: [], note: "" },
@@ -2867,12 +2867,12 @@ function createTrainingTickets() {
       id: "demo-0995",
       orderNumber: "T0995",
       customerName: "Theo",
-      employeeName: "Zahra",
+      employeeName: "Morgan",
       createdAt: getTrainingTimestamp(-3, 10, 22),
       completedAt: getTrainingTimestamp(-3, 10, 39),
       source: "Square Register",
       status: "done",
-      diningOption: "HANGIN' OUT",
+      diningOption: "Dine in",
       items: [
         { name: "Cappuccino", qty: 1, modifiers: ["Whole milk"], note: "" },
         { name: "Muffin", qty: 1, modifiers: [], note: "" },
@@ -4495,19 +4495,23 @@ function CustomerInsightsHistory() {
 }
 
 function DemoBrandMark({ size = "md" }) {
-  const dimensions = size === "lg" ? "h-28 w-56" : "h-16 w-36";
+  if (size === "sm") {
+    return (
+      <div className="drinkflow-demo-stamp" aria-label="DrinkFlow KDS interactive sample">
+        DF
+      </div>
+    );
+  }
+
+  const dimensions = size === "lg" ? "h-28 w-64" : "h-16 w-44";
 
   return (
-    <div className={`${dimensions} flex items-center justify-center gap-2 rounded-2xl border border-[#0F4036]/15 bg-white/80 px-3 shadow-sm`}>
-      <img
-        src="/demo/demo-cafe-logo.svg"
-        alt="DrinkFlow Demo Cafe"
-        className="h-11 w-11 rounded-xl"
-      />
+    <div className={`${dimensions} drinkflow-demo-brand flex items-center justify-center gap-3 px-3`} aria-label="DrinkFlow KDS interactive sample">
+      <div className="drinkflow-demo-stamp" aria-hidden="true">DF</div>
       <div className="text-left leading-none">
-        <div className="text-base font-black text-[#0F4036]">DF</div>
-        <div className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#CA862B]">
-          Demo Cafe
+        <div className="text-base font-black text-[#201713]">DrinkFlow KDS</div>
+        <div className="mt-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#e9432e]">
+          Interactive sample
         </div>
       </div>
     </div>
@@ -4539,7 +4543,7 @@ function WatermarkLayer({ trainingMode = false, darkMode = false, demoMode = fal
         className="absolute inset-0 pointer-events-none"
         style={{
           backgroundImage:
-            "radial-gradient(circle at 18px 18px, rgba(15,64,54,0.1) 0 2px, transparent 3px)",
+            "radial-gradient(circle at 18px 18px, rgba(49,87,200,0.12) 0 2px, transparent 3px)",
           backgroundSize: "86px 86px",
           opacity: 0.5,
         }}
@@ -4732,6 +4736,8 @@ function SettingsPopover({
   suggestFixHref,
   onVersionClick,
   showPasswordAction = true,
+  showVersionAction = true,
+  showThemeAction = true,
   ownerActionLabel = "Owner Reports",
 }) {
   if (!open) return null;
@@ -4766,12 +4772,14 @@ function SettingsPopover({
         </div>
 
         <div className="space-y-2 p-3">
-          <ModeToggle
-            active={themeMode === "dark"}
-            label={themeMode === "dark" ? "Light mode" : "Dark mode"}
-            onToggle={onThemeToggle}
-            hint="Switch between the light and dark dashboard themes."
-          />
+          {showThemeAction && (
+            <ModeToggle
+              active={themeMode === "dark"}
+              label={themeMode === "dark" ? "Light mode" : "Dark mode"}
+              onToggle={onThemeToggle}
+              hint="Switch between the light and dark dashboard themes."
+            />
+          )}
 
           {onToggleDiningOnTickets && (
             <button
@@ -4811,16 +4819,18 @@ function SettingsPopover({
             Suggest Fix
           </a>
 
-          <button
-            type="button"
-            onClick={onVersionClick}
-            className="w-full rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-left"
-          >
-            <div className="text-[11px] font-black uppercase tracking-[0.18em] text-[#6A614F]">
-              What&apos;s new?
-            </div>
-            <div className="text-sm font-black text-[#0F4036]">{APP_VERSION}</div>
-          </button>
+          {showVersionAction && (
+            <button
+              type="button"
+              onClick={onVersionClick}
+              className="w-full rounded-xl border border-[#CA862B]/22 bg-white px-4 py-2 text-left"
+            >
+              <div className="text-[11px] font-black uppercase tracking-[0.18em] text-[#6A614F]">
+                What&apos;s new?
+              </div>
+              <div className="text-sm font-black text-[#0F4036]">{APP_VERSION}</div>
+            </button>
+          )}
         </div>
       </div>
     </div>,
@@ -6380,7 +6390,7 @@ function PrivacyAgreementsCard({
   const lastDailyCheck = demoMode
     ? "Sample timestamp"
     : "Scheduled checks active when cloud monitoring runs";
-  const lastSquareSync = demoMode ? "Demo Mode" : "Shown in the Square and System Health box";
+  const lastSquareSync = demoMode ? "Sample mode" : "Shown in the Square and System Health box";
 
   return (
     <section className="rounded-2xl border border-[#CA862B]/18 bg-white/85 p-4 shadow-sm">
@@ -6405,7 +6415,7 @@ function PrivacyAgreementsCard({
           </div>
           <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-[#6A614F]">
             {demoMode
-              ? "Demo owner reports privacy notes are collapsed because the demo uses sample data only."
+              ? "Sample owner-report privacy notes are collapsed because this experience uses fictional data only."
               : acknowledged
                 ? `Acknowledged by ${policyAcknowledgment?.user_name || "Owner"}${policyAcknowledgment?.acknowledged_timestamp ? ` on ${formatPolicyTimestamp(policyAcknowledgment.acknowledged_timestamp)}` : ""}.`
                 : "The acknowledgment prompt now appears after KDS sign-in and stays dismissed once the current policy version is acknowledged."}
@@ -6413,7 +6423,7 @@ function PrivacyAgreementsCard({
         </div>
         <div className="flex flex-wrap gap-2">
           <a
-            href="/policy.html"
+            href={demoMode ? "https://drinkflowkds.com/policy" : "/policy.html"}
             target="_blank"
             rel="noreferrer"
             className="rounded-xl border border-[#CA862B]/22 bg-[#FFFDF8] px-4 py-2 text-center text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
@@ -6437,14 +6447,14 @@ function PrivacyAgreementsCard({
         {[
           ["Privacy Policy", acknowledged || demoMode ? "Acknowledged" : "Needs Acknowledgment"],
           ["Policy Version", POLICY_VERSION],
-          ["Acknowledged By", demoMode ? "Demo Owner" : policyAcknowledgment?.user_name || ""],
+          ["Acknowledged By", demoMode ? "Sample Owner" : policyAcknowledgment?.user_name || ""],
           ["Acknowledged On", demoMode ? "Sample timestamp" : formatPolicyTimestamp(policyAcknowledgment?.acknowledged_timestamp)],
           ["Last Dismissed", demoMode ? "Sample timestamp" : formatPolicyTimestamp(policyReminder?.dismissed_timestamp)],
           ["Reminder Count", demoMode ? "2" : String(policyReminder?.reminder_count || 0)],
-          ["Case Study Permission", demoMode ? "Demo Data Only" : "Approved with restrictions"],
-          ["Custom Domain", demoMode ? "demo.drinkflowkds.com" : "goldieskds.com"],
-          ["Fallback Domain", demoMode ? "goldies-demo.drinkflowkds.com" : "goldies.drinkflowkds.com or goldieskds.drinkflowkds.com"],
-          ["Domain Status", demoMode ? "Demo Mode" : "Managed by Studio Samantha / DrinkFlow KDS"],
+          ["Case Study Permission", demoMode ? "Sample Data Only" : "Approved with restrictions"],
+          ["Custom Domain", demoMode ? "Product-specific domain" : "goldieskds.com"],
+          ["Fallback Domain", demoMode ? "Managed product route" : "goldies.drinkflowkds.com or goldieskds.drinkflowkds.com"],
+          ["Domain Status", demoMode ? "Sample mode" : "Managed by Studio Samantha / DrinkFlow KDS"],
           ["Domain Renewal Date", demoMode ? "Sample future date" : "First-year renewal reminder pending"],
           ["Daily Checks", demoMode ? "Active" : "Active"],
           ["Last Daily Check", lastDailyCheck],
@@ -6469,7 +6479,7 @@ function PrivacyAgreementsCard({
 function buildDemoReportCsv(report, range) {
   const rows = [
     ["DEMO DATA ONLY"],
-    ["Business", "DrinkFlow Demo Cafe"],
+    ["Business", "DrinkFlow Sample Counter"],
     ["Report", getOwnerRangeLabel(range)],
     ["Generated", new Date().toLocaleString()],
     [],
@@ -6525,14 +6535,14 @@ function openDemoReportPreview(report, timingReport, range) {
   preview.document.write(`<!doctype html>
 <html>
   <head>
-    <title>DrinkFlow Demo Cafe Report</title>
+    <title>DrinkFlow Sample Counter Report</title>
     <style>
       body { font-family: Inter, Arial, sans-serif; color: #222; margin: 32px; }
-      .mark { width: 64px; height: 64px; border-radius: 18px; background: #0f4036; color: white; display: grid; place-items: center; font-weight: 900; font-size: 24px; }
-      .banner { margin: 18px 0; padding: 12px 14px; border: 2px solid #0f4036; background: #eef7f2; font-weight: 800; }
+      .mark { width: 64px; height: 64px; border-radius: 8px; background: #e9432e; color: white; display: grid; place-items: center; font-weight: 900; font-size: 24px; box-shadow: 5px 5px 0 #38261f; }
+      .banner { margin: 18px 0; padding: 12px 14px; border: 2px solid #38261f; background: #ffd95a; font-weight: 800; }
       table { width: 100%; border-collapse: collapse; margin-top: 14px; }
       th, td { border: 1px solid #ddd; padding: 9px; text-align: left; }
-      th { background: #eee0c5; }
+      th { background: #2fb6b2; }
       footer { margin-top: 32px; font-size: 12px; color: #555; }
       @media print { button { display: none; } }
     </style>
@@ -6540,9 +6550,9 @@ function openDemoReportPreview(report, timingReport, range) {
   <body>
     <button onclick="window.print()">Print / Save PDF</button>
     <div class="mark">DF</div>
-    <h1>DrinkFlow Demo Cafe</h1>
+    <h1>DrinkFlow Sample Counter</h1>
     <h2>Sample Report - Demo Data Only</h2>
-    <div class="banner">DEMO DATA ONLY. This report uses fictional sample data for training, school projects, public demos, and product walkthroughs. No live Goldie's data is included.</div>
+    <div class="banner">DEMO DATA ONLY. This report uses fictional sample data for public demos and product walkthroughs. No live shop data is included.</div>
     <h3>${getOwnerRangeLabel(range)} Summary</h3>
     <p>Total drinks/orders: ${report?.orderCount || 0}. Drink units: ${report?.totalUnits || 0}. Average prep time: ${timingReport?.label || "3m 42s"}. Busiest hour: ${report?.busiestHour || "8:00 AM"}.</p>
     <table><thead><tr><th>Category</th><th>Units</th><th>Revenue</th></tr></thead><tbody>${categories}</tbody></table>
@@ -6550,7 +6560,7 @@ function openDemoReportPreview(report, timingReport, range) {
     <ul>${topDrinks}</ul>
     <h3>System Health</h3>
     <p>Square sync status: Demo Mode. Daily checks status: Active. Privacy policy status: Passed. Case study permission: Demo Data Only.</p>
-    <footer>Generated by DrinkFlow Kitchen Display Systems (KDS). This demo report uses fictional sample data only. No live Goldie's data is included.</footer>
+    <footer>Generated by DrinkFlow KDS. This sample report uses fictional data only. No live shop data is included.</footer>
   </body>
 </html>`);
   preview.document.close();
@@ -6840,7 +6850,7 @@ function OwnerReportsView({
   }
 
   return (
-    <div className={`fixed inset-0 z-50 overflow-auto bg-[radial-gradient(circle_at_top,_rgba(255,253,248,0.98),_rgba(238,224,197,1)_55%,_rgba(230,210,173,1)_100%)] p-4 text-[#111111] ${themeMode === "dark" ? "goldies-dark" : ""}`}>
+    <div className={`fixed inset-0 z-50 overflow-auto bg-[radial-gradient(circle_at_top,_rgba(255,253,248,0.98),_rgba(238,224,197,1)_55%,_rgba(230,210,173,1)_100%)] p-4 text-[#111111] ${themeMode === "dark" ? "goldies-dark" : ""} ${demoMode ? "drinkflow-demo-surface" : ""}`}>
       <div className="mx-auto max-w-6xl space-y-4">
         <header className="flex flex-col gap-4 rounded-3xl border border-white/70 bg-[rgba(255,253,248,0.94)] p-4 shadow-sm md:flex-row md:items-center md:justify-between">
           <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
@@ -6861,14 +6871,14 @@ function OwnerReportsView({
             </div>
             <div className="min-w-0">
               <div className="text-xs font-black uppercase tracking-[0.18em] text-[#6A614F]">
-                {demoMode ? "DrinkFlow Demo Cafe" : "Owner Reports"}
+                {demoMode ? "DrinkFlow KDS sample" : "Owner Reports"}
               </div>
               <h1 className="mt-1 text-3xl font-black text-[#0F4036]">
-                {demoMode ? "Demo Owner Reports" : "Drink Revenue"}
+                {demoMode ? "Sample Owner Reports" : "Drink Revenue"}
               </h1>
               <p className="mt-1 text-sm text-[#6A614F]">
                 {demoMode
-                  ? "Sample analytics and reports for DrinkFlow Kitchen Display Systems (KDS)"
+                  ? "Fictional analytics showing the decisions DrinkFlow can support"
                   : "Coffee, Not Coffee, and Smoothies only"}
               </p>
             </div>
@@ -6894,7 +6904,7 @@ function OwnerReportsView({
               onClick={handleLogout}
               className="rounded-xl bg-[#0F4036] px-4 py-2 text-sm font-black text-white transition hover:bg-[#0b352d]"
             >
-              {demoMode ? "Exit demo" : "Back to dashboard"}
+              {demoMode ? "Exit sample" : "Back to dashboard"}
             </button>
           </div>
         </header>
@@ -6947,16 +6957,14 @@ function OwnerReportsView({
         {demoMode && (
           <div className="rounded-3xl border-2 border-[#0F4036] bg-[#eaf7f1] px-5 py-4 text-[#0F4036] shadow-sm">
             <div className="text-xs font-black uppercase tracking-[0.18em]">
-              Demo Mode
+              Interactive Sample
             </div>
             <div className="mt-1 text-lg font-black">
-              This dashboard uses sample data only. No live Goldie&apos;s Square data
-              is shown.
+              Explore the owner decisions behind the queue without exposing any live shop data.
             </div>
             <p className="mt-2 text-sm font-semibold leading-6">
-              Data shown here is fictional and intended for training, school
-              projects, public demos, screenshots, portfolio use, customer
-              conversations, and product walkthroughs.
+              The fictional data demonstrates timing, category mix, demand patterns,
+              order history, exports, and customer-facing workflow connections.
             </p>
           </div>
         )}
@@ -7947,21 +7955,29 @@ function openDashboardReportWindow(panel) {
 }
 
 function useDisplayTheme() {
-  const [themeMode, setThemeMode] = useState(getSavedThemeMode);
+  const demoMode = isDemoTrainingRoute();
+  const [themeMode, setThemeMode] = useState(() =>
+    demoMode ? "light" : getSavedThemeMode()
+  );
 
   useEffect(() => {
+    if (demoMode) return;
+
     try {
       window.localStorage.setItem(THEME_STORAGE_KEY, themeMode);
     } catch {
       // ignore storage failures
     }
-  }, [themeMode]);
+  }, [demoMode, themeMode]);
 
   return {
     themeMode,
     isDark: themeMode === "dark",
-    toggleTheme: () =>
-      setThemeMode((current) => (current === "dark" ? "light" : "dark")),
+    toggleTheme: () => {
+      if (!demoMode) {
+        setThemeMode((current) => (current === "dark" ? "light" : "dark"));
+      }
+    },
   };
 }
 
@@ -8048,8 +8064,11 @@ function useScreenWakeLock(enabled = true) {
 function DisplayBackground({ children, accent = "gold", darkMode = false }) {
   useScreenWakeLock(true);
 
+  const demoMode = isDemoTrainingRoute();
   const isGreen = accent === "green";
-  const backgroundImage = darkMode
+  const backgroundImage = demoMode
+    ? "linear-gradient(180deg, #fff5e3 0%, #fffdf6 52%, #e8f7ff 100%)"
+    : darkMode
     ? "radial-gradient(circle at 12% 8%, rgba(202,134,43,0.22), transparent 28%), radial-gradient(circle at 86% 4%, rgba(255,253,248,0.1), transparent 32%), linear-gradient(135deg, #041c19 0%, #0F4036 48%, #1F160F 100%)"
     : isGreen
       ? "radial-gradient(circle at 20% 12%, rgba(15,64,54,0.22), transparent 30%), radial-gradient(circle at 82% 8%, rgba(202,134,43,0.26), transparent 30%), linear-gradient(135deg, #FFFDF8 0%, #F4E8D1 46%, #EEE0C5 100%)"
@@ -8066,10 +8085,12 @@ function DisplayBackground({ children, accent = "gold", darkMode = false }) {
         aria-hidden="true"
         className="fixed inset-0 pointer-events-none opacity-[0.035]"
         style={{
-          backgroundImage: `url(${darkMode ? LOGO_DARK_URL : LOGO_URL})`,
-          backgroundSize: "180px",
-          backgroundRepeat: "repeat",
-          transform: "rotate(-8deg) scale(1.08)",
+        backgroundImage: demoMode
+          ? "radial-gradient(circle at 18px 18px, rgba(49,87,200,0.16) 0 2px, transparent 3px)"
+          : `url(${darkMode ? LOGO_DARK_URL : LOGO_URL})`,
+        backgroundSize: demoMode ? "86px 86px" : "180px",
+        backgroundRepeat: "repeat",
+        transform: demoMode ? "none" : "rotate(-8deg) scale(1.08)",
         }}
       />
       <div className="relative z-10">{children}</div>
@@ -8271,7 +8292,7 @@ function FullscreenButton({ darkMode = false }) {
 
 function DisplayThemeButton({ themeMode, onToggle, darkMode = false }) {
   const { isFullscreen } = useFullscreenMode();
-  if (isFullscreen) return null;
+  if (isFullscreen || isDemoTrainingRoute()) return null;
 
   const buttonClass = darkMode
     ? "border-white/20 bg-white/12 text-[#FFF7EA] hover:bg-white/18"
@@ -8423,7 +8444,7 @@ function MenuBoardDisplay() {
             </div>
             <div>
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F3D39B] sm:text-xs sm:tracking-[0.24em]">
-                {demoMode ? "DF Demo Cafe" : "Goldie's Coffee & Goods"}
+                {demoMode ? "DrinkFlow Sample Counter" : "Goldie's Coffee & Goods"}
               </div>
               <h1 className="mt-1 text-2xl font-semibold tracking-normal sm:text-3xl md:text-4xl">
                 {eventMenuActive ? eventMenu.label : "Drink Menu"}
@@ -8703,7 +8724,7 @@ function OrdersUpDisplay() {
             </div>
             <div>
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F3D39B] sm:text-xs sm:tracking-[0.24em]">
-                {demoMode ? "DF Demo Cafe" : "Goldie's Coffee & Goods"}
+                {demoMode ? "DrinkFlow Sample Counter" : "Goldie's Coffee & Goods"}
               </div>
               <h1 className="mt-1 text-2xl font-semibold tracking-normal sm:text-3xl md:text-4xl">
                 Orders Up
@@ -8957,7 +8978,7 @@ function DriveThruDisplay() {
             </div>
             <div>
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F3D39B] sm:text-xs sm:tracking-[0.24em]">
-                {demoMode ? "DF Demo Cafe" : "Pickup & Drive Thru"}
+                {demoMode ? "DrinkFlow Sample Counter" : "Pickup & Drive Thru"}
               </div>
               <h1 className="mt-1 text-2xl font-semibold tracking-normal sm:text-3xl md:text-4xl">
                 Order Board
@@ -9453,7 +9474,7 @@ function OnlineOrdersDisplay() {
             </div>
             <div>
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F3D39B] sm:text-xs sm:tracking-[0.24em]">
-                {demoMode ? "DF Demo Cafe" : "Online Pickup"}
+                {demoMode ? "DrinkFlow Sample Counter" : "Online Pickup"}
               </div>
               <h1 className="mt-1 text-2xl font-semibold tracking-normal sm:text-3xl md:text-4xl">
                 Online Orders
@@ -11378,7 +11399,7 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
               <p className="mt-5 max-w-2xl text-lg font-semibold leading-8 text-[#5A4F3E]">
                 {kioskMode
                   ? demoMode
-                    ? "Explore a sample menu and complete a practice order. Nothing connects to Goldie's or a live checkout."
+                    ? "Explore a sample menu and complete a practice order. Nothing connects to a live shop or checkout."
                     : "Browse the photo menu, add your favorites, then open the cart when you're ready."
                   : demoMode
                     ? "See how customers choose a drink, add a pickup name, and receive a clear ready-time estimate."
@@ -11410,7 +11431,7 @@ function OnlineOrderingBetaPage({ kioskMode = false }) {
         {ordered || demoOrdered ? (
           <div className="rounded-3xl border border-[#0F4036]/14 bg-white/90 p-4 text-sm font-bold leading-6 text-[#0F4036] shadow-sm">
             {demoMode
-              ? "Sample order complete. Nothing was sent to Goldie's, Square, or a live KDS."
+              ? "Sample order complete. Nothing was sent to a live shop, payment system, or KDS."
               : "Payment complete. Square may take a moment to send the order back to the KDS."}
           </div>
         ) : null}
@@ -12477,8 +12498,8 @@ export default function GoldiesKDS() {
   if (isDemoOwnerRoute()) {
     return (
       <OwnerReportsView
-        ownerName="Demo Owner"
-        themeMode={getSavedThemeMode()}
+        ownerName="Sample Owner"
+        themeMode="light"
         demoMode
         demoTickets={createTrainingTickets()}
         onClose={() => {
@@ -12502,13 +12523,15 @@ export default function GoldiesKDS() {
     toggleFullscreen: toggleDashboardFullscreen,
   } = useFullscreenMode();
   const isDemoRoute = isDemoTrainingRoute();
-  const [themeMode, setThemeMode] = useState(getSavedThemeMode);
+  const [themeMode, setThemeMode] = useState(() =>
+    isDemoTrainingRoute() ? "light" : getSavedThemeMode()
+  );
   const [isTrainingMode, setIsTrainingMode] = useState(getSavedTrainingMode);
   const [authStatus, setAuthStatus] = useState(() =>
     isDemoTrainingRoute() ? "authenticated" : "checking"
   );
   const [signedInEmployee, setSignedInEmployee] = useState(() =>
-    isDemoTrainingRoute() ? "Demo" : ""
+    isDemoTrainingRoute() ? "Sample Guide" : ""
   );
   const [tickets, setTickets] = useState([]);
   const pendingTicketStatusesRef = useRef(new Map());
@@ -12612,7 +12635,7 @@ export default function GoldiesKDS() {
   function openOwnerPortal() {
     setShowSettingsMenu(false);
     if (isDemoRoute || isTrainingMode) {
-      setSignedInOwner(isDemoRoute ? "Demo Owner" : "Training Owner");
+      setSignedInOwner(isDemoRoute ? "Sample Owner" : "Training Owner");
       setShowOwnerLogin(false);
       setShowOwnerReports(true);
       return;
@@ -12671,6 +12694,14 @@ export default function GoldiesKDS() {
           colorScheme: "dark",
         }
       : undefined;
+  const demoThemeStyle = isDemoRoute
+    ? {
+        backgroundColor: "#fff5e3",
+        backgroundImage: "none",
+        color: "#201713",
+        colorScheme: "light",
+      }
+    : undefined;
   const [trainingTickets, setTrainingTickets] = useState(() =>
     createTrainingTickets()
   );
@@ -12752,14 +12783,18 @@ export default function GoldiesKDS() {
   }
 
   useEffect(() => {
+    if (isDemoRoute) return;
+
     try {
       window.localStorage.setItem(THEME_STORAGE_KEY, themeMode);
     } catch {
       // ignore storage failures
     }
-  }, [themeMode]);
+  }, [isDemoRoute, themeMode]);
 
   useEffect(() => {
+    if (isDemoRoute) return;
+
     try {
       window.localStorage.setItem(
         TRAINING_MODE_STORAGE_KEY,
@@ -12768,7 +12803,7 @@ export default function GoldiesKDS() {
     } catch {
       // ignore storage failures
     }
-  }, [isTrainingMode]);
+  }, [isDemoRoute, isTrainingMode]);
 
   useEffect(() => {
     if (!isTrainingMode) return;
@@ -12868,7 +12903,7 @@ export default function GoldiesKDS() {
     if (isDemoRoute) {
       setIsTrainingMode(true);
       setAuthStatus("authenticated");
-      setSignedInEmployee("Demo");
+      setSignedInEmployee("Sample Guide");
       return undefined;
     }
 
@@ -13593,7 +13628,7 @@ export default function GoldiesKDS() {
             ? `goldies-dark ${isTrainingMode ? "goldies-training-dark" : ""}`
             : ""
         }`}
-        style={{ ...themeStyle, ...trainingThemeStyle }}
+        style={{ ...themeStyle, ...trainingThemeStyle, ...demoThemeStyle }}
         onClick={() => {
           setShowSettingsMenu(false);
           setShowDisplaysMenu(false);
@@ -13649,7 +13684,7 @@ export default function GoldiesKDS() {
               </h1>
 
               <p className="text-[#6A614F] mt-1 text-sm md:text-base">
-                {isDemoRoute ? "Demo orders" : "Live Square orders"}
+                {isDemoRoute ? "Interactive sample orders" : "Live Square orders"}
               </p>
 
               {!isDashboardFullscreen && (
@@ -13800,7 +13835,7 @@ export default function GoldiesKDS() {
                   href="https://drinkflowkds.com"
                   className="rounded-2xl border border-[#CA862B]/14 bg-white/80 px-4 py-2 text-sm font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/55 shadow-sm"
                 >
-                  Back to Learn More
+                  Back to DrinkFlow
                 </a>
               )}
 
@@ -13809,7 +13844,7 @@ export default function GoldiesKDS() {
                 onClick={openOwnerPortal}
                 className="rounded-2xl border border-[#CA862B]/14 bg-[#0F4036] px-4 py-2 text-sm font-black text-white shadow-sm transition hover:bg-[#0b352d]"
               >
-                {isTrainingMode ? "Training Owner Reports" : "Owner Reports"}
+                {isDemoRoute ? "Sample Owner Reports" : isTrainingMode ? "Training Owner Reports" : "Owner Reports"}
               </button>
 
             <div className="relative" onClick={(event) => event.stopPropagation()}>
@@ -13818,7 +13853,7 @@ export default function GoldiesKDS() {
                     <div className="text-xs font-black uppercase tracking-[0.16em] text-[#CA862B]">
                       Demo tip
                     </div>
-                    Click Training Owner Reports for the demo reports.
+                    Open Sample Owner Reports to explore fictional analytics.
                   </div>
                 )}
                 <div className="flex items-center gap-1.5 rounded-2xl border border-[#CA862B]/14 bg-white/75 px-1.5 py-1 shadow-sm">
@@ -13863,15 +13898,17 @@ export default function GoldiesKDS() {
                     setShowDiningOnTickets((current) => !current)
                   }
                   onOwnerLogin={openOwnerPortal}
-                  ownerActionLabel={isDemoRoute || isTrainingMode ? "Training Owner Reports" : "Owner Reports"}
-                  showPasswordAction={true}
+                  ownerActionLabel={isDemoRoute ? "Sample Owner Reports" : isTrainingMode ? "Training Owner Reports" : "Owner Reports"}
+                  showPasswordAction={!isDemoRoute}
+                  showVersionAction={!isDemoRoute}
+                  showThemeAction={!isDemoRoute}
                   onChangePassword={() => {
                     setShowSettingsMenu(false);
                     setPasswordError("");
                     setPasswordNotice("");
                     setShowPasswordModal(true);
                   }}
-                  suggestFixHref={buildSupportMailto()}
+                  suggestFixHref={isDemoRoute ? "mailto:samantha@studiosamantha.com?subject=DrinkFlow%20KDS%20sample%20feedback" : buildSupportMailto()}
                   onVersionClick={() => {
                     setShowSettingsMenu(false);
                     setShowReleaseNotes(true);
@@ -13884,7 +13921,7 @@ export default function GoldiesKDS() {
                 onClick={handleLogout}
                 className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-black text-red-800 transition hover:bg-red-100 shadow-sm"
               >
-                Sign out
+                {isDemoRoute ? "Exit sample" : "Sign out"}
               </button>
             </div>
             )}
@@ -13932,10 +13969,10 @@ export default function GoldiesKDS() {
                   Mode
                 </div>
                 <div className="text-xl md:text-2xl font-black mt-1 text-[#111111]">
-                  {isTrainingMode ? "Training" : "Live"}
+                  {isDemoRoute ? "Interactive sample" : isTrainingMode ? "Training" : "Live"}
                 </div>
                 <div className="text-sm text-[#6A614F] mt-1">
-                  {isTrainingMode ? "Demo data" : "Production"}
+                  {isDemoRoute ? "Fictional data; working controls" : isTrainingMode ? "Demo data" : "Production"}
                 </div>
               </div>
 
@@ -13943,18 +13980,21 @@ export default function GoldiesKDS() {
                 type="button"
                 onClick={() =>
                   setModeHelp({
-                    title: "Training mode",
-                    body: "Training mode swaps in practice orders and sample counts. It does not change live Square data.",
+                    title: isDemoRoute ? "Interactive sample" : "Training mode",
+                    body: isDemoRoute
+                      ? "This public sample uses fictional orders and working controls. It never connects to a live shop."
+                      : "Training mode swaps in practice orders and sample counts. It does not change live Square data.",
                   })
                 }
-                title="Training mode swaps in practice orders and counts so staff can practice without changing live Square data."
-                aria-label="Training mode swaps in practice orders and counts so staff can practice without changing live Square data."
+                title={isDemoRoute ? "This sample uses fictional orders and working controls." : "Training mode swaps in practice orders and counts so staff can practice without changing live Square data."}
+                aria-label={isDemoRoute ? "This sample uses fictional orders and working controls." : "Training mode swaps in practice orders and counts so staff can practice without changing live Square data."}
                 className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#CA862B]/20 bg-white text-xs font-black text-[#0F4036] transition hover:bg-[#EEE0C5]/45"
               >
                 ?
               </button>
             </div>
 
+            {!isDemoRoute && (
             <div className="mt-3 inline-flex rounded-2xl border border-[#CA862B]/18 bg-[#EEE0C5]/45 p-1">
               <button
                 type="button"
@@ -13984,6 +14024,7 @@ export default function GoldiesKDS() {
                 Training
               </button>
             </div>
+            )}
           </div>
 
           <StatCard
