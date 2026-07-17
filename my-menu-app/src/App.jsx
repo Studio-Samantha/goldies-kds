@@ -2755,6 +2755,10 @@ function getTrainingTimestamp(dayOffset, hour, minute) {
   return date.getTime();
 }
 
+function getTrainingRecentTimestamp(minutesAgo) {
+  return Date.now() - minutesAgo * 60 * 1000;
+}
+
 function createTrainingTickets() {
   return [
     {
@@ -2762,7 +2766,7 @@ function createTrainingTickets() {
       orderNumber: "T1001",
       customerName: "",
       employeeName: "Avery",
-      createdAt: getTrainingTimestamp(0, 7, 58),
+      createdAt: getTrainingRecentTimestamp(8),
       completedAt: null,
       source: "Square Register",
       status: "new",
@@ -2777,7 +2781,7 @@ function createTrainingTickets() {
       orderNumber: "T1002",
       customerName: "Mia",
       employeeName: "Morgan",
-      createdAt: getTrainingTimestamp(0, 8, 7),
+      createdAt: getTrainingRecentTimestamp(6),
       completedAt: null,
       source: "Square Register",
       status: "making",
@@ -2792,7 +2796,7 @@ function createTrainingTickets() {
       orderNumber: "T1003",
       customerName: "Sammy",
       employeeName: "Riley",
-      createdAt: getTrainingTimestamp(0, 8, 15),
+      createdAt: getTrainingRecentTimestamp(1),
       completedAt: null,
       source: "Square Register",
       status: "ready",
@@ -2807,8 +2811,8 @@ function createTrainingTickets() {
       orderNumber: "T1004",
       customerName: "Jordan",
       employeeName: "Avery",
-      createdAt: getTrainingTimestamp(0, 8, 29),
-      completedAt: getTrainingTimestamp(0, 8, 42),
+      createdAt: getTrainingRecentTimestamp(45),
+      completedAt: getTrainingRecentTimestamp(32),
       source: "Square Register",
       status: "completed",
       diningOption: "Delivery",
@@ -2823,8 +2827,8 @@ function createTrainingTickets() {
       orderNumber: "T1005",
       customerName: "",
       employeeName: "Morgan",
-      createdAt: getTrainingTimestamp(0, 8, 39),
-      completedAt: getTrainingTimestamp(0, 8, 51),
+      createdAt: getTrainingRecentTimestamp(28),
+      completedAt: getTrainingRecentTimestamp(16),
       source: "Square Register",
       status: "done",
       diningOption: "Drive thru",
@@ -2891,13 +2895,14 @@ function TicketCard({
   compact = false,
   focusMode = false,
 }) {
+  const demoMode = isDemoTrainingRoute();
   const [nameValue, setNameValue] = useState(ticket.customerName || "");
   const orderTime = formatOrderTime(ticket.createdAt);
   const timeClass = getTimeClass(ticket.createdAt);
   const drinkItems = getDrinkItems(ticket);
-  const visibleItems = compact ? drinkItems : getVisibleItems(ticket);
+  const visibleItems = compact || demoMode ? drinkItems : getVisibleItems(ticket);
   const displayName = String(ticket.customerName || "").trim();
-  const hiddenItemCount = compact
+  const hiddenItemCount = compact || demoMode
     ? Math.max((ticket.items || []).length - drinkItems.length, 0)
     : 0;
   const ticketHasDrinks = hasDrinkItems(ticket);
@@ -3107,7 +3112,10 @@ function TicketCard({
                 className="mt-1 w-full rounded-xl border border-[#CA862B]/22 bg-white px-3 py-2 text-sm font-black text-[#0F4036] outline-none focus:border-[#CA862B] focus:ring-2 focus:ring-[#CA862B]/15"
               >
                 <option value="">Set service</option>
-                {DINING_OPTIONS.map((option) => (
+                {(demoMode
+                  ? ["Dine in", "To go", "Pickup", "Delivery", "Drive thru"]
+                  : DINING_OPTIONS
+                ).map((option) => (
                   <option key={option} value={option}>
                     {option}
                   </option>
@@ -3195,7 +3203,9 @@ function TicketCard({
 
         {hiddenItemCount > 0 && (
           <div className="rounded-lg border border-[#CA862B]/14 bg-[#EEE0C5]/50 px-2 py-1 text-xs font-black text-[#6A614F]">
-            {hiddenItemCount} non-drink item{hiddenItemCount === 1 ? "" : "s"} hidden on Focus Board
+            {demoMode
+              ? `${hiddenItemCount} retail item${hiddenItemCount === 1 ? "" : "s"} kept out of the drink queue; available in transaction history`
+              : `${hiddenItemCount} non-drink item${hiddenItemCount === 1 ? "" : "s"} hidden on Focus Board`}
           </div>
         )}
       </div>
@@ -12809,11 +12819,11 @@ export default function GoldiesKDS() {
     if (!isTrainingMode) return;
 
     setTrainingTickets(createTrainingTickets());
-    setConnectionStatus("Training mode");
-    setConnectionDetail("Practice data");
+    setConnectionStatus(isDemoRoute ? "Sample data ready" : "Training mode");
+    setConnectionDetail(isDemoRoute ? "Working controls" : "Practice data");
     setLastError("");
     setLastPoll(new Date());
-  }, [isTrainingMode]);
+  }, [isDemoRoute, isTrainingMode]);
 
   useEffect(() => {
     if (!isTrainingMode && authStatus === "authenticated") {
@@ -13180,10 +13190,16 @@ export default function GoldiesKDS() {
         },
       }
     : drinkTimeReports;
-  const displayedConnectionStatus = isTrainingMode
-    ? "Training mode"
+  const displayedConnectionStatus = isDemoRoute
+    ? "Sample data ready"
+    : isTrainingMode
+      ? "Training mode"
     : connectionStatus;
-  const displayedConnectionDetail = isTrainingMode ? "Practice data" : connectionDetail;
+  const displayedConnectionDetail = isDemoRoute
+    ? "Working controls"
+    : isTrainingMode
+      ? "Practice data"
+      : connectionDetail;
   const activeTickets = displayedTickets.filter(
     (ticket) =>
       ticket.status !== "done" &&
@@ -13848,14 +13864,6 @@ export default function GoldiesKDS() {
               </button>
 
             <div className="relative" onClick={(event) => event.stopPropagation()}>
-                {isDemoRoute && (
-                  <div className="absolute right-0 top-full z-20 mt-2 w-72 rounded-2xl border border-[#CA862B]/22 bg-white px-4 py-3 text-sm font-bold leading-5 text-[#0F4036] shadow-[0_18px_45px_rgba(15,64,54,0.16)]">
-                    <div className="text-xs font-black uppercase tracking-[0.16em] text-[#CA862B]">
-                      Demo tip
-                    </div>
-                    Open Sample Owner Reports to explore fictional analytics.
-                  </div>
-                )}
                 <div className="flex items-center gap-1.5 rounded-2xl border border-[#CA862B]/14 bg-white/75 px-1.5 py-1 shadow-sm">
                   <button
                     type="button"
