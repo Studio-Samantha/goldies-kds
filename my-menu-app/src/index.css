@@ -2,6 +2,111 @@
 @tailwind components;
 @tailwind utilities;
 
+.drinkflow-demo body {
+  background: #fff5e3;
+  color: #201713;
+  font-family: "Nunito Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+.drinkflow-demo h1,
+.drinkflow-demo h2,
+.drinkflow-demo h3 {
+  font-family: Fraunces, Georgia, serif;
+  letter-spacing: 0 !important;
+}
+
+.drinkflow-demo .drinkflow-demo-brand {
+  border: 2px solid #38261f;
+  border-radius: 8px;
+  background: #fffdf6;
+  box-shadow: 5px 5px 0 #38261f;
+}
+
+.drinkflow-demo .drinkflow-demo-stamp {
+  display: grid;
+  width: 2.65rem;
+  height: 2.65rem;
+  place-items: center;
+  border: 2px solid #38261f;
+  border-radius: 8px;
+  color: #fffdf6;
+  background: #e9432e;
+  box-shadow: 3px 3px 0 #38261f;
+  font-weight: 950;
+}
+
+.drinkflow-demo [class*="bg-[radial-gradient(circle_at_top"],
+.drinkflow-demo .drinkflow-demo-surface {
+  background-color: #fff5e3 !important;
+  background-image: none !important;
+}
+
+.drinkflow-demo [class*="bg-[#EEE0C5]"],
+.drinkflow-demo [class*="bg-[rgba(238,224,197"] {
+  background-color: #ffd95a !important;
+}
+
+.drinkflow-demo [class*="bg-[#FFFDF8]"],
+.drinkflow-demo [class*="bg-[rgba(255,253,248"],
+.drinkflow-demo [class*="bg-white"] {
+  background-color: #fffdf6 !important;
+}
+
+.drinkflow-demo [class*="bg-[#0F4036]"],
+.drinkflow-demo [class*="hover:bg-[#0b352d]"]:hover {
+  background-color: #e9432e !important;
+}
+
+.drinkflow-demo [class*="bg-[#CA862B]"],
+.drinkflow-demo [class*="hover:bg-[#a86d22]"]:hover {
+  background-color: #3157c8 !important;
+}
+
+.drinkflow-demo [class*="border-[#CA862B]"],
+.drinkflow-demo [class*="border-[#0F4036]"],
+.drinkflow-demo [class*="border-white"] {
+  border-color: rgba(56, 38, 31, 0.34) !important;
+}
+
+.drinkflow-demo [class*="text-[#0F4036]"],
+.drinkflow-demo [class*="text-[#111111]"],
+.drinkflow-demo [class*="text-[#2D261C]"] {
+  color: #201713 !important;
+}
+
+.drinkflow-demo [class*="text-[#CA862B]"],
+.drinkflow-demo [class*="text-[#8B5A1D]"] {
+  color: #e9432e !important;
+}
+
+.drinkflow-demo [class*="text-[#6A614F]"],
+.drinkflow-demo [class*="text-[#4E4637]"],
+.drinkflow-demo [class*="text-[#5A4F3E]"] {
+  color: #67564d !important;
+}
+
+.drinkflow-demo [class*="rounded-3xl"],
+.drinkflow-demo [class*="rounded-[1.75rem]"],
+.drinkflow-demo [class*="rounded-2xl"] {
+  border-radius: 8px !important;
+}
+
+.drinkflow-demo button,
+.drinkflow-demo a,
+.drinkflow-demo input,
+.drinkflow-demo select,
+.drinkflow-demo textarea {
+  letter-spacing: 0 !important;
+}
+
+.drinkflow-demo input,
+.drinkflow-demo select,
+.drinkflow-demo textarea {
+  border-color: rgba(56, 38, 31, 0.38) !important;
+  color: #201713 !important;
+  background: #fffdf6 !important;
+}
+
 .goldies-dark {
   color: #fff7ea;
 }
