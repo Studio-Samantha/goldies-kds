@@ -228,7 +228,10 @@ NODE
   check_json_endpoint "display-online-orders" "$BASE_URL/api/display/online-orders" "object"
 
   local sop_code
-  sop_code="$(curl "${CURL_RETRY_ARGS[@]}" -sS -o /tmp/goldies-check-sop.png -w "%{http_code}" -b "$COOKIE_JAR" "$BASE_URL/api/staff/sop/goldies-recipes-1.png")"
+  sop_code="$(curl "${CURL_RETRY_ARGS[@]}" -sS -o /tmp/goldies-check-sop.png -w "%{http_code}" \
+    -b "$COOKIE_JAR" \
+    -H "x-goldies-recipe-viewer: kds" \
+    "$BASE_URL/api/staff/sop/goldies-recipes-1.png")"
   if [ "$sop_code" != "200" ]; then
     echo "FAIL staff SOP status=$sop_code"
     STATUS=1
