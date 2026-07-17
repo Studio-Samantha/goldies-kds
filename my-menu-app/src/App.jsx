@@ -5646,7 +5646,13 @@ function getShopTimeParts(date = new Date()) {
   return { hour, minute, minutes: hour * 60 + minute };
 }
 
-function getServiceWindowRead(now = new Date(), shopHours = DEFAULT_SHOP_HOURS, selectedDate = getTodayDateKey()) {
+function getServiceWindowRead(
+  now = new Date(),
+  shopHours = DEFAULT_SHOP_HOURS,
+  selectedDate = getTodayDateKey(),
+  shopName = "Goldie's",
+  timeZoneLabel = "Central"
+) {
   const todayKey = getTodayDateKey();
   const isToday = selectedDate === todayKey;
   const openHour = Number(shopHours.openHour ?? DEFAULT_SHOP_HOURS.openHour);
@@ -5657,7 +5663,7 @@ function getServiceWindowRead(now = new Date(), shopHours = DEFAULT_SHOP_HOURS, 
     return {
       phase: "past-day",
       label: "Past day",
-      pace: `This view is showing ${selectedDate}, using Goldie's ${label} Central service window.`,
+      pace: `This view is showing ${selectedDate}, using the ${shopName} ${label} ${timeZoneLabel} service window.`,
       action: "Use this as a day review instead of a live staffing read.",
     };
   }
@@ -5671,7 +5677,7 @@ function getServiceWindowRead(now = new Date(), shopHours = DEFAULT_SHOP_HOURS, 
     return {
       phase: "before-open",
       label: "Before open",
-      pace: `Goldie's opens at ${label.split("-")[0]} Central and closes at ${label.split("-")[1]} Central today.`,
+      pace: `${shopName} opens at ${label.split("-")[0]} ${timeZoneLabel} and closes at ${label.split("-")[1]} ${timeZoneLabel} today.`,
       action: "Use this as a pre-service check: confirm Square is syncing, then watch the first real rush after open.",
     };
   }
@@ -5680,7 +5686,7 @@ function getServiceWindowRead(now = new Date(), shopHours = DEFAULT_SHOP_HOURS, 
     return {
       phase: "after-close",
       label: "After close",
-      pace: `Goldie's service window has closed for the day: ${label} Central.`,
+      pace: `${shopName} service window has closed for the day: ${label} ${timeZoneLabel}.`,
       action: "Treat today as a closed-day read now. Use the numbers for review, restock notes, and tomorrow's prep instead of live staffing moves.",
     };
   }
@@ -5705,7 +5711,7 @@ function getServiceWindowRead(now = new Date(), shopHours = DEFAULT_SHOP_HOURS, 
     phase: "open",
     label: "Open now",
     progress,
-    pace: `Goldie's is ${progress}% through its ${label} Central service window, with ${elapsedLabel} served and about ${remainingLabel} left.`,
+    pace: `${shopName} is ${progress}% through its ${label} ${timeZoneLabel} service window, with ${elapsedLabel} served and about ${remainingLabel} left.`,
     action: "Use this as a live service read. Compare the current pace to the time left before changing prep, staffing, or specials.",
   };
 }
@@ -9186,7 +9192,7 @@ function VolumeBoardDisplay() {
         const demoReport = buildDemoOwnerReport(getDemoDisplayTickets(), "today");
         setReport({
           ...demoReport,
-          shopHours: getShopHoursForDate(selectedDate),
+          shopHours: { openHour: 8, closeHour: 20, label: "8 AM-8 PM" },
         });
         setUpdatedAt(new Date().toISOString());
         setError("");
@@ -9229,7 +9235,13 @@ function VolumeBoardDisplay() {
   }, [demoMode, selectedDate]);
 
   const shopHours = getShopHoursFromReport(report, selectedDate);
-  const serviceRead = getServiceWindowRead(new Date(), shopHours, selectedDate);
+  const serviceRead = getServiceWindowRead(
+    new Date(),
+    shopHours,
+    selectedDate,
+    demoMode ? "Sample counter" : "Goldie's",
+    demoMode ? "local" : "Central"
+  );
   const orderCount = Number(report?.orderCount || 0);
   const totalUnits = Number(report?.totalUnits || 0);
   const averageDrinks = orderCount ? (totalUnits / orderCount).toFixed(1) : "0.0";
@@ -9272,7 +9284,7 @@ function VolumeBoardDisplay() {
             </div>
             <div>
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F3D39B] sm:text-xs sm:tracking-[0.24em]">
-                {shopHours.label} Central
+                {demoMode ? `${shopHours.label} sample window` : `${shopHours.label} Central`}
               </div>
               <h1 className="mt-1 text-2xl font-semibold tracking-normal sm:text-3xl md:text-4xl">
                 Volume Board
