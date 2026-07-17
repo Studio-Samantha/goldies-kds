@@ -4519,8 +4519,8 @@ function DemoBrandMark({ size = "md" }) {
     <div className={`${dimensions} drinkflow-demo-brand flex items-center justify-center gap-3 px-3`} aria-label="DrinkFlow KDS interactive sample">
       <div className="drinkflow-demo-stamp" aria-hidden="true">DF</div>
       <div className="text-left leading-none">
-        <div className="text-base font-black text-[#201713]">DrinkFlow KDS</div>
-        <div className="mt-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#e9432e]">
+        <div className="whitespace-nowrap text-xs font-black text-[#201713]">DrinkFlow KDS</div>
+        <div className="mt-1 whitespace-nowrap text-[8px] font-black uppercase tracking-[0.08em] text-[#e9432e]">
           Interactive sample
         </div>
       </div>
