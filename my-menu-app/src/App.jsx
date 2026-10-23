@@ -10,7 +10,7 @@ const OWNER_LOGO_URL = "/goldies-logo-owner.png";
 const POLL_INTERVAL_MS = 3000;
 const THEME_STORAGE_KEY = "goldies-kds-theme";
 const TRAINING_MODE_STORAGE_KEY = "goldies-kds-training-mode";
-const APP_VERSION = "v1.10.29";
+const APP_VERSION = "v1.10.30";
 const RELEASE_NOTES_HIDE_KEY = "goldies-kds-hidden-release-notes-version";
 const CELEBRATION_HIDE_KEY = "goldies-kds-hidden-celebration";
 const OWNER_REPORTS_NOTICE_HIDE_KEY = "goldies-kds-hidden-owner-reports-notice-v2";
@@ -32,6 +32,8 @@ const SETTINGS_HELP_TEXT =
 const DINING_OPTIONS = ["HANGIN' OUT", "TAKING OFF", "Pickup", "Delivery", "Drive thru"];
 const DAILY_UPDATE_NOTICE = {
   id: APP_VERSION,
+  validFrom: "2026-07-04",
+  validThrough: "2026-07-04",
   eyebrow: "Today on the KDS",
   title: "250th Fourth of July service",
   message:
@@ -40,6 +42,11 @@ const DAILY_UPDATE_NOTICE = {
     "The screen stays light, with red and blue accents today only.",
 };
 const OWNER_PORTAL_RECENT_CHANGES = [
+  {
+    title: "Prepared drinks and retail products",
+    body:
+      "Prepared drinks, including Apple Cider, use Square's drink categories across menus, availability and service tickets. Recognized retail products stay off drink menus, preparation checklists and drink counts, while mixed orders keep their transaction details.",
+  },
   {
     title: "Online ordering launch path",
     body:
@@ -188,8 +195,18 @@ const OWNER_PORTAL_RECENT_CHANGES = [
 ];
 const RELEASE_NOTES = [
   {
+    version: "v1.10.30",
+    date: "October 23, 2026",
+    summary: "Connected prepared drinks and kept retail products separate.",
+    items: [
+      "Prepared drinks, including Apple Cider, use Square's drink categories across menus, availability and service tickets.",
+      "Packaged cider and other recognized retail products stay off drink menus, preparation checklists and drink counts.",
+      "Mixed orders keep their transaction details, and drink options remain attached to the prepared drink.",
+    ],
+  },
+  {
     version: "v1.10.29",
-    date: "Current build",
+    date: "Previous build",
     summary: "Fixed the customer online-ordering link.",
     items: [
       "The owner dashboard now opens the customer-facing Online Ordering page at /online-ordering.",
@@ -1167,6 +1184,27 @@ function getTodayDateKey() {
   return getLocalDateInputValue();
 }
 
+
+function getDailyUpdateNotice(dateKey = getTodayDateKey(), notice = DAILY_UPDATE_NOTICE) {
+  function isValidDateKey(value) {
+    if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const parsed = new Date(`${value}T00:00:00Z`);
+    return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+  }
+
+  if (
+    !notice ||
+    !isValidDateKey(dateKey) ||
+    !isValidDateKey(notice.validFrom) ||
+    !isValidDateKey(notice.validThrough) ||
+    notice.validFrom > notice.validThrough
+  ) {
+    return null;
+  }
+
+  return dateKey >= notice.validFrom && dateKey <= notice.validThrough ? notice : null;
+}
+
 function getNthWeekdayDateKey(year, monthIndex, weekday, occurrence) {
   const date = new Date(year, monthIndex, 1);
   const offset = (weekday - date.getDay() + 7) % 7;
@@ -2002,14 +2040,14 @@ function buildDrinkReportFromTickets(tickets, rangeKey) {
   tickets
     .filter((ticket) => ticket.createdAt >= start && ticket.createdAt < end)
     .forEach((ticket) => {
-      const drinkItems = ticket.items.filter((item) => isDrinkItem(item.name));
+      const drinkItems = ticket.items.filter((item) => isDrinkItem(item));
       if (!drinkItems.length) return;
 
       orderCount += 1;
 
       drinkItems.forEach((item) => {
         const qty = Number(item.qty || 1);
-        const category = getBeverageCategory(item.name);
+        const category = getBeverageCategory(item);
         const displayName = getCanonicalDrinkName(item.name);
 
         names[displayName] = (names[displayName] || 0) + qty;
@@ -2379,6 +2417,10 @@ function isNonDrinkItem(itemName = "") {
     /\bbamboo\b/i,
     /\bsoap\b/i,
     /\bshower steamer\b/i,
+    /\bcandles?\b/i,
+    /\blinen sprays?\b/i,
+    /\bessential oils?\b/i,
+    /\bwax melts?\b/i,
     /\bbestseller\b/i,
     /\bbagged coffee\b/i,
     /\bcoffee beans\b/i,
@@ -2389,14 +2431,25 @@ function isNonDrinkItem(itemName = "") {
   ]);
 }
 
-function getBeverageCategory(itemName = "") {
-  const name = String(itemName || "").trim();
+function getBeverageCategory(itemOrName = "") {
+  const item = itemOrName && typeof itemOrName === "object" ? itemOrName : null;
+  if (item?.isRetail === true) return null;
+
+  const name = String(item ? item.originalName || item.squareName || item.name || "" : itemOrName || "").trim();
   const lower = normalizeDrinkText(name);
   const compact = lower.replace(/\s+/g, "");
   const smoothieName = stripDrinkSizeDescriptors(name);
   const smoothieCompact = smoothieName.replace(/\s+/g, "");
 
   if (isNonDrinkItem(name)) return null;
+
+  // Keep Square's item classification when present; names are a legacy fallback.
+  const itemCategory = normalizeDrinkText(item?.category);
+  if (itemCategory) {
+    return GOLDIES_MENU_CATEGORY_LABELS.find(
+      (category) => normalizeDrinkText(category) === itemCategory
+    ) || null;
+  }
 
   if (lower.includes("cherry") && lower.includes("firecracker")) return "Not Coffee";
 
@@ -2496,12 +2549,12 @@ function getTimeClass(createdAt) {
   return "text-[#0F4036] bg-[#EEE0C5]/65 border-[#CA862B]/18";
 }
 
-function isDrinkItem(itemName = "") {
-  return Boolean(getBeverageCategory(itemName));
+function isDrinkItem(itemOrName = "") {
+  return Boolean(getBeverageCategory(itemOrName));
 }
 
 function getDrinkItems(ticket) {
-  return ticket.items.filter((item) => isDrinkItem(item.name));
+  return ticket.items.filter((item) => isDrinkItem(item));
 }
 
 function hasDrinkItems(ticket) {
@@ -2532,7 +2585,7 @@ function getItemKey(item, index) {
 }
 
 function areAllDrinkItemsDone(items = []) {
-  const drinkItems = (items || []).filter((item) => isDrinkItem(item.name));
+  const drinkItems = (items || []).filter((item) => isDrinkItem(item));
   return drinkItems.length > 0 && drinkItems.every((item) => Boolean(item.done));
 }
 
@@ -2656,7 +2709,7 @@ function getDailyDrinkCounts(tickets) {
     .filter((ticket) => isToday(ticket.createdAt))
     .forEach((ticket) => {
       ticket.items.forEach((item) => {
-        if (!getBeverageCategory(item.name)) return;
+        if (!getBeverageCategory(item)) return;
 
         const qty = Number(item.qty || 1);
         const displayName = getCanonicalDrinkName(item.name);
@@ -2677,9 +2730,13 @@ function getStableItemId(item, index) {
 }
 
 function normalizeTicket(ticket) {
-const items = (ticket.items || []).map((item, index) => ({
+  const items = (ticket.items || []).map((item, index) => ({
     id: getStableItemId(item, index),
+    originalName: item.originalName || item.squareName || item.name || "Unnamed item",
     name: getCanonicalDrinkName(item.name || "Unnamed item"),
+    category: item.category ?? null,
+    isRetail: item.isRetail === true,
+    catalogObjectId: item.catalogObjectId || item.catalog_object_id || null,
     qty: item.qty || item.quantity || 1,
     modifiers: item.modifiers || [],
     note: item.note || "",
@@ -3134,7 +3191,7 @@ function TicketCard({
         {visibleItems.length > 0 ? (
           visibleItems.map((item, idx) => {
             const itemKey = getItemKey(item, idx);
-            const isDrink = isDrinkItem(item.name);
+            const isDrink = isDrinkItem(item);
             const isDone = Boolean(item.done);
 
             return (
@@ -8260,7 +8317,7 @@ function getDemoMenuDisplay() {
 
   for (const ticket of getDemoDisplayTickets()) {
     for (const item of getDrinkItems(ticket)) {
-      const category = getBeverageCategory(item.name) || "Drinks";
+      const category = getBeverageCategory(item) || "Drinks";
       if (!groups.has(category)) groups.set(category, new Set());
       groups.get(category).add(item.name);
     }
@@ -12672,12 +12729,15 @@ export default function GoldiesKDS() {
   const scheduledCelebrationKey = scheduledCelebration
     ? `${todayDateKey}:${scheduledCelebration.id}`
     : "";
-  const dailyUpdateKey = `${todayDateKey}:daily-update:${DAILY_UPDATE_NOTICE.id}`;
+  const dailyUpdateNotice = getDailyUpdateNotice(todayDateKey);
+  const dailyUpdateKey = dailyUpdateNotice
+    ? `${todayDateKey}:daily-update:${dailyUpdateNotice.id}`
+    : "";
   const showCelebrationNote =
     authStatus === "login" &&
     ((scheduledCelebration && hiddenCelebrationKey !== scheduledCelebrationKey) ||
-      (!scheduledCelebration && hiddenCelebrationKey !== dailyUpdateKey));
-  const loginCelebration = scheduledCelebration || DAILY_UPDATE_NOTICE;
+      (!scheduledCelebration && dailyUpdateNotice && hiddenCelebrationKey !== dailyUpdateKey));
+  const loginCelebration = scheduledCelebration || dailyUpdateNotice;
   const loginCelebrationKey = scheduledCelebration ? scheduledCelebrationKey : dailyUpdateKey;
   const showOwnerReportsNotice =
     authStatus === "login" &&
@@ -12906,7 +12966,7 @@ export default function GoldiesKDS() {
     setPolicyAcknowledgment(record);
     if (!record) {
       setPolicyReminder(readPolicyReminder());
-      setShowPolicyAcknowledgment(true);
+      setShowPolicyAcknowledgment(false);
     }
   }, [authStatus, isDemoRoute, isTrainingMode]);
 
