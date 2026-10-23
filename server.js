@@ -133,6 +133,13 @@ const ONLINE_ORDERING_BETA_MENU_BY_ID = new Map(
   ONLINE_ORDERING_BETA_MENU.map((item) => [item.id, item])
 );
 const GOLDIES_MENU_CATEGORY_LABELS = ["Coffee", "Not Coffee", "Smoothies"];
+const GOLDIES_PACKAGED_RETAIL_SKUS = new Set([
+  "01344522227", // Deal's Orchard half-gallon Apple Cider
+  "810192371686", // Whole chocolate milk, 12 fl oz
+  "712096811490", // Spicy Honey Chai, shelf product
+  "712096811506", // Honey Chai, shelf product
+  "850001210560", // Spiced latte candle
+]);
 const SHOP_TIME_ZONE = "America/Chicago";
 const GOLDIES_EVENT_MENU = Object.freeze({
   categoryName:
@@ -578,6 +585,33 @@ function isCatalogObjectPresentAtLocation(data = {}) {
   if (data.present_at_all_locations || data.presentAtAllLocations) return true;
   const locationIds = data.present_at_location_ids || data.presentAtLocationIds || [];
   return !locationIds.length || locationIds.includes(SQUARE_LOCATION_ID);
+}
+
+function getSquareCatalogItemVariations(itemData = {}, catalogById = new Map()) {
+  return (itemData.variations || [])
+    .map((variationRef) => catalogById.get(variationRef.id) || variationRef)
+    .filter(Boolean);
+}
+
+function getSquareCatalogPresentItemVariations(itemData = {}, catalogById = new Map()) {
+  return getSquareCatalogItemVariations(itemData, catalogById).filter((variation) => {
+    const variationData = variation.item_variation_data || variation.itemVariationData || {};
+    return !variation.is_deleted && isCatalogObjectPresentAtLocation(variationData);
+  });
+}
+
+function isSquareCatalogItemPackagedOnly(itemData = {}, catalogById = new Map()) {
+  const presentVariations = getSquareCatalogPresentItemVariations(itemData, catalogById);
+  const scopedVariations = presentVariations.length
+    ? presentVariations
+    : getSquareCatalogItemVariations(itemData, catalogById);
+  return scopedVariations.length > 0 && !scopedVariations.some(isSquareCatalogDrinkVariationEligible);
+}
+
+function isSquareCatalogDrinkVariationEligible(variation = {}) {
+  const variationData = variation.item_variation_data || variation.itemVariationData || {};
+  const sku = String(variationData.sku ?? "").trim();
+  return !GOLDIES_PACKAGED_RETAIL_SKUS.has(sku);
 }
 
 function getCatalogImageUrl(imageObject) {
@@ -1029,7 +1063,7 @@ function buildOnlineOrderingFallbackMenu(options = {}) {
 
 function mergeStaticOnlineOrderingMenuItems(
   menu,
-  { includeForHereOnly = false, unavailableKeys = new Set() } = {}
+  { includeForHereOnly = false, unavailableKeys = new Set(), excludedStaticKeys = new Set() } = {}
 ) {
   const groups = new Map((menu || []).map((group) => [group.category, [...(group.items || [])]]));
   const seenNames = new Set();
@@ -1046,7 +1080,7 @@ function mergeStaticOnlineOrderingMenuItems(
 
     for (const item of group.items || []) {
       const itemKey = normalizeMenuAvailabilityKey(getCanonicalDrinkName(item.name || item.squareName || ""));
-      if (!itemKey || seenNames.has(itemKey)) continue;
+      if (!itemKey || excludedStaticKeys.has(itemKey) || seenNames.has(itemKey)) continue;
       groups.get(group.category).push(item);
       seenNames.add(itemKey);
     }
@@ -1087,12 +1121,18 @@ async function getSquareOnlineOrderingMenu({ includeForHereOnly = false } = {}) 
       .map((object) => [object.id, object])
   );
   const groups = new Map();
+  const excludedStaticKeys = new Set();
 
   for (const object of objects) {
     if (object.type !== "ITEM" || object.is_deleted) continue;
 
-    const itemData = object.item_data || {};
+    const itemData = object.item_data || object.itemData || {};
     if (!isCatalogObjectPresentAtLocation(itemData)) continue;
+    const itemVariations = getSquareCatalogPresentItemVariations(itemData, byId);
+    if (isNonDrinkItem(itemData.name || "") || isSquareCatalogItemPackagedOnly(itemData, byId)) {
+      excludedStaticKeys.add(normalizeMenuAvailabilityKey(getCanonicalDrinkName(itemData.name || "")));
+      continue;
+    }
 
     const squareCategoryNames = getCatalogCategoryIds(itemData)
       .map((categoryId) => categoriesById.get(categoryId))
@@ -1162,15 +1202,10 @@ async function getSquareOnlineOrderingMenu({ includeForHereOnly = false } = {}) 
       })
       .filter((group) => group.options.length);
 
-    const variations = (itemData.variations || [])
-      .map((variationRef) => byId.get(variationRef.id) || variationRef)
-      .filter((variation) => {
-        const variationData = variation?.item_variation_data || {};
-        return variation && !variation.is_deleted && isCatalogObjectPresentAtLocation(variationData);
-      });
+    const variations = itemVariations.filter(isSquareCatalogDrinkVariationEligible);
 
     for (const variation of variations) {
-      const variationData = variation.item_variation_data || {};
+      const variationData = variation.item_variation_data || variation.itemVariationData || {};
       const priceCents = Number(variationData.price_money?.amount || 0);
       if (!priceCents) continue;
       const itemName = itemData.name || variationData.name || "Drink";
@@ -1214,7 +1249,7 @@ async function getSquareOnlineOrderingMenu({ includeForHereOnly = false } = {}) 
 
   if (eventMenuActive) return menu;
 
-  return mergeStaticOnlineOrderingMenuItems(menu, { includeForHereOnly, unavailableKeys });
+  return mergeStaticOnlineOrderingMenuItems(menu, { includeForHereOnly, unavailableKeys, excludedStaticKeys });
 }
 
 function flattenOnlineOrderingMenu(menu) {
@@ -1771,6 +1806,10 @@ function isNonDrinkItem(itemName = "") {
     /\bsanctuary\b/,
     /\bbamboo\b/,
     /\bsoap\b/,
+    /\bcandles?\b/,
+    /\blinen sprays?\b/,
+    /\bessential oils?\b/,
+    /\bwax melts?\b/,
     /\bshower steamer\b/,
     /\bbestseller\b/,
     /\bbagged coffee\b/,
@@ -1909,7 +1948,7 @@ function getDrinkCategory(itemName = "") {
 }
 
 function getItemDrinkCategory(item = {}) {
-  if (isNonDrinkItem(item.name)) return null;
+  if (item.isRetail === true || isNonDrinkItem(item.name)) return null;
 
   const savedCategory = normalizeGoldiesDrinkCategory(item.category);
   if (savedCategory) {
@@ -2069,6 +2108,7 @@ function buildCatalogMenuAvailabilityItems(catalogItems = [], recentPrices = new
 
   for (const item of catalogItems) {
     const itemName = item.displayName || getCanonicalDrinkName(item.name);
+    if (isNonDrinkItem(item.name || itemName)) continue;
     const category = normalizeGoldiesDrinkCategory(item.category) || getDrinkCategory(itemName);
     if (!itemName || !category) continue;
 
@@ -2122,6 +2162,7 @@ async function fetchSquareDrinkCategoryAudit({ force = false } = {}) {
       missingCategories: [...GOLDIES_MENU_CATEGORY_LABELS],
       mismatches: [],
       categoryByCatalogObjectId: new Map(),
+      retailCatalogObjectIds: [],
       checkedAt: new Date().toISOString(),
     };
   }
@@ -2141,6 +2182,8 @@ async function fetchSquareDrinkCategoryAudit({ force = false } = {}) {
       })
   );
   const categoryByCatalogObjectId = new Map();
+  const retailCatalogObjectIds = new Set();
+  const objectsById = new Map(objects.map((object) => [object.id, object]));
   const categories = Object.fromEntries(GOLDIES_MENU_CATEGORY_LABELS.map((category) => [category, []]));
   const missingCategorySet = new Set(GOLDIES_MENU_CATEGORY_LABELS);
   const mismatches = [];
@@ -2154,6 +2197,19 @@ async function fetchSquareDrinkCategoryAudit({ force = false } = {}) {
     if (object.type !== "ITEM" || object.is_deleted) continue;
 
     const itemData = object.item_data || object.itemData || {};
+    const variations = getSquareCatalogItemVariations(itemData, objectsById);
+    const nonDrinkItem = isNonDrinkItem(itemData.name || "");
+    for (const variation of variations) {
+      if (nonDrinkItem || !isSquareCatalogDrinkVariationEligible(variation)) {
+        categoryByCatalogObjectId.set(variation.id, null);
+        retailCatalogObjectIds.add(variation.id);
+      }
+    }
+    if (nonDrinkItem || isSquareCatalogItemPackagedOnly(itemData, objectsById)) {
+      categoryByCatalogObjectId.set(object.id, null);
+      retailCatalogObjectIds.add(object.id);
+      continue;
+    }
     const squareCategory = getCatalogCategoryIds(itemData)
       .map((id) => normalizeGoldiesDrinkCategory(categoryNamesById.get(id)))
       .find(Boolean);
@@ -2175,8 +2231,10 @@ async function fetchSquareDrinkCategoryAudit({ force = false } = {}) {
     categories[category].push(record);
     categoryByCatalogObjectId.set(object.id, category);
 
-    for (const variationRef of itemData.variations || []) {
-      if (variationRef?.id) categoryByCatalogObjectId.set(variationRef.id, category);
+    for (const variation of variations) {
+      if (variation.id && isSquareCatalogDrinkVariationEligible(variation)) {
+        categoryByCatalogObjectId.set(variation.id, category);
+      }
     }
 
     if (squareCategory && kdsCategory && kdsCategory !== squareCategory) {
@@ -2194,6 +2252,7 @@ async function fetchSquareDrinkCategoryAudit({ force = false } = {}) {
     missingCategories: Array.from(missingCategorySet),
     mismatches,
     categoryByCatalogObjectId,
+    retailCatalogObjectIds: Array.from(retailCatalogObjectIds),
     checkedAt: new Date().toISOString(),
   };
 
@@ -2301,6 +2360,8 @@ async function fetchSquareMenuCatalogItems() {
       .map((object) => {
         const itemData = object.itemData || object.item_data || {};
         if (!isCatalogObjectPresentAtLocation(itemData)) return null;
+        const itemVariations = getSquareCatalogPresentItemVariations(itemData, byId);
+        if (isSquareCatalogItemPackagedOnly(itemData, byId)) return null;
 
         const categoryNames = getCatalogCategoryIds(itemData)
           .map((id) => categoryNamesById.get(id))
@@ -2312,12 +2373,8 @@ async function fetchSquareMenuCatalogItems() {
         });
         if (!category) return null;
 
-        const prices = (itemData.variations || [])
-          .map((variationRef) => byId.get(variationRef.id) || variationRef)
-          .filter((variation) => {
-            const variationData = variation?.itemVariationData || variation?.item_variation_data || {};
-            return variation && !variation.is_deleted && isCatalogObjectPresentAtLocation(variationData);
-          })
+        const prices = itemVariations
+          .filter(isSquareCatalogDrinkVariationEligible)
           .map((variation) => {
             const variationData = variation.itemVariationData || variation.item_variation_data || {};
             return Number(
@@ -2335,7 +2392,7 @@ async function fetchSquareMenuCatalogItems() {
         };
       })
       .filter(Boolean)
-      .filter((item) => item.name && getDrinkCategory(item.name)),
+      .filter((item) => item.name && getItemDrinkCategory(item)),
   };
 
   return menuCatalogCache.items;
@@ -2393,9 +2450,12 @@ async function fetchRecentMenuPrices() {
 
   for (const order of orders || []) {
     const lineItems = order.raw_order?.lineItems || order.raw_order?.line_items || [];
-    for (const lineItem of lineItems) {
+    for (const [index, lineItem] of lineItems.entries()) {
       const name = lineItem.name || "";
-      if (!getDrinkCategory(name)) continue;
+      if (!getItemDrinkCategory(restoreRetailItemIdentity({
+        ...lineItem,
+        id: buildKdsLineItemId(lineItem, index),
+      }, order.raw_order || {}))) continue;
 
       const key = normalizeDrinkText(name);
       if (prices.has(key)) continue;
@@ -2587,6 +2647,69 @@ function appendStatusEvent(rawOrder, status, at) {
       },
     ],
   });
+}
+
+function getRetailLineItemIdentities(rawOrder = {}) {
+  if (!Array.isArray(rawOrder?.kdsRetailLineItems)) return [];
+  return rawOrder.kdsRetailLineItems
+    .filter((entry) => entry && typeof entry.itemKey === "string")
+    .map((entry) => ({
+      itemKey: entry.itemKey,
+      catalogObjectId: typeof entry.catalogObjectId === "string" ? entry.catalogObjectId : "",
+      lineUid: typeof entry.lineUid === "string" ? entry.lineUid : "",
+    }));
+}
+
+function getRetailItemIdentity(item = {}, rawOrder = {}) {
+  const itemKey = String(item.square_line_item_uid || item.id || "");
+  const directCatalogId = String(item.catalogObjectId || item.catalog_object_id || "");
+  const rawLines = rawOrder?.lineItems || rawOrder?.line_items || [];
+  const rawLine = rawLines.find((line, index) =>
+    buildKdsLineItemId(line, index) === itemKey ||
+    (item.squareLineItemUid && String(line.uid || line.uid_v2 || "") === String(item.squareLineItemUid))
+  );
+  return {
+    itemKey,
+    catalogObjectId: directCatalogId || String(rawLine?.catalogObjectId || rawLine?.catalog_object_id || ""),
+    lineUid: String(item.squareLineItemUid || item.uid || item.uid_v2 || rawLine?.uid || rawLine?.uid_v2 || ""),
+  };
+}
+
+function hasStoredRetailIdentity(item = {}, currentRawOrder = {}, metadataRawOrder = currentRawOrder) {
+  const identity = getRetailItemIdentity(item, currentRawOrder);
+  return getRetailLineItemIdentities(metadataRawOrder).some((entry) => {
+    if (entry.catalogObjectId !== identity.catalogObjectId) return false;
+    if (entry.lineUid && identity.lineUid) return entry.lineUid === identity.lineUid;
+    return Boolean(identity.itemKey) && entry.itemKey === identity.itemKey;
+  });
+}
+
+function restoreRetailItemIdentity(item = {}, rawOrder = {}) {
+  const identity = getRetailItemIdentity(item, rawOrder);
+  return {
+    ...item,
+    catalogObjectId: identity.catalogObjectId,
+    isRetail: item.isRetail === true || hasStoredRetailIdentity(item, rawOrder),
+  };
+}
+
+function preserveRetailTicketIdentity(ticket = {}, rawOrder = null, existingRawOrder = null) {
+  const currentRawOrder = rawOrder || existingRawOrder || {};
+  const items = (ticket.items || []).map((item) => ({
+    ...item,
+    isRetail: item.isRetail === true || isNonDrinkItem(item.name) ||
+      (item.isRetail !== false && (
+        hasStoredRetailIdentity(item, currentRawOrder) ||
+        hasStoredRetailIdentity(item, currentRawOrder, existingRawOrder || {})
+      )),
+  }));
+  const kdsRetailLineItems = items
+    .filter((item) => item.isRetail === true)
+    .map((item) => getRetailItemIdentity(item, currentRawOrder));
+  return {
+    ticket: { ...ticket, items },
+    rawOrder: { ...currentRawOrder, kdsRetailLineItems },
+  };
 }
 
 function getCompletedItemKeys(rawOrder) {
@@ -4115,18 +4238,27 @@ async function getSquareEmployeeName(order, payment = null) {
 
 async function normalizeSquareOrder(order, payment = null) {
   const items = [];
-  const catalogCategoryByObjectId = await getSquareCatalogDrinkCategoryMap().catch((error) => {
+  const catalogAudit = await fetchSquareDrinkCategoryAudit().catch((error) => {
     console.warn(`WARNING: Unable to check Square drink categories: ${error.message}`);
-    return new Map();
+    return {};
   });
+  const catalogCategoryByObjectId = catalogAudit.categoryByCatalogObjectId || new Map();
+  const retailCatalogObjectIds = new Set(catalogAudit.retailCatalogObjectIds || []);
 
-  for (const [index, lineItem] of (order.lineItems || []).entries()) {
+  for (const [index, lineItem] of (order.lineItems || order.line_items || []).entries()) {
     const modifiers = (lineItem.modifiers || []).map(
       (modifier) => modifier.name || "Unknown modifier"
     );
     const name = lineItem.name || "Unnamed item";
     const catalogObjectId = lineItem.catalogObjectId || lineItem.catalog_object_id || "";
-    const category = catalogCategoryByObjectId.get(catalogObjectId) || getDrinkCategory(name);
+    const category = catalogCategoryByObjectId.has(catalogObjectId)
+      ? catalogCategoryByObjectId.get(catalogObjectId)
+      : getDrinkCategory(name);
+    const isRetail = retailCatalogObjectIds.has(catalogObjectId) || isNonDrinkItem(name)
+      ? true
+      : normalizeGoldiesDrinkCategory(catalogCategoryByObjectId.get(catalogObjectId))
+        ? false
+        : undefined;
 
     items.push({
       id: buildKdsLineItemId(lineItem, index),
@@ -4137,6 +4269,7 @@ async function normalizeSquareOrder(order, payment = null) {
       modifiers,
       note: lineItem.note || "",
       category,
+      isRetail,
     });
   }
 
@@ -4177,15 +4310,20 @@ function ticketFromDb(order, items = []) {
     pickupDueTime: getSquarePickupDueTime(order.raw_order || {}),
     status: sanitizeStatus(order.status),
     diningOption: storedDiningOption || rawDiningOption || "",
-    items: items.map((item) => ({
-      id: item.square_line_item_uid || String(item.id),
-      name: item.name || "Unnamed item",
-      qty: item.quantity || 1,
-      modifiers: Array.isArray(item.modifiers) ? item.modifiers : [],
-      note: item.note || "",
-      category: getItemDrinkCategory(item),
-      done: completedItemKeys.has(String(item.square_line_item_uid || item.id)),
-    })),
+    items: items.map((storedItem) => {
+      const item = restoreRetailItemIdentity(storedItem, order.raw_order || {});
+      return {
+        id: item.square_line_item_uid || String(item.id),
+        name: item.name || "Unnamed item",
+        qty: item.quantity || 1,
+        modifiers: Array.isArray(item.modifiers) ? item.modifiers : [],
+        note: item.note || "",
+        category: getItemDrinkCategory(item),
+        isRetail: item.isRetail === true,
+        catalogObjectId: item.catalogObjectId || "",
+        done: completedItemKeys.has(String(item.square_line_item_uid || item.id)),
+      };
+    }),
   };
 }
 
@@ -4215,8 +4353,12 @@ function getSuspiciousPickupNameTickets(ticketsToCheck = lastKnownActiveTickets)
 
 async function upsertTicket(ticket, rawOrder = null, options = {}) {
   if (!supabase) {
-    const alreadyExists = tickets.some((existing) => existing.id === ticket.id);
-    return { ...addTicket(ticket), syncAction: alreadyExists ? "updated" : "created" };
+    const existing = tickets.find((entry) => entry.id === ticket.id);
+    const retailState = preserveRetailTicketIdentity(ticket, rawOrder, existing?.rawOrder);
+    return {
+      ...addTicket({ ...retailState.ticket, rawOrder: retailState.rawOrder }),
+      syncAction: existing ? "updated" : "created",
+    };
   }
 
   try {
@@ -4228,6 +4370,9 @@ async function upsertTicket(ticket, rawOrder = null, options = {}) {
 
     if (existingError) throw existingError;
 
+    const retailState = preserveRetailTicketIdentity(ticket, rawOrder, existingOrder?.raw_order);
+    ticket = retailState.ticket;
+    rawOrder = retailState.rawOrder;
     const status = resolveKdsTicketStatus(existingOrder, ticket, options);
     const createdAt = new Date(ticket.createdAt || Date.now()).toISOString();
     const completedAt = isCompletedStatus(status)
@@ -4304,8 +4449,10 @@ async function upsertTicket(ticket, rawOrder = null, options = {}) {
       `Supabase write failed for ${ticket.id}; serving ticket from memory until storage recovers:`,
       error.message
     );
+    const existing = tickets.find((entry) => entry.id === ticket.id);
+    const fallback = preserveRetailTicketIdentity(ticket, rawOrder, existing?.rawOrder);
     return {
-      ...addTicket(ticket),
+      ...addTicket({ ...fallback.ticket, rawOrder: fallback.rawOrder }),
       status: sanitizeStatus(ticket.status),
       syncAction: alreadyExists ? "memory-updated" : "memory-created",
       storageFallback: true,
@@ -5132,7 +5279,7 @@ async function getDrinkReport(range = "today") {
 
   const start = getRangeStart(range);
   const end = getRangeEnd(range);
-  const selectColumns = "square_order_id, created_at, updated_at";
+  const selectColumns = "square_order_id, created_at, updated_at, raw_order";
 
   const { data, error: orderError } = await supabase
     .from("kds_orders")
@@ -5153,7 +5300,7 @@ async function getDrinkReport(range = "today") {
   const orderDateById = new Map(
     orders.map((order) => [order.square_order_id, order.createdAt])
   );
-  const items = await fetchOrderItemsByOrderIds(orderIds);
+  const items = await fetchOrderItemsByOrderIds(orderIds, "*", new Map(orders.map((order) => [order.square_order_id, order.raw_order])));
 
   const reportTickets = orderIds.map((orderId) => ({
     id: orderId,
@@ -5164,13 +5311,14 @@ async function getDrinkReport(range = "today") {
         name: item.name,
         qty: item.quantity,
         category: getItemDrinkCategory(item),
+        isRetail: item.isRetail === true,
       })),
   }));
 
   return buildDrinkReport(reportTickets, start, end);
 }
 
-async function fetchOrderItemsByOrderIds(orderIds = [], columns = "*") {
+async function fetchOrderItemsByOrderIds(orderIds = [], columns = "*", rawOrderById = new Map()) {
   if (!supabase || !orderIds.length) return [];
 
   const chunkSize = 100;
@@ -5184,7 +5332,9 @@ async function fetchOrderItemsByOrderIds(orderIds = [], columns = "*") {
       .in("order_id", chunk);
 
     if (error) throw error;
-    collected.push(...(data || []));
+    collected.push(...(data || []).map((item) =>
+      restoreRetailItemIdentity(item, rawOrderById.get(item.order_id) || {})
+    ));
   }
 
   return collected;
@@ -5333,7 +5483,11 @@ async function getDrinkMakingTimeReport(range = "today") {
   }
 
   const orderIds = orders.map((order) => order.square_order_id);
-  const items = await fetchOrderItemsByOrderIds(orderIds, "order_id, name, category");
+  const items = await fetchOrderItemsByOrderIds(
+    orderIds,
+    "order_id, square_line_item_uid, name, quantity, category",
+    new Map(orders.map((order) => [order.square_order_id, order.raw_order]))
+  );
 
   const drinkItemsByOrderId = new Map();
   for (const item of items || []) {
@@ -5448,9 +5602,12 @@ function buildOwnerDrinkRevenueReport(orders = [], start, end) {
       allOrderIds.add(order.square_order_id);
     }
 
-    for (const lineItem of lineItems) {
+    for (const [index, lineItem] of lineItems.entries()) {
       const name = lineItem.name || "";
-      const category = getItemDrinkCategory({ name });
+      const category = getItemDrinkCategory(restoreRetailItemIdentity({
+        ...lineItem,
+        id: buildKdsLineItemId(lineItem, index),
+      }, rawOrder));
       const displayName = getCanonicalDrinkName(name);
       const qty = Number.parseFloat(lineItem.quantity || "1") || 1;
       const totalCents = getLineItemAmountCents(lineItem);
